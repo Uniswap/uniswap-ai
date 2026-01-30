@@ -1,0 +1,388 @@
+name: Publish Packages
+
+# Unified publishing workflow that handles both CI (automatic) and force (manual) publishing.
+# This consolidation is required due to npm OIDC trusted publishing constraints.
+#
+# MODES:
+# - Auto (CI): Triggered on push to main, detects affected packages, publishes, generates changelog
+# - Force: Manually triggered, publishes user-specified packages with prerelease versions
+#
+# TRIGGERS:
+# - Push to main: Auto mode with 'latest' npm tag, conventional versioning
+# - workflow_dispatch: Force mode with 'next' npm tag, prerelease versioning
+#
+# REQUIRED SECRETS:
+# - WORKFLOW_PAT: For pushing commits/tags
+# - NODE_AUTH_TOKEN: For npm publishing (fallback if OIDC unavailable)
+# - SERVICE_ACCOUNT_GPG_PRIVATE_KEY: For signing commits/tags
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      packages:
+        description: 'Packages to publish (single name, comma-separated list, or "all")'
+        required: true
+        default: "all"
+        type: string
+      dryRun:
+        description: "Perform a dry run without publishing"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "true"
+          - "false"
+
+# Ensure only one publish workflow runs at a time per branch
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # Detect which packages to publish
+  detect:
+    name: Detect packages to publish
+    runs-on: ubuntu-latest
+    environment: ${{ github.event_name == 'push' && 'Production' || null }}
+    outputs:
+      has_packages: ${{ steps.resolve.outputs.has_packages }}
+      projects: ${{ steps.resolve.outputs.projects }}
+      packages: ${{ steps.resolve.outputs.packages }}
+      package_count: ${{ steps.resolve.outputs.package_count }}
+      base_sha: ${{ steps.base-sha.outputs.base }}
+      npm_tag: ${{ steps.config.outputs.npm_tag }}
+      version_strategy: ${{ steps.config.outputs.version_strategy }}
+      is_dry_run: ${{ steps.config.outputs.is_dry_run }}
+      is_force_mode: ${{ steps.config.outputs.is_force_mode }}
+      is_prerelease: ${{ steps.config.outputs.is_prerelease }}
+    # Skip workflow for version bump commits (prevents loops)
+    if: ${{ !startsWith(github.event.head_commit.message, 'chore(release):') }}
+
+    steps:
+      - uses: bullfrogsec/bullfrog@1831f79cce8ad602eef14d2163873f27081ebfb3 # v0.8.4
+
+      - name: Checkout repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
+        with:
+          node-version: ${{ vars.NODE_VERSION }}
+          registry-url: "https://registry.npmjs.org"
+          scope: "@uniswap-ai"
+
+      - name: Install npm
+        run: npm install -g npm@${{ vars.NPM_VERSION }}
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline --no-audit
+
+      - name: Determine workflow configuration
+        id: config
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BRANCH_NAME: ${{ github.ref_name }}
+          DRY_RUN_INPUT: ${{ github.event.inputs.dryRun }}
+        run: |
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            echo "is_force_mode=true" >> $GITHUB_OUTPUT
+            echo "📦 Mode: Force publish (manual trigger)"
+            echo "npm_tag=next" >> $GITHUB_OUTPUT
+            echo "version_strategy=prerelease" >> $GITHUB_OUTPUT
+            echo "is_prerelease=true" >> $GITHUB_OUTPUT
+
+            if [[ "$DRY_RUN_INPUT" == "true" ]]; then
+              echo "is_dry_run=true" >> $GITHUB_OUTPUT
+              echo "🔍 Dry run mode enabled"
+            else
+              echo "is_dry_run=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "is_force_mode=false" >> $GITHUB_OUTPUT
+            echo "🚀 Mode: Auto publish (CI trigger)"
+            echo "is_dry_run=false" >> $GITHUB_OUTPUT
+            echo "npm_tag=latest" >> $GITHUB_OUTPUT
+            echo "version_strategy=conventional" >> $GITHUB_OUTPUT
+            echo "is_prerelease=false" >> $GITHUB_OUTPUT
+            echo "📦 Branch: main → npm tag: latest, conventional versioning"
+          fi
+
+      - name: Determine base SHA for affected detection
+        id: base-sha
+        if: github.event_name == 'push'
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          BASE_SHA="$BEFORE_SHA"
+          if [[ "$BASE_SHA" == "0000000000000000000000000000000000000000" ]]; then
+            echo "First push to branch - using HEAD~1 as base"
+            echo "base=HEAD~1" >> $GITHUB_OUTPUT
+          else
+            echo "Using commit before push: $BASE_SHA"
+            echo "base=$BASE_SHA" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Resolve packages to publish
+        id: resolve
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_PACKAGES: ${{ github.event.inputs.packages }}
+          BASE_SHA: ${{ steps.base-sha.outputs.base }}
+        run: |
+          # Get all release-configured packages from nx.json
+          echo "Scanning for release-configured packages..."
+          ALL_PACKAGES=$(npx nx show projects --json 2>/dev/null | jq -r '.[]' | while read project; do
+            PROJECT_ROOT=$(npx nx show project "$project" --json 2>/dev/null | jq -r '.root' || echo "")
+            if [ -n "$PROJECT_ROOT" ] && [ -f "$PROJECT_ROOT/package.json" ]; then
+              IS_PRIVATE=$(jq -r '.private // false' "$PROJECT_ROOT/package.json")
+              if [ "$IS_PRIVATE" != "true" ]; then
+                PACKAGE_NAME=$(jq -r '.name // ""' "$PROJECT_ROOT/package.json")
+                if [ -n "$PACKAGE_NAME" ]; then
+                  if jq -e --arg pkg "$PACKAGE_NAME" '.release.projects | index($pkg)' nx.json > /dev/null 2>&1; then
+                    echo "$project:$PACKAGE_NAME"
+                  fi
+                fi
+              fi
+            fi
+          done)
+
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            echo "🔧 Force mode: resolving user-specified packages"
+
+            if [[ "$INPUT_PACKAGES" == "all" ]]; then
+              SELECTED_PROJECTS=$(echo "$ALL_PACKAGES" | cut -d: -f1 | tr '\n' ',' | sed 's/,$//')
+              SELECTED_PACKAGES=$(echo "$ALL_PACKAGES" | cut -d: -f2 | tr '\n' ',' | sed 's/,$//')
+            else
+              SELECTED_PROJECTS=""
+              SELECTED_PACKAGES=""
+              IFS=',' read -ra INPUT_PKG_ARRAY <<< "$INPUT_PACKAGES"
+
+              for input_pkg in "${INPUT_PKG_ARRAY[@]}"; do
+                input_pkg=$(echo "$input_pkg" | xargs)
+                MATCH=$(echo "$ALL_PACKAGES" | grep ":${input_pkg}$" || echo "")
+
+                if [ -z "$MATCH" ]; then
+                  echo "❌ ERROR: Package '$input_pkg' not found in release configuration"
+                  exit 1
+                fi
+
+                PROJECT=$(echo "$MATCH" | cut -d: -f1)
+                PACKAGE=$(echo "$MATCH" | cut -d: -f2)
+
+                if [ -n "$SELECTED_PROJECTS" ]; then
+                  SELECTED_PROJECTS="${SELECTED_PROJECTS},${PROJECT}"
+                  SELECTED_PACKAGES="${SELECTED_PACKAGES},${PACKAGE}"
+                else
+                  SELECTED_PROJECTS="$PROJECT"
+                  SELECTED_PACKAGES="$PACKAGE"
+                fi
+              done
+            fi
+          else
+            echo "🔍 Auto mode: detecting affected packages"
+            RAW_OUTPUT=$(NODE_NO_WARNINGS=1 npx nx show projects --affected --base="$BASE_SHA" --head=HEAD --type=lib --json 2>&1 || echo "[]")
+            AFFECTED_OUTPUT=$(echo "$RAW_OUTPUT" | grep -v '^npm warn' || echo "[]")
+
+            if echo "$AFFECTED_OUTPUT" | jq empty 2>/dev/null; then
+              AFFECTED_JSON="$AFFECTED_OUTPUT"
+            else
+              AFFECTED_JSON="[]"
+            fi
+
+            SELECTED_PROJECTS=""
+            SELECTED_PACKAGES=""
+
+            for project in $(echo "$AFFECTED_JSON" | jq -r '.[]'); do
+              PROJECT_ROOT=$(npx nx show project "$project" --json 2>/dev/null | jq -r '.root' || echo "")
+
+              if [ -n "$PROJECT_ROOT" ] && [ -f "$PROJECT_ROOT/package.json" ]; then
+                IS_PRIVATE=$(jq -r '.private // false' "$PROJECT_ROOT/package.json")
+
+                if [ "$IS_PRIVATE" = "true" ]; then
+                  echo "  ⏭️  Skipping $project (private: true)"
+                else
+                  PACKAGE_NAME=$(jq -r '.name // ""' "$PROJECT_ROOT/package.json")
+                  if [ -n "$PACKAGE_NAME" ]; then
+                    echo "  ✅ Including $project → $PACKAGE_NAME (publishable)"
+                    if [ -n "$SELECTED_PROJECTS" ]; then
+                      SELECTED_PROJECTS="${SELECTED_PROJECTS},${project}"
+                      SELECTED_PACKAGES="${SELECTED_PACKAGES},${PACKAGE_NAME}"
+                    else
+                      SELECTED_PROJECTS="$project"
+                      SELECTED_PACKAGES="$PACKAGE_NAME"
+                    fi
+                  fi
+                fi
+              fi
+            done
+          fi
+
+          if [ -z "$SELECTED_PACKAGES" ]; then
+            PACKAGE_COUNT=0
+          else
+            PACKAGE_COUNT=$(echo "$SELECTED_PACKAGES" | tr ',' '\n' | grep -c '.' || echo "0")
+          fi
+
+          echo "projects=$SELECTED_PROJECTS" >> $GITHUB_OUTPUT
+          echo "packages=$SELECTED_PACKAGES" >> $GITHUB_OUTPUT
+          echo "package_count=$PACKAGE_COUNT" >> $GITHUB_OUTPUT
+
+          if [ "$PACKAGE_COUNT" -eq "0" ]; then
+            echo "has_packages=false" >> $GITHUB_OUTPUT
+            echo "ℹ️  No packages to publish"
+          else
+            echo "has_packages=true" >> $GITHUB_OUTPUT
+            echo "✅ Found $PACKAGE_COUNT package(s) to publish"
+          fi
+
+  # Build and publish packages
+  publish:
+    name: Build and publish packages
+    runs-on: ubuntu-latest
+    environment: Production
+    needs: detect
+    if: needs.detect.outputs.has_packages == 'true'
+    permissions:
+      id-token: write
+      contents: write
+      packages: write
+      pull-requests: write
+      issues: write
+
+    steps:
+      - uses: bullfrogsec/bullfrog@1831f79cce8ad602eef14d2163873f27081ebfb3 # v0.8.4
+
+      - name: Import GPG key
+        uses: crazy-max/ghaction-import-gpg@e89d40939c28e39f97cf32126055eeae86ba74ec # v6
+        with:
+          gpg_private_key: ${{ secrets.SERVICE_ACCOUNT_GPG_PRIVATE_KEY }}
+          git_user_signingkey: true
+          git_commit_gpgsign: true
+          git_tag_gpgsign: true
+          git_config_global: true
+
+      - name: Checkout repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.WORKFLOW_PAT }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
+        with:
+          node-version: ${{ vars.NODE_VERSION }}
+          registry-url: "https://registry.npmjs.org"
+          scope: "@uniswap-ai"
+
+      - name: Install npm
+        run: npm install -g npm@${{ vars.NPM_VERSION }}
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline --no-audit
+
+      - name: Configure Git identity
+        run: |
+          git config user.name "Uniswap Labs Service Account"
+          git config user.email "hello-happy-puppy@uniswap.org"
+
+      - name: Build packages
+        env:
+          INPUT_PROJECTS: ${{ needs.detect.outputs.projects }}
+          INPUT_BASE_SHA: ${{ needs.detect.outputs.base_sha }}
+        run: |
+          echo "Building packages: $INPUT_PROJECTS"
+
+          if [ -n "$INPUT_BASE_SHA" ]; then
+            npx nx affected --target=build --base="$INPUT_BASE_SHA" --head=HEAD
+          else
+            IFS=',' read -ra PROJECT_ARRAY <<< "$INPUT_PROJECTS"
+            for project in "${PROJECT_ARRAY[@]}"; do
+              echo "Building $project..."
+              npx nx build "$project"
+            done
+          fi
+
+      - name: Version and publish packages
+        if: needs.detect.outputs.is_dry_run != 'true'
+        env:
+          INPUT_PROJECTS: ${{ needs.detect.outputs.projects }}
+          INPUT_PACKAGES: ${{ needs.detect.outputs.packages }}
+          INPUT_NPM_TAG: ${{ needs.detect.outputs.npm_tag }}
+          INPUT_VERSION_STRATEGY: ${{ needs.detect.outputs.version_strategy }}
+          INPUT_BRANCH: ${{ github.ref_name }}
+          NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > ~/.npmrc
+
+          echo "Processing packages with tag: $INPUT_NPM_TAG"
+          echo "=========================================="
+
+          IFS=',' read -ra PROJECTS <<< "$INPUT_PROJECTS"
+          IFS=',' read -ra PACKAGES <<< "$INPUT_PACKAGES"
+
+          FAILED_PACKAGES=()
+          SUCCESS_PACKAGES=()
+
+          for i in "${!PROJECTS[@]}"; do
+            project="${PROJECTS[$i]}"
+            package="${PACKAGES[$i]}"
+
+            if [ -z "$project" ] || [ -z "$package" ]; then continue; fi
+
+            echo "=========================================="
+            echo "Processing: $project → $package"
+            echo "=========================================="
+
+            PROJECT_ROOT=$(npx nx show project "$project" --json 2>/dev/null | jq -r '.root' || echo "")
+
+            if [ -z "$PROJECT_ROOT" ] || [ ! -f "$PROJECT_ROOT/package.json" ]; then
+              echo "❌ Could not find package.json for $project"
+              FAILED_PACKAGES+=("$package")
+              continue
+            fi
+
+            # Version the package using Nx release
+            if npx nx release version --projects="$project" --git-commit --git-tag; then
+              echo "✅ Versioning complete"
+
+              # Get the new version
+              NEW_VERSION=$(jq -r '.version' "$PROJECT_ROOT/package.json")
+
+              # Publish to npm
+              if npx nx release publish --projects="$project" --tag="$INPUT_NPM_TAG" --registry=https://registry.npmjs.org; then
+                echo "✅ Successfully published $package@$NEW_VERSION"
+
+                # Push commit and tag
+                git push origin "$INPUT_BRANCH"
+                git push origin "${package}@${NEW_VERSION}"
+
+                SUCCESS_PACKAGES+=("$package")
+              else
+                echo "❌ Failed to publish $package"
+                FAILED_PACKAGES+=("$package")
+              fi
+            else
+              echo "❌ Failed to version $package"
+              FAILED_PACKAGES+=("$package")
+            fi
+          done
+
+          echo "=========================================="
+          echo "Publishing Summary"
+          echo "=========================================="
+          echo "Successful: ${#SUCCESS_PACKAGES[@]} package(s)"
+          for pkg in "${SUCCESS_PACKAGES[@]}"; do echo "  ✅ $pkg"; done
+
+          if [ ${#FAILED_PACKAGES[@]} -gt 0 ]; then
+            echo ""
+            echo "Failed: ${#FAILED_PACKAGES[@]} package(s)"
+            for pkg in "${FAILED_PACKAGES[@]}"; do echo "  ❌ $pkg"; done
+          fi
+
+          [ ${#SUCCESS_PACKAGES[@]} -eq 0 ] && exit 1 || exit 0

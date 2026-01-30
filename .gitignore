@@ -1,0 +1,57 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+.nx/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Testing
+coverage/
+.nyc_output/
+
+# Cache
+.cache/
+.turbo/
+.eslintcache
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# VitePress
+docs/.vitepress/dist/
+docs/.vitepress/cache/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Lock files (keep package-lock.json)
+yarn.lock
+pnpm-lock.yaml
+bun.lock
+
+# Release artifacts
+*.tgz
+
+# Local Nx cache
+.nx/cache

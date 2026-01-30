@@ -1,0 +1,163 @@
+# Composite action to validate all Claude Code plugins in a marketplace
+# Validates plugin structure by running scripts/validate-plugin.cjs on each plugin
+# defined in the marketplace.json file.
+
+name: 'Validate Claude Code Plugins'
+description: 'Validates all Claude Code plugins defined in a marketplace.json file'
+
+inputs:
+  marketplace-path:
+    description: 'Path to the marketplace.json file'
+    required: false
+    default: '.claude-plugin/marketplace.json'
+  fail-on-warning:
+    description: 'Fail validation if warnings are present'
+    required: false
+    default: 'false'
+
+outputs:
+  plugin-count:
+    description: 'Number of plugins validated'
+    value: ${{ steps.validate.outputs.plugin_count }}
+  plugins-json:
+    description: 'JSON array of validated plugins with status'
+    value: ${{ steps.validate.outputs.plugins_json }}
+  marketplace-name:
+    description: 'Name of the marketplace from marketplace.json'
+    value: ${{ steps.validate.outputs.marketplace_name }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Validate marketplace and plugins
+      id: validate
+      shell: bash
+      env:
+        MARKETPLACE_PATH: ${{ inputs.marketplace-path }}
+        FAIL_ON_WARNING: ${{ inputs.fail-on-warning }}
+      run: |
+        echo "=== Validating Claude Code Plugins ==="
+        echo ""
+
+        # Check if marketplace.json exists
+        if [ ! -f "$MARKETPLACE_PATH" ]; then
+          echo "::error::Marketplace file not found: $MARKETPLACE_PATH"
+          exit 1
+        fi
+
+        # Parse marketplace.json
+        MARKETPLACE_NAME=$(jq -r '.name' "$MARKETPLACE_PATH")
+        PLUGINS_COUNT=$(jq '.plugins | length' "$MARKETPLACE_PATH")
+
+        echo "Marketplace: $MARKETPLACE_NAME"
+        echo "Plugins to validate: $PLUGINS_COUNT"
+        echo ""
+
+        # Initialize results
+        TOTAL_ERRORS=0
+        TOTAL_WARNINGS=0
+        RESULTS="[]"
+
+        # Iterate over each plugin
+        for i in $(seq 0 $((PLUGINS_COUNT - 1))); do
+          PLUGIN_NAME=$(jq -r ".plugins[$i].name" "$MARKETPLACE_PATH")
+          PLUGIN_SOURCE=$(jq -r ".plugins[$i].source" "$MARKETPLACE_PATH")
+
+          # Resolve relative path from repository root
+          if [[ "$PLUGIN_SOURCE" == ./* ]]; then
+            PLUGIN_PATH="${PLUGIN_SOURCE#./}"
+          else
+            PLUGIN_PATH="$PLUGIN_SOURCE"
+          fi
+
+          echo "---"
+          echo "Validating plugin: $PLUGIN_NAME"
+          echo "Path: $PLUGIN_PATH"
+          echo ""
+
+          # Run the validation script
+          VALIDATION_OUTPUT=""
+          VALIDATION_EXIT_CODE=0
+
+          if [ -f "scripts/validate-plugin.cjs" ]; then
+            VALIDATION_OUTPUT=$(node scripts/validate-plugin.cjs "$PLUGIN_PATH" 2>&1) || VALIDATION_EXIT_CODE=$?
+          else
+            echo "::warning::Validation script not found: scripts/validate-plugin.cjs"
+            VALIDATION_OUTPUT="Validation script not found"
+            VALIDATION_EXIT_CODE=1
+          fi
+
+          echo "$VALIDATION_OUTPUT"
+
+          # Determine status
+          if [ $VALIDATION_EXIT_CODE -eq 0 ]; then
+            STATUS="passed"
+            echo "::notice::Plugin $PLUGIN_NAME: PASSED"
+          else
+            STATUS="failed"
+            TOTAL_ERRORS=$((TOTAL_ERRORS + 1))
+            echo "::error::Plugin $PLUGIN_NAME: FAILED"
+          fi
+
+          # Check for warnings in output
+          if echo "$VALIDATION_OUTPUT" | grep -q "⚠"; then
+            TOTAL_WARNINGS=$((TOTAL_WARNINGS + 1))
+            if [ "$FAIL_ON_WARNING" = "true" ] && [ "$STATUS" = "passed" ]; then
+              STATUS="warning"
+            fi
+          fi
+
+          # Add to results
+          RESULT=$(jq -n \
+            --arg name "$PLUGIN_NAME" \
+            --arg path "$PLUGIN_PATH" \
+            --arg status "$STATUS" \
+            '{name: $name, path: $path, status: $status}')
+          RESULTS=$(echo "$RESULTS" | jq --argjson item "$RESULT" '. + [$item]')
+        done
+
+        echo ""
+        echo "=== Validation Summary ==="
+        echo "Total plugins: $PLUGINS_COUNT"
+        echo "Passed: $((PLUGINS_COUNT - TOTAL_ERRORS))"
+        echo "Failed: $TOTAL_ERRORS"
+        echo "Warnings: $TOTAL_WARNINGS"
+        echo ""
+
+        # Set outputs
+        echo "plugin_count=$PLUGINS_COUNT" >> $GITHUB_OUTPUT
+        echo "marketplace_name=$MARKETPLACE_NAME" >> $GITHUB_OUTPUT
+
+        # Handle multiline JSON output
+        {
+          echo "plugins_json<<EOF"
+          echo "$RESULTS"
+          echo "EOF"
+        } >> $GITHUB_OUTPUT
+
+        # Create job summary
+        {
+          echo "## Plugin Validation Results"
+          echo ""
+          echo "**Marketplace:** \`$MARKETPLACE_NAME\`"
+          echo ""
+          echo "| Plugin | Path | Status |"
+          echo "|--------|------|--------|"
+          echo "$RESULTS" | jq -r '.[] | "| \(.name) | `\(.path)` | \(if .status == "passed" then "✅ Passed" elif .status == "warning" then "⚠️ Warning" else "❌ Failed" end) |"'
+          echo ""
+          echo "**Summary:** $((PLUGINS_COUNT - TOTAL_ERRORS))/$PLUGINS_COUNT plugins passed"
+        } >> $GITHUB_STEP_SUMMARY
+
+        # Exit with error if any plugin failed
+        if [ $TOTAL_ERRORS -gt 0 ]; then
+          echo "::error::$TOTAL_ERRORS plugin(s) failed validation"
+          exit 1
+        fi
+
+        # Exit with error if warnings should fail
+        if [ "$FAIL_ON_WARNING" = "true" ] && [ $TOTAL_WARNINGS -gt 0 ]; then
+          echo "::error::$TOTAL_WARNINGS warning(s) found and fail-on-warning is enabled"
+          exit 1
+        fi
+
+        echo "All plugins validated successfully!"

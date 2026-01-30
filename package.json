@@ -1,0 +1,66 @@
+{
+  "name": "@uniswap-ai/source",
+  "version": "0.0.0",
+  "license": "MIT",
+  "type": "module",
+  "packageManager": "npm@11.7.0",
+  "engines": {
+    "node": "22.x",
+    "npm": "11.7.0"
+  },
+  "scripts": {
+    "build": "nx run-many --target=build --all",
+    "lint": "nx run-many --target=lint --all",
+    "test": "nx run-many --target=test --all",
+    "format": "nx format:write",
+    "format:check": "nx format:check",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs",
+    "prepare": "node scripts/prepare.cjs",
+    "lefthook": "npx lefthook run pre-commit"
+  },
+  "private": true,
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.1",
+    "@eslint/js": "^9.34.0",
+    "@nx/devkit": "22.0.2",
+    "@nx/eslint": "22.0.2",
+    "@nx/eslint-plugin": "22.0.2",
+    "@nx/jest": "22.0.2",
+    "@nx/js": "22.0.2",
+    "@swc-node/register": "~1.9.1",
+    "@swc/cli": "~0.6.0",
+    "@swc/core": "^1.14.0",
+    "@swc/helpers": "~0.5.11",
+    "@swc/jest": "~0.2.38",
+    "@types/jest": "^30.0.0",
+    "@types/node": "20.19.9",
+    "@typescript-eslint/eslint-plugin": "^8.42.0",
+    "@typescript-eslint/parser": "^8.42.0",
+    "eslint": "^9.33.0",
+    "eslint-config-prettier": "^10.0.0",
+    "eslint-plugin-import": "^2.32.0",
+    "jest": "^30.0.2",
+    "jest-environment-node": "^30.0.2",
+    "jsonc-eslint-parser": "^2.1.0",
+    "lefthook": "^1.12.3",
+    "markdownlint-cli2": "^0.20.0",
+    "nx": "22.0.2",
+    "prettier": "^2.6.2",
+    "ts-jest": "^29.4.0",
+    "tslib": "^2.3.0",
+    "tsx": "^4.20.6",
+    "typescript": "5.9.3",
+    "typescript-eslint": "^8.29.0",
+    "vitepress": "^1.6.3"
+  },
+  "workspaces": [
+    "packages/*",
+    "packages/plugins/*",
+    "packages/sdk/*"
+  ],
+  "nx": {
+    "includedScripts": []
+  }
+}

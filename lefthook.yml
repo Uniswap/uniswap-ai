@@ -1,0 +1,12 @@
+# Lefthook configuration for git hooks
+# https://github.com/evilmartians/lefthook
+
+pre-commit:
+  parallel: false
+  commands:
+    format:
+      glob: "*.{js,ts,tsx,json,md}"
+      run: npx nx format:write --uncommitted
+      stage_fixed: true
+    lint:
+      run: npx nx affected --target=lint --base=HEAD~1 --head=HEAD

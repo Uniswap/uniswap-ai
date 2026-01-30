@@ -1,0 +1,18 @@
+{
+  "name": "uniswap-hooks",
+  "version": "1.0.0",
+  "description": "AI-powered assistance for creating Uniswap V4 hooks, including aggregator hooks, custom fee hooks, and more",
+  "author": {
+    "name": "Uniswap Labs",
+    "email": "ai-services@uniswap.org"
+  },
+  "homepage": "https://github.com/Uniswap/uniswap-ai",
+  "keywords": ["uniswap", "hooks", "v4", "defi", "solidity", "smart-contracts"],
+  "license": "MIT",
+  "skills": [
+    "./skills/aggregator-hook-creator"
+  ],
+  "commands": [
+    "./skills/aggregator-hook-creator/aggregator-hook-creator.md"
+  ]
+}

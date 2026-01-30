@@ -1,0 +1,150 @@
+name: PR Checks
+
+on:
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Pre-check job to detect automated PRs
+  check-automated:
+    name: Check Automated PR
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      is_automated: ${{ steps.check.outputs.is_automated }}
+      category: ${{ steps.check.outputs.category }}
+      skip_reason: ${{ steps.check.outputs.skip_reason }}
+      # Skip CI for release/sync/action-update PRs, but NOT for dependency updates (which need testing)
+      should_skip_ci: ${{ steps.check.outputs.is_automated == 'true' && steps.check.outputs.category != 'deps' }}
+    steps:
+      - uses: bullfrogsec/bullfrog@1831f79cce8ad602eef14d2163873f27081ebfb3 # v0.8.4
+
+      - name: Checkout repository (for composite action)
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          sparse-checkout: .github/actions
+          sparse-checkout-cone-mode: false
+
+      - name: Check for automated PR
+        id: check
+        uses: ./.github/actions/check-automated-pr
+        with:
+          branch_name: ${{ github.head_ref }}
+          pr_title: ${{ github.event.pull_request.title }}
+
+  validate:
+    name: Validate Installation & Build
+    needs: check-automated
+    # Skip for automated PRs except dependency updates (which should still run tests)
+    if: ${{ needs.check-automated.outputs.should_skip_ci != 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      # Override nx.json defaultBase for PR target branch
+      NX_BASE: origin/${{ github.base_ref }}
+      NX_HEAD: HEAD
+
+    steps:
+      - uses: bullfrogsec/bullfrog@1831f79cce8ad602eef14d2163873f27081ebfb3 # v0.8.4
+
+      - name: Checkout repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
+        with:
+          node-version: ${{ vars.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install npm
+        run: npm install -g npm@${{ vars.NPM_VERSION }}
+
+      - name: Verify package-lock.json
+        run: |
+          echo "Checking if package-lock.json is up to date..."
+          npm install --package-lock-only
+          if ! git diff --exit-code package-lock.json; then
+            echo "❌ package-lock.json is out of sync!"
+            echo "Please run 'npm install' and commit the updated package-lock.json"
+            exit 1
+          fi
+          echo "✅ package-lock.json is up to date"
+
+      - name: Clean install dependencies
+        run: |
+          echo "Running npm ci to validate clean installation..."
+          npm ci --prefer-offline --no-audit
+          echo "✅ npm ci completed successfully"
+
+      - name: Build changed packages
+        run: |
+          echo "Building changed packages..."
+          npx nx affected --target=build --verbose
+          echo "✅ Build(s) completed successfully"
+
+      - name: Run linting
+        run: |
+          echo "Running linters..."
+          npx nx affected --target=lint --verbose
+          echo "✅ Linting passed"
+
+      - name: Check formatting
+        run: |
+          echo "Checking code formatting..."
+          npx nx format:check
+          echo "✅ Formatting check passed"
+
+      - name: Run tests
+        run: |
+          echo "Running tests..."
+          npx nx affected --target=test --parallel=3 --coverage --verbose
+          echo "✅ Tests passed"
+
+  validate-plugins:
+    name: Validate Plugins
+    needs: check-automated
+    # Skip for automated PRs except dependency updates (which should still run tests)
+    if: ${{ needs.check-automated.outputs.should_skip_ci != 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: bullfrogsec/bullfrog@1831f79cce8ad602eef14d2163873f27081ebfb3 # v0.8.4
+
+      - name: Checkout repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
+        with:
+          node-version: ${{ vars.NODE_VERSION }}
+
+      - name: Validate all plugins
+        uses: ./.github/actions/validate-plugins
+        with:
+          marketplace-path: '.claude-plugin/marketplace.json'
+          fail-on-warning: 'false'
+
+  # Summary job for automated PRs that were skipped
+  skipped-summary:
+    name: CI Skipped (Automated PR)
+    needs: check-automated
+    if: ${{ needs.check-automated.outputs.should_skip_ci == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: bullfrogsec/bullfrog@1831f79cce8ad602eef14d2163873f27081ebfb3 # v0.8.4
+
+      - name: Report skipped status
+        env:
+          SKIP_REASON: ${{ needs.check-automated.outputs.skip_reason }}
+        run: |
+          echo "::notice::CI checks skipped for automated PR: $SKIP_REASON"
+          echo "✅ Automated PR detected - CI checks are not required for this PR type."

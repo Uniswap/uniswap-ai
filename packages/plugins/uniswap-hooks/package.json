@@ -1,0 +1,28 @@
+{
+  "name": "@uniswap/uniswap-hooks",
+  "version": "0.0.1",
+  "private": true,
+  "description": "AI-powered assistance for creating Uniswap V4 hooks - includes aggregator hooks, custom fee hooks, and more",
+  "author": "Uniswap Labs <ai-services@uniswap.org>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Uniswap/uniswap-ai.git",
+    "directory": "packages/plugins/uniswap-hooks"
+  },
+  "keywords": [
+    "claude-code",
+    "plugin",
+    "uniswap",
+    "hooks",
+    "v4",
+    "defi",
+    "solidity",
+    "smart-contracts"
+  ],
+  "files": [
+    ".claude-plugin",
+    "skills",
+    "README.md"
+  ]
+}

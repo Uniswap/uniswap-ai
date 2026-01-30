@@ -1,0 +1,98 @@
+{
+  "$schema": "./node_modules/nx/schemas/nx-schema.json",
+  "tui": {
+    "enabled": false
+  },
+  "defaultBase": "origin/main",
+  "namedInputs": {
+    "default": ["{projectRoot}/**/*", "sharedGlobals"],
+    "production": [
+      "default",
+      "!{projectRoot}/**/?(*.)+(spec|test).[jt]s?(x)?(.snap)",
+      "!{projectRoot}/tsconfig.spec.json",
+      "!{projectRoot}/jest.config.[jt]s",
+      "!{projectRoot}/src/test-setup.[jt]s",
+      "!{projectRoot}/test-setup.[jt]s",
+      "!{projectRoot}/eslint.config.mjs"
+    ],
+    "sharedGlobals": []
+  },
+  "plugins": [
+    {
+      "plugin": "@nx/js/typescript",
+      "options": {
+        "typecheck": {
+          "targetName": "typecheck"
+        },
+        "build": {
+          "targetName": "build",
+          "configName": "tsconfig.lib.json",
+          "buildDepsName": "build-deps",
+          "watchDepsName": "watch-deps"
+        }
+      }
+    },
+    {
+      "plugin": "@nx/eslint/plugin",
+      "options": {
+        "targetName": "lint"
+      }
+    },
+    {
+      "plugin": "@nx/jest/plugin",
+      "options": {
+        "targetName": "test"
+      }
+    }
+  ],
+  "targetDefaults": {
+    "@nx/js:tsc": {
+      "cache": true,
+      "dependsOn": ["^build"],
+      "inputs": ["production", "^production"]
+    },
+    "build": {
+      "cache": true,
+      "dependsOn": ["^build"],
+      "inputs": ["production", "^production"]
+    },
+    "lint": {
+      "cache": true,
+      "inputs": ["default", "{workspaceRoot}/.eslintrc.json", "{workspaceRoot}/eslint.config.mjs"]
+    },
+    "format": {
+      "cache": true,
+      "inputs": ["default", "{workspaceRoot}/.prettierrc.json"]
+    },
+    "test": {
+      "dependsOn": ["^build"]
+    }
+  },
+  "parallel": 5,
+  "cacheDirectory": "node_modules/.cache/nx",
+  "release": {
+    "projects": [],
+    "projectsRelationship": "independent",
+    "version": {
+      "preVersionCommand": "npx nx affected -t build",
+      "conventionalCommits": true,
+      "fallbackCurrentVersionResolver": "disk",
+      "git": {
+        "commit": true,
+        "tag": true,
+        "commitMessage": "chore(release): [skip ci] publish"
+      }
+    },
+    "changelog": {
+      "projectChangelogs": true,
+      "createRelease": "github",
+      "git": {
+        "commit": true,
+        "tag": true
+      }
+    },
+    "releaseTag": {
+      "pattern": "{projectName}@{version}"
+    }
+  }
+}

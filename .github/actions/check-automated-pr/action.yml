@@ -1,0 +1,95 @@
+# Composite action to detect automated PRs and determine if CI should be skipped
+# Checks branch name patterns and PR title patterns to identify automated PRs
+
+name: 'Check Automated PR'
+description: 'Detects automated PRs and determines if CI should be skipped'
+
+inputs:
+  branch_name:
+    description: 'The branch name to check'
+    required: true
+  pr_title:
+    description: 'The PR title to check'
+    required: false
+    default: ''
+
+outputs:
+  is_automated:
+    description: 'Whether this is an automated PR'
+    value: ${{ steps.check.outputs.is_automated }}
+  category:
+    description: 'Category of automated PR (release, sync, action-update, deps, other)'
+    value: ${{ steps.check.outputs.category }}
+  skip_reason:
+    description: 'Human-readable reason for skipping'
+    value: ${{ steps.check.outputs.skip_reason }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Check for automated PR patterns
+      id: check
+      shell: bash
+      env:
+        BRANCH_NAME: ${{ inputs.branch_name }}
+        PR_TITLE: ${{ inputs.pr_title }}
+      run: |
+        IS_AUTOMATED="false"
+        CATEGORY="other"
+        SKIP_REASON=""
+
+        # Check branch patterns
+        case "$BRANCH_NAME" in
+          chore/release-*)
+            IS_AUTOMATED="true"
+            CATEGORY="release"
+            SKIP_REASON="Automated release branch"
+            ;;
+          chore/sync-*)
+            IS_AUTOMATED="true"
+            CATEGORY="sync"
+            SKIP_REASON="Automated branch sync"
+            ;;
+          chore/update-action-versions*)
+            IS_AUTOMATED="true"
+            CATEGORY="action-update"
+            SKIP_REASON="Automated action version update"
+            ;;
+          dependabot/*)
+            IS_AUTOMATED="true"
+            CATEGORY="deps"
+            SKIP_REASON="Dependabot dependency update"
+            ;;
+          renovate/*)
+            IS_AUTOMATED="true"
+            CATEGORY="deps"
+            SKIP_REASON="Renovate dependency update"
+            ;;
+        esac
+
+        # Check PR title patterns (as fallback)
+        if [[ "$IS_AUTOMATED" == "false" && -n "$PR_TITLE" ]]; then
+          case "$PR_TITLE" in
+            "chore(release):"*)
+              IS_AUTOMATED="true"
+              CATEGORY="release"
+              SKIP_REASON="Automated release PR"
+              ;;
+            "chore(deps):"*)
+              IS_AUTOMATED="true"
+              CATEGORY="deps"
+              SKIP_REASON="Automated dependency update"
+              ;;
+          esac
+        fi
+
+        echo "is_automated=$IS_AUTOMATED" >> $GITHUB_OUTPUT
+        echo "category=$CATEGORY" >> $GITHUB_OUTPUT
+        echo "skip_reason=$SKIP_REASON" >> $GITHUB_OUTPUT
+
+        if [[ "$IS_AUTOMATED" == "true" ]]; then
+          echo "🤖 Detected automated PR: $SKIP_REASON"
+          echo "   Category: $CATEGORY"
+        else
+          echo "👤 Not an automated PR"
+        fi
