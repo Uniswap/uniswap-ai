@@ -25,16 +25,16 @@ on:
       packages:
         description: 'Packages to publish (single name, comma-separated list, or "all")'
         required: true
-        default: "all"
+        default: 'all'
         type: string
       dryRun:
-        description: "Perform a dry run without publishing"
+        description: 'Perform a dry run without publishing'
         required: false
-        default: "false"
+        default: 'false'
         type: choice
         options:
-          - "true"
-          - "false"
+          - 'true'
+          - 'false'
 
 # Ensure only one publish workflow runs at a time per branch
 concurrency:
@@ -73,8 +73,8 @@ jobs:
         uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
         with:
           node-version: ${{ vars.NODE_VERSION }}
-          registry-url: "https://registry.npmjs.org"
-          scope: "@uniswap-ai"
+          registry-url: 'https://registry.npmjs.org'
+          scope: '@uniswap-ai'
 
       - name: Install npm
         run: npm install -g npm@${{ vars.NPM_VERSION }}
@@ -251,8 +251,6 @@ jobs:
       id-token: write
       contents: write
       packages: write
-      pull-requests: write
-      issues: write
 
     steps:
       - uses: bullfrogsec/bullfrog@1831f79cce8ad602eef14d2163873f27081ebfb3 # v0.8.4
@@ -276,8 +274,8 @@ jobs:
         uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
         with:
           node-version: ${{ vars.NODE_VERSION }}
-          registry-url: "https://registry.npmjs.org"
-          scope: "@uniswap-ai"
+          registry-url: 'https://registry.npmjs.org'
+          scope: '@uniswap-ai'
 
       - name: Install npm
         run: npm install -g npm@${{ vars.NPM_VERSION }}

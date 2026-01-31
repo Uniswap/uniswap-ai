@@ -61,10 +61,10 @@ npx nx run-many -t test
 ## System Requirements
 
 | Requirement | Version |
-|-------------|---------|
-| Node.js | 22.x |
-| npm | 11.7.0 |
-| Claude Code | Latest |
+| ----------- | ------- |
+| Node.js     | 22.x    |
+| npm         | 11.7.0  |
+| Claude Code | Latest  |
 
 ### npm Version
 
@@ -77,7 +77,7 @@ npm --version  # Should output: 11.7.0
 
 ## Verifying Installation
 
-### Claude Code Plugin
+### Verify Plugin Installation
 
 After plugin installation:
 
