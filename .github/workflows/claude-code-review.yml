@@ -49,7 +49,7 @@ on:
         required: true
         type: string
       force_review:
-        description: 'Force a full review even if the code hasn''t changed (bypasses cache)'
+        description: "Force a full review even if the code hasn't changed (bypasses cache)"
         required: false
         type: boolean
         default: true
