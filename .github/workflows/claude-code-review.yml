@@ -1,0 +1,302 @@
+name: Claude Code Review
+
+# Automated PR code reviews using Claude AI
+#
+# This workflow provides:
+# - Formal GitHub reviews (APPROVE/REQUEST_CHANGES/COMMENT)
+# - Inline comments on specific lines of code
+# - Auto-resolution of fixed issues on subsequent reviews
+# - Patch-ID based caching to skip rebases (no duplicate reviews)
+# - Iterative review tracking of previous comments
+#
+# TRIGGERS:
+# - Automatic: On PR open, synchronize (push), or ready_for_review
+# - Comment: Add a comment containing "@request-claude-review" to trigger a fresh review
+# - Manual: Via workflow_dispatch with PR number and optional force_review flag
+#
+# TRIGGERING A NEW REVIEW WITHOUT CODE CHANGES:
+# The easiest way is to add a comment on the PR containing "@request-claude-review".
+# This bypasses the cache and forces a fresh review.
+#
+# Alternatively, use the manual workflow_dispatch trigger via the Actions tab or CLI:
+#   gh workflow run "Claude Code Review" -f pr_number=123
+#
+# NOTE: Re-requesting a review from github-actions[bot] via the GitHub UI
+# does NOT work. GitHub does not fire events when re-requesting reviews
+# from bot accounts. Use the comment trigger or manual dispatch instead.
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - ready_for_review
+
+  # Comment trigger: Add "@request-claude-review" to any PR comment to force a fresh review
+  # Works with both regular PR comments and inline review comments
+  issue_comment:
+    types: [created]
+
+  # Pull request review comments (inline comments on diffs)
+  pull_request_review_comment:
+    types: [created]
+
+  # Manual trigger for forcing a new review without code changes
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'Pull request number to review'
+        required: true
+        type: string
+      force_review:
+        description: "Force a full review even if the code hasn't changed (bypasses cache)"
+        required: false
+        type: boolean
+        default: true
+
+# Ensure only one review runs at a time per PR
+# New reviews wait for the current one to complete before starting
+concurrency:
+  group: claude-review-${{ github.event.pull_request.number || github.event.issue.number || inputs.pr_number }}
+  cancel-in-progress: false
+
+jobs:
+  # Pre-check job for automatic reviews to detect automated PRs
+  # Only runs for pull_request events (not manual/comment triggers)
+  check-automated:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      is_automated: ${{ steps.check.outputs.is_automated }}
+      category: ${{ steps.check.outputs.category }}
+      skip_reason: ${{ steps.check.outputs.skip_reason }}
+    steps:
+      - uses: bullfrogsec/bullfrog@1831f79cce8ad602eef14d2163873f27081ebfb3 # v0.8.4
+
+      - name: Checkout repository (for composite action)
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          sparse-checkout: .github/actions
+          sparse-checkout-cone-mode: false
+
+      - name: Check for automated PR
+        id: check
+        uses: ./.github/actions/check-automated-pr
+        with:
+          branch_name: ${{ github.head_ref }}
+          pr_title: ${{ github.event.pull_request.title }}
+
+  # Fetch PR details for manual triggers (workflow_dispatch) and comment triggers
+  # This job retrieves base_ref which isn't available in these event contexts
+  get-pr-info:
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'issue_comment' || github.event_name == 'pull_request_review_comment'
+    runs-on: ubuntu-latest
+    outputs:
+      base_ref: ${{ steps.pr-info.outputs.base_ref }}
+      head_ref: ${{ steps.pr-info.outputs.head_ref }}
+      pr_number: ${{ steps.pr-info.outputs.pr_number }}
+      should_run: ${{ steps.pr-info.outputs.should_run }}
+    steps:
+      - name: Get PR Info
+        id: pr-info
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_PR_NUMBER: ${{ inputs.pr_number }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          PR_NUMBER_FROM_REVIEW: ${{ github.event.pull_request.number }}
+          COMMENT_BODY: ${{ github.event.comment.body }}
+          COMMENT_AUTHOR: ${{ github.event.comment.user.login }}
+          IS_PR: ${{ github.event.issue.pull_request && 'true' || 'false' }}
+        run: |
+          # Determine PR number based on event type
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            PR_NUMBER="$INPUT_PR_NUMBER"
+            SHOULD_RUN="true"
+          elif [ "$EVENT_NAME" = "pull_request_review_comment" ]; then
+            PR_NUMBER="$PR_NUMBER_FROM_REVIEW"
+            # Ignore comments from github-actions[bot] to prevent self-triggering
+            if [ "$COMMENT_AUTHOR" = "github-actions[bot]" ]; then
+              echo "ℹ️  Ignoring comment from github-actions[bot] to prevent self-triggering"
+              echo "should_run=false" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+            # Check if comment contains the trigger phrase
+            if echo "$COMMENT_BODY" | grep -qi "@request-claude-review"; then
+              SHOULD_RUN="true"
+              echo "🔍 Found @request-claude-review in review comment"
+            else
+              SHOULD_RUN="false"
+              echo "ℹ️  Comment does not contain @request-claude-review, skipping"
+            fi
+          elif [ "$EVENT_NAME" = "issue_comment" ]; then
+            # issue_comment fires for both issues and PRs
+            # Ignore comments from github-actions[bot] to prevent self-triggering
+            if [ "$COMMENT_AUTHOR" = "github-actions[bot]" ]; then
+              echo "ℹ️  Ignoring comment from github-actions[bot] to prevent self-triggering"
+              echo "should_run=false" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+            # Check if this is a PR (has pull_request field)
+            if [ "$IS_PR" != "true" ]; then
+              echo "ℹ️  Comment is on an issue, not a PR. Skipping."
+              echo "should_run=false" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+            PR_NUMBER="$ISSUE_NUMBER"
+            # Check if comment contains the trigger phrase
+            if echo "$COMMENT_BODY" | grep -qi "@request-claude-review"; then
+              SHOULD_RUN="true"
+              echo "🔍 Found @request-claude-review in PR comment"
+            else
+              SHOULD_RUN="false"
+              echo "ℹ️  Comment does not contain @request-claude-review, skipping"
+            fi
+          fi
+
+          echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+          echo "should_run=$SHOULD_RUN" >> $GITHUB_OUTPUT
+
+          if [ "$SHOULD_RUN" != "true" ]; then
+            echo "ℹ️  Skipping - trigger condition not met"
+            exit 0
+          fi
+
+          echo "ℹ️  Fetching PR #$PR_NUMBER info..."
+          PR_DATA=$(gh api repos/${{ github.repository }}/pulls/$PR_NUMBER)
+
+          BASE_REF=$(echo "$PR_DATA" | jq -r '.base.ref')
+          HEAD_REF=$(echo "$PR_DATA" | jq -r '.head.ref')
+
+          echo "base_ref=$BASE_REF" >> $GITHUB_OUTPUT
+          echo "head_ref=$HEAD_REF" >> $GITHUB_OUTPUT
+
+          echo "✅ PR #$PR_NUMBER: base=$BASE_REF, head=$HEAD_REF"
+
+  # Automatic review triggered by pull_request events (opened, synchronize, ready_for_review)
+  # Skips certain automated PRs but reviews dependency updates (for auto-merge support)
+  # Skip categories: release, sync, action-update, merge-queue
+  # Review categories: deps (dependabot/renovate), and all non-automated PRs
+  claude-review-auto:
+    needs: check-automated
+    if: |
+      github.event_name == 'pull_request' &&
+      (
+        needs.check-automated.outputs.is_automated != 'true' ||
+        needs.check-automated.outputs.category == 'deps'
+      ) &&
+      (
+        github.event.pull_request.draft == false ||
+        github.event.action == 'ready_for_review' ||
+        github.event.pull_request.user.login == 'claude[bot]'
+      )
+
+    uses: Uniswap/ai-toolkit/.github/workflows/_claude-code-review.yml@2cb5e4389c24b2984b2d6d3392ebf3649597e271
+    with:
+      pr_number: ${{ github.event.pull_request.number }}
+      base_ref: ${{ github.base_ref }}
+      force_review: false
+      max_diff_lines: 5000
+
+      # Use Sonnet for fast, cost-effective reviews
+      model: 'claude-sonnet-4-5-20250929'
+
+      # Standard timeout for most PRs
+      timeout_minutes: 20
+
+    secrets:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      WORKFLOW_PAT: ${{ secrets.WORKFLOW_PAT }}
+
+  # Summary job for skipped automatic reviews
+  review-skipped:
+    needs: check-automated
+    if: |
+      github.event_name == 'pull_request' &&
+      needs.check-automated.outputs.is_automated == 'true' &&
+      needs.check-automated.outputs.category != 'deps'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: bullfrogsec/bullfrog@1831f79cce8ad602eef14d2163873f27081ebfb3 # v0.8.4
+
+      - name: Report skipped review
+        env:
+          SKIP_REASON: ${{ needs.check-automated.outputs.skip_reason }}
+        run: |
+          echo "::notice::Code review skipped for automated PR: $SKIP_REASON"
+          echo "✅ Automated PR detected - code review is not required for this PR type."
+
+  # Manual review triggered by workflow_dispatch
+  # This runs after get-pr-info to have access to PR metadata
+  # Note: Manual triggers bypass automated PR checks - if you explicitly request a review, you get one
+  claude-review-manual:
+    needs: get-pr-info
+    if: |
+      github.event_name == 'workflow_dispatch' &&
+      needs.get-pr-info.outputs.should_run == 'true'
+
+    uses: Uniswap/ai-toolkit/.github/workflows/_claude-code-review.yml@2cb5e4389c24b2984b2d6d3392ebf3649597e271
+    with:
+      pr_number: ${{ needs.get-pr-info.outputs.pr_number }}
+      base_ref: ${{ needs.get-pr-info.outputs.base_ref }}
+      force_review: ${{ inputs.force_review }}
+      max_diff_lines: 5000
+
+      # Use Sonnet for fast, cost-effective reviews
+      model: 'claude-sonnet-4-5-20250929'
+
+      # Standard timeout for most PRs
+      timeout_minutes: 20
+
+    secrets:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      WORKFLOW_PAT: ${{ secrets.WORKFLOW_PAT }}
+
+  # Comment-triggered review: Add "@request-claude-review" to any PR comment
+  # This forces a fresh review, bypassing the cache
+  # Note: Comment triggers bypass automated PR checks - if you explicitly request a review, you get one
+  claude-review-comment:
+    needs: get-pr-info
+    if: |
+      (github.event_name == 'issue_comment' || github.event_name == 'pull_request_review_comment') &&
+      needs.get-pr-info.outputs.should_run == 'true'
+
+    uses: Uniswap/ai-toolkit/.github/workflows/_claude-code-review.yml@2cb5e4389c24b2984b2d6d3392ebf3649597e271
+    with:
+      pr_number: ${{ needs.get-pr-info.outputs.pr_number }}
+      base_ref: ${{ needs.get-pr-info.outputs.base_ref }}
+      force_review: true # Always force when triggered by comment
+      max_diff_lines: 5000
+
+      # Use Sonnet for fast, cost-effective reviews
+      model: 'claude-sonnet-4-5-20250929'
+
+      # Standard timeout for most PRs
+      timeout_minutes: 20
+
+    secrets:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      WORKFLOW_PAT: ${{ secrets.WORKFLOW_PAT }}
+
+  # Auto-merge Dependabot security updates after successful review
+  # Only runs for pull_request events (dependabot only triggers pull_request)
+  auto-merge-dependabot:
+    needs: claude-review-auto
+    if: |
+      github.event_name == 'pull_request' &&
+      github.actor == 'dependabot[bot]' &&
+      (contains(github.event.pull_request.title, 'security') || contains(github.event.pull_request.title, 'Bump')) &&
+      needs.claude-review-auto.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Enable auto-merge for Dependabot updates
+        run: gh pr merge --auto --squash "$PR_NUMBER"
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}

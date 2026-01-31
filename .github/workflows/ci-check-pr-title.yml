@@ -1,0 +1,53 @@
+name: 'Check PR Title'
+
+on:
+  pull_request_target:
+    types:
+      - opened
+      - edited
+      - synchronize
+  workflow_run:
+    workflows: ['Claude: Generate PR Title & Description']
+    types: [completed]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check-pr-title:
+    if: ${{ github.event_name == 'pull_request_target' || github.event.workflow_run.conclusion == 'success' }}
+    name: 🔡 Check PR Title
+    runs-on: ubuntu-latest
+    steps:
+      - uses: bullfrogsec/bullfrog@1831f79cce8ad602eef14d2163873f27081ebfb3 # v0.8.4
+        with:
+          egress-policy: block
+
+      - name: Checkout repository (for composite action)
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          sparse-checkout: .github/actions
+          sparse-checkout-cone-mode: false
+
+      - name: Check for automated PR
+        id: check-automated
+        uses: ./.github/actions/check-automated-pr
+        with:
+          branch_name: ${{ github.head_ref }}
+          pr_title: ${{ github.event.pull_request.title }}
+
+      - name: Conditional semantic PR check
+        if: ${{ steps.check-automated.outputs.is_automated != 'true' }}
+        uses: amannn/action-semantic-pull-request@536f681e2c60d973396eb60457d42ced8cd3f61a # v5.5.3
+        with:
+          requireScope: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pass check for automated PRs
+        if: ${{ steps.check-automated.outputs.is_automated == 'true' }}
+        env:
+          SKIP_REASON: ${{ steps.check-automated.outputs.skip_reason }}
+        run: |
+          echo "Automated PR detected: $SKIP_REASON. This check is automatically passed."

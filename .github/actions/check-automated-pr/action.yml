@@ -1,28 +1,25 @@
-# Composite action to detect automated PRs and determine if CI should be skipped
-# Checks branch name patterns and PR title patterns to identify automated PRs
-
 name: 'Check Automated PR'
-description: 'Detects automated PRs and determines if CI should be skipped'
+description: 'Detects if a PR was created by CI automation and should skip certain checks'
 
 inputs:
   branch_name:
-    description: 'The branch name to check'
+    description: 'The head branch name (github.head_ref)'
     required: true
   pr_title:
-    description: 'The PR title to check'
+    description: 'The PR title (github.event.pull_request.title)'
     required: false
     default: ''
 
 outputs:
   is_automated:
-    description: 'Whether this is an automated PR'
+    description: 'Whether this PR is automated (true/false)'
     value: ${{ steps.check.outputs.is_automated }}
-  category:
-    description: 'Category of automated PR (release, sync, action-update, deps, other)'
-    value: ${{ steps.check.outputs.category }}
   skip_reason:
-    description: 'Human-readable reason for skipping'
+    description: 'Human-readable reason for skipping (empty if not automated)'
     value: ${{ steps.check.outputs.skip_reason }}
+  category:
+    description: 'Category of automation (release, sync, deps, merge-queue, action-update, or empty)'
+    value: ${{ steps.check.outputs.category }}
 
 runs:
   using: 'composite'
@@ -35,61 +32,88 @@ runs:
         PR_TITLE: ${{ inputs.pr_title }}
       run: |
         IS_AUTOMATED="false"
-        CATEGORY="other"
         SKIP_REASON=""
+        CATEGORY=""
 
-        # Check branch patterns
-        case "$BRANCH_NAME" in
-          chore/release-*)
-            IS_AUTOMATED="true"
-            CATEGORY="release"
-            SKIP_REASON="Automated release branch"
-            ;;
-          chore/sync-*)
-            IS_AUTOMATED="true"
-            CATEGORY="sync"
-            SKIP_REASON="Automated branch sync"
-            ;;
-          chore/update-action-versions*)
-            IS_AUTOMATED="true"
-            CATEGORY="action-update"
-            SKIP_REASON="Automated action version update"
-            ;;
-          dependabot/*)
-            IS_AUTOMATED="true"
-            CATEGORY="deps"
-            SKIP_REASON="Dependabot dependency update"
-            ;;
-          renovate/*)
-            IS_AUTOMATED="true"
-            CATEGORY="deps"
-            SKIP_REASON="Renovate dependency update"
-            ;;
-        esac
+        # ===========================================
+        # Branch prefix checks (CI-created branches)
+        # ===========================================
 
-        # Check PR title patterns (as fallback)
-        if [[ "$IS_AUTOMATED" == "false" && -n "$PR_TITLE" ]]; then
-          case "$PR_TITLE" in
-            "chore(release):"*)
-              IS_AUTOMATED="true"
-              CATEGORY="release"
-              SKIP_REASON="Automated release PR"
-              ;;
-            "chore(deps):"*)
-              IS_AUTOMATED="true"
-              CATEGORY="deps"
-              SKIP_REASON="Automated dependency update"
-              ;;
-          esac
+        # Graphite merge queue branches
+        if [[ "$BRANCH_NAME" == gtmq* ]]; then
+          IS_AUTOMATED="true"
+          SKIP_REASON="Graphite merge queue branch (gtmq* prefix)"
+          CATEGORY="merge-queue"
+
+        # GitHub merge queue branches
+        elif [[ "$BRANCH_NAME" == gh-readonly-queue/* ]]; then
+          IS_AUTOMATED="true"
+          SKIP_REASON="GitHub merge queue branch (gh-readonly-queue/* prefix)"
+          CATEGORY="merge-queue"
+
+        # Release automation branches (e.g., release/next-to-main-20260113-184501)
+        elif [[ "$BRANCH_NAME" == release/* ]] || [[ "$BRANCH_NAME" == chore/release-* ]]; then
+          IS_AUTOMATED="true"
+          SKIP_REASON="Release automation branch"
+          CATEGORY="release"
+
+        # Action version update branches (e.g., chore/update-action-versions-2026-01-12)
+        elif [[ "$BRANCH_NAME" == chore/update-action-versions-* ]]; then
+          IS_AUTOMATED="true"
+          SKIP_REASON="Action version update branch (chore/update-action-versions-* prefix)"
+          CATEGORY="action-update"
+
+        # Dependabot branches
+        elif [[ "$BRANCH_NAME" == dependabot/* ]]; then
+          IS_AUTOMATED="true"
+          SKIP_REASON="Dependabot dependency update branch (dependabot/* prefix)"
+          CATEGORY="deps"
+
+        # Renovate branches
+        elif [[ "$BRANCH_NAME" == renovate/* ]]; then
+          IS_AUTOMATED="true"
+          SKIP_REASON="Renovate dependency update branch (renovate/* prefix)"
+          CATEGORY="deps"
+
+        # Branch sync branches
+        elif [[ "$BRANCH_NAME" == chore/sync-* ]]; then
+          IS_AUTOMATED="true"
+          SKIP_REASON="Automated branch sync"
+          CATEGORY="sync"
         fi
 
-        echo "is_automated=$IS_AUTOMATED" >> $GITHUB_OUTPUT
-        echo "category=$CATEGORY" >> $GITHUB_OUTPUT
-        echo "skip_reason=$SKIP_REASON" >> $GITHUB_OUTPUT
+        # ===========================================
+        # PR title checks (CI-created PR titles)
+        # Only check if not already identified by branch
+        # ===========================================
 
+        if [[ "$IS_AUTOMATED" == "false" && -n "$PR_TITLE" ]]; then
+          # Release commits (e.g., "chore(release): @uniswap-ai/core@0.5.30")
+          if [[ "$PR_TITLE" == "chore(release):"* ]]; then
+            IS_AUTOMATED="true"
+            SKIP_REASON="Release commit (chore(release): prefix)"
+            CATEGORY="release"
+
+          # Branch sync commits (e.g., "chore(sync): [skip ci] sync next with main")
+          elif [[ "$PR_TITLE" == "chore(sync):"* ]]; then
+            IS_AUTOMATED="true"
+            SKIP_REASON="Branch sync commit (chore(sync): prefix)"
+            CATEGORY="sync"
+
+          # Dependency update commits (e.g., "chore(deps): bump js-yaml...")
+          elif [[ "$PR_TITLE" == "chore(deps):"* ]]; then
+            IS_AUTOMATED="true"
+            SKIP_REASON="Dependency update commit (chore(deps): prefix)"
+            CATEGORY="deps"
+          fi
+        fi
+
+        # Output results
+        echo "is_automated=$IS_AUTOMATED" >> $GITHUB_OUTPUT
+        echo "skip_reason=$SKIP_REASON" >> $GITHUB_OUTPUT
+        echo "category=$CATEGORY" >> $GITHUB_OUTPUT
+
+        # Log for visibility
         if [[ "$IS_AUTOMATED" == "true" ]]; then
-          echo "🤖 Detected automated PR: $SKIP_REASON"
-          echo "   Category: $CATEGORY"
-        else
-          echo "👤 Not an automated PR"
+          echo "::notice::Automated PR detected: $SKIP_REASON"
         fi
