@@ -6,8 +6,8 @@ Skills are AI-powered capabilities that help you build on Uniswap. Each skill is
 
 ### uniswap-hooks Plugin
 
-| Skill | Description | Invocation |
-|-------|-------------|------------|
+| Skill                                                | Description                           | Invocation                 |
+| ---------------------------------------------------- | ------------------------------------- | -------------------------- |
 | [Aggregator Hook Creator](./aggregator-hook-creator) | Create hooks that aggregate liquidity | `/aggregator-hook-creator` |
 
 ## Using Skills
@@ -48,4 +48,4 @@ To add a new skill:
 3. Update the plugin's `plugin.json` to include the skill
 4. Add an eval suite under `evals/suites/<skill-name>/`
 
-See the [Plugin Development Guide](https://github.com/Uniswap/uniswap-ai/blob/main/docs/contributing.md) for details.
+See the [CLAUDE.md](https://github.com/Uniswap/uniswap-ai/blob/main/CLAUDE.md) for plugin architecture details.

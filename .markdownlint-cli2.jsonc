@@ -5,7 +5,9 @@
     "MD033": {
       "allowed_elements": ["br", "img", "details", "summary"]
     },
-    "MD041": false
+    "MD036": false,
+    "MD041": false,
+    "MD060": false
   },
   "ignores": [
     "node_modules/**",
