@@ -185,7 +185,8 @@ import {Hooks} from "v4-core/src/libraries/Hooks.sol";
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/src/types/PoolId.sol";
-import {BeforeSwapDelta} from "v4-core/types/BeforeSwapDelta.sol";
+import {BalanceDelta} from "v4-core/types/BalanceDelta.sol";
+import {BeforeSwapDelta, BeforeSwapDeltaLibrary} from "v4-core/types/BeforeSwapDelta.sol";
 
 struct ExternalAction {
     address to;
@@ -274,6 +275,18 @@ contract GenericAggregatorHook is BaseHook {
 
         emit RouteDecision(poolId, routedExternal, amount);
         return (this.afterSwap.selector, 0);
+    }
+
+    /// @notice Calculate the balance delta for external routing
+    /// @dev Implementation depends on your routing strategy. This is a placeholder.
+    function _calculateDelta(
+        PoolKey calldata, /* key */
+        IPoolManager.SwapParams calldata /* params */
+    ) internal pure returns (BeforeSwapDelta) {
+        // TODO: Implement based on external swap results
+        // For pass-through to V4, return ZERO_DELTA
+        // For full external routing, calculate actual token deltas
+        return BeforeSwapDeltaLibrary.ZERO_DELTA;
     }
 
     receive() external payable {}
