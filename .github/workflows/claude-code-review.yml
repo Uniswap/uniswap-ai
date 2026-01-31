@@ -207,7 +207,7 @@ jobs:
       timeout_minutes: 20
 
     secrets:
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
       WORKFLOW_PAT: ${{ secrets.WORKFLOW_PAT }}
 
   # Summary job for skipped automatic reviews
@@ -251,7 +251,7 @@ jobs:
       timeout_minutes: 20
 
     secrets:
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
       WORKFLOW_PAT: ${{ secrets.WORKFLOW_PAT }}
 
   # Comment-triggered review: Add "@request-claude-review" to any PR comment
@@ -277,7 +277,7 @@ jobs:
       timeout_minutes: 20
 
     secrets:
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
       WORKFLOW_PAT: ${{ secrets.WORKFLOW_PAT }}
 
   # Auto-merge Dependabot security updates after successful review
