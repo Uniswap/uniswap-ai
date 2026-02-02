@@ -23,11 +23,11 @@ interface ICurvePool {
 
 ## Pool Variants
 
-| Variant | Use Case | Notes |
-|---------|----------|-------|
-| StableSwap | Stablecoins (USDC/USDT/DAI) | Low slippage for pegged assets |
-| StableSwap-NG | Next-gen stable pools | Improved gas efficiency |
-| CryptoSwap | Volatile pairs | Dynamic fees, concentrated liquidity |
+| Variant       | Use Case                    | Notes                                |
+| ------------- | --------------------------- | ------------------------------------ |
+| StableSwap    | Stablecoins (USDC/USDT/DAI) | Low slippage for pegged assets       |
+| StableSwap-NG | Next-gen stable pools       | Improved gas efficiency              |
+| CryptoSwap    | Volatile pairs              | Dynamic fees, concentrated liquidity |
 
 ## Key Considerations
 

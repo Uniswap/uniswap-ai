@@ -25,10 +25,10 @@ interface IAerodromeRouter {
 
 ## Pool Types
 
-| Type | `stable` | Use Case |
-|------|----------|----------|
-| Volatile | `false` | Standard x*y=k AMM |
-| Stable | `true` | StableSwap curve for pegged assets |
+| Type     | `stable` | Use Case                           |
+| -------- | -------- | ---------------------------------- |
+| Volatile | `false`  | Standard x\*y=k AMM                |
+| Stable   | `true`   | StableSwap curve for pegged assets |
 
 ## Key Considerations
 
