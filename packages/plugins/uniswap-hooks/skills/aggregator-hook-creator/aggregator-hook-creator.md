@@ -1,5 +1,5 @@
 ---
-name: Aggregator Hook Creator
+name: aggregator-hook-creator
 description: Integrate external DEX liquidity into Uniswap V4 via Aggregator Hooks. Use when user says "aggregator hook", "external liquidity", "wrap Curve/Balancer/Aerodrome", "route through external DEX", "V4 hook for non-Uniswap pools", "compare liquidity sources", or mentions integrating third-party AMM liquidity into Uniswap routing.
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash(npm:*), Bash(npx:*), Bash(forge:*), Bash(cast:*), Bash(curl:*), WebFetch, Task(subagent_type:Explore)
 model: opus
