@@ -6,10 +6,10 @@ Uniswap-specific AI tools (skills, plugins, agents) for external developers and 
 
 This repository provides Claude Code plugins and AI development tools specifically designed for building on the Uniswap protocol. It complements the general-purpose [ai-toolkit](https://github.com/Uniswap/ai-toolkit) with protocol-specific capabilities.
 
-| Repository | Focus | Audience |
-|------------|-------|----------|
-| `ai-toolkit` | General development workflow plugins | Internal developers |
-| `uniswap-ai` | Uniswap protocol-specific AI tools | External developers, AI agents |
+| Repository   | Focus                                | Audience                       |
+| ------------ | ------------------------------------ | ------------------------------ |
+| `ai-toolkit` | General development workflow plugins | Internal developers            |
+| `uniswap-ai` | Uniswap protocol-specific AI tools   | External developers, AI agents |
 
 ## Installation
 
@@ -98,6 +98,18 @@ Contributions are welcome. Please ensure:
 1. All code passes linting and tests
 2. New skills include eval suites
 3. Documentation is updated
+
+### Automated Checks
+
+PRs are automatically validated by several workflows:
+
+- **PR Checks** - Build, lint, test, and plugin validation
+- **Claude Code Review** - AI-powered code review with inline comments
+- **Claude Docs Check** - Validates CLAUDE.md and README updates, ensures plugin version bumps
+
+If the docs check flags missing documentation updates, you can apply the suggested changes directly from the PR comments.
+
+See [.github/workflows/CLAUDE.md](.github/workflows/CLAUDE.md) for detailed CI documentation.
 
 ## License
 
