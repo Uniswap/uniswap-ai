@@ -1,0 +1,17 @@
+{
+  "name": "uniswap-cca",
+  "version": "0.0.1",
+  "description": "Configure and deploy Continuous Clearing Auction (CCA) smart contracts for token distribution",
+  "skills": ["./skills/configurator", "./skills/deployer"],
+  "commands": ["./skills/configurator/configurator.md", "./skills/deployer/deployer.md"],
+  "mcpServers": ["./.mcp.json"],
+  "keywords": [
+    "cca",
+    "auction",
+    "continuous-clearing-auction",
+    "token-distribution",
+    "uniswap",
+    "deployment",
+    "configuration"
+  ]
+}

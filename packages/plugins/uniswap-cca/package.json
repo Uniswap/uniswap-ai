@@ -1,0 +1,21 @@
+{
+  "name": "@uniswap/uniswap-cca",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Configure and deploy Continuous Clearing Auction (CCA) smart contracts",
+  "files": [
+    ".claude-plugin",
+    "skills",
+    "mcp-server",
+    "README.md"
+  ],
+  "keywords": [
+    "cca",
+    "auction",
+    "continuous-clearing-auction",
+    "token-distribution",
+    "uniswap"
+  ],
+  "author": "Uniswap Labs",
+  "license": "MIT"
+}
