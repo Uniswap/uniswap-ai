@@ -192,9 +192,9 @@ def encode_supply_schedule(schedule: list[dict[str, int]]) -> str:
         block_delta = item['blockDelta']
 
         # Validate bounds
-        if mps >= 2**24:
+        if mps > 2**24 - 1:
             raise ValueError(f"mps {mps} exceeds 24-bit max (16777215)")
-        if block_delta >= 2**40:
+        if block_delta > 2**40 - 1:
             raise ValueError(f"blockDelta {block_delta} exceeds 40-bit max (1099511627775)")
 
         # Pack into uint64: mps (24 bits) << 40 | blockDelta (40 bits)

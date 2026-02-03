@@ -4,5 +4,18 @@
   "sourceRoot": "packages/plugins/uniswap-cca",
   "projectType": "library",
   "tags": ["type:plugin", "scope:uniswap", "domain:cca"],
-  "targets": {}
+  "targets": {
+    "lint-markdown": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npm exec markdownlint-cli2 -- 'packages/plugins/uniswap-cca/**/*.md'"
+      }
+    },
+    "validate": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node scripts/validate-plugin.cjs packages/plugins/uniswap-cca"
+      }
+    }
+  }
 }

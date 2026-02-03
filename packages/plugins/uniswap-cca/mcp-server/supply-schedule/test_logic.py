@@ -3,68 +3,14 @@
 Test the supply schedule generation logic with normalized convex curve.
 """
 
-from typing import Optional
-
 # Import the logic to test
-TOTAL_TARGET = 10_000_000  # 1e7
-DEFAULT_NUM_STEPS = 12
-DEFAULT_FINAL_BLOCK_PCT = 0.30
-DEFAULT_ALPHA = 1.2
-
-
-def generate_schedule(
-    auction_blocks: int,
-    prebid_blocks: int = 0,
-    num_steps: int = DEFAULT_NUM_STEPS,
-    final_block_pct: float = DEFAULT_FINAL_BLOCK_PCT,
-    alpha: float = DEFAULT_ALPHA,
-    round_to_nearest: Optional[int] = None
-) -> list[dict[str, int]]:
-    """Generate supply schedule using normalized convex curve."""
-    schedule = []
-
-    if prebid_blocks > 0:
-        schedule.append({"mps": 0, "blockDelta": prebid_blocks})
-
-    main_supply_pct = 1.0 - final_block_pct
-    step_tokens_pct = main_supply_pct / num_steps
-
-    time_boundaries = [0.0]
-    for i in range(1, num_steps + 1):
-        cum_pct = i * step_tokens_pct / main_supply_pct
-        t_i = cum_pct ** (1.0 / alpha)
-        time_boundaries.append(t_i)
-
-    block_boundaries = [round(t * auction_blocks) for t in time_boundaries]
-
-    if round_to_nearest is not None and round_to_nearest > 0:
-        block_boundaries = [
-            round(b / round_to_nearest) * round_to_nearest
-            for b in block_boundaries
-        ]
-        block_boundaries[-1] = auction_blocks
-
-    cumulative_tokens = 0
-    for i in range(num_steps):
-        start_block = block_boundaries[i]
-        end_block = block_boundaries[i + 1]
-        duration = end_block - start_block
-
-        step_tokens = step_tokens_pct * TOTAL_TARGET
-
-        if duration > 0:
-            mps = round(step_tokens / duration)
-            mps = max(1, mps)
-        else:
-            mps = 0
-
-        schedule.append({"mps": mps, "blockDelta": duration})
-        cumulative_tokens += mps * duration
-
-    final_tokens = TOTAL_TARGET - cumulative_tokens
-    schedule.append({"mps": final_tokens, "blockDelta": 1})
-
-    return schedule
+from server import (
+    generate_schedule,
+    TOTAL_TARGET,
+    DEFAULT_NUM_STEPS,
+    DEFAULT_FINAL_BLOCK_PCT,
+    DEFAULT_ALPHA,
+)
 
 
 def test_basic_schedule():
