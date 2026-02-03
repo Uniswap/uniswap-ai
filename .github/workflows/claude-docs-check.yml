@@ -1,0 +1,77 @@
+name: 'Claude Docs Check'
+
+# Validates that PR documentation is properly updated
+#
+# This workflow checks:
+# - CLAUDE.md files are updated when code changes
+# - README.md files reflect current state
+# - Plugin versions are bumped when plugin code changes
+#
+# Trigger: Runs on all PRs and can be triggered manually
+#
+# For more information, see:
+# https://github.com/Uniswap/ai-toolkit/blob/main/.github/workflows/CLAUDE.md
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+  # Manual trigger for re-running on specific PRs
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to check'
+        required: true
+        type: string
+      suggestion_mode:
+        description: 'How to provide suggestions'
+        required: false
+        type: choice
+        options:
+          - suggest
+          - branch
+          - auto
+          - check
+        default: suggest
+      auto_commit:
+        description: 'Automatically commit and push suggestions to the PR branch'
+        required: false
+        type: boolean
+        default: false
+
+# Prevent concurrent runs on the same PR
+concurrency:
+  group: docs-check-${{ github.event.pull_request.number || github.event.inputs.pr_number }}
+  cancel-in-progress: true
+
+jobs:
+  docs-check:
+    # Skip if PR is from a bot (e.g., dependabot)
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' && !contains(github.event.pull_request.user.login, '[bot]'))
+    uses: Uniswap/ai-toolkit/.github/workflows/_claude-docs-check.yml@40b7cda9c5816be0587e47734fc450447c5aaeba # main
+    with:
+      pr_number: ${{ github.event.pull_request.number || github.event.inputs.pr_number }}
+      suggestion_mode: ${{ github.event.inputs.suggestion_mode || 'suggest' }}
+      auto_commit: ${{ github.event.inputs.auto_commit == 'true' }}
+      # Use sonnet for faster, cheaper checks
+      model: 'claude-sonnet-4-5-20250929'
+      # Fail if plugin versions aren't bumped
+      fail_on_missing_version: true
+      # Don't fail on missing docs (just warn)
+      fail_on_missing_docs: false
+      # Use main branch of ai-toolkit for scripts
+      toolkit_ref: 'main'
+      plugin_ref: 'main'
+    secrets:
+      # Use OAuth token (Pro/Max) instead of API key
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+      # PAT for branch creation
+      WORKFLOW_PAT: ${{ secrets.WORKFLOW_PAT }}
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: read
+      actions: read
+      id-token: write
