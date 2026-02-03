@@ -14,9 +14,9 @@ This plugin provides skills and MCP servers for configuring and deploying Contin
 
 ### MCP Servers (./.mcp.json)
 
-| Server                  | Description                                                                 | Type  |
-| ----------------------- | --------------------------------------------------------------------------- | ----- |
-| **cca-supply-schedule** | Generate supply schedules using normalized convex curve (C(t) = t^α, α=1.2) | stdio |
+| Server                  | Description                                                                            | Type  |
+| ----------------------- | -------------------------------------------------------------------------------------- | ----- |
+| **cca-supply-schedule** | Generate and encode supply schedules using normalized convex curve (C(t) = t^α, α=1.2) | stdio |
 
 ## File Structure
 
@@ -64,8 +64,6 @@ deployer (deploy via Factory)
 
 ## Configurator Skill
 
-### Purpose
-
 Interactive configuration tool that collects CCA auction parameters through a **bulk form prompting flow**. Minimizes user interaction rounds by asking up to 4 questions at once.
 
 ### Configuration Flow (5 Batches)
@@ -89,7 +87,11 @@ Interactive configuration tool that collects CCA auction parameters through a **
 
 ### MCP Tool Integration
 
-The configurator uses the `cca-supply-schedule__generate_supply_schedule` MCP tool to generate supply schedules:
+The configurator uses two MCP tools from the `cca-supply-schedule` server:
+
+#### 1. generate_supply_schedule
+
+Generates supply schedules using the normalized convex curve algorithm.
 
 **Input:**
 
@@ -104,6 +106,20 @@ The configurator uses the `cca-supply-schedule__generate_supply_schedule` MCP to
 - ~30% in final block
 - Always exactly 10,000,000 MPS total
 
+#### 2. encode_supply_schedule
+
+Encodes supply schedules to bytes for onchain deployment.
+
+**Input:**
+
+- `schedule`: Array of `{mps, blockDelta}` objects
+
+**Output:**
+
+- Hex-encoded bytes string (0x prefix)
+- Each element packed as uint64: mps (24 bits) | blockDelta (40 bits)
+- Ready for Factory's `initializeDistribution` configData parameter
+
 ### Network Support
 
 - Ethereum Mainnet (chain ID: 1, 12s blocks)
@@ -113,8 +129,6 @@ The configurator uses the `cca-supply-schedule__generate_supply_schedule` MCP to
 - Sepolia (chain ID: 11155111, 12s blocks)
 
 ## Deployer Skill
-
-### Purpose
 
 Deployment guidance tool that provides safety warnings, validation checklists, Foundry script examples, and post-deployment steps for CCA contracts.
 
@@ -160,7 +174,9 @@ cast send $AUCTION_ADDRESS "onTokensReceived()" --rpc-url $RPC_URL --private-key
 
 ## MCP Server: cca-supply-schedule
 
-### Algorithm
+This server provides two tools for working with CCA supply schedules.
+
+### Tool 1: generate_supply_schedule
 
 Generates supply schedules using a **normalized convex curve**:
 
@@ -170,7 +186,7 @@ Generates supply schedules using a **normalized convex curve**:
 - **Final Block**: ~30% of tokens (configurable 20-40%)
 - **Total**: Always exactly 10,000,000 MPS
 
-### Input Parameters
+**Input Parameters:**
 
 - `auction_blocks` (required): Total blocks for auction
 - `prebid_blocks` (optional): Prebid period blocks (default: 0)
@@ -178,6 +194,30 @@ Generates supply schedules using a **normalized convex curve**:
 - `final_block_pct` (optional): Final block percentage (default: 0.30)
 - `alpha` (optional): Convexity exponent (default: 1.2)
 - `round_to_nearest` (optional): Round block boundaries to N blocks
+
+### Tool 2: encode_supply_schedule
+
+Encodes a supply schedule to bytes for onchain deployment.
+
+- **Encoding**: Each `{mps, blockDelta}` packed as uint64
+- **Format**: mps (24 bits) << 40 | blockDelta (40 bits)
+- **Output**: Hex string with 0x prefix
+- **Usage**: Pass to Factory's `initializeDistribution` as `auctionStepsData`
+
+**Input Parameters:**
+
+- `schedule` (required): Array of `{mps, blockDelta}` objects
+
+**Output:**
+
+- `encoded`: Hex-encoded bytes string
+- `length_bytes`: Total byte length
+- `num_elements`: Number of schedule elements
+
+**Constraints:**
+
+- mps must fit in 24 bits (max: 16,777,215)
+- blockDelta must fit in 40 bits (max: 1,099,511,627,775)
 
 ### Setup
 

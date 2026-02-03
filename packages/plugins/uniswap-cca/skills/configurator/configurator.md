@@ -1,6 +1,6 @@
 ---
 description: Configure CCA (Continuous Clearing Auction) smart contract parameters through an interactive bulk form flow. Use when user says "configure auction", "cca auction", "setup token auction", "auction configuration", "continuous auction", or mentions CCA contracts.
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash(curl:*), WebFetch, AskUserQuestion, cca-supply-schedule__generate_supply_schedule
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash(curl:*), WebFetch, AskUserQuestion, cca-supply-schedule__generate_supply_schedule, cca-supply-schedule__encode_supply_schedule
 model: opus
 ---
 
@@ -636,6 +636,104 @@ For custom distribution, manually define the schedule:
 ```
 
 **Important**: The last block should sell a significant amount of tokens (typically 30%+) to prevent price manipulation.
+
+---
+
+## Encoding Supply Schedule for Onchain Deployment
+
+After generating a supply schedule, it must be encoded into a bytes format for the onchain `AuctionParameters` struct. The encoding packs each `{mps, blockDelta}` element into a uint64.
+
+### Encoding Algorithm
+
+For each element in the supply schedule:
+
+1. **Create uint64** (64 bits / 8 bytes) where:
+   - First 24 bits: `mps` value (left padded)
+   - Next 40 bits: `blockDelta` value (left padded)
+2. **Pack all uint64s** together via `encodePacked` (concatenate bytes)
+3. **Return** as hex bytes string with `0x` prefix
+
+### Encoding Formula
+
+```solidity
+// Solidity equivalent
+uint64 packed = (uint64(mps) << 40) | uint64(blockDelta);
+bytes memory auctionStepsData = abi.encodePacked(packed1, packed2, ...);
+```
+
+### Value Constraints
+
+- **mps**: Must fit in 24 bits (max: 16,777,215)
+- **blockDelta**: Must fit in 40 bits (max: 1,099,511,627,775)
+
+### Using the MCP Tool
+
+Use the `encode_supply_schedule` MCP tool to encode a supply schedule:
+
+**Input:**
+
+```json
+{
+  "schedule": [
+    { "mps": 0, "blockDelta": 43200 },
+    { "mps": 54, "blockDelta": 10894 },
+    { "mps": 68, "blockDelta": 8517 }
+  ]
+}
+```
+
+**Output:**
+
+```json
+{
+  "encoded": "0x0000000000a8c00000003600002aa60000004400002145...",
+  "length_bytes": 112,
+  "num_elements": 14
+}
+```
+
+### Manual Encoding Example (Python)
+
+```python
+def encode_supply_schedule(schedule):
+    """Encode supply schedule to bytes."""
+    encoded_bytes = b''
+
+    for item in schedule:
+        mps = item['mps']
+        block_delta = item['blockDelta']
+
+        # Validate bounds
+        assert mps < 2**24, f"mps {mps} exceeds 24-bit max"
+        assert block_delta < 2**40, f"blockDelta {block_delta} exceeds 40-bit max"
+
+        # Pack into uint64: mps (24 bits) << 40 | blockDelta (40 bits)
+        packed = (mps << 40) | block_delta
+
+        # Convert to 8 bytes (big-endian)
+        encoded_bytes += packed.to_bytes(8, byteorder='big')
+
+    return '0x' + encoded_bytes.hex()
+
+# Example
+schedule = [
+    {"mps": 0, "blockDelta": 43200},
+    {"mps": 54, "blockDelta": 10894}
+]
+encoded = encode_supply_schedule(schedule)
+print(encoded)  # 0x0000000000a8c00000003600002aa6
+```
+
+### Integration with Configuration Flow
+
+When using the configurator skill:
+
+1. **Generate schedule** via `generate_supply_schedule` MCP tool
+2. **Encode schedule** via `encode_supply_schedule` MCP tool
+3. **Include encoded bytes** in final configuration output
+4. **Pass to deployment** script as `auctionStepsData` parameter
+
+The encoded bytes string is what gets passed to the Factory's `initializeDistribution` function as part of the `configData` parameter.
 
 ---
 

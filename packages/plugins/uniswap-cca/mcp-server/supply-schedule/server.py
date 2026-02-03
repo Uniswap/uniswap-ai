@@ -65,6 +65,13 @@ class GenerateScheduleInput(BaseModel):
     )
 
 
+class EncodeScheduleInput(BaseModel):
+    """Input parameters for encode_supply_schedule tool."""
+    schedule: list[dict[str, int]] = Field(
+        description="Supply schedule as array of {mps, blockDelta} objects"
+    )
+
+
 def generate_schedule(
     auction_blocks: int,
     prebid_blocks: int = 0,
@@ -159,6 +166,47 @@ def generate_schedule(
     return schedule
 
 
+def encode_supply_schedule(schedule: list[dict[str, int]]) -> str:
+    """
+    Encode supply schedule to bytes for onchain deployment.
+
+    For each {mps, blockDelta} element:
+    - Create uint64 where:
+      - First 24 bits: mps value (left padded)
+      - Next 40 bits: blockDelta value (left padded)
+    - Pack all uint64s together (like Solidity's abi.encodePacked)
+
+    Args:
+        schedule: List of dicts with 'mps' and 'blockDelta' keys
+
+    Returns:
+        Hex string with 0x prefix representing packed bytes
+
+    Raises:
+        ValueError: If mps exceeds 24-bit max or blockDelta exceeds 40-bit max
+    """
+    encoded_bytes = b''
+
+    for item in schedule:
+        mps = item['mps']
+        block_delta = item['blockDelta']
+
+        # Validate bounds
+        if mps >= 2**24:
+            raise ValueError(f"mps {mps} exceeds 24-bit max (16777215)")
+        if block_delta >= 2**40:
+            raise ValueError(f"blockDelta {block_delta} exceeds 40-bit max (1099511627775)")
+
+        # Pack into uint64: mps (24 bits) << 40 | blockDelta (40 bits)
+        packed = (mps << 40) | block_delta
+
+        # Convert to 8 bytes (big-endian)
+        encoded_bytes += packed.to_bytes(8, byteorder='big')
+
+    # Return as hex string with 0x prefix
+    return '0x' + encoded_bytes.hex()
+
+
 # Create MCP server instance
 server = Server("cca-supply-schedule")
 
@@ -218,6 +266,44 @@ async def list_tools() -> list[Tool]:
                 },
                 "required": ["auction_blocks"]
             }
+        ),
+        Tool(
+            name="encode_supply_schedule",
+            description=(
+                "Encode a CCA supply schedule to bytes for onchain deployment. "
+                "For each {mps, blockDelta} element, creates a uint64 where the first 24 bits are mps "
+                "and the next 40 bits are blockDelta. All uint64s are packed together (like Solidity's abi.encodePacked). "
+                "Returns a hex string with 0x prefix. This encoded bytes string is passed to the Factory's "
+                "initializeDistribution function as part of the configData parameter."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "schedule": {
+                        "type": "array",
+                        "description": "Supply schedule as array of {mps, blockDelta} objects",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "mps": {
+                                    "type": "integer",
+                                    "description": "Tokens per block (max: 16777215 for 24-bit)",
+                                    "minimum": 0,
+                                    "maximum": 16777215
+                                },
+                                "blockDelta": {
+                                    "type": "integer",
+                                    "description": "Number of blocks (max: 1099511627775 for 40-bit)",
+                                    "minimum": 0,
+                                    "maximum": 1099511627775
+                                }
+                            },
+                            "required": ["mps", "blockDelta"]
+                        }
+                    }
+                },
+                "required": ["schedule"]
+            }
         )
     ]
 
@@ -225,68 +311,106 @@ async def list_tools() -> list[Tool]:
 @server.call_tool()
 async def call_tool(name: str, arguments: Any) -> list[TextContent]:
     """Handle tool calls."""
-    if name != "generate_supply_schedule":
-        raise ValueError(f"Unknown tool: {name}")
+    if name == "generate_supply_schedule":
+        try:
+            # Validate input
+            input_data = GenerateScheduleInput(**arguments)
 
-    try:
-        # Validate input
-        input_data = GenerateScheduleInput(**arguments)
+            # Generate schedule
+            schedule = generate_schedule(
+                auction_blocks=input_data.auction_blocks,
+                prebid_blocks=input_data.prebid_blocks,
+                num_steps=input_data.num_steps,
+                final_block_pct=input_data.final_block_pct,
+                alpha=input_data.alpha,
+                round_to_nearest=input_data.round_to_nearest
+            )
 
-        # Generate schedule
-        schedule = generate_schedule(
-            auction_blocks=input_data.auction_blocks,
-            prebid_blocks=input_data.prebid_blocks,
-            num_steps=input_data.num_steps,
-            final_block_pct=input_data.final_block_pct,
-            alpha=input_data.alpha,
-            round_to_nearest=input_data.round_to_nearest
-        )
+            # Calculate summary statistics
+            total_mps = sum(item["mps"] * item["blockDelta"] for item in schedule)
+            final_block_mps = schedule[-1]["mps"]
+            final_block_percentage = (final_block_mps / TOTAL_TARGET) * 100
 
-        # Calculate summary statistics
-        total_mps = sum(item["mps"] * item["blockDelta"] for item in schedule)
-        final_block_mps = schedule[-1]["mps"]
-        final_block_percentage = (final_block_mps / TOTAL_TARGET) * 100
+            # Calculate main supply (excluding prebid and final block)
+            main_phases = [item for item in schedule if item != schedule[0] or input_data.prebid_blocks == 0]
+            if main_phases:
+                main_phases = main_phases[:-1]  # Exclude final block
 
-        # Calculate main supply (excluding prebid and final block)
-        main_phases = [item for item in schedule if item != schedule[0] or input_data.prebid_blocks == 0]
-        if main_phases:
-            main_phases = main_phases[:-1]  # Exclude final block
-
-        # Format output
-        output = {
-            "schedule": schedule,
-            "auction_blocks": input_data.auction_blocks,
-            "prebid_blocks": input_data.prebid_blocks,
-            "total_phases": len(schedule),
-            "summary": {
-                "total_mps": total_mps,
-                "target_mps": TOTAL_TARGET,
-                "final_block_mps": final_block_mps,
-                "final_block_percentage": round(final_block_percentage, 2),
-                "num_steps": input_data.num_steps,
-                "alpha": input_data.alpha,
-                "main_supply_pct": round((1.0 - input_data.final_block_pct) * 100, 2),
-                "step_tokens_pct": round((1.0 - input_data.final_block_pct) / input_data.num_steps * 100, 4)
+            # Format output
+            output = {
+                "schedule": schedule,
+                "auction_blocks": input_data.auction_blocks,
+                "prebid_blocks": input_data.prebid_blocks,
+                "total_phases": len(schedule),
+                "summary": {
+                    "total_mps": total_mps,
+                    "target_mps": TOTAL_TARGET,
+                    "final_block_mps": final_block_mps,
+                    "final_block_percentage": round(final_block_percentage, 2),
+                    "num_steps": input_data.num_steps,
+                    "alpha": input_data.alpha,
+                    "main_supply_pct": round((1.0 - input_data.final_block_pct) * 100, 2),
+                    "step_tokens_pct": round((1.0 - input_data.final_block_pct) / input_data.num_steps * 100, 4)
+                }
             }
-        }
 
-        return [
-            TextContent(
-                type="text",
-                text=json.dumps(output, indent=2)
-            )
-        ]
-    except Exception as e:
-        logger.error(f"Error generating supply schedule: {e}", exc_info=True)
-        return [
-            TextContent(
-                type="text",
-                text=json.dumps({
-                    "error": str(e),
-                    "message": "Failed to generate supply schedule"
-                })
-            )
-        ]
+            return [
+                TextContent(
+                    type="text",
+                    text=json.dumps(output, indent=2)
+                )
+            ]
+        except Exception as e:
+            logger.error(f"Error generating supply schedule: {e}", exc_info=True)
+            return [
+                TextContent(
+                    type="text",
+                    text=json.dumps({
+                        "error": str(e),
+                        "message": "Failed to generate supply schedule"
+                    })
+                )
+            ]
+
+    elif name == "encode_supply_schedule":
+        try:
+            # Validate input
+            input_data = EncodeScheduleInput(**arguments)
+
+            # Encode schedule
+            encoded = encode_supply_schedule(input_data.schedule)
+
+            # Calculate output statistics
+            length_bytes = (len(encoded) - 2) // 2  # Subtract '0x' and divide by 2 (2 hex chars per byte)
+            num_elements = len(input_data.schedule)
+
+            # Format output
+            output = {
+                "encoded": encoded,
+                "length_bytes": length_bytes,
+                "num_elements": num_elements
+            }
+
+            return [
+                TextContent(
+                    type="text",
+                    text=json.dumps(output, indent=2)
+                )
+            ]
+        except Exception as e:
+            logger.error(f"Error encoding supply schedule: {e}", exc_info=True)
+            return [
+                TextContent(
+                    type="text",
+                    text=json.dumps({
+                        "error": str(e),
+                        "message": "Failed to encode supply schedule"
+                    })
+                )
+            ]
+
+    else:
+        raise ValueError(f"Unknown tool: {name}")
 
 
 async def main():
