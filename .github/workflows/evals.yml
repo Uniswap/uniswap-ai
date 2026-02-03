@@ -45,7 +45,8 @@ jobs:
       - name: Install npm
         env:
           NPM_VERSION: ${{ vars.NPM_VERSION }}
-        run: npm install -g "npm@$NPM_VERSION"
+        # NPM_VERSION is a repository variable set by admins - same pattern as all other workflows
+        run: npm install -g "npm@$NPM_VERSION" # nosemgrep: uniswap.npm-package-in-action-not-pinned-to-commit-sha
 
       - name: Install dependencies
         run: npm ci --prefer-offline --no-audit
