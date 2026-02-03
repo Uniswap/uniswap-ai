@@ -1,0 +1,8 @@
+{
+  "name": "claude-setup",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/plugins/claude-setup",
+  "projectType": "library",
+  "tags": ["type:plugin", "scope:claude-setup"],
+  "targets": {}
+}
