@@ -1,0 +1,30 @@
+# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
+description: 'Uniswap AI Plugin Evaluations'
+
+# Default to single model for speed
+# Auth: Uses ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN (via custom provider)
+providers:
+  - id: anthropic:claude-sonnet-4-20250514
+    config:
+      temperature: 0
+
+# Multi-model configuration (use with --env MULTI_MODEL=true)
+# providers:
+#   - id: anthropic:claude-sonnet-4-20250514
+#     config:
+#       temperature: 0
+#   - id: anthropic:claude-opus-4-20250514
+#     config:
+#       temperature: 0
+
+# Enable cost tracking
+evaluateOptions:
+  showCost: true
+
+# Default assertions applied to all tests
+defaultTest:
+  options:
+    timeout: 120000 # 2 minutes per case
+
+# Import suites from subdirectories
+# Each suite has its own promptfoo.yaml with specific prompts and tests

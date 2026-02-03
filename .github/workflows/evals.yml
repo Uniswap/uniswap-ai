@@ -1,0 +1,211 @@
+name: Evals
+
+on:
+  pull_request:
+    paths:
+      - 'packages/plugins/**'
+      - 'evals/**'
+      - '.github/workflows/evals.yml'
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: 'Specific suite to run (leave empty for all)'
+        required: false
+        type: string
+      multi_model:
+        description: 'Run against multiple models'
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: evals-${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  eval:
+    name: Run Evaluations
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - uses: bullfrogsec/bullfrog@1831f79cce8ad602eef14d2163873f27081ebfb3 # v0.8.4
+
+      - name: Checkout repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
+        with:
+          node-version: ${{ vars.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install npm
+        run: npm install -g npm@${{ vars.NPM_VERSION }}
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline --no-audit
+
+      - name: Run evaluations
+        id: eval
+        env:
+          # Support both API key and OAuth token authentication
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          SUITE_INPUT: ${{ github.event.inputs.suite }}
+        run: |
+          cd evals
+
+          # Determine which suites to run
+          if [ -n "$SUITE_INPUT" ]; then
+            echo "Running specific suite: $SUITE_INPUT"
+            SUITES="suites/$SUITE_INPUT"
+          else
+            echo "Running all suites"
+            SUITES=$(ls -d suites/*/ 2>/dev/null || echo "")
+          fi
+
+          if [ -z "$SUITES" ]; then
+            echo "No eval suites found"
+            echo "status=skipped" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Run evals for each suite
+          TOTAL_PASS=0
+          TOTAL_FAIL=0
+          TOTAL_COST=0
+          RESULTS_SUMMARY=""
+
+          for suite_dir in $SUITES; do
+            suite_name=$(basename "$suite_dir")
+            echo "::group::Running $suite_name"
+
+            if [ ! -f "$suite_dir/promptfoo.yaml" ]; then
+              echo "Skipping $suite_name - no promptfoo.yaml found"
+              echo "::endgroup::"
+              continue
+            fi
+
+            # Run eval and capture output
+            npx promptfoo eval \
+              -c "$suite_dir/promptfoo.yaml" \
+              --output "$suite_dir/results.json" \
+              --no-progress-bar \
+              || true
+
+            if [ -f "$suite_dir/results.json" ]; then
+              # Extract stats using jq
+              PASS=$(jq '.results.stats.successes // 0' "$suite_dir/results.json")
+              FAIL=$(jq '.results.stats.failures // 0' "$suite_dir/results.json")
+              COST=$(jq '.results.stats.totalCost // 0' "$suite_dir/results.json")
+
+              TOTAL_PASS=$((TOTAL_PASS + PASS))
+              TOTAL_FAIL=$((TOTAL_FAIL + FAIL))
+              TOTAL_COST=$(echo "$TOTAL_COST + $COST" | bc -l)
+
+              RESULTS_SUMMARY="${RESULTS_SUMMARY}| ${suite_name} | ${PASS} | ${FAIL} | \$${COST} |\n"
+            fi
+
+            echo "::endgroup::"
+          done
+
+          # Calculate pass rate
+          TOTAL=$((TOTAL_PASS + TOTAL_FAIL))
+          if [ "$TOTAL" -gt 0 ]; then
+            PASS_RATE=$(echo "scale=2; $TOTAL_PASS * 100 / $TOTAL" | bc -l)
+          else
+            PASS_RATE="N/A"
+          fi
+
+          # Output summary
+          echo "## Eval Results" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Suite | Passed | Failed | Cost |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|-------|--------|--------|------|" >> "$GITHUB_STEP_SUMMARY"
+          echo -e "$RESULTS_SUMMARY" >> "$GITHUB_STEP_SUMMARY"
+          echo "| **Total** | **$TOTAL_PASS** | **$TOTAL_FAIL** | **\$${TOTAL_COST}** |" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Pass Rate:** ${PASS_RATE}%" >> "$GITHUB_STEP_SUMMARY"
+
+          # Set outputs
+          echo "pass_rate=$PASS_RATE" >> $GITHUB_OUTPUT
+          echo "total_pass=$TOTAL_PASS" >> $GITHUB_OUTPUT
+          echo "total_fail=$TOTAL_FAIL" >> $GITHUB_OUTPUT
+          echo "total_cost=$TOTAL_COST" >> $GITHUB_OUTPUT
+
+          # Fail if below threshold (85%)
+          if [ "$TOTAL" -gt 0 ]; then
+            THRESHOLD=85
+            if (( $(echo "$PASS_RATE < $THRESHOLD" | bc -l) )); then
+              echo "::error::Pass rate ${PASS_RATE}% is below ${THRESHOLD}% threshold"
+              exit 1
+            fi
+          fi
+
+          echo "status=success" >> $GITHUB_OUTPUT
+
+      - name: Upload eval results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: eval-results
+          path: evals/suites/*/results.json
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request' && steps.eval.outputs.status == 'success'
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        env:
+          PASS_RATE: ${{ steps.eval.outputs.pass_rate }}
+          TOTAL_PASS: ${{ steps.eval.outputs.total_pass }}
+          TOTAL_FAIL: ${{ steps.eval.outputs.total_fail }}
+          TOTAL_COST: ${{ steps.eval.outputs.total_cost }}
+        with:
+          script: |
+            const passRate = process.env.PASS_RATE;
+            const totalPass = process.env.TOTAL_PASS;
+            const totalFail = process.env.TOTAL_FAIL;
+            const totalCost = process.env.TOTAL_COST;
+
+            const body = `## Eval Results
+
+            | Metric | Value |
+            |--------|-------|
+            | Pass Rate | ${passRate}% |
+            | Passed | ${totalPass} |
+            | Failed | ${totalFail} |
+            | Inference Cost | $${totalCost} |
+
+            [View full results](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`;
+
+            // Find existing comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(comment =>
+              comment.user.type === 'Bot' &&
+              comment.body.includes('## Eval Results')
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body
+              });
+            }
