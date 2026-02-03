@@ -62,6 +62,9 @@
     "packages/plugins/*",
     "packages/sdk/*"
   ],
+  "overrides": {
+    "posthog-node": "5.18.0"
+  },
   "nx": {
     "includedScripts": []
   },
