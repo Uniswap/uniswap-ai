@@ -41,7 +41,7 @@ on:
 
 # Prevent concurrent runs on the same PR
 concurrency:
-  group: docs-check-${{ github.event.pull_request.number || github.event.inputs.pr_number }}
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 
 jobs:
