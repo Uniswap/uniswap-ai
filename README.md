@@ -6,10 +6,10 @@ Uniswap-specific AI tools (skills, plugins, agents) for external developers and 
 
 This repository provides Claude Code plugins and AI development tools specifically designed for building on the Uniswap protocol. It complements the general-purpose [ai-toolkit](https://github.com/Uniswap/ai-toolkit) with protocol-specific capabilities.
 
-| Repository | Focus | Audience |
-|------------|-------|----------|
-| `ai-toolkit` | General development workflow plugins | Internal developers |
-| `uniswap-ai` | Uniswap protocol-specific AI tools | External developers, AI agents |
+| Repository   | Focus                                | Audience                       |
+| ------------ | ------------------------------------ | ------------------------------ |
+| `ai-toolkit` | General development workflow plugins | Internal developers            |
+| `uniswap-ai` | Uniswap protocol-specific AI tools   | External developers, AI agents |
 
 ## Installation
 
@@ -31,6 +31,19 @@ npm install @uniswap-ai/core
 ```
 
 ## Plugins
+
+### uniswap-cca
+
+Configuration and deployment tools for Continuous Clearing Auction (CCA) smart contracts.
+
+**Skills:**
+
+- `configurator` - Interactive bulk form configuration for CCA auction parameters
+- `deployer` - Deployment guidance with safety checks and Factory integration
+
+**MCP Servers:**
+
+- `cca-supply-schedule` - Generate and encode supply schedules using normalized convex curves
 
 ### uniswap-hooks
 

@@ -41,11 +41,11 @@ After making any code changes, Claude Code MUST:
 
 ## Package Scopes
 
-| Type | Scope | npm | Marketplace |
-|------|-------|-----|-------------|
-| Plugins | `@uniswap` | No | Yes (Claude Code Marketplace) |
-| SDKs | `@uniswap-ai` | Yes | N/A |
-| Utils | `@uniswap-ai` | Yes | N/A |
+| Type    | Scope         | npm | Marketplace                   |
+| ------- | ------------- | --- | ----------------------------- |
+| Plugins | `@uniswap`    | No  | Yes (Claude Code Marketplace) |
+| SDKs    | `@uniswap-ai` | Yes | N/A                           |
+| Utils   | `@uniswap-ai` | Yes | N/A                           |
 
 ## Repository Structure
 
@@ -65,6 +65,7 @@ uniswap-ai/
 │   └── suites/              # Per-tool eval suites
 ├── packages/
 │   ├── plugins/             # Claude Code plugins
+│   │   ├── uniswap-cca/     # Continuous Clearing Auction (CCA) plugin
 │   │   └── uniswap-hooks/   # Uniswap V4 hooks plugin
 │   ├── sdk/                 # TypeScript SDKs
 │   ├── prompts/             # Shared prompt templates
