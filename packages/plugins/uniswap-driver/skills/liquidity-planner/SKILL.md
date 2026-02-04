@@ -1,7 +1,7 @@
 ---
 name: liquidity-planner
 description: This skill should be used when the user asks to "provide liquidity", "create LP position", "add liquidity to pool", "become a liquidity provider", "create V3 position", "create V4 position", "concentrated liquidity", "set price range", or mentions providing liquidity, LP positions, or liquidity pools on Uniswap. Generates deep links to create positions in the Uniswap interface.
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash(curl:*), Bash(jq:*), Bash(cast:*), Bash(xdg-open:*), Bash(open:*), WebFetch, WebSearch, Task(subagent_type:Explore)
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash(curl:*), Bash(jq:*), Bash(cast:*), Bash(xdg-open:*), Bash(open:*), WebFetch, WebSearch, Task(subagent_type:Explore), AskUserQuestion
 model: sonnet
 ---
 
@@ -26,17 +26,59 @@ The generated link opens Uniswap with all parameters ready for position creation
 
 Extract from the user's request:
 
-| Parameter | Required | Default | Example |
-|-----------|----------|---------|---------|
-| Token A | Yes | - | ETH, USDC, address |
-| Token B | Yes | - | USDC, WBTC, address |
-| Amount | Yes | - | 1 ETH, $1000 |
-| Chain | No | Ethereum | Base, Arbitrum |
-| Version | No | V3 | V2, V3, V4 |
-| Fee Tier | No | Auto | 0.05%, 0.3%, 1% |
-| Price Range | No | Suggest | Full range, ±5%, custom |
+| Parameter   | Required | Default  | Example                 |
+| ----------- | -------- | -------- | ----------------------- |
+| Token A     | Yes      | -        | ETH, USDC, address      |
+| Token B     | Yes      | -        | USDC, WBTC, address     |
+| Amount      | Yes      | -        | 1 ETH, $1000            |
+| Chain       | No       | Ethereum | Base, Arbitrum          |
+| Version     | No       | V3       | V2, V3, V4              |
+| Fee Tier    | No       | Auto     | 0.05%, 0.3%, 1%         |
+| Price Range | No       | Suggest  | Full range, ±5%, custom |
 
-If token pair is missing, ask the user to specify.
+**If any required parameter is missing, use AskUserQuestion with structured options:**
+
+For missing chain:
+
+```json
+{
+  "questions": [
+    {
+      "question": "Which chain do you want to provide liquidity on?",
+      "header": "Chain",
+      "options": [
+        { "label": "Base (Recommended)", "description": "Low gas, growing DeFi ecosystem" },
+        { "label": "Ethereum", "description": "Deepest liquidity, higher gas" },
+        { "label": "Arbitrum", "description": "Low fees, high volume" },
+        { "label": "Optimism", "description": "Low fees, Ethereum L2" }
+      ],
+      "multiSelect": false
+    }
+  ]
+}
+```
+
+For missing token pair:
+
+```json
+{
+  "questions": [
+    {
+      "question": "Which token pair do you want to provide liquidity for?",
+      "header": "Pair",
+      "options": [
+        { "label": "ETH / USDC", "description": "Most popular pair, high volume" },
+        { "label": "ETH / USDT", "description": "High volume stablecoin pair" },
+        { "label": "WBTC / ETH", "description": "Blue chip crypto pair" },
+        { "label": "Custom pair", "description": "Specify your own tokens" }
+      ],
+      "multiSelect": false
+    }
+  ]
+}
+```
+
+Always use forms instead of plain text questions for better UX.
 
 ### Step 2: Resolve Token Addresses
 
@@ -44,53 +86,189 @@ Resolve token symbols to addresses. See `references/chains.md` for common tokens
 
 For unknown tokens, use web search and verify on-chain.
 
-### Step 3: Check Current Pool State
+### Step 3: Discover Available Pools
 
-For V3/V4 positions, check the current pool price to suggest ranges:
+Before fetching metrics, verify the pool exists and discover available fee tiers.
+
+**Find pools for a token using DexScreener:**
 
 ```bash
-# Get current price from pool (simplified)
-# In practice, query the pool contract or use web search for current price
+# Get all Uniswap pools for a token (replace {network} and {address})
+curl -s "https://api.dexscreener.com/token-pairs/v1/{network}/{address}" | \
+  jq '[.[] | select(.dexId == "uniswap")] | map({
+    pairAddress,
+    pair: "\(.baseToken.symbol)/\(.quoteToken.symbol)",
+    version: .labels[0],
+    liquidity: .liquidity.usd,
+    volume24h: .volume.h24
+  })'
 ```
 
-Alternatively, use web search: `"{tokenA} {tokenB} price"` to get approximate current price.
+**Network IDs:** `ethereum`, `base`, `arbitrum`, `optimism`, `polygon`
 
-### Step 4: Suggest Price Ranges
+**From the results, identify:**
 
-Based on current price, suggest range options:
+- Available pools and their addresses (multiple = different fee tiers)
+- Pool TVL (`liquidity.usd`) to assess liquidity depth
+- Version (v3 or v4) from `labels[0]`
 
-| Range Type | Description | Risk/Reward |
-|------------|-------------|-------------|
-| Full Range | Entire price spectrum | Lower fees, no rebalancing needed |
-| ±50% | Wide range around current price | Moderate fees, rarely out of range |
-| ±20% | Medium range | Higher fees, occasional rebalancing |
-| ±10% | Tight range | Highest fees, frequent rebalancing |
-| ±5% | Very tight | Maximum fees, constant monitoring |
+**If no Uniswap pools found:** The pair may not have an existing pool. Inform the user they would be creating a new pool and setting the initial price.
+
+### Step 4: Assess Pool Liquidity
+
+Evaluate if the pool has sufficient liquidity:
+
+| TVL Range    | Assessment     | Recommendation                                               |
+| ------------ | -------------- | ------------------------------------------------------------ |
+| > $1M        | Deep liquidity | Safe for most position sizes                                 |
+| $100K - $1M  | Moderate       | Suitable for positions up to ~$10K                           |
+| $10K - $100K | Thin           | Warn user about slippage risk, suggest smaller positions     |
+| < $10K       | Very thin      | **Warn strongly** - high IL risk, price impact on entry/exit |
+
+**For thin liquidity pools, present a warning:**
+
+```markdown
+⚠️ **Low Liquidity Warning**
+
+This pool has only ${tvl} TVL. Consider:
+
+- Your position will be a significant % of the pool
+- Entry/exit may move the price against you
+- Impermanent loss risk is amplified in thin pools
+- You may want to use a wider price range for safety
+```
+
+### Step 5: Fetch Pool Metrics
+
+Before suggesting ranges, fetch pool data for informed decisions. See `references/data-providers.md` for full API details.
+
+**Get pool APY and volume with DefiLlama:**
+
+```bash
+# Find Uniswap V3 pools for a token pair
+curl -s "https://yields.llama.fi/pools" | jq '[.data[] | select(.project == "uniswap-v3" and .chain == "Ethereum" and (.symbol | test("WETH.*USDC|USDC.*WETH")))]'
+```
+
+**Response fields to use:**
+
+| Field         | Use For                  |
+| ------------- | ------------------------ |
+| `apy`         | Show expected yield      |
+| `tvlUsd`      | Assess pool depth        |
+| `volumeUsd1d` | Estimate fee earnings    |
+| `volumeUsd7d` | Check volume consistency |
+
+**Get current prices with DexScreener:**
+
+```bash
+# Get token prices from the pool data (already fetched in Step 3)
+curl -s "https://api.dexscreener.com/token-pairs/v1/{network}/{address}" | \
+  jq '[.[] | select(.dexId == "uniswap")][0] | {
+    baseTokenPrice: .baseToken.priceUsd,
+    quoteTokenPrice: .quoteToken.priceUsd
+  }'
+```
+
+**Compare fee tiers (if APY data available):**
+
+```bash
+# Find all fee tier variants and compare APY
+curl -s "https://yields.llama.fi/pools" | jq '[.data[] | select(.project == "uniswap-v3" and (.symbol | test("WETH.*USDC")))] | map({symbol, tvlUsd, apy, volumeUsd1d})'
+```
+
+If APIs are unavailable, fall back to web search for price estimates.
+
+### Step 6: Suggest Price Ranges
+
+Based on current price and pair type, present range options using AskUserQuestion.
+
+**For major pairs (ETH/USDC, ETH/WBTC):**
+
+```json
+{
+  "questions": [
+    {
+      "question": "What price range do you want for your position? (Current: ~3,200 USDC/ETH)",
+      "header": "Range",
+      "options": [
+        {
+          "label": "±10% (Recommended)",
+          "description": "2,880 - 3,520 USDC. Higher fees, monitor weekly"
+        },
+        { "label": "±20%", "description": "2,560 - 3,840 USDC. Balanced risk/reward" },
+        { "label": "±50%", "description": "1,600 - 4,800 USDC. Rarely out of range" },
+        { "label": "Full Range", "description": "Never out of range, lower fee efficiency" }
+      ],
+      "multiSelect": false
+    }
+  ]
+}
+```
+
+**For stablecoin pairs (USDC/USDT, DAI/USDC):**
+
+```json
+{
+  "questions": [
+    {
+      "question": "What price range for your stablecoin position?",
+      "header": "Range",
+      "options": [
+        { "label": "±0.5% (Recommended)", "description": "0.995 - 1.005. Tight range, high fees" },
+        { "label": "±1%", "description": "0.99 - 1.01. Standard for stables" },
+        { "label": "±2%", "description": "0.98 - 1.02. Safer, lower fees" },
+        { "label": "Full Range", "description": "Maximum safety, lowest fees" }
+      ],
+      "multiSelect": false
+    }
+  ]
+}
+```
 
 **Recommendation logic:**
 
-- Stablecoin pairs (USDC/USDT): Suggest tight range (±1-2%)
-- Correlated pairs (ETH/stETH): Suggest tight range (±2-5%)
-- Major pairs (ETH/USDC): Suggest medium range (±10-20%)
-- Volatile pairs: Suggest wide range (±30-50%) or full range
-- New/uncertain: Suggest full range
+- Stablecoin pairs (USDC/USDT): Default to ±0.5-1%
+- Correlated pairs (ETH/stETH): Default to ±2-5%
+- Major pairs (ETH/USDC): Default to ±10-20%
+- Volatile pairs: Default to ±30-50% or full range
 
-Present options to user and let them choose.
+### Step 7: Determine Fee Tier
 
-### Step 5: Determine Fee Tier
+If multiple fee tiers exist for the pair, let the user choose using pool data from Step 3.
 
-**V3 Fee Tiers:**
+**Present fee tier options with APY data:**
 
-| Fee | Best For |
-|-----|----------|
-| 0.01% (100) | Stablecoin pairs |
-| 0.05% (500) | Correlated pairs |
-| 0.30% (3000) | Most pairs (default) |
-| 1.00% (10000) | Exotic/volatile pairs |
+```json
+{
+  "questions": [
+    {
+      "question": "Which fee tier? (Based on current pool data)",
+      "header": "Fee Tier",
+      "options": [
+        { "label": "0.30% (Recommended)", "description": "TVL: $15M, APY: 12.5%, highest volume" },
+        { "label": "0.05%", "description": "TVL: $8M, APY: 8.2%, lower fees per trade" },
+        { "label": "1.00%", "description": "TVL: $2M, APY: 18.1%, less competition" }
+      ],
+      "multiSelect": false
+    }
+  ]
+}
+```
+
+**Fee tier guidelines:**
+
+| Fee           | Tick Spacing | Best For                     |
+| ------------- | ------------ | ---------------------------- |
+| 0.01% (100)   | 1            | Stablecoin pairs             |
+| 0.05% (500)   | 10           | Correlated pairs (ETH/stETH) |
+| 0.30% (3000)  | 60           | Most pairs (default)         |
+| 1.00% (10000) | 200          | Exotic/volatile pairs        |
 
 **V4 Fee Tiers:** Dynamic fees possible with hooks. Default to similar V3 tiers.
 
-### Step 6: Generate Deep Link
+If pool data shows one tier with significantly higher APY or volume, recommend that tier.
+
+### Step 8: Generate Deep Link
 
 Construct the Uniswap position creation URL:
 
@@ -98,16 +276,16 @@ Construct the Uniswap position creation URL:
 
 **URL Parameters:**
 
-| Parameter | Description | Format |
-|-----------|-------------|--------|
-| `chain` | Network name | `ethereum`, `base`, etc. |
-| `currencyA` | First token | Address or `NATIVE` |
-| `currencyB` | Second token | Address or `NATIVE` |
-| `priceRangeState` | Range configuration | JSON (encode quotes only) |
-| `depositState` | Deposit amounts | JSON (encode quotes only) |
-| `fee` | Fee tier configuration | JSON (encode quotes only) |
-| `hook` | V4 hook address (optional) | Address or `undefined` |
-| `step` | Flow step | `1` (for create) |
+| Parameter         | Description                | Format                    |
+| ----------------- | -------------------------- | ------------------------- |
+| `chain`           | Network name               | `ethereum`, `base`, etc.  |
+| `currencyA`       | First token                | Address or `NATIVE`       |
+| `currencyB`       | Second token               | Address or `NATIVE`       |
+| `priceRangeState` | Range configuration        | JSON (encode quotes only) |
+| `depositState`    | Deposit amounts            | JSON (encode quotes only) |
+| `fee`             | Fee tier configuration     | JSON (encode quotes only) |
+| `hook`            | V4 hook address (optional) | Address or `undefined`    |
+| `step`            | Flow step                  | `1` (for create)          |
 
 **IMPORTANT: URL Encoding**
 
@@ -118,19 +296,33 @@ Only encode the double quotes (`"` → `%22`) in JSON values. Do NOT encode brac
 For full range:
 
 ```json
-{"priceInverted":false,"fullRange":true,"minPrice":"","maxPrice":"","initialPrice":"","inputMode":"price"}
+{
+  "priceInverted": false,
+  "fullRange": true,
+  "minPrice": "",
+  "maxPrice": "",
+  "initialPrice": "",
+  "inputMode": "price"
+}
 ```
 
 For custom range:
 
 ```json
-{"priceInverted":false,"fullRange":false,"minPrice":"2800","maxPrice":"3600","initialPrice":"","inputMode":"price"}
+{
+  "priceInverted": false,
+  "fullRange": false,
+  "minPrice": "2800",
+  "maxPrice": "3600",
+  "initialPrice": "",
+  "inputMode": "price"
+}
 ```
 
 **depositState JSON structure:**
 
 ```json
-{"exactField":"TOKEN0","exactAmounts":{"TOKEN0":"1.0"}}
+{ "exactField": "TOKEN0", "exactAmounts": { "TOKEN0": "1.0" } }
 ```
 
 Note: Use `TOKEN0` for currencyA, `TOKEN1` for currencyB.
@@ -138,19 +330,19 @@ Note: Use `TOKEN0` for currencyA, `TOKEN1` for currencyB.
 **fee JSON structure:**
 
 ```json
-{"feeAmount":3000,"tickSpacing":60,"isDynamic":false}
+{ "feeAmount": 3000, "tickSpacing": 60, "isDynamic": false }
 ```
 
 **Tick spacing by fee:**
 
-| Fee | Tick Spacing |
-|-----|--------------|
-| 100 (0.01%) | 1 |
-| 500 (0.05%) | 10 |
-| 3000 (0.30%) | 60 |
-| 10000 (1.00%) | 200 |
+| Fee           | Tick Spacing |
+| ------------- | ------------ |
+| 100 (0.01%)   | 1            |
+| 500 (0.05%)   | 10           |
+| 3000 (0.30%)  | 60           |
+| 10000 (1.00%) | 200          |
 
-### Step 7: Present Output and Open Browser
+### Step 9: Present Output and Open Browser
 
 Format the response with:
 
@@ -164,22 +356,31 @@ Format the response with:
 ```markdown
 ## Liquidity Position Summary
 
-| Parameter | Value |
-|-----------|-------|
-| Pair | ETH / USDC |
-| Chain | Base |
-| Version | V3 |
-| Fee Tier | 0.30% |
-| Deposit | 1 ETH + equivalent USDC |
+| Parameter | Value                   |
+| --------- | ----------------------- |
+| Pair      | ETH / USDC              |
+| Chain     | Base                    |
+| Version   | V3                      |
+| Fee Tier  | 0.30%                   |
+| Deposit   | 1 ETH + equivalent USDC |
+
+### Pool Analytics
+
+| Metric      | Value  |
+| ----------- | ------ |
+| Current APY | 12.5%  |
+| 24h Volume  | $2.1M  |
+| 7d Volume   | $14.8M |
+| Pool TVL    | $15.2M |
 
 ### Price Range
 
-| Metric | Value |
-|--------|-------|
+| Metric        | Value               |
+| ------------- | ------------------- |
 | Current Price | ~3,200 USDC per ETH |
-| Min Price | 2,800 USDC per ETH |
-| Max Price | 3,600 USDC per ETH |
-| Range Width | ±12.5% |
+| Min Price     | 2,800 USDC per ETH  |
+| Max Price     | 3,600 USDC per ETH  |
+| Range Width   | ±12.5%              |
 
 ### Considerations
 
@@ -187,6 +388,7 @@ Format the response with:
 - **Rebalancing**: Monitor position and adjust range if price moves significantly
 - **Fee Earnings**: Tighter ranges earn more fees but require more active management
 - **Gas Costs**: Creating and managing positions costs gas
+- **APY Note**: Shown APY is historical and may vary with market conditions
 
 Opening Uniswap in your browser...
 ```
@@ -248,6 +450,7 @@ All Uniswap-supported chains - see `references/position-types.md` for version av
 
 - **`references/chains.md`** - Chain configuration and token addresses (shared with swap-planner)
 - **`references/position-types.md`** - V2/V3/V4 differences, fee tiers, tick spacing
+- **`references/data-providers.md`** - DexScreener and DefiLlama APIs for pool discovery and yields
 
 ### URL Encoding
 
@@ -260,5 +463,5 @@ JSON parameters must be URL-encoded. In the deep link:
 Decodes to:
 
 ```json
-{"fullRange":true}
+{ "fullRange": true }
 ```

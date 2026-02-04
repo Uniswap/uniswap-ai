@@ -1,16 +1,13 @@
 {
   "name": "uniswap-driver",
-  "version": "0.1.0",
-  "description": "AI-powered assistance for planning Uniswap swaps and liquidity positions, generating deep links to execute in the Uniswap interface",
+  "version": "0.2.0",
+  "description": "AI-powered assistance for discovering tokens, planning Uniswap swaps and liquidity positions, generating deep links to execute in the Uniswap interface",
   "author": {
     "name": "Uniswap Labs",
     "email": "ai-services@uniswap.org"
   },
   "homepage": "https://github.com/Uniswap/uniswap-ai",
-  "keywords": ["uniswap", "swap", "liquidity", "defi", "deep-links"],
+  "keywords": ["uniswap", "swap", "liquidity", "defi", "deep-links", "token-discovery", "trending"],
   "license": "MIT",
-  "skills": [
-    "./skills/swap-planner",
-    "./skills/liquidity-planner"
-  ]
+  "skills": ["./skills/swap-planner", "./skills/liquidity-planner"]
 }
