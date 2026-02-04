@@ -20,6 +20,8 @@ Plan liquidity positions by:
 
 The generated link opens Uniswap with all parameters ready for position creation.
 
+> **Note:** Browser opening (`xdg-open`/`open`) may fail in SSH, containerized, or headless environments. Always display the URL prominently so users can copy and access it manually if needed.
+
 ## Workflow
 
 ### Step 1: Gather LP Intent

@@ -17,13 +17,13 @@ This plugin provides AI-powered assistance for planning Uniswap swaps and liquid
 
 Base URL: `https://app.uniswap.org/swap`
 
-| Parameter | Description | Example |
-|-----------|-------------|---------|
-| `chain` | Network name | `ethereum`, `base`, `arbitrum` |
-| `inputCurrency` | Input token address or "NATIVE" | `0xA0b8...` or `NATIVE` |
-| `outputCurrency` | Output token address or "NATIVE" | `0xA0b8...` or `NATIVE` |
-| `value` | Amount to swap | `1.5` |
-| `field` | Which field the value applies to | `INPUT` or `OUTPUT` |
+| Parameter        | Description                      | Example                        |
+| ---------------- | -------------------------------- | ------------------------------ |
+| `chain`          | Network name                     | `ethereum`, `base`, `arbitrum` |
+| `inputCurrency`  | Input token address or "NATIVE"  | `0xA0b8...` or `NATIVE`        |
+| `outputCurrency` | Output token address or "NATIVE" | `0xA0b8...` or `NATIVE`        |
+| `value`          | Amount to swap                   | `1.5`                          |
+| `field`          | Which field the value applies to | `INPUT` or `OUTPUT`            |
 
 **Example**: `https://app.uniswap.org/swap?chain=base&inputCurrency=NATIVE&outputCurrency=0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913&value=1&field=INPUT`
 
@@ -31,33 +31,33 @@ Base URL: `https://app.uniswap.org/swap`
 
 Base URL: `https://app.uniswap.org/positions/create`
 
-| Parameter | Description | Example |
-|-----------|-------------|---------|
-| `chain` | Network name | `ethereum`, `base` |
-| `currencyA` | First token address | `0xA0b8...` or `NATIVE` |
-| `currencyB` | Second token address | `0xA0b8...` |
-| `priceRangeState` | JSON with range params | `{"priceInverted":false,"fullRange":true,...}` |
-| `depositState` | JSON with deposit params | `{"exactField":"TOKEN0",...}` |
-| `fee` | JSON with fee tier | `{"feeAmount":3000,"tickSpacing":60,"isDynamic":false}` |
-| `hook` | V4 hook address (optional) | `0x...` or `undefined` |
-| `step` | Flow step | `1` |
+| Parameter         | Description                | Example                                                 |
+| ----------------- | -------------------------- | ------------------------------------------------------- |
+| `chain`           | Network name               | `ethereum`, `base`                                      |
+| `currencyA`       | First token address        | `0xA0b8...` or `NATIVE`                                 |
+| `currencyB`       | Second token address       | `0xA0b8...`                                             |
+| `priceRangeState` | JSON with range params     | `{"priceInverted":false,"fullRange":true,...}`          |
+| `depositState`    | JSON with deposit params   | `{"exactField":"TOKEN0",...}`                           |
+| `fee`             | JSON with fee tier         | `{"feeAmount":3000,"tickSpacing":60,"isDynamic":false}` |
+| `hook`            | V4 hook address (optional) | `0x...` or `undefined`                                  |
+| `step`            | Flow step                  | `1`                                                     |
 
 **URL Encoding**: Only encode quotes (`"` → `%22`). Do NOT encode `{}`, `:`, or `,`.
 
 ### Chain Names for URLs
 
-| Chain | URL Parameter |
-|-------|---------------|
-| Ethereum | `ethereum` |
-| Base | `base` |
-| Arbitrum | `arbitrum` |
-| Optimism | `optimism` |
-| Polygon | `polygon` |
-| BNB Chain | `bnb` |
-| Avalanche | `avalanche` |
-| Celo | `celo` |
-| Blast | `blast` |
-| Zora | `zora` |
+| Chain     | URL Parameter |
+| --------- | ------------- |
+| Ethereum  | `ethereum`    |
+| Base      | `base`        |
+| Arbitrum  | `arbitrum`    |
+| Optimism  | `optimism`    |
+| Polygon   | `polygon`     |
+| BNB Chain | `bnb`         |
+| Avalanche | `avalanche`   |
+| Celo      | `celo`        |
+| Blast     | `blast`       |
+| Zora      | `zora`        |
 
 ## On-Chain Verification
 
@@ -65,8 +65,8 @@ Skills should verify token contracts before generating deep links:
 
 ```typescript
 // Basic verification - check contract exists
-const code = await client.getCode({ address: tokenAddress })
-const isContract = code !== '0x' && code !== undefined
+const code = await client.getCode({ address: tokenAddress });
+const isContract = code !== '0x' && code !== undefined;
 ```
 
 ## Output Format
@@ -81,6 +81,7 @@ Example output:
 
 ```markdown
 ## Swap Summary
+
 - **From**: 1 ETH on Base
 - **To**: ~3,200 USDC (estimated)
 - **Slippage**: Default (0.5%)

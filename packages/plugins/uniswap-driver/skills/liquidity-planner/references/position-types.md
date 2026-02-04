@@ -4,21 +4,21 @@ Comprehensive reference for Uniswap V2, V3, and V4 liquidity positions.
 
 ## Version Comparison
 
-| Feature | V2 | V3 | V4 |
-|---------|----|----|----|
-| Liquidity Type | Full Range | Concentrated | Concentrated |
-| Price Ranges | No | Yes | Yes |
-| Position Representation | ERC-20 LP Token | NFT | NFT |
-| Fee Tiers | 0.3% fixed | 0.01%, 0.05%, 0.3%, 1% | Dynamic (with hooks) |
-| Hooks Support | No | No | Yes |
-| Capital Efficiency | 1x | Up to 4000x | Up to 4000x+ |
-| Gas Costs | Low | Medium | Medium |
+| Feature                 | V2              | V3                     | V4                   |
+| ----------------------- | --------------- | ---------------------- | -------------------- |
+| Liquidity Type          | Full Range      | Concentrated           | Concentrated         |
+| Price Ranges            | No              | Yes                    | Yes                  |
+| Position Representation | ERC-20 LP Token | NFT                    | NFT                  |
+| Fee Tiers               | 0.3% fixed      | 0.01%, 0.05%, 0.3%, 1% | Dynamic (with hooks) |
+| Hooks Support           | No              | No                     | Yes                  |
+| Capital Efficiency      | 1x              | Up to 4000x            | Up to 4000x+         |
+| Gas Costs               | Low             | Medium                 | Medium               |
 
 ## V2 Positions
 
 ### V2 Basics
 
-V2 uses the constant product formula (x * y = k) across the entire price range.
+V2 uses the constant product formula (x \* y = k) across the entire price range.
 
 **Pros:**
 
@@ -60,12 +60,12 @@ V3 allows LPs to concentrate liquidity within custom price ranges, dramatically 
 
 ### Fee Tiers
 
-| Fee | Tick Spacing | Best For | Typical Pairs |
-|-----|--------------|----------|---------------|
-| 0.01% (100) | 1 | Stablecoins | USDC/USDT, DAI/USDC |
-| 0.05% (500) | 10 | Correlated assets | ETH/stETH, WBTC/renBTC |
-| 0.30% (3000) | 60 | Most pairs | ETH/USDC, WBTC/ETH |
-| 1.00% (10000) | 200 | Exotic pairs | Long-tail tokens |
+| Fee           | Tick Spacing | Best For          | Typical Pairs          |
+| ------------- | ------------ | ----------------- | ---------------------- |
+| 0.01% (100)   | 1            | Stablecoins       | USDC/USDT, DAI/USDC    |
+| 0.05% (500)   | 10           | Correlated assets | ETH/stETH, WBTC/renBTC |
+| 0.30% (3000)  | 60           | Most pairs        | ETH/USDC, WBTC/ETH     |
+| 1.00% (10000) | 200          | Exotic pairs      | Long-tail tokens       |
 
 ### Tick Math
 
@@ -77,12 +77,12 @@ V3 uses discrete ticks to represent prices. Key concepts:
 
 **Tick ranges by fee tier:**
 
-| Fee | Tick Spacing | Min Tick | Max Tick |
-|-----|--------------|----------|----------|
-| 100 | 1 | -887272 | 887272 |
-| 500 | 10 | -887270 | 887270 |
-| 3000 | 60 | -887220 | 887220 |
-| 10000 | 200 | -887200 | 887200 |
+| Fee   | Tick Spacing | Min Tick | Max Tick |
+| ----- | ------------ | -------- | -------- |
+| 100   | 1            | -887272  | 887272   |
+| 500   | 10           | -887270  | 887270   |
+| 3000  | 60           | -887220  | 887220   |
+| 10000 | 200          | -887200  | 887200   |
 
 ### Price Range Strategies
 
@@ -201,18 +201,18 @@ V4 is newer and has limited pool availability. Check if a V4 pool exists before 
 
 ### Version Support by Chain
 
-| Chain | V2 | V3 | V4 |
-|-------|----|----|----|
-| Ethereum | ✅ | ✅ | ✅ |
-| Base | ❌ | ✅ | ✅ |
-| Arbitrum | ✅ | ✅ | ✅ |
-| Optimism | ❌ | ✅ | ✅ |
-| Polygon | ✅ | ✅ | 🔜 |
-| BNB Chain | ✅ | ✅ | 🔜 |
-| Avalanche | ❌ | ✅ | 🔜 |
-| Celo | ✅ | ✅ | ❌ |
-| Blast | ❌ | ✅ | ✅ |
-| Zora | ❌ | ✅ | ✅ |
+| Chain     | V2  | V3  | V4  |
+| --------- | --- | --- | --- |
+| Ethereum  | ✅  | ✅  | ✅  |
+| Base      | ❌  | ✅  | ✅  |
+| Arbitrum  | ✅  | ✅  | ✅  |
+| Optimism  | ❌  | ✅  | ✅  |
+| Polygon   | ✅  | ✅  | 🔜  |
+| BNB Chain | ✅  | ✅  | 🔜  |
+| Avalanche | ❌  | ✅  | 🔜  |
+| Celo      | ✅  | ✅  | ❌  |
+| Blast     | ❌  | ✅  | ✅  |
+| Zora      | ❌  | ✅  | ✅  |
 
 ### Recommendation by Chain
 
@@ -227,12 +227,12 @@ V4 is newer and has limited pool availability. Check if a V4 pool exists before 
 IL increases with range tightness and price movement:
 
 | Price Move | Full Range IL | ±50% Range IL | ±20% Range IL | ±10% Range IL |
-|------------|---------------|---------------|---------------|---------------|
-| ±10% | 0.11% | 0.22% | 0.55% | 1.10% |
-| ±25% | 0.64% | 1.28% | 3.20% | 100%* |
-| ±50% | 2.02% | 4.04% | 100%* | 100%* |
+| ---------- | ------------- | ------------- | ------------- | ------------- |
+| ±10%       | 0.11%         | 0.22%         | 0.55%         | 1.10%         |
+| ±25%       | 0.64%         | 1.28%         | 3.20%         | 100%\*        |
+| ±50%       | 2.02%         | 4.04%         | 100%\*        | 100%\*        |
 
-*100% means position is entirely in one asset (out of range)
+\*100% means position is entirely in one asset (out of range)
 
 ## Deep Link Parameter Reference
 
@@ -244,12 +244,12 @@ Only encode double quotes (`"` → `%22`). Do NOT encode braces `{}`, colons `:`
 
 ```typescript
 interface PriceRangeState {
-  priceInverted: boolean;   // false for normal price direction
-  fullRange: boolean;       // true for full range, false for custom
-  minPrice: string;         // Min price as string (empty for full range)
-  maxPrice: string;         // Max price as string (empty for full range)
-  initialPrice: string;     // Empty string for existing pools
-  inputMode: string;        // Always "price"
+  priceInverted: boolean; // false for normal price direction
+  fullRange: boolean; // true for full range, false for custom
+  minPrice: string; // Min price as string (empty for full range)
+  maxPrice: string; // Max price as string (empty for full range)
+  initialPrice: string; // Empty string for existing pools
+  inputMode: string; // Always "price"
 }
 ```
 
@@ -257,7 +257,7 @@ interface PriceRangeState {
 
 ```typescript
 interface DepositState {
-  exactField: 'TOKEN0' | 'TOKEN1';  // TOKEN0 = currencyA, TOKEN1 = currencyB
+  exactField: 'TOKEN0' | 'TOKEN1'; // TOKEN0 = currencyA, TOKEN1 = currencyB
   exactAmounts: {
     TOKEN0?: string;
     TOKEN1?: string;
@@ -269,9 +269,9 @@ interface DepositState {
 
 ```typescript
 interface FeeData {
-  feeAmount: number;    // Fee in hundredths of a bip (3000 = 0.3%)
-  tickSpacing: number;  // Tick spacing for the fee tier
-  isDynamic: boolean;   // false for V3, can be true for V4
+  feeAmount: number; // Fee in hundredths of a bip (3000 = 0.3%)
+  tickSpacing: number; // Tick spacing for the fee tier
+  isDynamic: boolean; // false for V3, can be true for V4
 }
 ```
 
