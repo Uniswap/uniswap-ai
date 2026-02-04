@@ -5,18 +5,46 @@
   "projectType": "library",
   "tags": ["type:evals"],
   "targets": {
+    "setup": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "./scripts/setup-evals-env.sh",
+        "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Setup evals .env from 1Password"
+      }
+    },
     "eval": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "npx tsx evals/framework/runner.ts",
-        "forwardAllArgs": true
+        "command": "set -a && [ -f .env ] && source .env && set +a && npx promptfoo eval -c suites/{args.suite}/promptfoo.yaml",
+        "cwd": "evals"
+      },
+      "configurations": {
+        "all": {
+          "command": "set -a && [ -f .env ] && source .env && set +a && npx promptfoo eval -c promptfoo.yaml"
+        }
       }
     },
-    "run": {
+    "eval:all": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "npx tsx evals/framework/runner.ts",
-        "forwardAllArgs": true
+        "command": "set -a && [ -f .env ] && source .env && set +a && for suite in suites/*/; do npx promptfoo eval -c \"$suite/promptfoo.yaml\" --output \"$suite/results.json\"; done",
+        "cwd": "evals"
+      }
+    },
+    "eval:view": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx promptfoo view",
+        "cwd": "evals"
+      }
+    },
+    "eval:cache-clear": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx promptfoo cache clear"
       }
     },
     "typecheck": {
