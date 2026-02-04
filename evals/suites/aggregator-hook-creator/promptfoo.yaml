@@ -8,7 +8,7 @@ prompts:
 # Provider configuration
 # Uses default from root config, can override here for suite-specific models
 providers:
-  - id: file://../../scripts/anthropic-provider.ts:AnthropicProvider
+  - id: anthropic:claude-sonnet-4-20250514
     config:
       temperature: 0
 
@@ -21,7 +21,7 @@ defaultTest:
     - type: llm-rubric
       value: file://rubrics/security.md
       threshold: 1.0
-      provider: file://../../scripts/anthropic-provider.ts:AnthropicProvider
+      provider: anthropic:claude-sonnet-4-20250514
 
 # Test cases with specific assertions
 tests:
@@ -32,13 +32,13 @@ tests:
       - type: llm-rubric
         value: file://rubrics/correctness.md
         threshold: 0.8
-        provider: file://../../scripts/anthropic-provider.ts:AnthropicProvider
+        provider: anthropic:claude-sonnet-4-20250514
 
       # Completeness rubric
       - type: llm-rubric
         value: file://rubrics/completeness.md
         threshold: 0.85
-        provider: file://../../scripts/anthropic-provider.ts:AnthropicProvider
+        provider: anthropic:claude-sonnet-4-20250514
 
       # Deterministic checks for required patterns
       - type: contains

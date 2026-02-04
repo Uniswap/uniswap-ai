@@ -54,7 +54,7 @@ mkdir -p evals
 
 # Fetch the .env content from 1Password note
 echo "Fetching .env from 1Password..."
-op item get "$OP_ITEM" --fields notesPlain --format json | jq -r '.value' > "$ENV_FILE" 2>/dev/null || {
+ENV_CONTENT=$(op item get "$OP_ITEM" --fields notesPlain --format json | jq -r '.value' 2>/dev/null) || {
     log_error "Failed to read .env from 1Password"
     echo ""
     echo "Make sure you have access to: $OP_ITEM"
@@ -63,6 +63,17 @@ op item get "$OP_ITEM" --fields notesPlain --format json | jq -r '.value' > "$EN
     echo "  op item get '$OP_ITEM'"
     exit 1
 }
+
+# Write the content to the .env file
+echo "$ENV_CONTENT" > "$ENV_FILE"
+
+# If CLAUDE_CODE_OAUTH_TOKEN is set but ANTHROPIC_API_KEY isn't, add an alias
+# This allows the built-in Promptfoo anthropic provider to use the OAuth token
+if grep -q "CLAUDE_CODE_OAUTH_TOKEN" "$ENV_FILE" && ! grep -q "ANTHROPIC_API_KEY" "$ENV_FILE"; then
+    TOKEN=$(grep "CLAUDE_CODE_OAUTH_TOKEN" "$ENV_FILE" | cut -d'=' -f2-)
+    echo "ANTHROPIC_API_KEY=$TOKEN" >> "$ENV_FILE"
+    log_info "Added ANTHROPIC_API_KEY alias for OAuth token"
+fi
 
 log_info "Created $ENV_FILE"
 

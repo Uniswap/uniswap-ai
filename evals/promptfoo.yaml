@@ -1,10 +1,10 @@
 # yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
 description: 'Uniswap AI Plugin Evaluations'
 
-# Default provider with OAuth support
-# Auth: Uses ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN
+# Default provider
+# Auth: Uses ANTHROPIC_API_KEY (run `nx run evals:setup` to configure from 1Password)
 providers:
-  - id: file://scripts/anthropic-provider.ts:AnthropicProvider
+  - id: anthropic:claude-sonnet-4-20250514
     config:
       temperature: 0
 
