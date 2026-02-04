@@ -205,7 +205,7 @@ For token symbols, resolve to addresses using known tokens or web search:
 
 **Native tokens**: Use `NATIVE` as the address parameter.
 
-**Common tokens by chain** - see `references/chains.md` for full list:
+**Common tokens by chain** - see `../../references/chains.md` for full list:
 
 | Token | Ethereum                                     | Base                                         | Arbitrum                                     |
 | ----- | -------------------------------------------- | -------------------------------------------- | -------------------------------------------- |
@@ -229,13 +229,15 @@ curl -s -X POST <rpc_url> \
 
 If the result is `0x` or empty, the address is not a valid contract.
 
-**Alternative with cast** (if Foundry is installed):
+**Alternative with cast** (optional, requires [Foundry](https://book.getfoundry.sh/)):
 
 ```bash
 cast code <token_address> --rpc-url <rpc_url>
 ```
 
-**RPC URLs by chain** - see `references/chains.md` for full list.
+**Note:** The curl/RPC method above is preferred for broader compatibility. Only use `cast` if already available in the environment.
+
+**RPC URLs by chain** - see `../../references/chains.md` for full list.
 
 ### Step 4: Research (If Needed)
 
@@ -335,7 +337,15 @@ xdg-open "https://app.uniswap.org/swap?chain=base&inputCurrency=NATIVE&outputCur
 open "https://app.uniswap.org/swap?..."
 ```
 
-Always open the browser after presenting the summary so users can review and execute.
+**Environment limitations:** Browser opening may fail in remote SSH, containerized, or headless environments. If `xdg-open`/`open` fails, display the full URL prominently so users can copy and paste it manually:
+
+```markdown
+**[Click here to open in Uniswap](https://app.uniswap.org/swap?...)**
+
+Or copy this URL: `https://app.uniswap.org/swap?...`
+```
+
+Always present the summary and URL so users can review and execute.
 
 ## Important Considerations
 
@@ -375,7 +385,7 @@ All chains supported by the Uniswap interface:
 
 ### Reference Files
 
-- **`references/chains.md`** - Chain IDs, RPC URLs, native tokens, common token addresses
+- **`../../references/chains.md`** - Chain IDs, RPC URLs, native tokens, common token addresses
 - **`references/data-providers.md`** - DexScreener and DefiLlama APIs for prices and liquidity
 
 ### Examples

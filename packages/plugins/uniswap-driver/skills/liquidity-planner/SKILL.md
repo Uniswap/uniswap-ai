@@ -82,7 +82,7 @@ Always use forms instead of plain text questions for better UX.
 
 ### Step 2: Resolve Token Addresses
 
-Resolve token symbols to addresses. See `references/chains.md` for common tokens by chain.
+Resolve token symbols to addresses. See `../../references/chains.md` for common tokens by chain.
 
 For unknown tokens, use web search and verify on-chain.
 
@@ -403,7 +403,15 @@ xdg-open "https://app.uniswap.org/positions/create?currencyA=NATIVE&currencyB=0x
 open "https://app.uniswap.org/positions/create?..."
 ```
 
-Always open the browser after presenting the summary so users can review and create the position.
+**Environment limitations:** Browser opening may fail in remote SSH, containerized, or headless environments. If `xdg-open`/`open` fails, display the full URL prominently so users can copy and paste it manually:
+
+```markdown
+**[Click here to open in Uniswap](https://app.uniswap.org/positions/create?...)**
+
+Or copy this URL: `https://app.uniswap.org/positions/create?...`
+```
+
+Always present the summary and URL so users can review and create the position.
 
 ## Version Selection
 
@@ -448,7 +456,7 @@ All Uniswap-supported chains - see `references/position-types.md` for version av
 
 ### Reference Files
 
-- **`references/chains.md`** - Chain configuration and token addresses (shared with swap-planner)
+- **`../../references/chains.md`** - Chain configuration and token addresses (shared with swap-planner)
 - **`references/position-types.md`** - V2/V3/V4 differences, fee tiers, tick spacing
 - **`references/data-providers.md`** - DexScreener and DefiLlama APIs for pool discovery and yields
 
