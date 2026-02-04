@@ -185,11 +185,11 @@ Pass rate must be ≥85% for PR to pass. Results include inference cost tracking
 
 ## npm Version Requirement
 
-**CRITICAL: This project requires npm 11.7.0**
+**CRITICAL: This project requires npm >=11.7.0**
 
 ```bash
-npm install -g npm@11.7.0
-npm --version  # Should output: 11.7.0
+npm install -g npm@latest
+npm --version  # Should output: 11.7.0 or higher
 ```
 
 ## GitHub Actions Best Practices

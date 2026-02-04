@@ -61,8 +61,22 @@ jobs:
         run: |
           cd evals
 
-          # Determine which suites to run
+          # Verify required dependencies
+          command -v jq >/dev/null 2>&1 || { echo "::error::jq is required but not installed"; exit 1; }
+          command -v bc >/dev/null 2>&1 || { echo "::error::bc is required but not installed"; exit 1; }
+
+          # Verify suites directory exists
+          if [ ! -d "suites" ]; then
+            echo "::error::evals/suites directory not found"
+            exit 1
+          fi
+
+          # Validate suite input (only alphanumeric, dash, and underscore allowed)
           if [ -n "$SUITE_INPUT" ]; then
+            if ! echo "$SUITE_INPUT" | grep -qE '^[a-zA-Z0-9_-]+$'; then
+              echo "::error::Invalid suite name. Only alphanumeric, dash, and underscore allowed"
+              exit 1
+            fi
             echo "Running specific suite: $SUITE_INPUT"
             SUITES="suites/$SUITE_INPUT"
           else
@@ -120,7 +134,7 @@ jobs:
           if [ "$TOTAL" -gt 0 ]; then
             PASS_RATE=$(echo "scale=2; $TOTAL_PASS * 100 / $TOTAL" | bc -l)
           else
-            PASS_RATE="N/A"
+            PASS_RATE="0"
           fi
 
           # Output summary

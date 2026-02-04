@@ -44,6 +44,23 @@ function getAnthropicClient(): Anthropic {
 }
 
 /**
+ * Model pricing per 1M tokens (as of 2025)
+ * Source: https://www.anthropic.com/pricing
+ */
+const MODEL_PRICING: Record<string, { input: number; output: number }> = {
+  'claude-sonnet-4-20250514': { input: 3, output: 15 },
+  'claude-opus-4-20250514': { input: 15, output: 75 },
+  'claude-haiku-3-5-20241022': { input: 0.8, output: 4 },
+};
+
+/**
+ * Get pricing for a model, with fallback to Sonnet pricing
+ */
+function getModelPricing(model: string): { input: number; output: number } {
+  return MODEL_PRICING[model] ?? MODEL_PRICING['claude-sonnet-4-20250514'];
+}
+
+/**
  * Custom Anthropic provider for Promptfoo evaluations
  */
 export class AnthropicProvider implements ApiProvider {
@@ -82,9 +99,10 @@ export class AnthropicProvider implements ApiProvider {
           ? response.content[0].text
           : JSON.stringify(response.content[0]);
 
-      // Calculate cost based on token usage
-      const inputCost = (response.usage.input_tokens / 1_000_000) * 3; // $3 per 1M input tokens (Sonnet)
-      const outputCost = (response.usage.output_tokens / 1_000_000) * 15; // $15 per 1M output tokens (Sonnet)
+      // Calculate cost based on token usage and model-specific pricing
+      const pricing = getModelPricing(this.model);
+      const inputCost = (response.usage.input_tokens / 1_000_000) * pricing.input;
+      const outputCost = (response.usage.output_tokens / 1_000_000) * pricing.output;
       const totalCost = inputCost + outputCost;
 
       return {
