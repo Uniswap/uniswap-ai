@@ -18,19 +18,19 @@
     "eval": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "npx promptfoo eval -c suites/{args.suite}/promptfoo.yaml",
+        "command": "set -a && [ -f .env ] && source .env && set +a && npx promptfoo eval -c suites/{args.suite}/promptfoo.yaml",
         "cwd": "evals"
       },
       "configurations": {
         "all": {
-          "command": "npx promptfoo eval -c promptfoo.yaml"
+          "command": "set -a && [ -f .env ] && source .env && set +a && npx promptfoo eval -c promptfoo.yaml"
         }
       }
     },
     "eval:all": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "for suite in suites/*/; do npx promptfoo eval -c \"$suite/promptfoo.yaml\" --output \"$suite/results.json\"; done",
+        "command": "set -a && [ -f .env ] && source .env && set +a && for suite in suites/*/; do npx promptfoo eval -c \"$suite/promptfoo.yaml\" --output \"$suite/results.json\"; done",
         "cwd": "evals"
       }
     },
