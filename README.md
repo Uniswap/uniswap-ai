@@ -112,6 +112,18 @@ Contributions are welcome. Please ensure:
 2. New skills include eval suites
 3. Documentation is updated
 
+### Automated Checks
+
+PRs are automatically validated by several workflows:
+
+- **PR Checks** - Build, lint, test, and plugin validation
+- **Claude Code Review** - AI-powered code review with inline comments
+- **Claude Docs Check** - Validates CLAUDE.md and README updates, ensures plugin version bumps
+
+If the docs check flags missing documentation updates, you can apply the suggested changes directly from the PR comments.
+
+See [.github/workflows/CLAUDE.md](.github/workflows/CLAUDE.md) for detailed CI documentation.
+
 ## License
 
 MIT License - see [LICENSE](./LICENSE) for details.
