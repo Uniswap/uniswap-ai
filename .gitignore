@@ -55,3 +55,6 @@ bun.lock
 
 # Local Nx cache
 .nx/cache
+
+# Python
+**/__pycache__/**
