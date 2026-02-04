@@ -5,6 +5,16 @@
   "projectType": "library",
   "tags": ["type:evals"],
   "targets": {
+    "setup": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "./scripts/setup-evals-env.sh",
+        "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Setup evals .env from 1Password"
+      }
+    },
     "eval": {
       "executor": "nx:run-commands",
       "options": {

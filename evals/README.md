@@ -45,7 +45,21 @@ evals/
     └── suite/
 ```
 
-## Running Evals
+## Quick Start
+
+### 1. Setup Authentication
+
+```bash
+# Option A: Use 1Password (recommended for team)
+nx run evals:setup
+
+# Option B: Set environment variable directly
+export ANTHROPIC_API_KEY="sk-ant-..."
+# OR
+export CLAUDE_CODE_OAUTH_TOKEN="..."
+```
+
+### 2. Run Evals
 
 ```bash
 # Run a specific suite
@@ -63,14 +77,24 @@ nx run evals:eval:cache-clear
 
 ### Authentication
 
-Evals support two authentication methods:
+Evals support two authentication methods (API key takes priority if both set):
+
+| Method      | Environment Variable      | Use Case          |
+| ----------- | ------------------------- | ----------------- |
+| API Key     | `ANTHROPIC_API_KEY`       | CI, production    |
+| OAuth Token | `CLAUDE_CODE_OAUTH_TOKEN` | Local development |
+
+#### Setup with 1Password
+
+The setup script fetches secrets from 1Password (requires [1Password CLI](https://developer.1password.com/docs/cli/get-started)):
 
 ```bash
-# Option 1: Direct Anthropic API key
-export ANTHROPIC_API_KEY=sk-ant-...
+# One-time setup
+eval $(op signin)
+nx run evals:setup
 
-# Option 2: Claude Code OAuth token
-export CLAUDE_CODE_OAUTH_TOKEN=<token>
+# Then run evals
+nx run evals:eval --suite=aggregator-hook-creator
 ```
 
 ## Writing Evals

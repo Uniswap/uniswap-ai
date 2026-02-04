@@ -130,32 +130,29 @@ evals/
 └── templates/              # Templates for new suites
 ```
 
+### Setup (One-Time)
+
+```bash
+# Requires 1Password CLI (https://developer.1password.com/docs/cli/get-started)
+eval $(op signin)
+nx run evals:setup
+```
+
+Or set environment variables directly:
+
+```bash
+export ANTHROPIC_API_KEY=sk-ant-...       # CI, production
+# OR
+export CLAUDE_CODE_OAUTH_TOKEN=<token>    # Local development
+```
+
 ### Running Evals
 
 ```bash
-# Run a specific suite
-nx run evals:eval --suite=aggregator-hook-creator
-
-# Run all suites
-nx run evals:eval:all
-
-# View results in browser
-nx run evals:eval:view
-
-# Clear eval cache
-nx run evals:eval:cache-clear
-```
-
-### Authentication
-
-Evals support two authentication methods:
-
-```bash
-# Option 1: Direct API key
-export ANTHROPIC_API_KEY=sk-ant-...
-
-# Option 2: Claude Code OAuth token
-export CLAUDE_CODE_OAUTH_TOKEN=<token>
+nx run evals:eval --suite=aggregator-hook-creator  # Run specific suite
+nx run evals:eval:all                               # Run all suites
+nx run evals:eval:view                              # Open results viewer
+nx run evals:eval:cache-clear                       # Clear cache
 ```
 
 ### Creating New Eval Suites
