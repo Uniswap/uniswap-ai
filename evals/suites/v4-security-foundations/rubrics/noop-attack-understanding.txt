@@ -1,0 +1,42 @@
+# NoOp Rug Pull Attack Understanding Rubric
+
+Evaluate whether the response correctly explains the NoOp rug pull attack vector in Uniswap V4 hooks.
+
+## Required Elements (Must Include)
+
+Score based on how many of these are correctly explained:
+
+1. **beforeSwapReturnDelta Permission Identification**
+   - Correctly identifies beforeSwapReturnDelta (or BEFORE_SWAP_RETURNS_DELTA) as the dangerous permission
+   - Explains this is the "most dangerous" or "critical risk" permission
+
+2. **Attack Mechanism Explanation**
+   - Explains that the hook can return a delta claiming to handle the entire swap
+   - Explains that PoolManager accepts this and settles without actual token provision
+   - Explains the user loses their input tokens
+
+3. **Detection Strategies**
+   - Recommends auditing hook code before interaction
+   - Recommends checking ownership/upgradeability
+   - Recommends testing with minimal amounts
+
+4. **Legitimate Use Cases**
+   - Identifies valid uses: JIT liquidity, custom AMM curves, intent systems, RFQ/PMM
+   - Distinguishes these from malicious implementations
+
+5. **Mitigation Recommendations**
+   - Provides actionable security recommendations
+   - Emphasizes the need for professional audits for hooks with this permission
+
+## Scoring Guide
+
+- 5/5 elements correct: 1.0
+- 4/5 elements correct: 0.85
+- 3/5 elements correct: 0.7
+- 2/5 elements correct: 0.5
+- 1/5 elements correct: 0.3
+- 0/5 elements correct: 0.0
+
+## Instructions
+
+Evaluate the response for technical accuracy and completeness in explaining the NoOp attack vector. The response should help developers and users understand this critical vulnerability.
