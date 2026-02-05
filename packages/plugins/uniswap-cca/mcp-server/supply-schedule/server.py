@@ -49,9 +49,9 @@ class GenerateScheduleInput(BaseModel):
     )
     final_block_pct: float = Field(
         default=DEFAULT_FINAL_BLOCK_PCT,
-        description=f"Percentage of supply for final block (default: {DEFAULT_FINAL_BLOCK_PCT})",
-        gt=0,
-        lt=1
+        description=f"Percentage of supply for final block (default: {DEFAULT_FINAL_BLOCK_PCT}, range: 0.1-0.9)",
+        gt=0.1,
+        lt=0.9
     )
     alpha: float = Field(
         default=DEFAULT_ALPHA,
@@ -163,6 +163,14 @@ def generate_schedule(
     final_tokens = TOTAL_TARGET - cumulative_tokens
     schedule.append({"mps": final_tokens, "blockDelta": 1})
 
+    # Validate that rounding didn't cause supply loss
+    actual_total = sum(entry["mps"] * entry["blockDelta"] for entry in schedule)
+    if actual_total != TOTAL_TARGET:
+        raise ValueError(
+            f"Schedule totals {actual_total} MPS, expected {TOTAL_TARGET}. "
+            f"Try reducing round_to_nearest or adjusting num_steps to avoid zero-duration blocks."
+        )
+
     return schedule
 
 
@@ -247,9 +255,9 @@ async def list_tools() -> list[Tool]:
                     },
                     "final_block_pct": {
                         "type": "number",
-                        "description": f"Percentage of supply for final block as decimal (default: {DEFAULT_FINAL_BLOCK_PCT})",
-                        "minimum": 0,
-                        "maximum": 1,
+                        "description": f"Percentage of supply for final block as decimal (default: {DEFAULT_FINAL_BLOCK_PCT}, range: 0.1-0.9)",
+                        "minimum": 0.1,
+                        "maximum": 0.9,
                         "default": DEFAULT_FINAL_BLOCK_PCT
                     },
                     "alpha": {

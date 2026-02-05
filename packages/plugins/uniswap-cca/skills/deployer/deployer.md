@@ -67,6 +67,80 @@ This deployment guide is provided **for educational purposes only**. AI-generate
 
 ---
 
+## 🔐 Private Key Security
+
+**CRITICAL: Handling private keys safely is essential for secure deployments.**
+
+### ⚠️ Never Do These
+
+- ❌ **Never** store private keys in git repositories or config files
+- ❌ **Never** paste private keys directly in command line (visible in shell history)
+- ❌ **Never** share private keys or store them in shared environments
+- ❌ **Never** use mainnet private keys on untrusted computers
+
+### ✅ Recommended Practices
+
+#### Option 1: Hardware Wallets (Most Secure)
+
+Use Ledger or Trezor hardware wallets with the `--ledger` flag:
+
+```bash
+forge script script/Example.s.sol:ExampleScript \
+  --rpc-url $RPC_URL \
+  --broadcast \
+  --ledger
+```
+
+#### Option 2: Encrypted Keystore
+
+Create an encrypted keystore with `cast wallet import`:
+
+```bash
+# Import private key to encrypted keystore (one-time setup)
+cast wallet import deployer --interactive
+
+# Use keystore for deployment
+forge script script/Example.s.sol:ExampleScript \
+  --rpc-url $RPC_URL \
+  --broadcast \
+  --account deployer \
+  --sender $DEPLOYER_ADDRESS
+```
+
+#### Option 3: Environment Variables (For Testing Only)
+
+If using environment variables, ensure they are:
+
+- Set in a secure `.env` file (never committed to git)
+- Loaded via `source .env` or `dotenv`
+- Only used on trusted, secure computers
+- Use testnet keys for development
+
+**Example:**
+
+```bash
+# .env file (add to .gitignore)
+PRIVATE_KEY=0x...
+RPC_URL=https://...
+
+# Load environment
+source .env
+
+# Deploy
+forge script ... --private-key $PRIVATE_KEY
+```
+
+### Testnet First
+
+**Always test on testnets before mainnet:**
+
+- Sepolia (testnet): Get free ETH from faucets
+- Base Sepolia: Free ETH for testing on Base
+- Deploy and verify full workflow on testnet
+- Only deploy to mainnet after thorough testing
+
+---
+
 ## Deployment Guide
 
 ### Factory Deployment

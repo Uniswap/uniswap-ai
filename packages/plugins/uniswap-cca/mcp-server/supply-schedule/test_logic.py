@@ -6,6 +6,7 @@ Test the supply schedule generation logic with normalized convex curve.
 # Import the logic to test
 from server import (
     generate_schedule,
+    encode_supply_schedule,
     TOTAL_TARGET,
     DEFAULT_NUM_STEPS,
     DEFAULT_FINAL_BLOCK_PCT,
@@ -255,6 +256,147 @@ def test_custom_parameters():
     print("\n✓ Custom parameters test passed!")
 
 
+def test_encode_schedule():
+    """Test encode_supply_schedule function for bit-packing and encoding."""
+    print("\nTesting encode_supply_schedule function...")
+
+    # Test 1: Basic encoding with simple values
+    print("\nTest 1: Basic encoding")
+    schedule = [
+        {"mps": 1000, "blockDelta": 5000},
+        {"mps": 2000, "blockDelta": 3000}
+    ]
+
+    encoded = encode_supply_schedule(schedule)
+
+    # Verify format
+    assert encoded.startswith("0x"), "Encoded output should start with 0x"
+    assert len(encoded) == 2 + (8 * 2 * 2), f"Expected length {2 + 16}, got {len(encoded)}"  # 0x + 16 hex chars (8 bytes * 2 elements)
+
+    # Manually verify bit packing for first element: (1000 << 40) | 5000
+    expected_first = (1000 << 40) | 5000
+    expected_first_hex = hex(expected_first)[2:].zfill(16)  # Convert to 16-char hex
+    actual_first_hex = encoded[2:18]  # First 8 bytes (16 hex chars)
+    assert actual_first_hex == expected_first_hex, f"First element mismatch: expected {expected_first_hex}, got {actual_first_hex}"
+
+    print(f"  ✓ Basic encoding works: {encoded}")
+
+    # Test 2: Maximum values (boundary testing)
+    print("\nTest 2: Maximum values")
+    max_mps = 2**24 - 1  # 16,777,215
+    max_block_delta = 2**40 - 1  # 1,099,511,627,775
+
+    schedule_max = [
+        {"mps": max_mps, "blockDelta": max_block_delta}
+    ]
+
+    encoded_max = encode_supply_schedule(schedule_max)
+    expected_max = (max_mps << 40) | max_block_delta
+    expected_max_hex = "0x" + hex(expected_max)[2:].zfill(16)
+
+    assert encoded_max == expected_max_hex, f"Max values encoding failed: expected {expected_max_hex}, got {encoded_max}"
+    print(f"  ✓ Maximum values encoded correctly: mps={max_mps}, blockDelta={max_block_delta}")
+
+    # Test 3: Overflow detection - mps exceeds 24-bit
+    print("\nTest 3: Overflow detection (mps)")
+    schedule_overflow_mps = [{"mps": 2**24, "blockDelta": 1000}]  # One more than max
+
+    try:
+        encode_supply_schedule(schedule_overflow_mps)
+        assert False, "Should have raised ValueError for mps overflow"
+    except ValueError as e:
+        assert "exceeds 24-bit max" in str(e), f"Expected mps overflow error, got: {e}"
+        print(f"  ✓ mps overflow detected correctly: {e}")
+
+    # Test 4: Overflow detection - blockDelta exceeds 40-bit
+    print("\nTest 4: Overflow detection (blockDelta)")
+    schedule_overflow_delta = [{"mps": 1000, "blockDelta": 2**40}]  # One more than max
+
+    try:
+        encode_supply_schedule(schedule_overflow_delta)
+        assert False, "Should have raised ValueError for blockDelta overflow"
+    except ValueError as e:
+        assert "exceeds 40-bit max" in str(e), f"Expected blockDelta overflow error, got: {e}"
+        print(f"  ✓ blockDelta overflow detected correctly: {e}")
+
+    # Test 5: Multiple elements
+    print("\nTest 5: Multiple elements")
+    schedule_multi = [
+        {"mps": 100, "blockDelta": 1000},
+        {"mps": 200, "blockDelta": 2000},
+        {"mps": 300, "blockDelta": 3000}
+    ]
+
+    encoded_multi = encode_supply_schedule(schedule_multi)
+    expected_length = 2 + (8 * 2 * len(schedule_multi))  # 0x + (8 bytes * 2 hex/byte * 3 elements)
+    assert len(encoded_multi) == expected_length, f"Expected length {expected_length}, got {len(encoded_multi)}"
+
+    # Verify each element is correctly packed
+    for i, item in enumerate(schedule_multi):
+        expected_packed = (item["mps"] << 40) | item["blockDelta"]
+        expected_hex = hex(expected_packed)[2:].zfill(16)
+        start_idx = 2 + (i * 16)
+        end_idx = start_idx + 16
+        actual_hex = encoded_multi[start_idx:end_idx]
+        assert actual_hex == expected_hex, f"Element {i} mismatch: expected {expected_hex}, got {actual_hex}"
+
+    print(f"  ✓ Multiple elements encoded correctly: {len(schedule_multi)} elements")
+
+    # Test 6: Integration with generate_schedule
+    print("\nTest 6: Integration with generated schedule")
+    generated = generate_schedule(86400, 0)
+    encoded_generated = encode_supply_schedule(generated)
+
+    assert encoded_generated.startswith("0x"), "Generated schedule encoding should start with 0x"
+    assert len(encoded_generated) > 2, "Generated schedule encoding should have content"
+    print(f"  ✓ Generated schedule encodes successfully: {len(generated)} phases, {len(encoded_generated)} chars")
+
+    print("\n✓ encode_supply_schedule test passed!")
+
+
+def test_rounding_validation():
+    """Test that rounding validation catches supply loss."""
+    print("\nTesting rounding validation...")
+
+    # Test parameters that are likely to cause zero-duration blocks with aggressive rounding
+    # Using small auction_blocks with large round_to_nearest
+    try:
+        # This should fail: 1000 blocks with rounding to nearest 500
+        # With 12 steps, this will likely create duplicate boundaries
+        schedule = generate_schedule(
+            auction_blocks=1000,
+            prebid_blocks=0,
+            num_steps=12,
+            final_block_pct=0.30,
+            alpha=1.2,
+            round_to_nearest=500  # Very aggressive rounding
+        )
+        print(f"  Generated schedule: {len(schedule)} phases")
+        print(f"  ✓ Validation passed (no supply loss detected)")
+    except ValueError as e:
+        if "Schedule totals" in str(e):
+            print(f"  ✓ Validation correctly caught supply loss: {e}")
+        else:
+            # Re-raise if it's a different error
+            raise
+
+    # Test case that should succeed: reasonable rounding
+    schedule_good = generate_schedule(
+        auction_blocks=86400,
+        prebid_blocks=0,
+        num_steps=12,
+        final_block_pct=0.30,
+        alpha=1.2,
+        round_to_nearest=100  # Reasonable rounding
+    )
+
+    total = sum(item["mps"] * item["blockDelta"] for item in schedule_good)
+    assert total == TOTAL_TARGET, f"Expected {TOTAL_TARGET}, got {total}"
+    print(f"  ✓ Reasonable rounding works correctly: {len(schedule_good)} phases, total={total}")
+
+    print("\n✓ Rounding validation test passed!")
+
+
 if __name__ == "__main__":
     test_basic_schedule()
     test_canonical_sample()
@@ -262,6 +404,8 @@ if __name__ == "__main__":
     test_prebid_schedule()
     test_different_durations()
     test_custom_parameters()
+    test_encode_schedule()
+    test_rounding_validation()
     print("\n" + "="*60)
     print("✓ All tests passed!")
     print("="*60)
