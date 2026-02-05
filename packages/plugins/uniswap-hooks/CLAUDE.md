@@ -2,12 +2,13 @@
 
 ## Overview
 
-This plugin provides AI-powered assistance for creating Uniswap V4 hooks. It helps developers design, implement, and test custom hooks for the Uniswap V4 protocol.
+This plugin provides AI-powered, security-first assistance for creating Uniswap V4 hooks. It helps developers design, implement, and test custom hooks for the Uniswap V4 protocol with a strong emphasis on security best practices.
 
 ## Plugin Components
 
 ### Skills (./skills/)
 
+- **v4-security-foundations**: Security-first guide for V4 hook development (NoOp attacks, delta accounting, access control, audit checklists)
 - **aggregator-hook-creator**: Create custom aggregator hooks that route through multiple liquidity sources
 
 ## Uniswap V4 Hooks Architecture
@@ -16,18 +17,18 @@ Hooks are smart contracts that can intercept and modify pool actions at specific
 
 ### Hook Callbacks
 
-| Callback | When Called | Use Case |
-|----------|-------------|----------|
-| `beforeInitialize` | Before pool creation | Validate pool parameters |
-| `afterInitialize` | After pool creation | Set up hook state |
-| `beforeAddLiquidity` | Before LP deposit | Custom fee logic |
-| `afterAddLiquidity` | After LP deposit | Update rewards |
-| `beforeRemoveLiquidity` | Before LP withdrawal | Lock periods |
-| `afterRemoveLiquidity` | After LP withdrawal | Distribute rewards |
-| `beforeSwap` | Before swap execution | Price oracles, routing |
-| `afterSwap` | After swap execution | MEV protection, analytics |
-| `beforeDonate` | Before donation | Access control |
-| `afterDonate` | After donation | Track donations |
+| Callback                | When Called           | Use Case                  |
+| ----------------------- | --------------------- | ------------------------- |
+| `beforeInitialize`      | Before pool creation  | Validate pool parameters  |
+| `afterInitialize`       | After pool creation   | Set up hook state         |
+| `beforeAddLiquidity`    | Before LP deposit     | Custom fee logic          |
+| `afterAddLiquidity`     | After LP deposit      | Update rewards            |
+| `beforeRemoveLiquidity` | Before LP withdrawal  | Lock periods              |
+| `afterRemoveLiquidity`  | After LP withdrawal   | Distribute rewards        |
+| `beforeSwap`            | Before swap execution | Price oracles, routing    |
+| `afterSwap`             | After swap execution  | MEV protection, analytics |
+| `beforeDonate`          | Before donation       | Access control            |
+| `afterDonate`           | After donation        | Track donations           |
 
 ### Hook Flags
 
