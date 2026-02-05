@@ -7,7 +7,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Uniswap/uniswap-ai.git",
+    "url": "https://github.com/uniswap/uniswap-ai.git",
     "directory": "packages/plugins/uniswap-hooks"
   },
   "keywords": [

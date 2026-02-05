@@ -6,7 +6,7 @@
     "name": "Uniswap Labs",
     "email": "ai-services@uniswap.org"
   },
-  "homepage": "https://github.com/Uniswap/uniswap-ai",
+  "homepage": "https://github.com/uniswap/uniswap-ai",
   "keywords": ["uniswap", "hooks", "v4", "defi", "solidity", "smart-contracts", "security"],
   "license": "MIT",
   "skills": ["./skills/v4-security-foundations", "./skills/aggregator-hook-creator"],

@@ -55,7 +55,7 @@ Or describe what you want:
 ### Via Claude Code Marketplace
 
 ```bash
-/plugin marketplace add Uniswap/uniswap-ai
+/plugin marketplace add uniswap/uniswap-ai
 /plugin install uniswap-hooks
 ```
 
