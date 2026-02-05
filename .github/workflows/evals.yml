@@ -45,7 +45,8 @@ jobs:
       - name: Install npm
         env:
           NPM_VERSION: ${{ vars.NPM_VERSION }}
-        # NPM_VERSION is a repository variable set by admins - same pattern as all other workflows
+        # NPM_VERSION is a repository variable controlled by admins
+        # Safe to use because: (1) admin-controlled (2) validated by npm version parser
         run: npm install -g "npm@$NPM_VERSION" # nosemgrep: uniswap.npm-package-in-action-not-pinned-to-commit-sha
 
       - name: Install dependencies
@@ -101,7 +102,7 @@ jobs:
             echo "::group::Running $suite_name"
 
             if [ ! -f "$suite_dir/promptfoo.yaml" ]; then
-              echo "Skipping $suite_name - no promptfoo.yaml found"
+              echo "::warning::Skipping $suite_name - no promptfoo.yaml found"
               echo "::endgroup::"
               continue
             fi
@@ -134,7 +135,7 @@ jobs:
           if [ "$TOTAL" -gt 0 ]; then
             PASS_RATE=$(echo "scale=2; $TOTAL_PASS * 100 / $TOTAL" | bc -l)
           else
-            PASS_RATE="0"
+            PASS_RATE=0
           fi
 
           # Output summary
