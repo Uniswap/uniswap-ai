@@ -81,6 +81,13 @@ uniswap-hooks/
 ├── .claude-plugin/
 │   └── plugin.json
 ├── skills/
+│   ├── v4-security-foundations/
+│   │   ├── v4-security-foundations.md
+│   │   ├── SKILL.md -> v4-security-foundations.md
+│   │   └── references/
+│   │       ├── audit-checklist.md
+│   │       ├── base-hook-template.md
+│   │       └── vulnerabilities-catalog.md
 │   └── aggregator-hook-creator/
 │       ├── aggregator-hook-creator.md
 │       └── SKILL.md -> aggregator-hook-creator.md
