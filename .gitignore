@@ -55,3 +55,8 @@ bun.lock
 
 # Local Nx cache
 .nx/cache
+
+# Devenv
+.devenv/
+devenv.lock
+.npm-global/
