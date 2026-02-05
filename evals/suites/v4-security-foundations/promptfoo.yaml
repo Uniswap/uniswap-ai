@@ -1,19 +1,26 @@
 # yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
 description: 'V4 Security Foundations Skill Evaluation'
 
-# Prompts (eval cases)
+# Prompts (eval cases) - each with id (file path) and label (for test filtering)
 prompts:
-  - file://cases/noop-rug-pull-identification.md
-  - file://cases/permission-flags-risk-assessment.md
-  - file://cases/delta-accounting-understanding.md
-  - file://cases/access-control-patterns.md
-  - file://cases/security-checklist-completeness.md
-  - file://cases/combined-vulnerability-code-review.md
-  - file://cases/delta-accounting-edge-cases.md
+  - id: file://cases/noop-rug-pull-identification.md
+    label: noop-rug-pull
+  - id: file://cases/permission-flags-risk-assessment.md
+    label: permission-flags
+  - id: file://cases/delta-accounting-understanding.md
+    label: delta-understanding
+  - id: file://cases/access-control-patterns.md
+    label: access-control
+  - id: file://cases/security-checklist-completeness.md
+    label: security-checklist
+  - id: file://cases/combined-vulnerability-code-review.md
+    label: combined-vulnerability
+  - id: file://cases/delta-accounting-edge-cases.md
+    label: delta-edge-cases
 
 # Provider configuration
 providers:
-  - id: anthropic:claude-sonnet-4-20250514
+  - id: anthropic:claude-sonnet-4-5-20250929
     config:
       temperature: 0
       max_tokens: 4096
@@ -24,15 +31,17 @@ defaultTest:
     timeout: 120000 # 2 minutes per case
 
 # Test cases with specific assertions
+# Each test uses 'prompts' filter to create 1:1 mapping with its corresponding prompt
 tests:
   # Test 1: NoOp Rug Pull Attack Identification
-  - vars:
+  - prompts: ['noop-rug-pull']
+    vars:
       scenario: noop-rug-pull-identification
     assert:
       - type: llm-rubric
         value: file://rubrics/noop-attack-understanding.txt
         threshold: 0.9
-        provider: anthropic:claude-sonnet-4-20250514
+        provider: anthropic:claude-sonnet-4-5-20250929
 
       # Must mention critical elements
       - type: contains-any
@@ -47,13 +56,14 @@ tests:
         value: 'PoolManager'
 
   # Test 2: Permission Flags Risk Assessment
-  - vars:
+  - prompts: ['permission-flags']
+    vars:
       scenario: permission-flags-risk-assessment
     assert:
       - type: llm-rubric
         value: file://rubrics/risk-assessment-quality.txt
         threshold: 0.85
-        provider: anthropic:claude-sonnet-4-20250514
+        provider: anthropic:claude-sonnet-4-5-20250929
 
       # Must categorize risk levels
       - type: contains-any
@@ -68,13 +78,14 @@ tests:
           - 'beforeRemoveLiquidity'
 
   # Test 3: Delta Accounting Understanding
-  - vars:
+  - prompts: ['delta-understanding']
+    vars:
       scenario: delta-accounting-understanding
     assert:
       - type: llm-rubric
         value: file://rubrics/delta-accounting-accuracy.txt
         threshold: 0.85
-        provider: anthropic:claude-sonnet-4-20250514
+        provider: anthropic:claude-sonnet-4-5-20250929
 
       # Must mention core delta functions
       - type: contains
@@ -85,13 +96,14 @@ tests:
           - 'sync'
 
   # Test 4: Access Control Pattern Recognition
-  - vars:
+  - prompts: ['access-control']
+    vars:
       scenario: access-control-patterns
     assert:
       - type: llm-rubric
         value: file://rubrics/access-control-correctness.txt
         threshold: 0.85
-        provider: anthropic:claude-sonnet-4-20250514
+        provider: anthropic:claude-sonnet-4-5-20250929
 
       # Must mention PoolManager verification
       - type: contains
@@ -100,13 +112,14 @@ tests:
         value: 'msg.sender'
 
   # Test 5: Security Checklist Completeness
-  - vars:
+  - prompts: ['security-checklist']
+    vars:
       scenario: security-checklist-completeness
     assert:
       - type: llm-rubric
         value: file://rubrics/checklist-completeness.txt
         threshold: 0.8
-        provider: anthropic:claude-sonnet-4-20250514
+        provider: anthropic:claude-sonnet-4-5-20250929
 
       # Must address multiple security domains
       - type: contains-any
@@ -120,13 +133,14 @@ tests:
           - 'onlyPoolManager'
 
   # Test 6: Combined Vulnerability Code Review
-  - vars:
+  - prompts: ['combined-vulnerability']
+    vars:
       scenario: combined-vulnerability-code-review
     assert:
       - type: llm-rubric
         value: file://rubrics/combined-vulnerability-detection.txt
         threshold: 0.85
-        provider: anthropic:claude-sonnet-4-20250514
+        provider: anthropic:claude-sonnet-4-5-20250929
 
       # Must identify multiple vulnerability types
       - type: contains-any
@@ -145,13 +159,14 @@ tests:
           - 'accounting'
 
   # Test 7: Delta Accounting Edge Cases
-  - vars:
+  - prompts: ['delta-edge-cases']
+    vars:
       scenario: delta-accounting-edge-cases
     assert:
       - type: llm-rubric
         value: file://rubrics/delta-edge-case-handling.txt
         threshold: 0.85
-        provider: anthropic:claude-sonnet-4-20250514
+        provider: anthropic:claude-sonnet-4-5-20250929
 
       # Must discuss boundaries and safe casting
       - type: contains-any
