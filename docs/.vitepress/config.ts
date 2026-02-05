@@ -48,7 +48,7 @@ export default defineConfig({
       ],
     },
 
-    socialLinks: [{ icon: 'github', link: 'https://github.com/Uniswap/uniswap-ai' }],
+    socialLinks: [{ icon: 'github', link: 'https://github.com/uniswap/uniswap-ai' }],
 
     footer: {
       message: 'Released under the MIT License.',
@@ -60,7 +60,7 @@ export default defineConfig({
     },
 
     editLink: {
-      pattern: 'https://github.com/Uniswap/uniswap-ai/edit/main/docs/:path',
+      pattern: 'https://github.com/uniswap/uniswap-ai/edit/main/docs/:path',
       text: 'Edit this page on GitHub',
     },
   },

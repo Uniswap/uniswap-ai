@@ -48,4 +48,4 @@ To add a new skill:
 3. Update the plugin's `plugin.json` to include the skill
 4. Add an eval suite under `evals/suites/<skill-name>/`
 
-See the [CLAUDE.md](https://github.com/Uniswap/uniswap-ai/blob/main/CLAUDE.md) for plugin architecture details.
+See the [CLAUDE.md](https://github.com/uniswap/uniswap-ai/blob/main/CLAUDE.md) for plugin architecture details.
