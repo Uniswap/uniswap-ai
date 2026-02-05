@@ -31,7 +31,7 @@ evals/
 ├── framework/
 │   └── types.ts            # TypeScript types (for programmatic use)
 ├── rubrics/                # Shared evaluation rubrics
-│   └── security-checklist.md
+│   └── security-checklist.txt
 ├── scripts/
 │   └── anthropic-provider.ts  # Custom provider for OAuth support
 ├── suites/
@@ -39,8 +39,8 @@ evals/
 │       ├── promptfoo.yaml  # Suite-specific config
 │       ├── cases/          # Test case prompts (markdown)
 │       │   └── *.md
-│       └── rubrics/        # Skill-specific rubrics
-│           └── *.md
+│       └── rubrics/        # Skill-specific rubrics (must use .txt)
+│           └── *.txt
 └── templates/              # Templates for new suites
     └── suite/
 ```
@@ -123,9 +123,11 @@ Create a simple hook that logs swap events.
 
 ### 2. Define Rubrics
 
-Create rubric files in `suites/<skill>/rubrics/`:
+Create rubric files in `suites/<skill>/rubrics/` with `.txt` extension:
 
-**correctness.md:**
+> **Important**: Promptfoo's grader only supports `.txt`, `.json`, and `.yaml` file types for rubric `file://` references. Use `.txt` for markdown-formatted rubrics.
+
+**correctness.txt:**
 
 ```markdown
 # Correctness Rubric
@@ -168,7 +170,7 @@ tests:
       scenario: basic
     assert:
       - type: llm-rubric
-        value: file://rubrics/correctness.md
+        value: file://rubrics/correctness.txt
         threshold: 0.8
         provider: anthropic:claude-sonnet-4-20250514
       - type: contains
@@ -183,7 +185,7 @@ Use for subjective evaluation:
 
 ```yaml
 - type: llm-rubric
-  value: file://rubrics/correctness.md
+  value: file://rubrics/correctness.txt
   threshold: 0.8
 ```
 

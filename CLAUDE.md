@@ -118,17 +118,19 @@ Evals are to AI tools what tests are to traditional code. This project uses [Pro
 ```text
 evals/
 ├── promptfoo.yaml          # Root config with default providers
-├── rubrics/                # Shared evaluation rubrics
-│   └── security-checklist.md
+├── rubrics/                # Shared evaluation rubrics (.txt files)
+│   └── security-checklist.txt
 ├── scripts/
 │   └── anthropic-provider.ts  # Custom provider for OAuth support
 ├── suites/                 # Per-skill eval suites
 │   └── <skill-name>/
 │       ├── promptfoo.yaml  # Suite-specific config
 │       ├── cases/          # Test case prompts (markdown)
-│       └── rubrics/        # Skill-specific rubrics
+│       └── rubrics/        # Skill-specific rubrics (.txt files)
 └── templates/              # Templates for new suites
 ```
+
+> **Note**: Rubric files must use `.txt` extension (not `.md`). Promptfoo's grader only supports `.txt`, `.json`, and `.yaml` for `file://` references in assertions.
 
 ### Setup (One-Time)
 
