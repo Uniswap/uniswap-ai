@@ -43,6 +43,41 @@ const REQUIRED_PLUGIN_JSON_FIELDS = ['name', 'version', 'description'];
 const OPTIONAL_COMPONENT_DIRS = ['skills', 'agents', 'commands', 'hooks'];
 
 /**
+ * Check eval coverage for skills in a plugin
+ *
+ * @param {string} pluginPath - Path to the plugin directory
+ * @returns {{ missing: string[], found: string[] }} Skills with and without eval suites
+ */
+function checkEvalCoverage(pluginPath) {
+  const skillsDir = path.join(pluginPath, 'skills');
+  const evalsDir = path.join(process.cwd(), 'evals', 'suites');
+
+  const result = { missing: [], found: [] };
+
+  // If no skills directory, nothing to check
+  if (!fs.existsSync(skillsDir)) {
+    return result;
+  }
+
+  // Get all skill directories
+  const skills = fs
+    .readdirSync(skillsDir, { withFileTypes: true })
+    .filter((dirent) => dirent.isDirectory())
+    .map((dirent) => dirent.name);
+
+  for (const skill of skills) {
+    const evalSuitePath = path.join(evalsDir, skill, 'promptfoo.yaml');
+    if (fs.existsSync(evalSuitePath)) {
+      result.found.push(skill);
+    } else {
+      result.missing.push(skill);
+    }
+  }
+
+  return result;
+}
+
+/**
  * Validate plugin structure
  */
 function validatePlugin(pluginPath) {
@@ -182,16 +217,45 @@ function printResults(errors, warnings) {
   return true;
 }
 
-// Main execution
-const pluginPath = process.argv[2];
+// Parse command line arguments
+const args = process.argv.slice(2);
+const requireEvals = args.includes('--require-evals');
+const pluginPath = args.find((arg) => !arg.startsWith('--'));
 
 if (!pluginPath) {
-  console.error('Usage: node scripts/validate-plugin.cjs <plugin-path>');
+  console.error('Usage: node scripts/validate-plugin.cjs <plugin-path> [--require-evals]');
   console.error('Example: node scripts/validate-plugin.cjs packages/plugins/uniswap-hooks');
+  console.error('');
+  console.error('Options:');
+  console.error('  --require-evals  Fail if any skill is missing an eval suite');
   process.exit(1);
 }
 
 const { errors, warnings } = validatePlugin(pluginPath);
+
+// Check eval coverage
+const evalCoverage = checkEvalCoverage(pluginPath);
+
+if (evalCoverage.found.length > 0) {
+  console.log(`  ✓ Eval coverage: ${evalCoverage.found.length} skill(s) have eval suites`);
+}
+
+if (evalCoverage.missing.length > 0) {
+  const message = `Skill(s) missing eval suites: ${evalCoverage.missing.join(', ')}`;
+  if (requireEvals) {
+    errors.push(message);
+    console.log(`  ✗ ${message}`);
+    console.log('');
+    console.log('  To create eval suites, run:');
+    for (const skill of evalCoverage.missing) {
+      console.log(`    cp -r evals/templates/suite/ evals/suites/${skill}/`);
+    }
+  } else {
+    warnings.push(message);
+    console.log(`  ⚠ ${message}`);
+  }
+}
+
 const success = printResults(errors, warnings);
 
 process.exit(success ? 0 : 1);
