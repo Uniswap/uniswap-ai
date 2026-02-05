@@ -48,16 +48,16 @@ function getAnthropicClient(): Anthropic {
  * Source: https://platform.claude.com/docs/en/about-claude/pricing
  */
 const MODEL_PRICING: Record<string, { input: number; output: number }> = {
-  'claude-sonnet-4-5': { input: 3, output: 15 },
-  'claude-opus-4-6': { input: 5, output: 25 },
-  'claude-haiku-4-5': { input: 1, output: 5 },
+  'claude-sonnet-4-5-20250929': { input: 3, output: 15 },
+  'claude-opus-4-5-20251101': { input: 15, output: 75 },
+  'claude-haiku-4-5-20251001': { input: 1, output: 5 },
 };
 
 /**
  * Get pricing for a model, with fallback to Sonnet pricing
  */
 function getModelPricing(model: string): { input: number; output: number } {
-  return MODEL_PRICING[model] ?? MODEL_PRICING['claude-sonnet-4-5'];
+  return MODEL_PRICING[model] ?? MODEL_PRICING['claude-sonnet-4-5-20250929'];
 }
 
 /**
@@ -71,7 +71,7 @@ export class AnthropicProvider implements ApiProvider {
 
   constructor(config: AnthropicProviderConfig = {}) {
     this.client = getAnthropicClient();
-    this.model = config.model ?? 'claude-sonnet-4-5';
+    this.model = config.model ?? 'claude-sonnet-4-5-20250929';
     this.temperature = config.temperature ?? 0;
     this.maxTokens = config.maxTokens ?? 4096;
   }

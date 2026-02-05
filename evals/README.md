@@ -161,7 +161,7 @@ prompts:
   - file://cases/basic.md
 
 providers:
-  - id: anthropic:claude-sonnet-4-5
+  - id: anthropic:claude-sonnet-4-5-20250929
     config:
       temperature: 0
 
@@ -172,7 +172,7 @@ tests:
       - type: llm-rubric
         value: file://rubrics/correctness.txt
         threshold: 0.8
-        provider: anthropic:claude-sonnet-4-5
+        provider: anthropic:claude-sonnet-4-5-20250929
       - type: contains
         value: 'BaseHook'
 ```
@@ -270,6 +270,6 @@ Review the rubric instructions - LLM judges need clear scoring guidelines.
 
 ### Cost concerns
 
-- Use `claude-sonnet-4-5` instead of `claude-opus-4-6` for routine evals
+- Use `claude-sonnet-4-5-20250929` instead of `claude-opus-4-5-20251101` for routine evals
 - Use deterministic assertions where possible
 - Run specific suites instead of all suites during development
