@@ -8,6 +8,8 @@ prompts:
   - file://cases/delta-accounting-understanding.md
   - file://cases/access-control-patterns.md
   - file://cases/security-checklist-completeness.md
+  - file://cases/combined-vulnerability-code-review.md
+  - file://cases/delta-accounting-edge-cases.md
 
 # Provider configuration
 providers:
@@ -116,3 +118,49 @@ tests:
           - 'access control'
           - 'Access control'
           - 'onlyPoolManager'
+
+  # Test 6: Combined Vulnerability Code Review
+  - vars:
+      scenario: combined-vulnerability-code-review
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/combined-vulnerability-detection.txt
+        threshold: 0.85
+        provider: anthropic:claude-sonnet-4-20250514
+
+      # Must identify multiple vulnerability types
+      - type: contains-any
+        value:
+          - 'reentrancy'
+          - 'Reentrancy'
+          - 'CEI'
+      - type: contains-any
+        value:
+          - 'poolManager'
+          - 'PoolManager'
+          - 'access control'
+      - type: contains-any
+        value:
+          - 'delta'
+          - 'accounting'
+
+  # Test 7: Delta Accounting Edge Cases
+  - vars:
+      scenario: delta-accounting-edge-cases
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/delta-edge-case-handling.txt
+        threshold: 0.85
+        provider: anthropic:claude-sonnet-4-20250514
+
+      # Must discuss boundaries and safe casting
+      - type: contains-any
+        value:
+          - 'int128'
+          - 'overflow'
+          - 'bounds'
+      - type: contains-any
+        value:
+          - 'require'
+          - 'check'
+          - 'validate'

@@ -98,6 +98,9 @@ function afterSwap(...) external returns (bytes4, int128) {
     // Bounds check: ensure amount fits in int128 to prevent overflow
     require(amount <= uint256(type(int128).max), "Amount exceeds int128 max");
     poolManager.take(currency, address(this), amount);
+    // Cast sequence: uint256 → uint128 → int128
+    // The uint128 intermediate prevents treating large values as negative,
+    // since direct uint256 → int128 would misinterpret values > int128.max
     return (BaseHook.afterSwap.selector, int128(uint128(amount)));
 }
 ```
