@@ -22,3 +22,11 @@ Create a simple aggregator hook that routes swaps through multiple liquidity sou
 - Must implement getHookPermissions() correctly
 - Must handle edge cases (zero liquidity, slippage)
 - Gas-efficient implementation
+
+## Security Requirements
+
+- Use ReentrancyGuard or checks-effects-interactions pattern for external calls
+- Validate all external call return values
+- Include access control for admin functions
+- No use of selfdestruct, delegatecall, or inline assembly
+- Use Solidity 0.8+ for built-in overflow protection

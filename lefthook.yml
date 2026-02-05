@@ -5,8 +5,11 @@ pre-commit:
   parallel: false
   commands:
     format:
-      glob: "*.{js,ts,tsx,json,md}"
+      glob: '*.{js,ts,tsx,json,md}'
       run: npx nx format:write --uncommitted
       stage_fixed: true
     lint:
       run: npx nx affected --target=lint --base=HEAD~1 --head=HEAD
+    eval-coverage:
+      glob: 'packages/plugins/**/*'
+      run: npx tsx scripts/check-eval-coverage.ts --staged

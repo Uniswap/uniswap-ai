@@ -1,0 +1,58 @@
+# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
+description: 'Aggregator Hook Creator Skill Evaluation'
+
+# Prompts (eval cases)
+prompts:
+  - file://cases/basic-aggregator-hook.md
+
+# Provider configuration
+# Uses default from root config, can override here for suite-specific models
+providers:
+  - id: anthropic:claude-sonnet-4-20250514
+    config:
+      temperature: 0
+      max_tokens: 8192 # Solidity contracts need more tokens for complete implementation
+
+# Default test configuration
+defaultTest:
+  options:
+    timeout: 120000 # 2 minutes per case
+  assert:
+    # Security is non-negotiable for smart contracts
+    - type: llm-rubric
+      value: file://rubrics/security.txt
+      threshold: 1.0
+      provider: anthropic:claude-sonnet-4-20250514
+
+# Test cases with specific assertions
+tests:
+  - vars:
+      scenario: basic-aggregator-hook
+    assert:
+      # Correctness rubric
+      - type: llm-rubric
+        value: file://rubrics/correctness.txt
+        threshold: 0.8
+        provider: anthropic:claude-sonnet-4-20250514
+
+      # Completeness rubric
+      - type: llm-rubric
+        value: file://rubrics/completeness.txt
+        threshold: 0.85
+        provider: anthropic:claude-sonnet-4-20250514
+
+      # Deterministic checks for required patterns
+      - type: contains
+        value: 'BaseHook'
+      - type: contains
+        value: 'getHookPermissions'
+      - type: contains
+        value: 'beforeSwap'
+      - type: contains
+        value: 'afterSwap'
+
+      # Should not contain security anti-patterns
+      - type: not-contains
+        value: 'selfdestruct'
+      - type: not-contains
+        value: 'delegatecall'

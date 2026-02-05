@@ -41,11 +41,11 @@ After making any code changes, Claude Code MUST:
 
 ## Package Scopes
 
-| Type | Scope | npm | Marketplace |
-|------|-------|-----|-------------|
-| Plugins | `@uniswap` | No | Yes (Claude Code Marketplace) |
-| SDKs | `@uniswap-ai` | Yes | N/A |
-| Utils | `@uniswap-ai` | Yes | N/A |
+| Type    | Scope         | npm | Marketplace                   |
+| ------- | ------------- | --- | ----------------------------- |
+| Plugins | `@uniswap`    | No  | Yes (Claude Code Marketplace) |
+| SDKs    | `@uniswap-ai` | Yes | N/A                           |
+| Utils   | `@uniswap-ai` | Yes | N/A                           |
 
 ## Repository Structure
 
@@ -60,9 +60,11 @@ uniswap-ai/
 ├── .claude/
 │   └── rules/               # Agent rules (agnostic design)
 ├── docs/                    # VitePress documentation
-├── evals/                   # AI tool evaluations
-│   ├── framework/           # Eval harness
-│   └── suites/              # Per-tool eval suites
+├── evals/                   # AI tool evaluations (Promptfoo)
+│   ├── rubrics/             # Shared evaluation rubrics
+│   ├── scripts/             # Custom providers and utilities
+│   ├── suites/              # Per-skill eval suites
+│   └── templates/           # Templates for new suites
 ├── packages/
 │   ├── plugins/             # Claude Code plugins
 │   │   └── uniswap-hooks/   # Uniswap V4 hooks plugin
@@ -109,20 +111,84 @@ All AI tools in this repo should be usable by ANY LLM coding agent, not just Cla
 
 ## Evals Framework
 
-Evals are to AI tools what tests are to traditional code:
+Evals are to AI tools what tests are to traditional code. This project uses [Promptfoo](https://github.com/promptfoo/promptfoo) for declarative, CI-integrated evaluations.
 
-- Each skill/plugin should have an eval suite
-- Cases are markdown prompts with expected behaviors
-- Run on PR to catch regressions
-- Support multiple LLM backends for comparison
+### Structure
+
+```text
+evals/
+├── promptfoo.yaml          # Root config with default providers
+├── rubrics/                # Shared evaluation rubrics (.txt files)
+│   └── security-checklist.txt
+├── scripts/
+│   └── anthropic-provider.ts  # Custom provider for OAuth support
+├── suites/                 # Per-skill eval suites
+│   └── <skill-name>/
+│       ├── promptfoo.yaml  # Suite-specific config
+│       ├── cases/          # Test case prompts (markdown)
+│       └── rubrics/        # Skill-specific rubrics (.txt files)
+└── templates/              # Templates for new suites
+```
+
+> **Note**: Rubric files must use `.txt` extension (not `.md`). Promptfoo's grader only supports `.txt`, `.json`, and `.yaml` for `file://` references in assertions.
+
+### Setup (One-Time)
+
+```bash
+# Requires 1Password CLI (https://developer.1password.com/docs/cli/get-started)
+eval $(op signin)
+nx run evals:setup
+```
+
+Or set environment variables directly:
+
+```bash
+export ANTHROPIC_API_KEY=sk-ant-...       # CI, production
+# OR
+export CLAUDE_CODE_OAUTH_TOKEN=<token>    # Local development
+```
+
+### Running Evals
+
+```bash
+nx run evals:eval --suite=aggregator-hook-creator  # Run specific suite
+nx run evals:eval:all                               # Run all suites
+nx run evals:eval:view                              # Open results viewer
+nx run evals:eval:cache-clear                       # Clear cache
+```
+
+### Creating New Eval Suites
+
+1. Copy `evals/templates/suite/` to `evals/suites/<skill-name>/`
+2. Rename `.template` files (remove `.template` extension)
+3. Replace `{{SKILL_NAME}}` placeholders
+4. Add test cases in `cases/` directory
+5. Define rubrics in `rubrics/` directory
+6. Update `promptfoo.yaml` with your prompts and assertions
+
+### CI Integration
+
+Evals run automatically on PRs that modify:
+
+- `packages/plugins/**`
+- `evals/**`
+
+Pass rate must be ≥85% for PR to pass. Results include inference cost tracking.
+
+### Writing Good Eval Cases
+
+- Focus on **outputs**, not prescribed paths
+- Include edge cases and security probes for smart contract code
+- Use deterministic checks (`contains`, `not-contains`) for required patterns
+- Use LLM rubrics for qualitative assessment
 
 ## npm Version Requirement
 
-**CRITICAL: This project requires npm 11.7.0**
+**CRITICAL: This project requires npm >=11.7.0**
 
 ```bash
-npm install -g npm@11.7.0
-npm --version  # Should output: 11.7.0
+npm install -g npm@latest
+npm --version  # Should output: 11.7.0 or higher
 ```
 
 ## GitHub Actions Best Practices
