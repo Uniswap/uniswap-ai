@@ -9,7 +9,7 @@ import type { EvalConfig } from '../../framework/types.js';
 export const config: EvalConfig = {
   name: 'aggregator-hook-creator',
   skill: 'aggregator-hook-creator',
-  models: ['claude-sonnet-4', 'claude-opus-4'],
+  models: ['claude-sonnet-4-5', 'claude-opus-4-6'],
   timeout: 120000, // 2 minutes per case
   retries: 2,
   thresholds: {

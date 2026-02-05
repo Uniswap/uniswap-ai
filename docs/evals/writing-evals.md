@@ -69,7 +69,7 @@ import type { EvalConfig } from '../../framework/types.js';
 export const config: EvalConfig = {
   name: 'my-skill',
   skill: 'my-skill',
-  models: ['claude-sonnet-4', 'claude-opus-4'],
+  models: ['claude-sonnet-4-5', 'claude-opus-4-6'],
   timeout: 60000,
   retries: 2,
   thresholds: {
