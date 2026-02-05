@@ -1,0 +1,118 @@
+# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
+description: 'V4 Security Foundations Skill Evaluation'
+
+# Prompts (eval cases)
+prompts:
+  - file://cases/noop-rug-pull-identification.md
+  - file://cases/permission-flags-risk-assessment.md
+  - file://cases/delta-accounting-understanding.md
+  - file://cases/access-control-patterns.md
+  - file://cases/security-checklist-completeness.md
+
+# Provider configuration
+providers:
+  - id: anthropic:claude-sonnet-4-20250514
+    config:
+      temperature: 0
+      max_tokens: 4096
+
+# Default test configuration applied to all tests
+defaultTest:
+  options:
+    timeout: 120000 # 2 minutes per case
+
+# Test cases with specific assertions
+tests:
+  # Test 1: NoOp Rug Pull Attack Identification
+  - vars:
+      scenario: noop-rug-pull-identification
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/noop-attack-understanding.txt
+        threshold: 0.9
+        provider: anthropic:claude-sonnet-4-20250514
+
+      # Must mention critical elements
+      - type: contains-any
+        value:
+          - 'beforeSwapReturnDelta'
+          - 'BEFORE_SWAP_RETURNS_DELTA'
+      - type: contains-any
+        value:
+          - 'delta'
+          - 'BeforeSwapDelta'
+      - type: contains
+        value: 'PoolManager'
+
+  # Test 2: Permission Flags Risk Assessment
+  - vars:
+      scenario: permission-flags-risk-assessment
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/risk-assessment-quality.txt
+        threshold: 0.85
+        provider: anthropic:claude-sonnet-4-20250514
+
+      # Must categorize risk levels
+      - type: contains-any
+        value:
+          - 'CRITICAL'
+          - 'critical'
+          - 'HIGH'
+          - 'high'
+      - type: contains-any
+        value:
+          - 'beforeSwapReturnDelta'
+          - 'beforeRemoveLiquidity'
+
+  # Test 3: Delta Accounting Understanding
+  - vars:
+      scenario: delta-accounting-understanding
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/delta-accounting-accuracy.txt
+        threshold: 0.85
+        provider: anthropic:claude-sonnet-4-20250514
+
+      # Must mention core delta functions
+      - type: contains
+        value: 'settle'
+      - type: contains-any
+        value:
+          - 'take'
+          - 'sync'
+
+  # Test 4: Access Control Pattern Recognition
+  - vars:
+      scenario: access-control-patterns
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/access-control-correctness.txt
+        threshold: 0.85
+        provider: anthropic:claude-sonnet-4-20250514
+
+      # Must mention PoolManager verification
+      - type: contains
+        value: 'poolManager'
+      - type: contains
+        value: 'msg.sender'
+
+  # Test 5: Security Checklist Completeness
+  - vars:
+      scenario: security-checklist-completeness
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/checklist-completeness.txt
+        threshold: 0.8
+        provider: anthropic:claude-sonnet-4-20250514
+
+      # Must address multiple security domains
+      - type: contains-any
+        value:
+          - 'reentrancy'
+          - 'Reentrancy'
+      - type: contains-any
+        value:
+          - 'access control'
+          - 'Access control'
+          - 'onlyPoolManager'

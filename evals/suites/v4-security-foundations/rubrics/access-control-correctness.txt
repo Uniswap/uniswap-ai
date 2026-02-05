@@ -1,0 +1,44 @@
+# Access Control Correctness Rubric
+
+Evaluate whether the response correctly identifies and explains V4 hook access control patterns.
+
+## Required Elements (Must Include)
+
+Score based on how many of these are correctly explained:
+
+1. **msg.sender Trap Identification**
+   - Correctly identifies that msg.sender is ALWAYS PoolManager in hook callbacks
+   - Explains this is a critical misconception that leads to vulnerabilities
+   - Notes that using msg.sender for user identity is incorrect
+
+2. **PoolManager Verification Pattern**
+   - Shows the correct onlyPoolManager modifier pattern
+   - Explains why every hook callback must verify msg.sender == poolManager
+   - Notes consequences of missing this check (direct calls, state manipulation)
+
+3. **Sender Parameter Understanding**
+   - Explains that the `sender` parameter is the router, not the end user
+   - Clarifies the distinction between msg.sender, sender parameter, and actual user
+
+4. **Router Allowlisting Pattern**
+   - Explains the router allowlisting approach for access control
+   - Shows mapping(address => bool) public allowedRouters pattern
+   - Notes that router must be trusted
+
+5. **User Identity via hookData**
+   - Explains how to pass user identity through hookData
+   - Notes the trust assumption (router must provide accurate user)
+   - Provides correct implementation guidance
+
+## Scoring Guide
+
+- 5/5 elements correct: 1.0
+- 4/5 elements correct: 0.85
+- 3/5 elements correct: 0.7
+- 2/5 elements correct: 0.5
+- 1/5 elements correct: 0.3
+- 0/5 elements correct: 0.0
+
+## Instructions
+
+Evaluate whether the response correctly identifies the vulnerability in the sample code and provides accurate access control patterns. This is a critical security topic - accuracy is essential.

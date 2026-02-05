@@ -1,0 +1,45 @@
+# Delta Accounting Accuracy Rubric
+
+Evaluate whether the response correctly explains V4's delta accounting system.
+
+## Required Elements (Must Include)
+
+Score based on how many of these are correctly explained:
+
+1. **Core Invariant**
+   - States that sum of deltas must equal zero at transaction end
+   - Explains the credit/debit system concept
+   - Explains PoolManager tracks what each address owes or is owed
+
+2. **Key Functions**
+   - Correctly explains take(): withdraw tokens from PoolManager (creates debt)
+   - Correctly explains settle(): pay tokens to PoolManager (pays debt)
+   - Correctly explains sync(): update PoolManager balance tracking before settle
+
+3. **Correct Settlement Pattern**
+   - Shows correct order: sync -> transfer -> settle
+   - Explains why sync must come before transfer
+   - Notes that settlement fails without proper sync
+
+4. **Error Identification**
+   - Identifies the problem in the example code (taking without settling)
+   - Explains that take() creates a debt that must be settled
+   - Provides corrected code or pattern
+
+5. **Common Mistakes**
+   - Lists common delta accounting errors
+   - Explains consequences of each mistake
+   - Provides guidance to avoid these errors
+
+## Scoring Guide
+
+- 5/5 elements correct: 1.0
+- 4/5 elements correct: 0.85
+- 3/5 elements correct: 0.7
+- 2/5 elements correct: 0.5
+- 1/5 elements correct: 0.3
+- 0/5 elements correct: 0.0
+
+## Instructions
+
+Evaluate whether the explanation is technically accurate and would help a developer understand and fix delta accounting issues. The response should demonstrate deep understanding of V4's settlement system.
