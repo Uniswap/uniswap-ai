@@ -20,6 +20,7 @@ This skill assumes familiarity with:
 - viem Integration - EVM basics
 - Swap Integration - Uniswap swap patterns
 - Uniswap V4 hook architecture basics
+- **[v4-security-foundations](../v4-security-foundations/v4-security-foundations.md)** - Complete the security foundations skill before building aggregator hooks. Understanding NoOp attacks, delta accounting, and access control is essential.
 
 ## Quick Decision Guide
 

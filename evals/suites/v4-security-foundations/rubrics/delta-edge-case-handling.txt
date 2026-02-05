@@ -1,0 +1,50 @@
+# Delta Accounting Edge Case Handling Rubric
+
+Evaluate whether the response correctly explains edge cases in delta accounting and provides safe handling patterns.
+
+## Required Elements
+
+Score based on how many of these are correctly explained:
+
+1. **int128 Boundary Understanding**
+   - Explains that int128.max is 2^127 - 1 (approximately 1.7e38)
+   - Notes that int128.min is -2^127
+   - Explains why deltas use int128 (signed for debits/credits)
+   - Identifies that uint256 values > int128.max cannot be safely cast
+
+2. **Safe Casting Pattern**
+   - Provides bounds checking before casting: `require(amount <= uint256(type(int128).max))`
+   - Explains the uint256 → uint128 → int128 cast sequence
+   - Notes why intermediate uint128 cast is needed (prevents negative interpretation)
+   - Provides complete safe casting function or pattern
+
+3. **Overflow/Underflow Scenarios**
+   - Identifies risk when `calculateFee()` returns values > int128.max
+   - Explains what happens with unchecked casts (silent truncation or wrap)
+   - Notes Solidity 0.8+ overflow protection doesn't help with explicit casts
+   - Recommends explicit bounds checking
+
+4. **Zero Amount Handling**
+   - Addresses what happens when feeAmount is 0
+   - Notes that zero deltas are valid but may indicate logic errors
+   - Discusses division by zero risks in fee calculations
+   - Recommends validation of inputs before operations
+
+5. **Delta-Operation Correspondence**
+   - Explains that `take()` amounts must match returned delta
+   - Notes that returning 0 when taking non-zero causes accounting mismatch
+   - Explains the relationship: positive delta = hook owes, negative delta = hook is owed
+   - Provides correct pattern for matching take/settle with delta returns
+
+## Scoring Guide
+
+- 5/5 elements correct: 1.0
+- 4/5 elements correct: 0.85
+- 3/5 elements correct: 0.7
+- 2/5 elements correct: 0.5
+- 1/5 elements correct: 0.3
+- 0/5 elements correct: 0.0
+
+## Instructions
+
+Evaluate whether the response demonstrates deep understanding of delta accounting edge cases and provides robust patterns that would prevent security issues in production code. The response should be practical and include code examples.
