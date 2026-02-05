@@ -30,6 +30,15 @@ contract SecureHook is BaseHook {
     error NotPoolManager();
     error RouterNotAllowed();
     error ZeroAddress();
+    error NotAdmin();
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // EVENTS
+    // ═══════════════════════════════════════════════════════════════════════
+
+    event RouterAdded(address indexed router);
+    event RouterRemoved(address indexed router);
+    event AdminTransferred(address indexed previousAdmin, address indexed newAdmin);
 
     // ═══════════════════════════════════════════════════════════════════════
     // STATE
@@ -59,7 +68,7 @@ contract SecureHook is BaseHook {
 
     /// @notice Ensures caller is admin
     modifier onlyAdmin() {
-        require(msg.sender == admin, "Not admin");
+        if (msg.sender != admin) revert NotAdmin();
         _;
     }
 
@@ -152,19 +161,27 @@ contract SecureHook is BaseHook {
     function addAllowedRouter(address router) external onlyAdmin {
         if (router == address(0)) revert ZeroAddress();
         allowedRouters[router] = true;
+        emit RouterAdded(router);
     }
 
     /// @notice Remove a router from the allowlist
     /// @param router The router address to remove
     function removeAllowedRouter(address router) external onlyAdmin {
         allowedRouters[router] = false;
+        emit RouterRemoved(router);
     }
 
     /// @notice Transfer admin role
+    /// @dev NOTE: For production, consider implementing two-step transfer:
+    ///      1. proposeAdmin(newAdmin) - sets pendingAdmin
+    ///      2. acceptAdmin() - pendingAdmin becomes admin
+    ///      This prevents accidental loss of admin privileges.
     /// @param newAdmin The new admin address
     function transferAdmin(address newAdmin) external onlyAdmin {
         if (newAdmin == address(0)) revert ZeroAddress();
+        address previousAdmin = admin;
         admin = newAdmin;
+        emit AdminTransferred(previousAdmin, newAdmin);
     }
 }
 ```

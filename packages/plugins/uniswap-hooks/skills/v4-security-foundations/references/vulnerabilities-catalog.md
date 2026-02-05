@@ -95,6 +95,8 @@ function afterSwap(...) external returns (bytes4, int128) {
 ```solidity
 function afterSwap(...) external returns (bytes4, int128) {
     uint256 amount = calculateAmount();
+    // Bounds check: ensure amount fits in int128 to prevent overflow
+    require(amount <= uint256(type(int128).max), "Amount exceeds int128 max");
     poolManager.take(currency, address(this), amount);
     return (BaseHook.afterSwap.selector, int128(uint128(amount)));
 }
@@ -130,8 +132,10 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.
 
 contract SecureHook is BaseHook, ReentrancyGuard {
     function afterSwap(...) external nonReentrant returns (bytes4, int128) {
+        // BEST PRACTICE: Follow CEI pattern - state changes BEFORE external calls
+        // The nonReentrant modifier is a safety net, not a replacement for CEI
+        state = newState;
         externalContract.callback();
-        state = newState; // State change after external call with guard
         return (BaseHook.afterSwap.selector, 0);
     }
 }

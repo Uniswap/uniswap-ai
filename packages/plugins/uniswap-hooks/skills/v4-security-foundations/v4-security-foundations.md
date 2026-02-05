@@ -285,19 +285,19 @@ Before deploying any hook:
 
 | #   | Check                                                 | Status |
 | --- | ----------------------------------------------------- | ------ |
-| 1   | All hook callbacks verify `msg.sender == poolManager` | ⬜     |
-| 2   | Router allowlisting implemented if needed             | ⬜     |
-| 3   | No unbounded loops that can cause OOG                 | ⬜     |
-| 4   | Reentrancy guards on external calls                   | ⬜     |
-| 5   | Delta accounting sums to zero                         | ⬜     |
-| 6   | Fee-on-transfer tokens handled                        | ⬜     |
-| 7   | No hardcoded addresses                                | ⬜     |
-| 8   | Slippage parameters respected                         | ⬜     |
-| 9   | No sensitive data stored on-chain                     | ⬜     |
-| 10  | Upgrade mechanisms secured (if applicable)            | ⬜     |
-| 11  | `beforeSwapReturnDelta` justified if enabled          | ⬜     |
-| 12  | Fuzz testing completed                                | ⬜     |
-| 13  | Invariant testing completed                           | ⬜     |
+| 1   | All hook callbacks verify `msg.sender == poolManager` | [ ]    |
+| 2   | Router allowlisting implemented if needed             | [ ]    |
+| 3   | No unbounded loops that can cause OOG                 | [ ]    |
+| 4   | Reentrancy guards on external calls                   | [ ]    |
+| 5   | Delta accounting sums to zero                         | [ ]    |
+| 6   | Fee-on-transfer tokens handled                        | [ ]    |
+| 7   | No hardcoded addresses                                | [ ]    |
+| 8   | Slippage parameters respected                         | [ ]    |
+| 9   | No sensitive data stored on-chain                     | [ ]    |
+| 10  | Upgrade mechanisms secured (if applicable)            | [ ]    |
+| 11  | `beforeSwapReturnDelta` justified if enabled          | [ ]    |
+| 12  | Fuzz testing completed                                | [ ]    |
+| 13  | Invariant testing completed                           | [ ]    |
 
 ## Risk Scoring System
 
