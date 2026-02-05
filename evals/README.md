@@ -1,6 +1,6 @@
 # AI Tool Evaluations
 
-Evals are to AI tools what tests are to traditional code. This framework provides a structured approach to evaluating the quality and reliability of AI-powered skills and plugins.
+Evals are to AI tools what tests are to traditional code. This framework uses [Promptfoo](https://github.com/promptfoo/promptfoo) for declarative, CI-integrated evaluations of skills and plugins.
 
 ## Philosophy
 
@@ -9,52 +9,92 @@ Evals are to AI tools what tests are to traditional code. This framework provide
 Traditional software tests verify deterministic behavior: given input X, expect output Y. AI tools are probabilistic - the same prompt might produce different (but equally valid) outputs. Evals bridge this gap by:
 
 1. **Defining expected behaviors** rather than exact outputs
-2. **Measuring quality across multiple dimensions** (accuracy, helpfulness, safety)
+2. **Measuring quality across multiple dimensions** (accuracy, completeness, safety)
 3. **Detecting regressions** when prompts or models change
 4. **Comparing performance** across different LLM backends
 
 ### Eval vs Test
 
-| Aspect | Traditional Test | AI Eval |
-|--------|------------------|---------|
-| Output | Exact match | Semantic similarity |
-| Pass/Fail | Binary | Scored (0-1) |
-| Determinism | Always same result | Statistical confidence |
-| What's Checked | Correctness | Quality, safety, helpfulness |
+| Aspect         | Traditional Test   | AI Eval                      |
+| -------------- | ------------------ | ---------------------------- |
+| Output         | Exact match        | Semantic similarity          |
+| Pass/Fail      | Binary             | Scored (0-1)                 |
+| Determinism    | Always same result | Statistical confidence       |
+| What's Checked | Correctness        | Quality, safety, helpfulness |
 
 ## Structure
 
 ```text
 evals/
-├── README.md              # This file
+├── promptfoo.yaml          # Root config with default providers
+├── README.md               # This file
 ├── framework/
-│   ├── runner.ts          # Eval execution harness
-│   ├── types.ts           # TypeScript types
-│   └── reporters/         # Output formatters
-│       └── console.ts     # Console reporter
-└── suites/
-    └── <skill-name>/
-        ├── eval.config.ts # Test configuration
-        ├── cases/         # Test case prompts
-        │   └── *.md       # Individual test cases
-        └── expected/      # Expected behaviors
-            └── *.md       # Expected output patterns
+│   └── types.ts            # TypeScript types (for programmatic use)
+├── rubrics/                # Shared evaluation rubrics
+│   └── security-checklist.txt
+├── scripts/
+│   └── anthropic-provider.ts  # Custom provider for OAuth support
+├── suites/
+│   └── <skill-name>/
+│       ├── promptfoo.yaml  # Suite-specific config
+│       ├── cases/          # Test case prompts (markdown)
+│       │   └── *.md
+│       └── rubrics/        # Skill-specific rubrics (must use .txt)
+│           └── *.txt
+└── templates/              # Templates for new suites
+    └── suite/
 ```
 
-## Running Evals
+## Quick Start
+
+### 1. Setup Authentication
 
 ```bash
-# Run all evals
-npx nx run evals:run
+# Option A: Use 1Password (recommended for team)
+nx run evals:setup
 
-# Run specific suite
-npx nx run evals:run --suite=aggregator-hook-creator
+# Option B: Set environment variable directly
+export ANTHROPIC_API_KEY="sk-ant-..."
+# OR
+export CLAUDE_CODE_OAUTH_TOKEN="..."
+```
 
-# Run with specific model
-npx nx run evals:run --model=claude-sonnet-4
+### 2. Run Evals
 
-# Dry run (show what would be evaluated)
-npx nx run evals:run --dry-run
+```bash
+# Run a specific suite
+nx run evals:eval --suite=aggregator-hook-creator
+
+# Run all suites
+nx run evals:eval:all
+
+# View results in browser
+nx run evals:eval:view
+
+# Clear eval cache
+nx run evals:eval:cache-clear
+```
+
+### Authentication
+
+Evals support two authentication methods (API key takes priority if both set):
+
+| Method      | Environment Variable      | Use Case          |
+| ----------- | ------------------------- | ----------------- |
+| API Key     | `ANTHROPIC_API_KEY`       | CI, production    |
+| OAuth Token | `CLAUDE_CODE_OAUTH_TOKEN` | Local development |
+
+#### Setup with 1Password
+
+The setup script fetches secrets from 1Password (requires [1Password CLI](https://developer.1password.com/docs/cli/get-started)):
+
+```bash
+# One-time setup
+eval $(op signin)
+nx run evals:setup
+
+# Then run evals
+nx run evals:eval --suite=aggregator-hook-creator
 ```
 
 ## Writing Evals
@@ -81,52 +121,90 @@ Create a simple hook that logs swap events.
 3. No state changes needed
 ```
 
-### 2. Define Expected Behaviors
+### 2. Define Rubrics
 
-Create a corresponding file in `suites/<skill>/expected/`:
+Create rubric files in `suites/<skill>/rubrics/` with `.txt` extension:
+
+> **Important**: Promptfoo's grader only supports `.txt`, `.json`, and `.yaml` file types for rubric `file://` references. Use `.txt` for markdown-formatted rubrics.
+
+**correctness.txt:**
 
 ```markdown
-# Expected Behaviors
+# Correctness Rubric
 
-## Must Include
+Evaluate whether the generated code correctly implements the requirements.
 
-- [ ] Inherits from BaseHook
-- [ ] Implements getHookPermissions()
-- [ ] Sets afterSwap to true
-- [ ] Emits event in afterSwap callback
+## Required Elements
 
-## Should Include
+1. Inherits from BaseHook
+2. Implements getHookPermissions()
+3. Sets afterSwap to true
+4. Emits event in afterSwap callback
 
-- [ ] Uses appropriate data types
-- [ ] Includes NatSpec comments
-- [ ] Follows Solidity style guide
+## Scoring
 
-## Must Not Include
-
-- [ ] Unnecessary callbacks enabled
-- [ ] Mutable state
-- [ ] External calls
+- 4/4 elements: 1.0
+- 3/4 elements: 0.75
+- 2/4 elements: 0.5
+- 1/4 elements: 0.25
+- 0/4 elements: 0.0
 ```
 
 ### 3. Configure the Suite
 
-Create `eval.config.ts`:
+Create `promptfoo.yaml`:
 
-```typescript
-import { EvalConfig } from '../../framework/types';
+```yaml
+description: 'My Skill Evaluation'
 
-export const config: EvalConfig = {
-  name: 'aggregator-hook-creator',
-  skill: 'aggregator-hook-creator',
-  models: ['claude-sonnet-4', 'claude-opus-4'],
-  timeout: 60000,
-  retries: 2,
-  thresholds: {
-    accuracy: 0.8,
-    completeness: 0.9,
-    safety: 1.0,
-  },
-};
+prompts:
+  - file://cases/basic.md
+
+providers:
+  - id: anthropic:claude-sonnet-4-20250514
+    config:
+      temperature: 0
+
+tests:
+  - vars:
+      scenario: basic
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/correctness.txt
+        threshold: 0.8
+        provider: anthropic:claude-sonnet-4-20250514
+      - type: contains
+        value: 'BaseHook'
+```
+
+## Assertion Types
+
+### LLM Rubrics (Qualitative)
+
+Use for subjective evaluation:
+
+```yaml
+- type: llm-rubric
+  value: file://rubrics/correctness.txt
+  threshold: 0.8
+```
+
+### Deterministic Checks
+
+Use for required patterns:
+
+```yaml
+# Must contain
+- type: contains
+  value: 'getHookPermissions'
+
+# Must not contain
+- type: not-contains
+  value: 'selfdestruct'
+
+# Regex match
+- type: regex
+  value: 'function\\s+beforeSwap'
 ```
 
 ## Evaluation Criteria
@@ -143,46 +221,55 @@ Does the output include all required elements?
 
 Does the output avoid security vulnerabilities and follow best practices?
 
-### Helpfulness (0-1)
-
-Is the output well-documented and easy to understand?
+For smart contract code, this should always have a threshold of 1.0 (non-negotiable).
 
 ## CI Integration
 
-Evals run automatically on PRs that modify skills:
+Evals run automatically on PRs that modify:
 
-```yaml
-# .github/workflows/ci-pr-checks.yml
-- name: Run evals
-  run: npx nx run evals:run --affected
-```
+- `packages/plugins/**`
+- `evals/**`
 
-## Multi-Model Support
+Pass rate must be ≥85% for PR to pass. Results include:
 
-Evals can be run against multiple LLM backends to:
+- Per-suite pass/fail counts
+- Inference cost tracking
+- PR comment with summary
 
-1. Compare quality across models
-2. Ensure prompts work universally
-3. Identify model-specific issues
+## Creating New Eval Suites
 
-Configure in `eval.config.ts`:
-
-```typescript
-models: ['claude-sonnet-4', 'gpt-4', 'gemini-pro'],
-```
-
-## Reporting
-
-Results are output in multiple formats:
-
-- **Console**: Human-readable summary
-- **JSON**: Machine-readable for CI
-- **Markdown**: PR comment summaries
+1. Copy `templates/suite/` to `suites/<skill-name>/`
+2. Rename `.template` files (remove `.template` extension)
+3. Replace `{{SKILL_NAME}}` placeholders
+4. Add test cases in `cases/` directory
+5. Define rubrics in `rubrics/` directory
+6. Update `promptfoo.yaml` with your prompts and assertions
 
 ## Best Practices
 
-1. **Test the edges**: Include cases that stress the skill's capabilities
-2. **Version your evals**: Track changes alongside skill changes
-3. **Set appropriate thresholds**: Different skills need different standards
-4. **Document failures**: When evals fail, document why in the case file
-5. **Review periodically**: Evals should evolve with the skill
+1. **Focus on outputs, not paths**: Don't check for specific steps, check that the result is correct
+2. **Start with real failures**: Build evals from actual issues found in usage
+3. **Test the edges**: Include cases that stress the skill's capabilities
+4. **Use deterministic checks first**: `contains`/`not-contains` are faster and cheaper than LLM rubrics
+5. **Set appropriate thresholds**: Security = 1.0, correctness ≥ 0.8, completeness ≥ 0.85
+6. **Review transcripts**: Regularly read eval outputs to validate rubric quality
+
+## Troubleshooting
+
+### Eval not finding config
+
+Ensure `promptfoo.yaml` exists in the suite directory.
+
+### Authentication errors
+
+Set either `ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN` environment variable.
+
+### Rubric scoring seems off
+
+Review the rubric instructions - LLM judges need clear scoring guidelines.
+
+### Cost concerns
+
+- Use `claude-sonnet-4` instead of `claude-opus-4` for routine evals
+- Use deterministic assertions where possible
+- Run specific suites instead of all suites during development

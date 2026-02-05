@@ -133,6 +133,28 @@ jobs:
           marketplace-path: '.claude-plugin/marketplace.json'
           fail-on-warning: 'false'
 
+  check-eval-coverage:
+    name: Check Eval Coverage
+    needs: check-automated
+    if: ${{ needs.check-automated.outputs.should_skip_ci != 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: bullfrogsec/bullfrog@1831f79cce8ad602eef14d2163873f27081ebfb3 # v0.8.4
+
+      - name: Checkout repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          fetch-depth: 0
+
+      - name: Check eval coverage for changed skills
+        uses: ./.github/actions/check-eval-coverage
+        with:
+          base-ref: origin/${{ github.base_ref }}
+          require-coverage: 'true'
+
   # Summary job for automated PRs that were skipped
   skipped-summary:
     name: CI Skipped (Automated PR)

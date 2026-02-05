@@ -1,0 +1,171 @@
+# Composite action to check eval coverage for skills changed in a PR
+# Ensures new skills have corresponding eval suites before merging.
+
+name: 'Check Eval Coverage'
+description: 'Checks that skills changed in a PR have corresponding eval suites'
+
+inputs:
+  base-ref:
+    description: 'Base ref to compare against (e.g., origin/main)'
+    required: true
+  require-coverage:
+    description: 'Fail if any changed skill is missing an eval suite'
+    required: false
+    default: 'false'
+
+outputs:
+  changed-skills:
+    description: 'JSON array of skill names that were changed'
+    value: ${{ steps.check.outputs.changed_skills }}
+  missing-evals:
+    description: 'JSON array of skill names missing eval suites'
+    value: ${{ steps.check.outputs.missing_evals }}
+  coverage-passed:
+    description: 'Whether all changed skills have eval suites'
+    value: ${{ steps.check.outputs.coverage_passed }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Check eval coverage for changed skills
+      id: check
+      shell: bash
+      env:
+        BASE_REF: ${{ inputs.base-ref }}
+        REQUIRE_COVERAGE: ${{ inputs.require-coverage }}
+      run: |
+        echo "=== Checking Eval Coverage ==="
+        echo ""
+
+        # Get list of changed files compared to base
+        CHANGED_FILES=$(git diff --name-only "$BASE_REF"...HEAD 2>/dev/null || git diff --name-only "$BASE_REF" HEAD)
+
+        # Extract unique skill names from changed paths
+        # Pattern: packages/plugins/<plugin>/skills/<skill>/...
+        CHANGED_SKILLS=$(echo "$CHANGED_FILES" | \
+          grep -E '^packages/plugins/[^/]+/skills/[^/]+/' | \
+          sed -E 's|^packages/plugins/[^/]+/skills/([^/]+)/.*|\1|' | \
+          sort -u || true)
+
+        if [ -z "$CHANGED_SKILLS" ]; then
+          echo "No skills changed in this PR."
+          echo "changed_skills=[]" >> $GITHUB_OUTPUT
+          echo "missing_evals=[]" >> $GITHUB_OUTPUT
+          echo "coverage_passed=true" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+
+        echo "Changed skills:"
+        echo "$CHANGED_SKILLS" | while read -r skill; do
+          echo "  - $skill"
+        done
+        echo ""
+
+        # Check each skill for eval suite
+        MISSING_EVALS=""
+        FOUND_EVALS=""
+        SKILLS_JSON="["
+        MISSING_JSON="["
+        FIRST_SKILL=true
+        FIRST_MISSING=true
+
+        while IFS= read -r skill; do
+          [ -z "$skill" ] && continue
+
+          # Build skills JSON array
+          if [ "$FIRST_SKILL" = true ]; then
+            SKILLS_JSON="${SKILLS_JSON}\"${skill}\""
+            FIRST_SKILL=false
+          else
+            SKILLS_JSON="${SKILLS_JSON},\"${skill}\""
+          fi
+
+          # Check for eval suite
+          EVAL_PATH="evals/suites/${skill}/promptfoo.yaml"
+          if [ -f "$EVAL_PATH" ]; then
+            FOUND_EVALS="${FOUND_EVALS}${skill}\n"
+            echo "  [FOUND] ${skill} -> ${EVAL_PATH}"
+          else
+            MISSING_EVALS="${MISSING_EVALS}${skill}\n"
+            echo "  [MISSING] ${skill} -> ${EVAL_PATH}"
+
+            # Build missing JSON array
+            if [ "$FIRST_MISSING" = true ]; then
+              MISSING_JSON="${MISSING_JSON}\"${skill}\""
+              FIRST_MISSING=false
+            else
+              MISSING_JSON="${MISSING_JSON},\"${skill}\""
+            fi
+          fi
+        done <<< "$CHANGED_SKILLS"
+
+        SKILLS_JSON="${SKILLS_JSON}]"
+        MISSING_JSON="${MISSING_JSON}]"
+
+        # Set outputs
+        echo "changed_skills=${SKILLS_JSON}" >> $GITHUB_OUTPUT
+        echo "missing_evals=${MISSING_JSON}" >> $GITHUB_OUTPUT
+
+        # Count results
+        FOUND_COUNT=$(echo -e "$FOUND_EVALS" | grep -c . || echo 0)
+        MISSING_COUNT=$(echo -e "$MISSING_EVALS" | grep -c . || echo 0)
+        TOTAL_COUNT=$((FOUND_COUNT + MISSING_COUNT))
+
+        echo ""
+        echo "=== Coverage Summary ==="
+        echo "Total skills changed: $TOTAL_COUNT"
+        echo "With eval suites: $FOUND_COUNT"
+        echo "Missing eval suites: $MISSING_COUNT"
+        echo ""
+
+        # Create job summary
+        {
+          echo "## Eval Coverage Check"
+          echo ""
+          echo "| Skill | Has Eval Suite |"
+          echo "|-------|----------------|"
+
+          while IFS= read -r skill; do
+            [ -z "$skill" ] && continue
+            EVAL_PATH="evals/suites/${skill}/promptfoo.yaml"
+            if [ -f "$EVAL_PATH" ]; then
+              echo "| \`${skill}\` | :white_check_mark: Found |"
+            else
+              echo "| \`${skill}\` | :x: **Missing** |"
+            fi
+          done <<< "$CHANGED_SKILLS"
+
+          echo ""
+          echo "**Summary:** ${FOUND_COUNT}/${TOTAL_COUNT} skills have eval suites"
+
+          if [ "$MISSING_COUNT" -gt 0 ]; then
+            echo ""
+            echo "### Required Action"
+            echo ""
+            echo "Create eval suites for the missing skills:"
+            echo ""
+            echo "\`\`\`bash"
+            echo -e "$MISSING_EVALS" | while IFS= read -r skill; do
+              [ -z "$skill" ] && continue
+              echo "cp -r evals/templates/suite/ evals/suites/${skill}/"
+            done
+            echo "\`\`\`"
+            echo ""
+            echo "See [Evals Framework documentation](../../evals/README.md) for more details."
+          fi
+        } >> $GITHUB_STEP_SUMMARY
+
+        # Determine pass/fail
+        if [ "$MISSING_COUNT" -eq 0 ]; then
+          echo "coverage_passed=true" >> $GITHUB_OUTPUT
+          echo "All changed skills have eval suites!"
+        else
+          echo "coverage_passed=false" >> $GITHUB_OUTPUT
+
+          if [ "$REQUIRE_COVERAGE" = "true" ]; then
+            echo "::error::${MISSING_COUNT} skill(s) missing eval suites"
+            exit 1
+          else
+            echo "::warning::${MISSING_COUNT} skill(s) missing eval suites"
+          fi
+        fi

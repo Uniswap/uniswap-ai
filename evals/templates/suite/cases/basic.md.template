@@ -1,0 +1,26 @@
+# Basic {{SKILL_NAME}} Test Case
+
+{{DESCRIPTION}}
+
+## Context
+
+- Describe the context and setup for this test case
+- Include any relevant background information
+- Specify the environment or constraints
+
+## Requirements
+
+1. First requirement the skill must fulfill
+2. Second requirement
+3. Third requirement
+4. etc.
+
+## Constraints
+
+- Any limitations or boundaries
+- Performance requirements
+- Security considerations
+
+## Expected Output
+
+Describe what a successful response should look like or contain.
