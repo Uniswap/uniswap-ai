@@ -5,8 +5,8 @@
   "type": "module",
   "packageManager": "npm@11.7.0",
   "engines": {
-    "node": "22.x",
-    "npm": "11.7.0"
+    "node": ">=22.x",
+    "npm": ">=11.7.0"
   },
   "scripts": {
     "build": "nx run-many --target=build --all",
@@ -22,6 +22,7 @@
   },
   "private": true,
   "devDependencies": {
+    "@anthropic-ai/sdk": "0.72.1",
     "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.34.0",
     "@nx/devkit": "22.0.2",
@@ -48,6 +49,7 @@
     "markdownlint-cli2": "^0.20.0",
     "nx": "22.0.2",
     "prettier": "^2.6.2",
+    "promptfoo": "0.120.22",
     "ts-jest": "^29.4.0",
     "tslib": "^2.3.0",
     "tsx": "^4.20.6",
