@@ -67,6 +67,7 @@ uniswap-ai/
 │   └── templates/           # Templates for new suites
 ├── packages/
 │   ├── plugins/             # Claude Code plugins
+│   │   ├── uniswap-cca/     # Continuous Clearing Auction (CCA) plugin
 │   │   └── uniswap-hooks/   # Uniswap V4 hooks plugin
 │   ├── sdk/                 # TypeScript SDKs
 │   ├── prompts/             # Shared prompt templates

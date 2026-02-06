@@ -14,6 +14,11 @@
       "name": "uniswap-hooks",
       "source": "./packages/plugins/uniswap-hooks",
       "description": "AI-powered assistance for creating Uniswap V4 hooks"
+    },
+    {
+      "name": "uniswap-cca",
+      "source": "./packages/plugins/uniswap-cca",
+      "description": "Configure and deploy Continuous Clearing Auction (CCA) smart contracts for token distribution"
     }
   ]
 }

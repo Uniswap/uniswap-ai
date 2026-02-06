@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "cca-supply-schedule": {
+      "type": "stdio",
+      "command": "python3",
+      "args": ["-u", "mcp-server/supply-schedule/server.py"],
+      "env": {},
+      "description": "Generate supply schedules for CCA contracts using normalized convex curve"
+    }
+  }
+}
