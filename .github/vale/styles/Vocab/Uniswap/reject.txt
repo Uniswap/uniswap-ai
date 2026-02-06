@@ -1,0 +1,6 @@
+# Common misspellings and rejected terms
+uniSwap
+uni-swap
+Uni Swap
+type-script
+java-script
