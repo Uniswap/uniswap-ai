@@ -1,3 +1,8 @@
+---
+title: Introduction
+order: 1
+---
+
 # Getting Started
 
 Welcome to Uniswap AI - a collection of AI tools for building on the Uniswap protocol.

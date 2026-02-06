@@ -1,3 +1,8 @@
+---
+title: Quick Start
+order: 3
+---
+
 # Quick Start
 
 Create your first Uniswap V4 hook with AI assistance in minutes.

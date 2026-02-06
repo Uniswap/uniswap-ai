@@ -1,3 +1,8 @@
+---
+title: Aggregator Hook Creator
+order: 2
+---
+
 # Aggregator Hook Creator
 
 Create custom aggregator hooks for Uniswap V4 that route through multiple liquidity sources.
