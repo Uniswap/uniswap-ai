@@ -101,6 +101,16 @@ jobs:
           npx nx format:check
           echo "✅ Formatting check passed"
 
+      - name: Lint documentation prose (Vale)
+        continue-on-error: true
+        run: |
+          echo "Checking documentation prose quality..."
+          if command -v vale &> /dev/null; then
+            vale docs/ --minAlertLevel=warning || echo "::warning::Vale found documentation issues - see output above"
+          else
+            echo "::notice::Vale not installed, skipping prose linting"
+          fi
+
       - name: Run tests
         run: |
           echo "Running tests..."
