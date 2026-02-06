@@ -6,6 +6,8 @@ on:
       - main
     paths:
       - 'docs/**'
+      - 'evals/framework/**/*.ts'
+      - 'typedoc.json'
       - '.github/workflows/deploy-docs.yml'
   workflow_dispatch:
 
@@ -45,7 +47,7 @@ jobs:
         run: npm ci --prefer-offline --no-audit
 
       - name: Build documentation
-        run: npm run docs:build
+        run: npx nx run docs:build
 
       - name: Setup Pages
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
