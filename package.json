@@ -36,6 +36,8 @@
     "@swc/core": "^1.14.0",
     "@swc/helpers": "~0.5.11",
     "@swc/jest": "~0.2.38",
+    "@types/gray-matter": "^1.0.0",
+    "gray-matter": "^4.0.3",
     "@types/jest": "^30.0.0",
     "@types/node": "20.19.9",
     "@typescript-eslint/eslint-plugin": "^8.42.0",

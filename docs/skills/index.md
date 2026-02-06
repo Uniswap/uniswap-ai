@@ -1,3 +1,8 @@
+---
+title: Overview
+order: 1
+---
+
 # Skills
 
 Skills are AI-powered capabilities that help you build on Uniswap. Each skill is designed for a specific task and can be invoked directly or contextually.
