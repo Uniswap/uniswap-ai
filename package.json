@@ -18,6 +18,7 @@
     "docs:build": "nx run docs:build",
     "docs:preview": "nx run docs:preview",
     "docs:api": "nx run evals:generate-api-docs",
+    "docs:lint": "vale docs/",
     "prepare": "node scripts/prepare.cjs",
     "lefthook": "npx lefthook run pre-commit"
   },
