@@ -1,0 +1,48 @@
+{
+  "name": "docs",
+  "$schema": "../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "targets": {
+    "generate-api-docs": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx typedoc",
+        "cwd": "{workspaceRoot}"
+      },
+      "inputs": [
+        "{workspaceRoot}/evals/framework/**/*.ts",
+        "{workspaceRoot}/typedoc.json"
+      ],
+      "outputs": ["{workspaceRoot}/docs/api"]
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["generate-api-docs"],
+      "options": {
+        "command": "vitepress build docs",
+        "cwd": "{workspaceRoot}"
+      },
+      "inputs": [
+        "{workspaceRoot}/docs/**/*",
+        "!{workspaceRoot}/docs/.vitepress/dist/**",
+        "!{workspaceRoot}/docs/.vitepress/cache/**"
+      ],
+      "outputs": ["{workspaceRoot}/docs/.vitepress/dist"]
+    },
+    "dev": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["generate-api-docs"],
+      "options": {
+        "command": "vitepress dev docs",
+        "cwd": "{workspaceRoot}"
+      }
+    },
+    "preview": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vitepress preview docs",
+        "cwd": "{workspaceRoot}"
+      }
+    }
+  }
+}
