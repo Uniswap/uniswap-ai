@@ -54,8 +54,8 @@
     "ts-jest": "^29.4.0",
     "tslib": "^2.3.0",
     "tsx": "^4.20.6",
-    "typedoc": "^0.27.0",
-    "typedoc-plugin-markdown": "^4.4.0",
+    "typedoc": "^0.28.0",
+    "typedoc-plugin-markdown": "^4.9.0",
     "typescript": "5.9.3",
     "typescript-eslint": "^8.29.0",
     "vitepress": "1.6.4"
