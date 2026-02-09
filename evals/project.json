@@ -52,6 +52,18 @@
       "options": {
         "command": "npx tsc --noEmit -p evals/tsconfig.json"
       }
+    },
+    "generate-api-docs": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx typedoc",
+        "cwd": "{workspaceRoot}"
+      },
+      "inputs": ["{projectRoot}/framework/**/*.ts", "{workspaceRoot}/typedoc.json"],
+      "outputs": ["{workspaceRoot}/docs/api"],
+      "metadata": {
+        "description": "Generate API documentation from TypeScript source files using TypeDoc"
+      }
     }
   }
 }
