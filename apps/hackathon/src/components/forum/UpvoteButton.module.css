@@ -22,7 +22,7 @@
 .upvoted {
   background-color: var(--color-accent1-bg);
   color: var(--color-accent1);
-  border-color: var(--color-accent1);
+  border-color: var(--color-neutral1);
 }
 
 .upvoted:hover {

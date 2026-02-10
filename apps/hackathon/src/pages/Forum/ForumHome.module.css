@@ -31,19 +31,19 @@
   display: inline-flex;
   align-items: center;
   padding: var(--space-3) var(--space-6);
-  background-color: var(--color-accent1);
-  color: var(--color-neutral1);
-  border-radius: var(--radius-full);
+  background-color: var(--color-neutral1);
+  color: #000000;
+  border-radius: var(--radius-xl);
   font-size: var(--font-size-sm);
   font-weight: 600;
   text-decoration: none;
   white-space: nowrap;
-  transition: background-color var(--duration-normal) ease;
+  transition: opacity var(--duration-normal) ease;
 }
 
 .newPostBtn:hover {
-  background-color: var(--color-accent1-hovered);
-  color: var(--color-neutral1);
+  opacity: 0.85;
+  color: #000000;
 }
 
 .toolbar {
@@ -65,7 +65,7 @@
   background-color: var(--color-surface2);
   color: var(--color-neutral1);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-xl);
   font-family: var(--font-family);
   font-size: var(--font-size-sm);
   transition: border-color var(--duration-normal) ease;
@@ -77,7 +77,7 @@
 
 .searchInput:focus {
   outline: none;
-  border-color: var(--color-accent1);
+  border-color: var(--color-neutral1);
 }
 
 .feed {
@@ -103,18 +103,18 @@
 .emptyLink {
   display: inline-block;
   padding: var(--space-3) var(--space-6);
-  background-color: var(--color-accent1);
-  color: var(--color-neutral1);
-  border-radius: var(--radius-full);
+  background-color: var(--color-neutral1);
+  color: #000000;
+  border-radius: var(--radius-xl);
   font-size: var(--font-size-sm);
   font-weight: 600;
   text-decoration: none;
-  transition: background-color var(--duration-normal) ease;
+  transition: opacity var(--duration-normal) ease;
 }
 
 .emptyLink:hover {
-  background-color: var(--color-accent1-hovered);
-  color: var(--color-neutral1);
+  opacity: 0.85;
+  color: #000000;
 }
 
 @media (max-width: 768px) {

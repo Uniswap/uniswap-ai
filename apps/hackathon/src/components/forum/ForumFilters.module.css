@@ -5,6 +5,9 @@
 }
 
 .chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
   padding: var(--space-1) var(--space-4);
   border-radius: var(--radius-full);
   font-size: var(--font-size-xs);
@@ -24,12 +27,12 @@
 }
 
 .chipActive {
-  background-color: var(--color-accent1-bg);
-  color: var(--color-accent1);
-  border-color: var(--color-accent1);
+  background-color: var(--color-surface3);
+  color: var(--color-neutral1);
+  border-color: var(--color-neutral1);
 }
 
 .chipActive:hover {
-  background-color: var(--color-accent1-bg);
-  color: var(--color-accent1);
+  background-color: var(--color-surface3);
+  color: var(--color-neutral1);
 }

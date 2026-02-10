@@ -28,7 +28,7 @@
 
 .textarea:focus {
   outline: none;
-  border-color: var(--color-accent1);
+  border-color: var(--color-neutral1);
 }
 
 .error {
@@ -43,18 +43,18 @@
 
 .submitBtn {
   padding: var(--space-2) var(--space-5);
-  background-color: var(--color-accent1);
-  color: var(--color-neutral1);
+  background-color: var(--color-neutral1);
+  color: #000000;
   border: none;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-xl);
   font-size: var(--font-size-sm);
   font-weight: 600;
   cursor: pointer;
-  transition: background-color var(--duration-normal) ease;
+  transition: opacity var(--duration-normal) ease;
 }
 
 .submitBtn:hover:not(:disabled) {
-  background-color: var(--color-accent1-hovered);
+  opacity: 0.85;
 }
 
 .submitBtn:disabled {
@@ -73,18 +73,18 @@
 
 .signInBtn {
   padding: var(--space-2) var(--space-4);
-  background-color: var(--color-accent1);
-  color: var(--color-neutral1);
+  background-color: var(--color-neutral1);
+  color: #000000;
   border: none;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-xl);
   font-size: var(--font-size-sm);
   font-weight: 600;
   cursor: pointer;
-  transition: background-color var(--duration-normal) ease;
+  transition: opacity var(--duration-normal) ease;
 }
 
 .signInBtn:hover {
-  background-color: var(--color-accent1-hovered);
+  opacity: 0.85;
 }
 
 .signInText {
