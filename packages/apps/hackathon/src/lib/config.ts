@@ -25,13 +25,6 @@ export const CATEGORIES = [
 
 export type Category = (typeof CATEGORIES)[number];
 
-export const PRIZES = [
-  { place: '1st Place', amount: '$10,000', description: 'Best overall project' },
-  { place: '2nd Place', amount: '$5,000', description: 'Runner-up' },
-  { place: '3rd Place', amount: '$2,500', description: 'Third place' },
-  { place: 'Best Use of AI', amount: '$2,500', description: 'Most innovative AI integration' },
-] as const;
-
 export const FAQ_ITEMS = [
   {
     question: 'Who can participate?',

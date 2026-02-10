@@ -134,6 +134,12 @@
   border-radius: var(--radius-2xl);
   padding: var(--space-8);
   border: none;
+  transition: transform var(--duration-normal), filter var(--duration-normal);
+}
+
+.aboutCard:hover {
+  transform: translateY(-3px);
+  filter: brightness(1.15);
 }
 
 .aboutCardPink {
@@ -193,61 +199,6 @@
   font-size: var(--font-size-sm);
 }
 
-/* Prizes */
-.prizesGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: var(--space-6);
-}
-
-.prizeCard {
-  background-color: var(--color-surface2);
-  border-radius: var(--radius-2xl);
-  padding: var(--space-8) var(--space-6);
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  position: relative;
-  overflow: hidden;
-  transition: transform var(--duration-normal);
-}
-
-.prizeCard::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--color-accent1), #ff85d9);
-}
-
-.prizeCard:hover {
-  transform: translateY(-2px);
-}
-
-.prizePlace {
-  font-size: var(--font-size-sm);
-  color: var(--color-neutral3);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-weight: 600;
-}
-
-.prizeAmount {
-  font-size: var(--font-size-4xl);
-  font-weight: 700;
-  color: var(--color-accent1);
-  line-height: 1.1;
-  padding: var(--space-2) 0;
-}
-
-.prizeDescription {
-  color: var(--color-neutral2);
-  font-size: var(--font-size-sm);
-}
-
 /* How to Participate */
 .stepsGrid {
   display: grid;
@@ -259,6 +210,12 @@
   position: relative;
   padding: var(--space-8);
   border-radius: var(--radius-2xl);
+  transition: transform var(--duration-normal), filter var(--duration-normal);
+}
+
+.stepCard:hover {
+  transform: translateY(-3px);
+  filter: brightness(1.15);
 }
 
 .stepCardTint1 {
