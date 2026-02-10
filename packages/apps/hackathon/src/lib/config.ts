@@ -14,11 +14,8 @@ export const HACKATHON_CONFIG = {
 } as const;
 
 export const CATEGORIES = [
-  'Trading Agents',
   'DeFi Automation',
-  'Analytics & Monitoring',
   'Developer Tooling',
-  'Infrastructure',
   'Social/Community',
   'Other',
 ] as const;
