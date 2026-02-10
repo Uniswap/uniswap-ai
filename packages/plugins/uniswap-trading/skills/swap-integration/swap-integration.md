@@ -1,0 +1,1001 @@
+---
+name: swap-integration
+description: Integrate Uniswap swaps into applications. Use when user says "integrate swaps", "uniswap", "trading api", "add swap functionality", "build a swap frontend", "create a swap script", "smart contract swap integration", "use Universal Router", "Trading API", or mentions swapping tokens via Uniswap.
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash(npm:*), Bash(npx:*), Bash(yarn:*), Bash(curl:*), WebFetch, Task(subagent_type:swap-integration-expert)
+model: opus
+---
+
+# Swap Integration
+
+Integrate Uniswap swaps into frontends, backends, and smart contracts.
+
+## Prerequisites
+
+This skill assumes familiarity with viem basics (client setup, account management, contract interactions, transaction signing). Install the **uniswap-viem** plugin for comprehensive viem/wagmi guidance: `claude plugin add @uniswap/uniswap-viem`
+
+## Quick Decision Guide
+
+| Building...                    | Use This Method               |
+| ------------------------------ | ----------------------------- |
+| Frontend with React/Next.js    | Trading API                   |
+| Backend script or bot          | Trading API                   |
+| Smart contract integration     | Universal Router direct calls |
+| Need full control over routing | Universal Router SDK          |
+
+## Integration Methods
+
+### 1. Trading API (Recommended)
+
+Best for: Frontends, backends, scripts. Handles routing optimization automatically.
+
+**Base URL**: `https://trade-api.gateway.uniswap.org/v1`
+
+**Authentication**: `x-api-key: <your-api-key>` header required
+
+**3-Step Flow**:
+
+```text
+1. POST /check_approval  -> Check if token is approved
+2. POST /quote           -> Get executable quote with routing
+3. POST /swap            -> Get transaction to sign and submit
+```
+
+See the [Trading API Reference](#trading-api-reference) section below for complete documentation.
+
+### 2. Universal Router SDK
+
+Best for: Direct control over transaction construction.
+
+**Installation**:
+
+```bash
+npm install @uniswap/universal-router-sdk @uniswap/sdk-core @uniswap/v3-sdk
+```
+
+**Key Pattern**:
+
+```typescript
+import { SwapRouter } from '@uniswap/universal-router-sdk';
+
+const { calldata, value } = SwapRouter.swapCallParameters(trade, options);
+```
+
+See the [Universal Router Reference](#universal-router-reference) section below for complete documentation.
+
+### 3. Smart Contract Integration
+
+Best for: On-chain integrations, DeFi composability.
+
+**Interface**: Call `execute()` on Universal Router with encoded commands.
+
+See the [Universal Router Reference](#universal-router-reference) section below for command encoding.
+
+---
+
+## Trading API Reference
+
+### Step 1: Check Token Approval
+
+```bash
+POST /check_approval
+```
+
+**Request**:
+
+```json
+{
+  "walletAddress": "0x...",
+  "token": "0x...",
+  "amount": "1000000000",
+  "chainId": 1
+}
+```
+
+**Response**:
+
+```json
+{
+  "approval": {
+    "to": "0x...",
+    "from": "0x...",
+    "data": "0x...",
+    "value": "0",
+    "chainId": 1
+  }
+}
+```
+
+If `approval` is `null`, token is already approved.
+
+### Step 2: Get Quote
+
+```bash
+POST /quote
+```
+
+**Request**:
+
+```json
+{
+  "swapper": "0x...",
+  "tokenIn": "0x...",
+  "tokenOut": "0x...",
+  "tokenInChainId": 1,
+  "tokenOutChainId": 1,
+  "amount": "1000000000000000000",
+  "type": "EXACT_INPUT",
+  "slippageTolerance": 0.5
+}
+```
+
+**Key Parameters**:
+
+| Parameter           | Description                        |
+| ------------------- | ---------------------------------- |
+| `type`              | `EXACT_INPUT` or `EXACT_OUTPUT`    |
+| `slippageTolerance` | 0-100 percentage                   |
+| `protocols`         | Optional: `["V2", "V3", "V4"]`     |
+| `routingPreference` | `BEST_PRICE`, `FASTEST`, `CLASSIC` |
+
+**Response**:
+
+```json
+{
+  "routing": "CLASSIC",
+  "quote": {
+    "input": { "token": "0x...", "amount": "1000000000000000000" },
+    "output": { "token": "0x...", "amount": "999000000" },
+    "slippage": 0.5,
+    "route": [],
+    "gasFee": "5000000000000000"
+  },
+  "permitData": {}
+}
+```
+
+### Step 3: Execute Swap
+
+```bash
+POST /swap
+```
+
+**Request** - Spread the quote response directly into the body:
+
+```typescript
+// CORRECT: Spread the quote response, strip null fields
+const quoteResponse = await fetchQuote(params);
+
+// Remove null permitData/permitTransaction (API rejects null values)
+const { permitData, permitTransaction, ...cleanQuote } = quoteResponse;
+
+const swapRequest = {
+  ...cleanQuote,
+  // Only include permitData if it's a valid object (not null)
+  ...(permitData && { permitData }),
+};
+
+// If using Permit2 signature, include BOTH signature and permitData
+if (permit2Signature && permitData) {
+  swapRequest.signature = permit2Signature;
+  swapRequest.permitData = permitData;
+}
+```
+
+**Critical**: Do NOT wrap the quote in `{quote: quoteResponse}`. The API expects the quote response fields spread into the request body.
+
+**Permit2 Rules**:
+
+- `signature` and `permitData` must BOTH be present, or BOTH be absent
+- Never set `permitData: null` - omit the field entirely
+- The quote response often includes `permitData: null` - strip this before sending
+
+**Response** (ready-to-sign transaction):
+
+```json
+{
+  "swap": {
+    "to": "0x...",
+    "from": "0x...",
+    "data": "0x...",
+    "value": "0",
+    "chainId": 1,
+    "gasLimit": "250000"
+  }
+}
+```
+
+**Response Validation** - Always validate before broadcasting:
+
+```typescript
+function validateSwapResponse(response: SwapResponse): void {
+  if (!response.swap?.data || response.swap.data === '' || response.swap.data === '0x') {
+    throw new Error('swap.data is empty - quote may have expired');
+  }
+  if (!isAddress(response.swap.to) || !isAddress(response.swap.from)) {
+    throw new Error('Invalid address in swap response');
+  }
+}
+```
+
+### Supported Chains
+
+| ID  | Chain    | ID    | Chain    |
+| --- | -------- | ----- | -------- |
+| 1   | Mainnet  | 42161 | Arbitrum |
+| 10  | Optimism | 8453  | Base     |
+| 137 | Polygon  | 81457 | Blast    |
+| 56  | BNB      | 130   | Unichain |
+
+### Swap Types
+
+| Value | Type     | Description         |
+| ----- | -------- | ------------------- |
+| 0     | CLASSIC  | Standard AMM swap   |
+| 2     | DUTCH_V2 | Dutch auction order |
+| 4     | WRAP     | ETH to WETH         |
+| 5     | UNWRAP   | WETH to ETH         |
+| 6     | BRIDGE   | Cross-chain bridge  |
+
+---
+
+## Critical Implementation Notes
+
+These are common pitfalls discovered during real-world Trading API integration. **Follow these rules to avoid on-chain reverts and API errors.**
+
+### 1. Swap Request Body Format
+
+The `/swap` endpoint expects the quote response **spread into the request body**, not wrapped in a `quote` field.
+
+```typescript
+// WRONG - causes "quote does not match any of the allowed types"
+const badRequest = {
+  quote: quoteResponse, // Don't wrap!
+  signature: '0x...',
+};
+
+// CORRECT - spread the quote response
+const goodRequest = {
+  ...quoteResponse,
+  signature: '0x...', // Only if using Permit2
+};
+```
+
+### 2. Null Field Handling
+
+The API rejects `permitData: null`. Always strip null fields before sending:
+
+```typescript
+function prepareSwapRequest(quoteResponse: QuoteResponse, signature?: string): object {
+  // Strip null values that the API rejects
+  const { permitData, permitTransaction, ...cleanQuote } = quoteResponse;
+
+  const request: Record<string, unknown> = { ...cleanQuote };
+
+  // Only include permitData if it's a valid object AND we have a signature
+  if (signature && permitData && typeof permitData === 'object') {
+    request.signature = signature;
+    request.permitData = permitData;
+  }
+
+  return request;
+}
+```
+
+### 3. Permit2 Field Rules
+
+When using Permit2 for gasless approvals:
+
+| Scenario                   | `signature` | `permitData` |
+| -------------------------- | ----------- | ------------ |
+| Standard swap (no Permit2) | Omit        | Omit         |
+| Permit2 swap               | Required    | Required     |
+| **Invalid**                | Present     | Missing      |
+| **Invalid**                | Missing     | Present      |
+| **Invalid (API error)**    | Any         | `null`       |
+
+### 4. Pre-Broadcast Validation
+
+Always validate the swap response before sending to the blockchain:
+
+```typescript
+import { isAddress, isHex } from 'viem';
+
+function validateSwapBeforeBroadcast(swap: SwapTransaction): void {
+  // 1. data must be non-empty hex
+  if (!swap.data || swap.data === '' || swap.data === '0x') {
+    throw new Error('swap.data is empty - this will revert on-chain. Re-fetch the quote.');
+  }
+
+  if (!isHex(swap.data)) {
+    throw new Error('swap.data is not valid hex');
+  }
+
+  // 2. Addresses must be valid
+  if (!isAddress(swap.to)) {
+    throw new Error('swap.to is not a valid address');
+  }
+
+  if (!isAddress(swap.from)) {
+    throw new Error('swap.from is not a valid address');
+  }
+
+  // 3. Value must be present (can be "0" for non-ETH swaps)
+  if (swap.value === undefined || swap.value === null) {
+    throw new Error('swap.value is missing');
+  }
+}
+```
+
+### 5. Browser Environment Setup
+
+When using viem/wagmi in browser environments, you need Node.js polyfills:
+
+**Install buffer polyfill**:
+
+```bash
+npm install buffer
+```
+
+**Add to your entry file (before other imports)**:
+
+```typescript
+// src/main.tsx or src/index.tsx
+import { Buffer } from 'buffer';
+globalThis.Buffer = Buffer;
+
+// Then your other imports
+import React from 'react';
+import { WagmiProvider } from 'wagmi';
+// ...
+```
+
+**Vite configuration** (`vite.config.ts`):
+
+```typescript
+export default defineConfig({
+  define: {
+    global: 'globalThis',
+  },
+  optimizeDeps: {
+    include: ['buffer'],
+  },
+  resolve: {
+    alias: {
+      buffer: 'buffer',
+    },
+  },
+});
+```
+
+Without this setup, you'll see: `ReferenceError: Buffer is not defined`
+
+### 6. Quote Freshness
+
+- Quotes expire quickly (typically 30 seconds)
+- Always re-fetch if the user takes time to review
+- Use the `deadline` parameter to prevent stale execution
+- If `/swap` returns empty `data`, the quote likely expired
+
+---
+
+## Universal Router Reference
+
+The Universal Router is a unified interface for swapping across Uniswap V2, V3, and V4.
+
+### Core Function
+
+```solidity
+function execute(
+    bytes calldata commands,
+    bytes[] calldata inputs,
+    uint256 deadline
+) external payable;
+```
+
+### Command Encoding
+
+Each command is a single byte:
+
+| Bits | Name     | Purpose                             |
+| ---- | -------- | ----------------------------------- |
+| 0    | flag     | Allow revert (1 = continue on fail) |
+| 1-2  | reserved | Use 0                               |
+| 3-7  | command  | Operation identifier                |
+
+### Swap Commands
+
+| Code | Command           | Description               |
+| ---- | ----------------- | ------------------------- |
+| 0x00 | V3_SWAP_EXACT_IN  | V3 swap with exact input  |
+| 0x01 | V3_SWAP_EXACT_OUT | V3 swap with exact output |
+| 0x08 | V2_SWAP_EXACT_IN  | V2 swap with exact input  |
+| 0x09 | V2_SWAP_EXACT_OUT | V2 swap with exact output |
+| 0x10 | V4_SWAP           | V4 swap                   |
+
+### Token Operations
+
+| Code | Command     | Description                |
+| ---- | ----------- | -------------------------- |
+| 0x04 | SWEEP       | Clear router token balance |
+| 0x05 | TRANSFER    | Send specific amount       |
+| 0x0b | WRAP_ETH    | ETH to WETH                |
+| 0x0c | UNWRAP_WETH | WETH to ETH                |
+
+### Permit2 Commands
+
+| Code | Command               | Description           |
+| ---- | --------------------- | --------------------- |
+| 0x02 | PERMIT2_TRANSFER_FROM | Single token transfer |
+| 0x03 | PERMIT2_PERMIT_BATCH  | Batch approval        |
+| 0x0a | PERMIT2_PERMIT        | Single approval       |
+
+### SDK Usage
+
+```typescript
+import { SwapRouter, UniswapTrade } from '@uniswap/universal-router-sdk'
+import { TradeType } from '@uniswap/sdk-core'
+
+// Build trade using v3-sdk or router-sdk
+const trade = new RouterTrade({
+  v3Routes: [...],
+  tradeType: TradeType.EXACT_INPUT
+})
+
+// Get calldata for Universal Router
+const { calldata, value } = SwapRouter.swapCallParameters(trade, {
+  slippageTolerance: new Percent(50, 10000), // 0.5%
+  recipient: walletAddress,
+  deadline: Math.floor(Date.now() / 1000) + 1200 // 20 min
+})
+
+// Send transaction
+const tx = await wallet.sendTransaction({
+  to: UNIVERSAL_ROUTER_ADDRESS,
+  data: calldata,
+  value
+})
+```
+
+---
+
+## Permit2 Integration
+
+Permit2 enables signature-based token approvals instead of on-chain approve() calls.
+
+### How It Works
+
+1. User approves Permit2 contract once (infinite approval)
+2. For each swap, user signs a message authorizing the transfer
+3. Universal Router uses signature to transfer tokens via Permit2
+
+### Two Modes
+
+| Mode              | Description                                |
+| ----------------- | ------------------------------------------ |
+| SignatureTransfer | One-time signature, no on-chain state      |
+| AllowanceTransfer | Time-limited allowance with on-chain state |
+
+### Integration Pattern
+
+```typescript
+// Check if Permit2 approval exists
+const allowance = await permit2Contract.allowance(
+  userAddress,
+  tokenAddress,
+  spenderAddress
+)
+
+// If not approved, user must approve Permit2 first
+if (allowance.amount < requiredAmount) {
+  await token.approve(PERMIT2_ADDRESS, ethers.MaxUint256)
+}
+
+// Then sign permit for the swap
+const permitSignature = await signPermit(...)
+```
+
+---
+
+## Direct Universal Router Integration (SDK)
+
+For direct Universal Router integration without the Trading API, use the SDK's high-level API.
+
+### Installation
+
+```bash
+npm install @uniswap/universal-router-sdk @uniswap/router-sdk @uniswap/sdk-core @uniswap/v3-sdk viem
+```
+
+### High-Level Approach (Recommended)
+
+Use `RouterTrade` + `SwapRouter.swapCallParameters()` for automatic command building:
+
+```typescript
+import { SwapRouter } from '@uniswap/universal-router-sdk';
+import { Trade as RouterTrade } from '@uniswap/router-sdk';
+import { TradeType, Percent } from '@uniswap/sdk-core';
+import { Route as V3Route, Pool } from '@uniswap/v3-sdk';
+
+// 1. Build route and trade (you need pool data from on-chain or subgraph)
+const route = new V3Route([pool], tokenIn, tokenOut);
+const trade = RouterTrade.createUncheckedTrade({
+  route,
+  inputAmount: amountIn,
+  outputAmount: expectedOut,
+  tradeType: TradeType.EXACT_INPUT,
+});
+
+// 2. Get calldata
+const { calldata, value } = SwapRouter.swapCallParameters(trade, {
+  slippageTolerance: new Percent(50, 10000), // 0.5%
+  recipient: walletAddress,
+  deadline: Math.floor(Date.now() / 1000) + 1800,
+});
+
+// 3. Execute with viem
+const hash = await walletClient.sendTransaction({
+  to: UNIVERSAL_ROUTER_ADDRESS,
+  data: calldata,
+  value: BigInt(value),
+});
+```
+
+### Low-Level Approach (Manual Commands)
+
+For custom flows (fee collection, complex routing), use `RoutePlanner` directly:
+
+```typescript
+import { RoutePlanner, CommandType, ROUTER_AS_RECIPIENT } from '@uniswap/universal-router-sdk';
+import { encodeRouteToPath } from '@uniswap/v3-sdk';
+
+// Special addresses
+const MSG_SENDER = '0x0000000000000000000000000000000000000001';
+const ADDRESS_THIS = '0x0000000000000000000000000000000000000002';
+```
+
+### Example: V3 Swap with Manual Commands
+
+```typescript
+import { RoutePlanner, CommandType } from '@uniswap/universal-router-sdk';
+import { encodeRouteToPath, Route } from '@uniswap/v3-sdk';
+
+async function swapV3Manual(route: Route, amountIn: bigint, amountOutMin: bigint) {
+  const planner = new RoutePlanner();
+
+  // Encode V3 path from route
+  const path = encodeRouteToPath(route, false); // false = exactInput
+
+  planner.addCommand(CommandType.V3_SWAP_EXACT_IN, [
+    MSG_SENDER, // recipient
+    amountIn, // amountIn
+    amountOutMin, // amountOutMin
+    path, // encoded path
+    true, // payerIsUser
+  ]);
+
+  return executeRoute(planner);
+}
+```
+
+### Example: ETH to Token (Wrap + Swap)
+
+```typescript
+async function swapEthToToken(route: Route, amountIn: bigint, amountOutMin: bigint) {
+  const planner = new RoutePlanner();
+  const path = encodeRouteToPath(route, false);
+
+  // 1. Wrap ETH to WETH (keep in router)
+  planner.addCommand(CommandType.WRAP_ETH, [ADDRESS_THIS, amountIn]);
+
+  // 2. Swap WETH → Token (payerIsUser = false since using router's WETH)
+  planner.addCommand(CommandType.V3_SWAP_EXACT_IN, [
+    MSG_SENDER,
+    amountIn,
+    amountOutMin,
+    path,
+    false,
+  ]);
+
+  return executeRoute(planner, { value: amountIn });
+}
+```
+
+### Example: Token to ETH (Swap + Unwrap)
+
+```typescript
+async function swapTokenToEth(route: Route, amountIn: bigint, amountOutMin: bigint) {
+  const planner = new RoutePlanner();
+  const path = encodeRouteToPath(route, false);
+
+  // 1. Swap Token → WETH (output to router)
+  planner.addCommand(CommandType.V3_SWAP_EXACT_IN, [
+    ADDRESS_THIS,
+    amountIn,
+    amountOutMin,
+    path,
+    true,
+  ]);
+
+  // 2. Unwrap WETH to ETH
+  planner.addCommand(CommandType.UNWRAP_WETH, [MSG_SENDER, amountOutMin]);
+
+  return executeRoute(planner);
+}
+```
+
+### Example: Fee Collection with PAY_PORTION
+
+```typescript
+async function swapWithFee(route: Route, amountIn: bigint, feeRecipient: Address, feeBips: number) {
+  const planner = new RoutePlanner();
+  const path = encodeRouteToPath(route, false);
+  const outputToken = route.output.wrapped.address;
+
+  // Swap to router (ADDRESS_THIS)
+  planner.addCommand(CommandType.V3_SWAP_EXACT_IN, [ADDRESS_THIS, amountIn, 0n, path, true]);
+
+  // Pay fee portion (e.g., 30 bips = 0.3%)
+  planner.addCommand(CommandType.PAY_PORTION, [outputToken, feeRecipient, feeBips]);
+
+  // Sweep remainder to user
+  planner.addCommand(CommandType.SWEEP, [outputToken, MSG_SENDER, 0n]);
+
+  return executeRoute(planner);
+}
+```
+
+### Execute Route Helper
+
+```typescript
+import { UNIVERSAL_ROUTER_ADDRESS } from '@uniswap/universal-router-sdk';
+
+const ROUTER_ABI = [
+  {
+    name: 'execute',
+    type: 'function',
+    stateMutability: 'payable',
+    inputs: [
+      { name: 'commands', type: 'bytes' },
+      { name: 'inputs', type: 'bytes[]' },
+      { name: 'deadline', type: 'uint256' },
+    ],
+    outputs: [],
+  },
+] as const;
+
+async function executeRoute(planner: RoutePlanner, options?: { value?: bigint }) {
+  const deadline = BigInt(Math.floor(Date.now() / 1000) + 1800);
+  const routerAddress = UNIVERSAL_ROUTER_ADDRESS(1); // chainId 1 = mainnet
+
+  const { request } = await publicClient.simulateContract({
+    address: routerAddress,
+    abi: ROUTER_ABI,
+    functionName: 'execute',
+    args: [planner.commands, planner.inputs, deadline],
+    account,
+    value: options?.value ?? 0n,
+  });
+
+  return walletClient.writeContract(request);
+}
+```
+
+### Command Cheat Sheet
+
+| Command           | Parameters                                               |
+| ----------------- | -------------------------------------------------------- |
+| V3_SWAP_EXACT_IN  | (recipient, amountIn, amountOutMin, path, payerIsUser)   |
+| V3_SWAP_EXACT_OUT | (recipient, amountOut, amountInMax, path, payerIsUser)   |
+| V2_SWAP_EXACT_IN  | (recipient, amountIn, amountOutMin, path[], payerIsUser) |
+| V2_SWAP_EXACT_OUT | (recipient, amountOut, amountInMax, path[], payerIsUser) |
+| WRAP_ETH          | (recipient, amount)                                      |
+| UNWRAP_WETH       | (recipient, amountMin)                                   |
+| SWEEP             | (token, recipient, amountMin)                            |
+| TRANSFER          | (token, recipient, amount)                               |
+| PAY_PORTION       | (token, recipient, bips)                                 |
+
+### Fee Tiers
+
+| Tier   | Value | Percentage |
+| ------ | ----- | ---------- |
+| LOWEST | 100   | 0.01%      |
+| LOW    | 500   | 0.05%      |
+| MEDIUM | 3000  | 0.30%      |
+| HIGH   | 10000 | 1.00%      |
+
+---
+
+## Common Integration Patterns
+
+### Frontend Swap Hook (React)
+
+**Note**: Ensure you've set up the Buffer polyfill (see Critical Implementation Notes).
+
+```typescript
+import { isAddress, isHex } from 'viem';
+
+const API_URL = 'https://trade-api.gateway.uniswap.org/v1';
+
+function useSwap() {
+  const [quoteResponse, setQuoteResponse] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const getQuote = async (params) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(`${API_URL}/quote`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': API_KEY,
+        },
+        body: JSON.stringify(params),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || 'Quote failed');
+      setQuoteResponse(data); // Store the FULL response, not just data.quote
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const executeSwap = async (permit2Signature?: string) => {
+    if (!quoteResponse) throw new Error('No quote available');
+
+    // CRITICAL: Strip null fields and spread quote response into body
+    const { permitData, permitTransaction, ...cleanQuote } = quoteResponse;
+
+    const swapRequest: Record<string, any> = {
+      ...cleanQuote,
+    };
+
+    // CRITICAL: Only include permitData if we have BOTH signature and permitData
+    // The API requires both fields to be present or both to be absent
+    if (permit2Signature && permitData && typeof permitData === 'object') {
+      swapRequest.signature = permit2Signature;
+      swapRequest.permitData = permitData;
+    }
+
+    const swapResponse = await fetch(`${API_URL}/swap`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': API_KEY,
+      },
+      body: JSON.stringify(swapRequest),
+    });
+    const data = await swapResponse.json();
+    if (!swapResponse.ok) throw new Error(data.detail || 'Swap failed');
+
+    // CRITICAL: Validate response before broadcasting
+    if (!data.swap?.data || data.swap.data === '' || data.swap.data === '0x') {
+      throw new Error('Empty swap data - quote may have expired. Please refresh.');
+    }
+
+    // Send transaction via wallet
+    const tx = await signer.sendTransaction(data.swap);
+    return tx;
+  };
+
+  return { quote: quoteResponse?.quote, loading, error, getQuote, executeSwap };
+}
+```
+
+### Backend Swap Script (Node.js)
+
+```typescript
+import { ethers } from 'ethers';
+
+const API_URL = 'https://trade-api.gateway.uniswap.org/v1';
+const API_KEY = process.env.UNISWAP_API_KEY;
+
+// Helper to strip null fields from quote response
+function prepareSwapRequest(quoteResponse: any, signature?: string): object {
+  const { permitData, permitTransaction, ...cleanQuote } = quoteResponse;
+
+  const request: Record<string, any> = { ...cleanQuote };
+
+  // CRITICAL: Only include permitData if we have BOTH signature and permitData
+  // The API requires both fields to be present or both to be absent
+  if (signature && permitData && typeof permitData === 'object') {
+    request.signature = signature;
+    request.permitData = permitData;
+  }
+
+  return request;
+}
+
+// Validate swap response before broadcasting
+function validateSwap(swap: any): void {
+  if (!swap?.data || swap.data === '' || swap.data === '0x') {
+    throw new Error('swap.data is empty - quote may have expired');
+  }
+  if (!ethers.isAddress(swap.to) || !ethers.isAddress(swap.from)) {
+    throw new Error('Invalid address in swap response');
+  }
+}
+
+async function executeSwap(
+  wallet: ethers.Wallet,
+  tokenIn: string,
+  tokenOut: string,
+  amount: string,
+  chainId: number
+) {
+  // 1. Check approval (for ERC20 tokens, not native ETH)
+  if (tokenIn !== '0x0000000000000000000000000000000000000000') {
+    const approvalRes = await fetch(`${API_URL}/check_approval`, {
+      method: 'POST',
+      headers: { 'x-api-key': API_KEY!, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        walletAddress: wallet.address,
+        token: tokenIn,
+        amount,
+        chainId,
+      }),
+    });
+    const approvalData = await approvalRes.json();
+
+    if (approvalData.approval) {
+      const approveTx = await wallet.sendTransaction(approvalData.approval);
+      await approveTx.wait();
+    }
+  }
+
+  // 2. Get quote
+  const quoteRes = await fetch(`${API_URL}/quote`, {
+    method: 'POST',
+    headers: { 'x-api-key': API_KEY!, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      swapper: wallet.address,
+      tokenIn,
+      tokenOut,
+      tokenInChainId: chainId,
+      tokenOutChainId: chainId,
+      amount,
+      type: 'EXACT_INPUT',
+      slippageTolerance: 0.5,
+    }),
+  });
+  const quoteResponse = await quoteRes.json(); // Store FULL response
+
+  if (!quoteRes.ok) {
+    throw new Error(quoteResponse.detail || 'Quote failed');
+  }
+
+  // 3. Execute swap - CRITICAL: spread quote response, strip null fields
+  const swapRequest = prepareSwapRequest(quoteResponse);
+
+  const swapRes = await fetch(`${API_URL}/swap`, {
+    method: 'POST',
+    headers: { 'x-api-key': API_KEY!, 'Content-Type': 'application/json' },
+    body: JSON.stringify(swapRequest),
+  });
+  const swapData = await swapRes.json();
+
+  if (!swapRes.ok) {
+    throw new Error(swapData.detail || 'Swap request failed');
+  }
+
+  // 4. Validate before broadcasting
+  validateSwap(swapData.swap);
+
+  const tx = await wallet.sendTransaction(swapData.swap);
+  return tx.wait();
+}
+```
+
+### Smart Contract Integration (Solidity)
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+interface IUniversalRouter {
+    function execute(
+        bytes calldata commands,
+        bytes[] calldata inputs,
+        uint256 deadline
+    ) external payable;
+}
+
+interface IERC20 {
+    function approve(address spender, uint256 amount) external returns (bool);
+}
+
+contract SwapIntegration {
+    IUniversalRouter public immutable router;
+    address public constant PERMIT2 = 0x000000000022D473030F116dDEE9F6B43aC78BA3;
+
+    constructor(address _router) {
+        router = IUniversalRouter(_router);
+    }
+
+    function swap(
+        bytes calldata commands,
+        bytes[] calldata inputs,
+        uint256 deadline
+    ) external payable {
+        router.execute{value: msg.value}(commands, inputs, deadline);
+    }
+
+    // Approve token for Permit2 (one-time setup)
+    function approveToken(address token) external {
+        IERC20(token).approve(PERMIT2, type(uint256).max);
+    }
+}
+```
+
+---
+
+## Key Contract Addresses
+
+### Universal Router
+
+| Chain      | Address                                      |
+| ---------- | -------------------------------------------- |
+| All chains | `0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD` |
+
+### Permit2
+
+| Chain      | Address                                      |
+| ---------- | -------------------------------------------- |
+| All chains | `0x000000000022D473030F116dDEE9F6B43aC78BA3` |
+
+---
+
+## Troubleshooting
+
+### Common Issues
+
+| Issue                                               | Solution                                                         |
+| --------------------------------------------------- | ---------------------------------------------------------------- |
+| "Insufficient allowance"                            | Call /check_approval first and submit approval tx                |
+| "Quote expired"                                     | Increase deadline or re-fetch quote                              |
+| "Slippage exceeded"                                 | Increase slippageTolerance or retry                              |
+| "Insufficient liquidity"                            | Try smaller amount or different route                            |
+| **"Buffer is not defined"**                         | Add Buffer polyfill (see Critical Implementation Notes)          |
+| **On-chain revert with empty data**                 | Validate `swap.data` is non-empty hex before broadcasting        |
+| **"permitData must be of type object"**             | Strip `permitData: null` from request - omit field entirely      |
+| **"quote does not match any of the allowed types"** | Don't wrap quote in `{quote: ...}` - spread it into request body |
+
+### API Validation Errors (400)
+
+| Error Message                                     | Cause                                      | Fix                                         |
+| ------------------------------------------------- | ------------------------------------------ | ------------------------------------------- |
+| `"permitData" must be of type object`             | Sending `permitData: null`                 | Omit the field entirely when null           |
+| `"quote" does not match any of the allowed types` | Wrapping quote in `{quote: quoteResponse}` | Spread quote response: `{...quoteResponse}` |
+| `signature and permitData must both be present`   | Including only one Permit2 field           | Include both or neither                     |
+
+### API Error Codes
+
+| Code | Meaning                                                  |
+| ---- | -------------------------------------------------------- |
+| 400  | Invalid request parameters (see validation errors above) |
+| 401  | Invalid or missing API key                               |
+| 404  | No route found for pair                                  |
+| 429  | Rate limit exceeded                                      |
+| 500  | API error - implement exponential backoff retry          |
+
+### Pre-Broadcast Checklist
+
+Before sending a swap transaction to the blockchain:
+
+1. **Verify `swap.data`** is non-empty hex (not `''`, not `'0x'`)
+2. **Verify addresses** - `swap.to` and `swap.from` are valid
+3. **Check quote freshness** - Re-fetch if older than 30 seconds
+4. **Validate gas** - Apply 10-20% buffer to estimates
+5. **Confirm balance** - User has sufficient token balance
+
+---
+
+## Additional Resources
+
+- [Universal Router GitHub](https://github.com/Uniswap/universal-router)
+- [Uniswap Docs](https://docs.uniswap.org)
+- [SDK Monorepo](https://github.com/Uniswap/sdks)
+- [Permit2 Patterns](https://github.com/dragonfly-xyz/useful-solidity-patterns/tree/main/patterns/permit2)
