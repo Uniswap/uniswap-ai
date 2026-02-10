@@ -11,7 +11,7 @@ hero:
       link: /getting-started/
     - theme: alt
       text: View on GitHub
-      link: https://github.com/Uniswap/uniswap-ai
+      link: https://github.com/uniswap/uniswap-ai
 
 features:
   - icon: 🪝
@@ -33,7 +33,7 @@ features:
 ### Claude Code Marketplace
 
 ```bash
-/plugin marketplace add Uniswap/uniswap-ai
+/plugin marketplace add uniswap/uniswap-ai
 /plugin install uniswap-hooks
 ```
 

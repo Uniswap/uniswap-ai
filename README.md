@@ -17,7 +17,7 @@ This repository provides Claude Code plugins and AI development tools specifical
 
 ```bash
 # Install the uniswap-ai plugin marketplace
-/plugin marketplace add Uniswap/uniswap-ai
+/plugin marketplace add uniswap/uniswap-ai
 
 # Install a specific plugin
 /plugin install uniswap-hooks
