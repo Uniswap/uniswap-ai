@@ -101,6 +101,20 @@ jobs:
           npx nx format:check
           echo "✅ Formatting check passed"
 
+      - name: Install Vale
+        run: |
+          echo "Installing Vale..."
+          wget https://github.com/errata-ai/vale/releases/download/v3.0.7/vale_3.0.7_Linux_64-bit.tar.gz
+          tar -xvzf vale_3.0.7_Linux_64-bit.tar.gz
+          sudo mv vale /usr/local/bin/
+          vale --version
+
+      - name: Lint documentation prose (Vale)
+        continue-on-error: true
+        run: |
+          echo "Checking documentation prose quality..."
+          vale docs/ || echo "::warning::Vale found documentation issues - see output above"
+
       - name: Run tests
         run: |
           echo "Running tests..."

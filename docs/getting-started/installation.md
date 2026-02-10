@@ -1,3 +1,8 @@
+---
+title: Installation
+order: 2
+---
+
 # Installation
 
 Multiple installation options are available depending on your use case.

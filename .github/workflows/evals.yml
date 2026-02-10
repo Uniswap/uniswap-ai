@@ -2,10 +2,6 @@ name: Evals
 
 on:
   pull_request:
-    paths:
-      - 'packages/plugins/**'
-      - 'evals/**'
-      - '.github/workflows/evals.yml'
   workflow_dispatch:
     inputs:
       suite:
@@ -23,9 +19,37 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  check-paths:
+    name: Check Changed Paths
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.filter.outputs.evals }}
+    permissions:
+      contents: read
+      pull-requests: read
+
+    steps:
+      - uses: bullfrogsec/bullfrog@1831f79cce8ad602eef14d2163873f27081ebfb3 # v0.8.4
+
+      - name: Checkout repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Check for eval-related changes
+        id: filter
+        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
+        with:
+          filters: |
+            evals:
+              - 'packages/plugins/**'
+              - 'evals/**'
+              - '.github/workflows/evals.yml'
+
   eval:
     name: Run Evaluations
     runs-on: ubuntu-latest
+    needs: check-paths
+    # Run if: paths changed OR workflow_dispatch (manual trigger)
+    if: needs.check-paths.outputs.should_run == 'true' || github.event_name == 'workflow_dispatch'
     permissions:
       contents: read
       pull-requests: write
