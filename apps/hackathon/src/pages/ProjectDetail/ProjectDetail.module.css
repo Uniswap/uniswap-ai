@@ -135,10 +135,12 @@
 .teamMember {
   display: inline-flex;
   align-items: center;
-  padding: var(--space-2) var(--space-4);
+  min-height: 28px;
+  padding: var(--space-1) var(--space-4);
   background-color: var(--color-surface3);
   border-radius: var(--radius-full);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
   color: var(--color-neutral2);
   text-decoration: none;
   transition: background-color var(--duration-fast) ease, color var(--duration-fast) ease;

@@ -33,7 +33,7 @@
   padding: var(--space-3) var(--space-6);
   background-color: var(--color-neutral1);
   color: #000000;
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-lg);
   font-size: var(--font-size-sm);
   font-weight: 600;
   text-decoration: none;
@@ -110,7 +110,7 @@
   padding: var(--space-3) var(--space-6);
   background-color: var(--color-neutral1);
   color: #000000;
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-lg);
   font-size: var(--font-size-sm);
   font-weight: 600;
   text-decoration: none;
