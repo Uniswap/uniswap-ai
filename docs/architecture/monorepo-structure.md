@@ -35,9 +35,7 @@ uniswap-ai/
 │   ├── suites/             # Per-skill eval suites
 │   └── templates/          # Templates for new suites
 ├── packages/
-│   ├── plugins/            # Claude Code plugins
-│   ├── sdk/                # TypeScript SDKs
-│   └── utils/              # Shared utilities
+│   └── plugins/            # Claude Code plugins
 ├── scripts/                # Build/validation scripts
 ├── AGENTS.md -> CLAUDE.md  # Symlink for agent-agnostic access
 ├── CLAUDE.md               # Project guidelines

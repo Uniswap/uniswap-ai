@@ -40,10 +40,8 @@ All packages use [Nx](https://nx.dev) for:
 ```
 uniswap-ai/
 ├── packages/
-│   ├── plugins/          # Claude Code plugins
-│   │   └── uniswap-hooks/  # Uniswap V4 hooks plugin
-│   ├── sdk/              # TypeScript SDKs
-│   └── utils/            # Shared utilities
+│   └── plugins/          # Claude Code plugins
+│       └── uniswap-hooks/  # Uniswap V4 hooks plugin
 ├── evals/                # AI tool evaluations
 ├── docs/                 # This documentation
 └── .github/              # CI/CD workflows
