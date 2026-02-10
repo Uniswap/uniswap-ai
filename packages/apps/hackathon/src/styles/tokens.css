@@ -1,0 +1,86 @@
+:root {
+  /* Spore Design Tokens - Uniswap Dark Theme */
+
+  /* Surface colors */
+  --color-surface1: #121212;
+  --color-surface2: #1b1b1b;
+  --color-surface2-hovered: #242424;
+  --color-surface3: rgba(255, 255, 255, 0.12);
+
+  /* Border color */
+  --color-border: rgba(255, 255, 255, 0.07);
+
+  /* Tag background colors */
+  --color-accent1-bg: rgba(252, 114, 255, 0.15);
+  --color-success-bg: rgba(33, 201, 94, 0.15);
+
+  /* Card accent backgrounds */
+  --color-card-pink: rgba(255, 55, 199, 0.06);
+  --color-card-blue: rgba(73, 129, 255, 0.1);
+  --color-card-green: rgba(0, 195, 160, 0.1);
+  --color-card-purple: rgba(158, 98, 255, 0.1);
+
+  /* Text colors */
+  --color-neutral1: #ffffff;
+  --color-neutral2: rgba(255, 255, 255, 0.65);
+  --color-neutral3: rgba(255, 255, 255, 0.55);
+
+  /* Accent colors */
+  --color-accent1: #fc72ff;
+  --color-accent1-hovered: #ff8ff2;
+
+  /* Status colors */
+  --color-success: #21c95e;
+  --color-warning: #ffbf17;
+  --color-critical: #ff593c;
+
+  /* Typography */
+  --font-family: 'Inter', -apple-system, system-ui, sans-serif;
+
+  /* Font size scale */
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 2rem;
+  --font-size-4xl: 2.5rem;
+  --font-size-hero: 3.25rem;
+
+  /* Transition durations */
+  --duration-fast: 0.15s;
+  --duration-normal: 0.2s;
+
+  /* Border radii */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
+  --radius-full: 9999px;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* Max widths */
+  --max-width: 1200px;
+  --max-width-narrow: 800px;
+
+  /*
+   * Breakpoints (for documentation; use raw values in media queries)
+   * --breakpoint-sm: 480px
+   * --breakpoint-md: 768px
+   * --breakpoint-lg: 1024px
+   * --breakpoint-xl: 1280px
+   */
+}

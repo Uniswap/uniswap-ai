@@ -1,0 +1,120 @@
+.footer {
+  margin-top: var(--space-16);
+}
+
+/* CTA Banner */
+.cta {
+  position: relative;
+  overflow: hidden;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 var(--space-6);
+}
+
+.ctaContent {
+  position: relative;
+  z-index: 1;
+  background: var(--color-surface2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-12) var(--space-10);
+}
+
+.ctaHeading {
+  font-size: var(--font-size-2xl);
+  font-weight: 500;
+  color: var(--color-neutral1);
+  margin-bottom: var(--space-3);
+}
+
+.ctaDescription {
+  color: var(--color-neutral3);
+  font-size: var(--font-size-base);
+  line-height: 1.6;
+  max-width: 440px;
+  margin-bottom: var(--space-6);
+}
+
+.ctaButton {
+  display: inline-block;
+  background-color: var(--color-accent1);
+  color: var(--color-neutral1);
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  padding: var(--space-3) var(--space-6);
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  transition: background-color var(--duration-fast) ease;
+}
+
+.ctaButton:hover {
+  background-color: var(--color-accent1-hovered);
+  color: var(--color-neutral1);
+}
+
+.ctaDecoration {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background: radial-gradient(
+    circle at 80% 50%,
+    rgba(252, 114, 255, 0.12) 0%,
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+/* Bottom bar */
+.bottom {
+  border-top: 1px solid var(--color-border);
+  margin-top: var(--space-10);
+  padding: var(--space-6);
+}
+
+.bottomInner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: var(--max-width);
+  margin: 0 auto;
+}
+
+.copyright {
+  color: var(--color-neutral3);
+  font-size: var(--font-size-sm);
+}
+
+.bottomNav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+}
+
+.bottomLink {
+  color: var(--color-neutral3);
+  font-size: var(--font-size-sm);
+  text-decoration: none;
+  transition: color var(--duration-fast) ease;
+}
+
+.bottomLink:hover {
+  color: var(--color-neutral1);
+}
+
+@media (max-width: 768px) {
+  .ctaContent {
+    padding: var(--space-8) var(--space-6);
+  }
+
+  .ctaDecoration {
+    display: none;
+  }
+
+  .bottomInner {
+    flex-direction: column;
+    gap: var(--space-4);
+    text-align: center;
+  }
+}

@@ -1,0 +1,89 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  padding: var(--space-8);
+  text-align: center;
+}
+
+.card {
+  background-color: var(--color-surface2);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-12) var(--space-8);
+  max-width: 480px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.icon {
+  font-size: 3rem; /* intentionally larger than type scale */
+  margin-bottom: var(--space-6);
+}
+
+.title {
+  font-family: var(--font-family);
+  font-size: var(--font-size-2xl);
+  font-weight: 500;
+  color: var(--color-neutral1);
+  margin: 0 0 var(--space-4);
+}
+
+.message {
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  color: var(--color-neutral2);
+  margin: 0 0 var(--space-6);
+  line-height: 1.6;
+}
+
+.rateLimitMessage {
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  color: var(--color-warning);
+  margin: 0 0 var(--space-6);
+  padding: var(--space-4);
+  background-color: var(--color-surface1);
+  border: 1px solid rgba(255, 191, 23, 0.2);
+  border-radius: var(--radius-lg);
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-4);
+}
+
+.button {
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  padding: var(--space-3) var(--space-6);
+  border-radius: var(--radius-full);
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color var(--duration-fast) ease;
+}
+
+.primaryButton {
+  composes: button;
+  background-color: var(--color-accent1);
+  color: var(--color-neutral1);
+}
+
+.primaryButton:hover {
+  background-color: var(--color-accent1-hovered);
+}
+
+.secondaryButton {
+  composes: button;
+  background-color: var(--color-surface3);
+  color: var(--color-neutral1);
+}
+
+.secondaryButton:hover {
+  background-color: var(--color-surface2-hovered);
+}

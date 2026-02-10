@@ -1,0 +1,14 @@
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+.skeleton {
+  background-color: var(--color-surface3);
+  animation: pulse 1.5s ease-in-out infinite;
+}

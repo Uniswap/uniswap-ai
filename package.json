@@ -62,6 +62,7 @@
   },
   "workspaces": [
     "packages/*",
+    "packages/apps/*",
     "packages/plugins/*",
     "packages/sdk/*"
   ],

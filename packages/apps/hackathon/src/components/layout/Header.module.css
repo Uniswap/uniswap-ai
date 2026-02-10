@@ -1,0 +1,89 @@
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background-color: #131313;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: var(--space-5) var(--space-6);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  text-decoration: none;
+  color: var(--color-neutral1);
+}
+
+.brand:hover {
+  color: var(--color-neutral1);
+}
+
+.logo {
+  width: 28px;
+  height: 28px;
+}
+
+.title {
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+}
+
+.navLink {
+  position: relative;
+  color: var(--color-neutral3);
+  text-decoration: none;
+  font-size: var(--font-size-sm);
+  font-weight: 400;
+  padding-bottom: 2px;
+  transition: color var(--duration-fast) ease;
+}
+
+.navLink:hover {
+  color: var(--color-neutral1);
+}
+
+.navLinkActive {
+  color: var(--color-accent1);
+}
+
+.navLinkActive::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: var(--color-accent1);
+  border-radius: var(--radius-full);
+}
+
+.navLinkActive:hover {
+  color: var(--color-accent1-hovered);
+}
+
+@media (max-width: 768px) {
+  .inner {
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .nav {
+    gap: var(--space-6);
+  }
+}

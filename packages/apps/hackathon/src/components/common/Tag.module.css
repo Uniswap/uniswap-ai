@@ -1,0 +1,24 @@
+.tag {
+  display: inline-block;
+  padding: var(--space-1) var(--space-4);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.default {
+  background-color: var(--color-surface3);
+  color: var(--color-neutral2);
+}
+
+.accent {
+  background-color: var(--color-accent1-bg);
+  color: var(--color-accent1);
+}
+
+.success {
+  background-color: var(--color-success-bg);
+  color: var(--color-success);
+}

@@ -1,0 +1,184 @@
+.container {
+  padding: var(--space-12) var(--space-6);
+  max-width: var(--max-width);
+  margin: 0 auto;
+}
+
+.title {
+  font-size: var(--font-size-3xl);
+  font-weight: 500;
+  margin-bottom: var(--space-8);
+}
+
+.metricsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-5);
+  margin-bottom: var(--space-12);
+}
+
+/* --- Metric cards with colored top-border accents --- */
+
+.metricCard {
+  background-color: var(--color-surface2);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-8) var(--space-6);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  border-top: 3px solid transparent;
+}
+
+.metricCardPink {
+  composes: metricCard;
+  border-top-color: var(--color-accent1);
+}
+
+.metricCardGreen {
+  composes: metricCard;
+  border-top-color: var(--color-success);
+}
+
+.metricCardBlue {
+  composes: metricCard;
+  /* No blue token yet — using raw value; should be tokenized as --color-info */
+  border-top-color: #4c82fb;
+}
+
+.metricLabel {
+  font-size: var(--font-size-xs);
+  color: var(--color-neutral3);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 500;
+}
+
+.metricValue {
+  font-size: 3rem; /* intentionally larger than type scale */
+  font-weight: 700;
+  color: var(--color-neutral1);
+}
+
+.metricValueAccent {
+  composes: metricValue;
+  color: var(--color-accent1);
+}
+
+.metricValueGreen {
+  composes: metricValue;
+  color: var(--color-success);
+}
+
+.metricValueBlue {
+  composes: metricValue;
+  /* No blue token yet — using raw value; should be tokenized as --color-info */
+  color: #4c82fb;
+}
+
+/* --- Feed section --- */
+
+.feedSection {
+  margin-top: var(--space-8);
+}
+
+.feedSection h2 {
+  font-size: var(--font-size-xl);
+  font-weight: 500;
+  margin-bottom: var(--space-6);
+}
+
+.feed {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.feedItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  background-color: var(--color-surface2);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-5) var(--space-6);
+  text-decoration: none;
+  color: inherit;
+  border-left: 3px solid var(--color-accent1);
+  transition:
+    background-color var(--duration-normal) ease,
+    border-color var(--duration-normal) ease;
+}
+
+.feedItem:hover {
+  background-color: var(--color-surface2-hovered);
+  color: inherit;
+}
+
+.feedItemHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-shrink: 0;
+}
+
+.feedAvatar {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+}
+
+.feedItemInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.feedItemAuthor {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+}
+
+.feedItemTime {
+  font-size: var(--font-size-xs);
+  color: var(--color-neutral3);
+}
+
+.feedItemBody {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex: 1;
+  min-width: 0;
+}
+
+.feedItemTitle {
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.emptyFeed {
+  text-align: center;
+  padding: var(--space-12);
+  color: var(--color-neutral3);
+  background-color: var(--color-surface2);
+  border-radius: var(--radius-2xl);
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: var(--space-8) var(--space-4);
+  }
+
+  .metricsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .feedItem {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

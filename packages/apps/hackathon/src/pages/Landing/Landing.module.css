@@ -1,0 +1,383 @@
+/* Hero */
+.hero {
+  text-align: center;
+  padding: var(--space-16) var(--space-6) var(--space-12);
+  position: relative;
+  overflow: hidden;
+}
+
+.heroGlow {
+  position: absolute;
+  top: -120px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 600px;
+  height: 400px;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(255, 55, 199, 0.15) 0%,
+    rgba(255, 55, 199, 0.05) 40%,
+    transparent 70%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+.heroContent {
+  max-width: var(--max-width-narrow);
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.heroTitle {
+  font-size: 3.25rem;
+  font-weight: 400;
+  margin-bottom: var(--space-4);
+  color: var(--color-neutral1);
+}
+
+.heroTitleAccent {
+  background: linear-gradient(135deg, var(--color-accent1), #ff85d9);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.heroTagline {
+  font-size: var(--font-size-2xl);
+  color: var(--color-neutral2);
+  font-weight: 400;
+  margin-bottom: var(--space-4);
+}
+
+.heroDescription {
+  font-size: var(--font-size-lg);
+  color: var(--color-neutral3);
+  margin-bottom: var(--space-8);
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.6;
+}
+
+.heroCtas {
+  display: flex;
+  gap: var(--space-4);
+  justify-content: center;
+  margin-top: var(--space-8);
+  flex-wrap: wrap;
+}
+
+.primaryButton {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-4) var(--space-8);
+  background-color: var(--color-accent1);
+  color: var(--color-neutral1);
+  border: none;
+  border-radius: var(--radius-xl);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color var(--duration-normal), transform var(--duration-normal);
+}
+
+.primaryButton:hover {
+  background-color: var(--color-accent1-hovered);
+  color: var(--color-neutral1);
+  transform: translateY(-1px);
+}
+
+.secondaryButton {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-4) var(--space-8);
+  background-color: transparent;
+  color: var(--color-neutral1);
+  border: 1px solid var(--color-surface3);
+  border-radius: var(--radius-xl);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color var(--duration-normal), transform var(--duration-normal);
+}
+
+.secondaryButton:hover {
+  background-color: var(--color-surface2);
+  color: var(--color-neutral1);
+  transform: translateY(-1px);
+}
+
+/* Sections */
+.section {
+  padding: var(--space-16) var(--space-6);
+  max-width: var(--max-width);
+  margin: 0 auto;
+}
+
+.sectionTitle {
+  text-align: center;
+  margin-bottom: var(--space-10);
+  font-size: var(--font-size-3xl);
+  font-weight: 400;
+}
+
+/* About */
+.aboutGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-6);
+}
+
+.aboutCard {
+  border-radius: var(--radius-2xl);
+  padding: var(--space-8);
+  border: none;
+}
+
+.aboutCardPink {
+  composes: aboutCard;
+  /* Pink tint: rgba(255, 55, 199, 0.06) — should be tokenized as --color-tint-pink */
+  background-color: rgba(255, 55, 199, 0.06);
+}
+
+.aboutCardBlue {
+  composes: aboutCard;
+  /* Blue tint: rgba(73, 129, 255, 0.1) — should be tokenized as --color-tint-blue */
+  background-color: rgba(73, 129, 255, 0.1);
+}
+
+.aboutCardGreen {
+  composes: aboutCard;
+  /* Green tint: rgba(0, 195, 160, 0.1) — should be tokenized as --color-tint-green */
+  background-color: rgba(0, 195, 160, 0.1);
+}
+
+.aboutIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-2xl);
+  margin-bottom: var(--space-4);
+}
+
+.aboutIconPink {
+  composes: aboutIcon;
+  background-color: rgba(255, 55, 199, 0.15);
+}
+
+.aboutIconBlue {
+  composes: aboutIcon;
+  background-color: rgba(73, 129, 255, 0.2);
+}
+
+.aboutIconGreen {
+  composes: aboutIcon;
+  background-color: rgba(0, 195, 160, 0.2);
+}
+
+.aboutCard h3 {
+  margin-bottom: var(--space-3);
+  color: var(--color-neutral1);
+  font-weight: 600;
+  font-size: var(--font-size-xl);
+}
+
+.aboutCard p {
+  color: var(--color-neutral2);
+  line-height: 1.7;
+  font-size: var(--font-size-sm);
+}
+
+/* Prizes */
+.prizesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-6);
+}
+
+.prizeCard {
+  background-color: var(--color-surface2);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-8) var(--space-6);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  position: relative;
+  overflow: hidden;
+  transition: transform var(--duration-normal);
+}
+
+.prizeCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-accent1), #ff85d9);
+}
+
+.prizeCard:hover {
+  transform: translateY(-2px);
+}
+
+.prizePlace {
+  font-size: var(--font-size-sm);
+  color: var(--color-neutral3);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+}
+
+.prizeAmount {
+  font-size: var(--font-size-4xl);
+  font-weight: 700;
+  color: var(--color-accent1);
+  line-height: 1.1;
+  padding: var(--space-2) 0;
+}
+
+.prizeDescription {
+  color: var(--color-neutral2);
+  font-size: var(--font-size-sm);
+}
+
+/* How to Participate */
+.stepsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-6);
+}
+
+.stepCard {
+  position: relative;
+  padding: var(--space-8);
+  border-radius: var(--radius-2xl);
+}
+
+.stepCardTint1 {
+  composes: stepCard;
+  /* Pink tint */
+  background-color: rgba(255, 55, 199, 0.06);
+}
+
+.stepCardTint2 {
+  composes: stepCard;
+  /* Blue tint */
+  background-color: rgba(73, 129, 255, 0.1);
+}
+
+.stepCardTint3 {
+  composes: stepCard;
+  /* Green tint */
+  background-color: rgba(0, 195, 160, 0.1);
+}
+
+.stepCardTint4 {
+  composes: stepCard;
+  /* Purple tint: rgba(158, 98, 255, 0.1) — should be tokenized as --color-tint-purple */
+  background-color: rgba(158, 98, 255, 0.1);
+}
+
+.stepNumber {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-accent1);
+  color: var(--color-neutral1);
+  font-weight: 700;
+  font-size: var(--font-size-lg);
+  margin-bottom: var(--space-4);
+}
+
+.stepTitle {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  margin-bottom: var(--space-2);
+}
+
+.stepDescription {
+  color: var(--color-neutral2);
+  font-size: var(--font-size-sm);
+  line-height: 1.6;
+}
+
+/* FAQ */
+.faqList {
+  max-width: var(--max-width-narrow);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--color-surface3);
+}
+
+.faqItem {
+  border-bottom: 1px solid var(--color-surface3);
+}
+
+.faqQuestion {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: var(--space-5) var(--space-2);
+  background: none;
+  border: none;
+  color: var(--color-neutral1);
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  text-align: left;
+  transition: color var(--duration-normal);
+}
+
+.faqQuestion:hover {
+  color: var(--color-neutral2);
+}
+
+.faqIcon {
+  font-size: var(--font-size-xl);
+  color: var(--color-neutral3);
+  flex-shrink: 0;
+  margin-left: var(--space-4);
+  transition: transform var(--duration-normal);
+}
+
+.faqIconOpen {
+  transform: rotate(45deg);
+}
+
+.faqAnswer {
+  padding: 0 var(--space-2) var(--space-5);
+  color: var(--color-neutral2);
+  line-height: 1.7;
+  font-size: var(--font-size-sm);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .heroTitle {
+    font-size: var(--font-size-4xl);
+  }
+
+  .heroTagline {
+    font-size: var(--font-size-xl);
+  }
+
+  .section {
+    padding: var(--space-10) var(--space-4);
+  }
+
+  .heroGlow {
+    width: 400px;
+    height: 300px;
+  }
+}

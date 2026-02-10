@@ -1,0 +1,110 @@
+.markdown h1 {
+  font-size: var(--font-size-2xl);
+  font-weight: 500;
+  margin-bottom: var(--space-4);
+}
+
+.markdown h2 {
+  font-size: var(--font-size-xl);
+  font-weight: 500;
+  margin-top: var(--space-8);
+  margin-bottom: var(--space-3);
+}
+
+.markdown h3 {
+  font-size: var(--font-size-lg);
+  font-weight: 500;
+  margin-top: var(--space-6);
+  margin-bottom: var(--space-2);
+}
+
+.markdown p {
+  color: var(--color-neutral2);
+  margin-bottom: var(--space-4);
+  line-height: 1.7;
+}
+
+.markdown a {
+  color: var(--color-accent1);
+}
+
+.markdown a:hover {
+  color: var(--color-accent1-hovered);
+}
+
+.markdown code {
+  background-color: rgba(255, 255, 255, 0.06);
+  padding: 0.15em 0.45em;
+  border-radius: var(--radius-sm);
+  font-size: 0.875em; /* relative em, not rem -- intentionally not tokenized */
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.markdown pre {
+  background-color: var(--color-surface1);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  overflow-x: auto;
+  margin-bottom: var(--space-4);
+}
+
+.markdown pre code {
+  background: none;
+  padding: 0;
+  border-radius: 0;
+  border: none;
+  font-size: var(--font-size-sm);
+}
+
+.markdown ul,
+.markdown ol {
+  color: var(--color-neutral2);
+  padding-left: var(--space-6);
+  margin-bottom: var(--space-4);
+}
+
+.markdown li {
+  margin-bottom: var(--space-2);
+  line-height: 1.6;
+}
+
+.markdown blockquote {
+  border-left: 3px solid var(--color-accent1);
+  padding-left: var(--space-4);
+  color: var(--color-neutral3);
+  margin-bottom: var(--space-4);
+}
+
+.markdown table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: var(--space-4);
+}
+
+.markdown th,
+.markdown td {
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  padding: var(--space-3) var(--space-4);
+  text-align: left;
+}
+
+.markdown th {
+  background-color: var(--color-surface1);
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+}
+
+.markdown td {
+  color: var(--color-neutral2);
+}
+
+.markdown img {
+  border-radius: var(--radius-lg);
+}
+
+.markdown hr {
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  margin: var(--space-8) 0;
+}
