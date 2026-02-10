@@ -1,0 +1,157 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  max-width: var(--max-width-narrow);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.label {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-neutral2);
+}
+
+.input,
+.select,
+.textarea {
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-surface2);
+  color: var(--color-neutral1);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  transition: border-color var(--duration-normal) ease;
+}
+
+.input::placeholder,
+.textarea::placeholder {
+  color: var(--color-neutral3);
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus {
+  outline: none;
+  border-color: var(--color-accent1);
+}
+
+.select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.55)' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--space-4) center;
+  padding-right: var(--space-10);
+}
+
+.select option {
+  background-color: var(--color-surface2);
+  color: var(--color-neutral1);
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 120px;
+  line-height: 1.6;
+}
+
+.error {
+  color: var(--color-critical);
+  font-size: var(--font-size-sm);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}
+
+.cancelBtn {
+  padding: var(--space-3) var(--space-6);
+  background-color: transparent;
+  color: var(--color-neutral2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color var(--duration-normal) ease,
+    color var(--duration-normal) ease;
+}
+
+.cancelBtn:hover {
+  background-color: var(--color-surface3);
+  color: var(--color-neutral1);
+}
+
+.submitBtn {
+  padding: var(--space-3) var(--space-6);
+  background-color: var(--color-accent1);
+  color: var(--color-neutral1);
+  border: none;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--duration-normal) ease;
+}
+
+.submitBtn:hover:not(:disabled) {
+  background-color: var(--color-accent1-hovered);
+}
+
+.submitBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.notConfigured {
+  text-align: center;
+  padding: var(--space-8);
+  background-color: var(--color-surface2);
+  border-radius: var(--radius-2xl);
+  color: var(--color-neutral3);
+  font-size: var(--font-size-sm);
+}
+
+.signIn {
+  text-align: center;
+  padding: var(--space-12) var(--space-6);
+  background-color: var(--color-surface2);
+  border-radius: var(--radius-2xl);
+}
+
+.signInTitle {
+  font-size: var(--font-size-2xl);
+  font-weight: 500;
+  margin-bottom: var(--space-3);
+}
+
+.signInText {
+  color: var(--color-neutral3);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--space-6);
+}
+
+.signInBtn {
+  padding: var(--space-3) var(--space-6);
+  background-color: var(--color-accent1);
+  color: var(--color-neutral1);
+  border: none;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--duration-normal) ease;
+}
+
+.signInBtn:hover {
+  background-color: var(--color-accent1-hovered);
+}

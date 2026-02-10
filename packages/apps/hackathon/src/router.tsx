@@ -6,6 +6,9 @@ import { Landing } from './pages/Landing/Landing';
 import { ProjectsList } from './pages/Projects/ProjectsList';
 import { ProjectDetail } from './pages/ProjectDetail/ProjectDetail';
 import { Dashboard } from './pages/Dashboard/Dashboard';
+import { ForumHome } from './pages/Forum/ForumHome';
+import { ForumPost } from './pages/Forum/ForumPost';
+import { ForumNewPost } from './pages/Forum/ForumNewPost';
 import { fetchSubmissions } from './lib/github';
 import { parseSubmission } from './lib/parseSubmission';
 import type { HackathonProject } from './lib/types';
@@ -93,6 +96,18 @@ export const router = createBrowserRouter([
         path: 'dashboard',
         element: <Dashboard />,
         loader: dashboardLoader,
+      },
+      {
+        path: 'forum',
+        element: <ForumHome />,
+      },
+      {
+        path: 'forum/new',
+        element: <ForumNewPost />,
+      },
+      {
+        path: 'forum/:postId',
+        element: <ForumPost />,
       },
     ],
   },

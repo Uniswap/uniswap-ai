@@ -1,0 +1,143 @@
+.container {
+  padding: var(--space-12) var(--space-6);
+  max-width: var(--max-width-narrow);
+  margin: 0 auto;
+}
+
+.breadcrumb {
+  display: inline-block;
+  font-size: var(--font-size-sm);
+  color: var(--color-neutral3);
+  text-decoration: none;
+  margin-bottom: var(--space-6);
+  transition: color var(--duration-normal) ease;
+}
+
+.breadcrumb:hover {
+  color: var(--color-accent1);
+}
+
+.post {
+  background-color: var(--color-surface2);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-8);
+  margin-bottom: var(--space-8);
+}
+
+.postHeader {
+  margin-bottom: var(--space-6);
+}
+
+.postTitle {
+  font-size: var(--font-size-2xl);
+  font-weight: 600;
+  line-height: 1.3;
+  margin-bottom: var(--space-4);
+}
+
+.postMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--color-neutral3);
+  flex-wrap: wrap;
+}
+
+.avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-full);
+}
+
+.authorName {
+  font-weight: 500;
+  color: var(--color-neutral2);
+}
+
+.dot {
+  color: var(--color-neutral3);
+}
+
+.time {
+  color: var(--color-neutral3);
+}
+
+.postBody {
+  font-size: var(--font-size-base);
+  color: var(--color-neutral1);
+  line-height: 1.7;
+  margin-bottom: var(--space-6);
+  padding-bottom: var(--space-6);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.postActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.commentCount {
+  font-size: var(--font-size-sm);
+  color: var(--color-neutral3);
+}
+
+.commentsSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.commentsTitle {
+  font-size: var(--font-size-xl);
+  font-weight: 500;
+}
+
+.notFound {
+  text-align: center;
+  padding: var(--space-16) var(--space-6);
+}
+
+.notFound h2 {
+  font-size: var(--font-size-2xl);
+  margin-bottom: var(--space-3);
+}
+
+.notFound p {
+  color: var(--color-neutral3);
+  margin-bottom: var(--space-6);
+}
+
+.backLink {
+  display: inline-block;
+  padding: var(--space-3) var(--space-6);
+  background-color: var(--color-accent1);
+  color: var(--color-neutral1);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color var(--duration-normal) ease;
+}
+
+.backLink:hover {
+  background-color: var(--color-accent1-hovered);
+  color: var(--color-neutral1);
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: var(--space-8) var(--space-4);
+  }
+
+  .post {
+    padding: var(--space-5);
+  }
+}
+
+@media (max-width: 480px) {
+  .postTitle {
+    font-size: var(--font-size-xl);
+  }
+}

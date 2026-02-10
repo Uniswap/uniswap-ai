@@ -1,0 +1,29 @@
+.bar {
+  display: flex;
+  gap: var(--space-1);
+  background-color: var(--color-surface2);
+  border-radius: var(--radius-full);
+  padding: var(--space-1);
+}
+
+.tab {
+  padding: var(--space-2) var(--space-5);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  background-color: transparent;
+  color: var(--color-neutral3);
+  border: none;
+  cursor: pointer;
+  transition: background-color var(--duration-normal) ease,
+    color var(--duration-normal) ease;
+}
+
+.tab:hover {
+  color: var(--color-neutral1);
+}
+
+.tabActive {
+  background-color: var(--color-surface3);
+  color: var(--color-neutral1);
+}

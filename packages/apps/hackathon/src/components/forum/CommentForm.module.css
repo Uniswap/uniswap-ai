@@ -1,0 +1,93 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.compact .textarea {
+  font-size: var(--font-size-xs);
+}
+
+.textarea {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-surface2);
+  color: var(--color-neutral1);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  line-height: 1.6;
+  resize: vertical;
+  transition: border-color var(--duration-normal) ease;
+}
+
+.textarea::placeholder {
+  color: var(--color-neutral3);
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: var(--color-accent1);
+}
+
+.error {
+  color: var(--color-critical);
+  font-size: var(--font-size-xs);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.submitBtn {
+  padding: var(--space-2) var(--space-5);
+  background-color: var(--color-accent1);
+  color: var(--color-neutral1);
+  border: none;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--duration-normal) ease;
+}
+
+.submitBtn:hover:not(:disabled) {
+  background-color: var(--color-accent1-hovered);
+}
+
+.submitBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.signInPrompt {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background-color: var(--color-surface2);
+  border-radius: var(--radius-lg);
+}
+
+.signInBtn {
+  padding: var(--space-2) var(--space-4);
+  background-color: var(--color-accent1);
+  color: var(--color-neutral1);
+  border: none;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--duration-normal) ease;
+}
+
+.signInBtn:hover {
+  background-color: var(--color-accent1-hovered);
+}
+
+.signInText {
+  font-size: var(--font-size-sm);
+  color: var(--color-neutral3);
+}

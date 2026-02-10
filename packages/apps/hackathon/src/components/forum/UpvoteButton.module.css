@@ -1,0 +1,37 @@
+.upvote {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  background-color: var(--color-surface3);
+  color: var(--color-neutral3);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color var(--duration-normal) ease,
+    color var(--duration-normal) ease,
+    border-color var(--duration-normal) ease;
+}
+
+.upvote:hover:not(.disabled) {
+  background-color: var(--color-surface2-hovered);
+  color: var(--color-neutral1);
+}
+
+.upvoted {
+  background-color: var(--color-accent1-bg);
+  color: var(--color-accent1);
+  border-color: var(--color-accent1);
+}
+
+.upvoted:hover {
+  background-color: var(--color-accent1-bg);
+  color: var(--color-accent1);
+}
+
+.disabled {
+  opacity: 0.6;
+  cursor: default;
+}

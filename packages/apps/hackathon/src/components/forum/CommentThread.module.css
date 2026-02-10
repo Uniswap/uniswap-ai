@@ -1,0 +1,94 @@
+.thread {
+  display: flex;
+  flex-direction: column;
+}
+
+.empty {
+  text-align: center;
+  color: var(--color-neutral3);
+  font-size: var(--font-size-sm);
+  padding: var(--space-8) 0;
+}
+
+.node {
+  border-left: 2px solid rgba(255, 255, 255, 0.05);
+  padding-left: var(--space-4);
+}
+
+.node:first-child {
+  border-left: none;
+  padding-left: 0;
+}
+
+.comment {
+  padding: var(--space-4) 0;
+}
+
+.commentHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-xs);
+  color: var(--color-neutral3);
+  margin-bottom: var(--space-2);
+}
+
+.avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-full);
+}
+
+.authorName {
+  font-weight: 500;
+  color: var(--color-neutral2);
+}
+
+.dot {
+  color: var(--color-neutral3);
+}
+
+.time {
+  color: var(--color-neutral3);
+}
+
+.commentBody {
+  font-size: var(--font-size-sm);
+  color: var(--color-neutral1);
+  line-height: 1.6;
+  margin-bottom: var(--space-3);
+}
+
+.commentActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.replyBtn {
+  font-size: var(--font-size-xs);
+  color: var(--color-neutral3);
+  background: none;
+  border: none;
+  padding: var(--space-1) var(--space-2);
+  cursor: pointer;
+  transition: color var(--duration-normal) ease;
+}
+
+.replyBtn:hover {
+  color: var(--color-accent1);
+}
+
+.replyForm {
+  margin-top: var(--space-3);
+}
+
+.replies {
+  margin-top: 0;
+}
+
+@media (max-width: 480px) {
+  .node {
+    padding-left: var(--space-3);
+  }
+}

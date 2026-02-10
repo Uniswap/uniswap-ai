@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router';
+import { AuthButton } from '../auth/AuthButton';
 import styles from './Header.module.css';
 
 export function Header() {
@@ -28,6 +29,14 @@ export function Header() {
             Projects
           </NavLink>
           <NavLink
+            to="/forum"
+            className={({ isActive }) =>
+              `${styles.navLink} ${isActive ? styles.navLinkActive : ''}`
+            }
+          >
+            Forum
+          </NavLink>
+          <NavLink
             to="/dashboard"
             className={({ isActive }) =>
               `${styles.navLink} ${isActive ? styles.navLinkActive : ''}`
@@ -36,6 +45,7 @@ export function Header() {
             Dashboard
           </NavLink>
         </nav>
+        <AuthButton />
       </div>
     </header>
   );
