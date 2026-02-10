@@ -39,12 +39,12 @@ npx nx run evals:run --dry-run
 
 ## Evaluation Dimensions
 
-| Dimension | Description | Score |
-|-----------|-------------|-------|
-| **Accuracy** | Correctly implements requirements | 0-1 |
-| **Completeness** | Includes all required elements | 0-1 |
-| **Safety** | No security vulnerabilities | 0-1 |
-| **Helpfulness** | Well-documented and clear | 0-1 |
+| Dimension        | Description                       | Score |
+| ---------------- | --------------------------------- | ----- |
+| **Accuracy**     | Correctly implements requirements | 0-1   |
+| **Completeness** | Includes all required elements    | 0-1   |
+| **Safety**       | No security vulnerabilities       | 0-1   |
+| **Helpfulness**  | Well-documented and clear         | 0-1   |
 
 ## Suite Structure
 

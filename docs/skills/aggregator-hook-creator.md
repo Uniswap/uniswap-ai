@@ -123,12 +123,12 @@ contract AggregatorHook is BaseHook {
 
 When invoking the skill, you can specify:
 
-| Option | Description | Default |
-|--------|-------------|---------|
-| Pool pair | Token pair for the hook | WETH/USDC |
-| External DEX | Which external source to compare | Mock DEX |
-| Fee tier | Uniswap V4 fee tier | 3000 (0.3%) |
-| Chain | Target deployment chain | Ethereum |
+| Option       | Description                      | Default     |
+| ------------ | -------------------------------- | ----------- |
+| Pool pair    | Token pair for the hook          | WETH/USDC   |
+| External DEX | Which external source to compare | Mock DEX    |
+| Fee tier     | Uniswap V4 fee tier              | 3000 (0.3%) |
+| Chain        | Target deployment chain          | Ethereum    |
 
 ## Best Practices
 
