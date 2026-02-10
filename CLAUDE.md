@@ -38,6 +38,7 @@ After making any code changes, Claude Code MUST:
 2. **Lint the code**: Run `npx nx affected --target=lint --base=HEAD~1` to check for linting errors
 3. **Typecheck the code**: Run `npx nx affected --target=typecheck --base=HEAD~1` to typecheck affected projects
 4. **Lint markdown files**: Run `npm exec markdownlint-cli2 -- --fix "**/*.md"`
+5. **Lint documentation prose**: Run `npm run docs:lint` to check documentation quality with Vale
 
 ## Package Scopes
 

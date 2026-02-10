@@ -103,7 +103,7 @@ Contributions are welcome. Please ensure:
 
 PRs are automatically validated by several workflows:
 
-- **PR Checks** - Build, lint, test, and plugin validation
+- **PR Checks** - Build, lint, test, documentation prose linting, and plugin validation
 - **Claude Code Review** - AI-powered code review with inline comments
 - **Claude Docs Check** - Validates CLAUDE.md and README updates, ensures plugin version bumps
 

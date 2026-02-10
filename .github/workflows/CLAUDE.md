@@ -26,6 +26,7 @@ Core CI validation workflow that runs on all PRs:
 - Validates `package-lock.json` is in sync
 - Builds affected packages with Nx
 - Runs linting and formatting checks
+- Lints documentation prose with Vale (non-blocking)
 - Executes test suites with coverage
 - Validates plugin configurations
 
