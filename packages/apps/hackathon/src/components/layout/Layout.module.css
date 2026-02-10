@@ -27,34 +27,6 @@
   animation: pageEnter 0.25s ease-out;
 }
 
-.fab {
-  position: fixed;
-  bottom: 20px;
-  left: 20px;
-  z-index: 999;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
-  background-color: #7c3aed;
-  color: #fff;
-  font-size: 13px;
-  font-weight: 500;
-  text-decoration: none;
-  border-radius: 999px;
-  box-shadow: 0 4px 12px rgb(0 0 0 / 0.3);
-  transition: background-color 0.15s ease, transform 0.15s ease;
-}
-
-.fab:hover {
-  background-color: #6d28d9;
-  transform: translateY(-1px);
-}
-
-.fab:active {
-  transform: translateY(0);
-}
-
 @media (max-width: 768px) {
   .main {
     padding: var(--space-4) var(--space-2);
