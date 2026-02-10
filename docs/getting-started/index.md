@@ -64,7 +64,6 @@ You should see `uniswap-hooks` in the list of installed plugins.
 | Directory           | Purpose             |
 | ------------------- | ------------------- |
 | `packages/plugins/` | Claude Code plugins |
-| `packages/sdk/`     | TypeScript SDKs     |
 | `evals/`            | AI tool evaluations |
 | `docs/`             | This documentation  |
 

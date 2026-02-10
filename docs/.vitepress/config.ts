@@ -16,6 +16,14 @@ export default defineConfig({
     nav: [
       { text: 'Home', link: '/' },
       { text: 'Getting Started', link: '/getting-started/' },
+      {
+        text: 'Guides',
+        items: [
+          { text: 'Architecture', link: '/architecture/' },
+          { text: 'Plugins', link: '/plugins/' },
+          { text: 'Contributing', link: '/contributing/' },
+        ],
+      },
       { text: 'Skills', link: '/skills/' },
       { text: 'Evals', link: '/evals/' },
       { text: 'API', link: '/api/' },

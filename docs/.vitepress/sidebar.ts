@@ -109,7 +109,15 @@ export function generateSidebar(docsDir: string): Record<string, SidebarItem[]> 
   const sidebar: Record<string, SidebarItem[]> = {};
 
   // Define sections in desired order
-  const sections = ['getting-started', 'skills', 'evals', 'api'];
+  const sections = [
+    'getting-started',
+    'architecture',
+    'plugins',
+    'skills',
+    'evals',
+    'contributing',
+    'api',
+  ];
 
   for (const section of sections) {
     const sectionPath = path.join(docsDir, section);
