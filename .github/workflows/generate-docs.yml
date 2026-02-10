@@ -42,9 +42,7 @@ jobs:
       - name: Install npm
         env:
           NPM_VERSION: ${{ vars.NPM_VERSION }}
-        # nosemgrep: uniswap.npm-package-in-action-not-pinned-to-commit-sha
-        # npm registry packages use semver, not git SHAs - pinning is not possible
-        run: npm install -g "npm@$NPM_VERSION"
+        run: npm install -g "npm@$NPM_VERSION" # nosemgrep: uniswap.npm-package-in-action-not-pinned-to-commit-sha
 
       - name: Install dependencies
         run: npm ci --prefer-offline --no-audit
