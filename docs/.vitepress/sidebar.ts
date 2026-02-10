@@ -14,41 +14,35 @@ interface FrontMatter {
   order?: number;
 }
 
-/**
- * Extract title from a markdown file using frontmatter or first h1
- */
-function getMarkdownTitle(filePath: string, fallbackName: string): string {
-  try {
-    const content = fs.readFileSync(filePath, 'utf-8');
-    const { data } = matter(content) as { data: FrontMatter };
-
-    if (data.title) {
-      return data.title;
-    }
-
-    // Fall back to first h1 heading
-    const h1Match = content.match(/^#\s+(.+)$/m);
-    if (h1Match) {
-      return h1Match[1];
-    }
-  } catch {
-    // Ignore read errors
-  }
-
-  // Fall back to formatted filename
-  return fallbackName.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+interface MarkdownMetadata {
+  title: string;
+  order: number;
 }
 
 /**
- * Get the order value from frontmatter, defaulting to 999
+ * Parse markdown file metadata (title and order) in a single pass
  */
-function getOrder(filePath: string): number {
+function parseMarkdownMetadata(filePath: string, fallbackName: string): MarkdownMetadata {
   try {
     const content = fs.readFileSync(filePath, 'utf-8');
     const { data } = matter(content) as { data: FrontMatter };
-    return data.order ?? 999;
-  } catch {
-    return 999;
+
+    let title = data.title;
+    if (!title) {
+      // Fall back to first h1 heading
+      const h1Match = content.match(/^#\s+(.+)$/m);
+      title = h1Match
+        ? h1Match[1]
+        : fallbackName.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+    }
+
+    return { title, order: data.order ?? 999 };
+  } catch (error) {
+    console.warn(`Failed to parse ${filePath}:`, error);
+    return {
+      title: fallbackName.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+      order: 999,
+    };
   }
 }
 
@@ -74,8 +68,10 @@ function getSidebarItems(dir: string, basePath: string): SidebarItem[] {
     if (entry.isFile() && entry.name.endsWith('.md')) {
       const name = entry.name.replace('.md', '');
       const link = name === 'index' ? basePath : `${basePath}/${name}`;
-      const title = getMarkdownTitle(fullPath, name === 'index' ? 'Overview' : name);
-      const order = getOrder(fullPath);
+      const { title, order } = parseMarkdownMetadata(
+        fullPath,
+        name === 'index' ? 'Overview' : name
+      );
 
       items.push({
         text: title,
