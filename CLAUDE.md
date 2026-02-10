@@ -68,7 +68,9 @@ uniswap-ai/
 │   └── templates/           # Templates for new suites
 ├── packages/
 │   ├── plugins/             # Claude Code plugins
-│   │   └── uniswap-hooks/   # Uniswap V4 hooks plugin
+│   │   ├── uniswap-hooks/   # Uniswap V4 hooks plugin
+│   │   ├── uniswap-viem/    # EVM blockchain integration (viem/wagmi)
+│   │   └── uniswap-trading/ # Uniswap swap integration
 │   ├── sdk/                 # TypeScript SDKs
 │   ├── prompts/             # Shared prompt templates
 │   └── utils/               # Shared utilities
