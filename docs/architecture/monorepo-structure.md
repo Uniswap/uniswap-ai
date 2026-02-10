@@ -50,8 +50,6 @@ uniswap-ai/
 | Type | Scope | npm | Marketplace |
 |------|-------|-----|-------------|
 | Plugins | `@uniswap` | No | Yes (Claude Code Marketplace) |
-| SDKs | `@uniswap-ai` | Yes | N/A |
-| Utils | `@uniswap-ai` | Yes | N/A |
 
 ## Nx Configuration
 

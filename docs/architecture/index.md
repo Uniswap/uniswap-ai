@@ -23,7 +23,6 @@ All tools in this repository are designed to work with any LLM coding agent, not
 The codebase is organized into independent packages:
 
 - **Plugins** - Self-contained Claude Code plugins with skills, agents, and commands
-- **SDKs** - Reusable TypeScript libraries for common functionality
 - **Evals** - Evaluation suites for testing AI tool quality
 
 ### Nx-Powered
