@@ -379,17 +379,20 @@
   border-radius: var(--radius-lg);
   padding: var(--space-4) var(--space-5);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--space-3);
   text-align: left;
+  overflow-x: auto;
 }
 
 .commandText {
   flex: 1;
+  margin: 0;
   font-family: 'SFMono-Regular', 'Consolas', 'Liberation Mono', 'Menlo', monospace;
   font-size: var(--font-size-sm);
   color: var(--color-neutral1);
   word-break: break-all;
+  white-space: pre-wrap;
   line-height: 1.5;
 }
 
@@ -419,21 +422,7 @@
   border-color: var(--color-neutral3);
 }
 
-.codeSnippet {
-  background-color: var(--color-surface2);
-  border-radius: var(--radius-lg);
-  padding: var(--space-5);
-  text-align: left;
-  overflow-x: auto;
-}
 
-.codeSnippet pre {
-  margin: 0;
-  font-family: 'SFMono-Regular', 'Consolas', 'Liberation Mono', 'Menlo', monospace;
-  font-size: var(--font-size-xs);
-  line-height: 1.7;
-  color: var(--color-neutral2);
-}
 
 .pathDescription {
   margin-top: var(--space-4);
@@ -532,7 +521,7 @@
     align-self: flex-end;
   }
 
-  .codeSnippet pre {
+  .commandText {
     font-size: 0.6875rem;
   }
 }

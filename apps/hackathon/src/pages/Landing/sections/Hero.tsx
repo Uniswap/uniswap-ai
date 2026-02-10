@@ -66,10 +66,27 @@ function AgentPath() {
 }
 
 function HumanPath() {
+  const [copied, setCopied] = useState(false);
+
+  function handleCopy() {
+    navigator.clipboard.writeText(DEVELOPER_SNIPPET).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
   return (
     <>
-      <div className={styles.codeSnippet}>
-        <pre>{DEVELOPER_SNIPPET}</pre>
+      <div className={styles.commandBox}>
+        <pre className={styles.commandText}>{DEVELOPER_SNIPPET}</pre>
+        <button
+          type="button"
+          className={styles.copyButton}
+          onClick={handleCopy}
+          aria-label="Copy code"
+        >
+          {copied ? '✓' : '⧉'}
+        </button>
       </div>
       <p className={styles.pathDescription}>
         Integrate Uniswap swaps in minutes with the Trading API.
