@@ -80,6 +80,11 @@
   border-color: var(--color-neutral1);
 }
 
+.searchInput::selection {
+  background-color: var(--color-neutral1);
+  color: var(--color-surface1);
+}
+
 .feed {
   display: flex;
   flex-direction: column;
