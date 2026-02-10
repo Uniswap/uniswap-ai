@@ -10,10 +10,18 @@
   margin-bottom: var(--space-2);
 }
 
+.headerRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-8);
+  flex-wrap: wrap;
+}
+
 .subtitle {
   color: var(--color-neutral3);
   font-size: var(--font-size-sm);
-  margin-bottom: var(--space-8);
 }
 
 .grid {

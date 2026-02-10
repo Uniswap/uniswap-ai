@@ -1,4 +1,4 @@
-import type { HackathonProject } from './types';
+import type { HackathonProject, ProjectWithVotes } from './types';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -90,6 +90,41 @@ export function assertHackathonProjectArray(data: unknown): HackathonProject[] {
   return data.map((item, index) => {
     try {
       return assertHackathonProject(item);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`Invalid project at index ${index}: ${message}`);
+    }
+  });
+}
+
+export function assertProjectWithVotes(data: unknown): ProjectWithVotes {
+  const project = assertHackathonProject(data);
+
+  if (!isRecord(data)) {
+    throw new Error('Expected project data to be an object');
+  }
+
+  if (typeof data.upvoteCount !== 'number') {
+    throw new Error('Expected project.upvoteCount to be a number');
+  }
+  if (typeof data.hasUpvoted !== 'boolean') {
+    throw new Error('Expected project.hasUpvoted to be a boolean');
+  }
+
+  return {
+    ...project,
+    upvoteCount: data.upvoteCount as number,
+    hasUpvoted: data.hasUpvoted as boolean,
+  };
+}
+
+export function assertProjectWithVotesArray(data: unknown): ProjectWithVotes[] {
+  if (!Array.isArray(data)) {
+    throw new Error('Expected loader data to be an array of projects');
+  }
+  return data.map((item, index) => {
+    try {
+      return assertProjectWithVotes(item);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Invalid project at index ${index}: ${message}`);

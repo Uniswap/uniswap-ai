@@ -11,13 +11,15 @@ import { ForumPost } from './pages/Forum/ForumPost';
 import { ForumNewPost } from './pages/Forum/ForumNewPost';
 import { fetchSubmissions } from './lib/github';
 import { parseSubmission } from './lib/parseSubmission';
-import type { HackathonProject } from './lib/types';
+import { isSupabaseConfigured } from './lib/supabase';
+import { fetchProjectVoteCounts, fetchUserProjectVotes } from './lib/project-votes';
+import type { ProjectWithVotes } from './lib/types';
 
-let cachedProjects: HackathonProject[] | null = null;
+let cachedProjects: ProjectWithVotes[] | null = null;
 let cacheTimestamp = 0;
 const CACHE_TTL = 60_000; // 1 minute
 
-let inflightFetch: Promise<HackathonProject[]> | null = null;
+let inflightFetch: Promise<ProjectWithVotes[]> | null = null;
 
 function invalidateCache() {
   cachedProjects = null;
@@ -30,7 +32,7 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
-async function loadProjects(): Promise<HackathonProject[]> {
+async function loadProjects(): Promise<ProjectWithVotes[]> {
   const now = Date.now();
   if (cachedProjects && now - cacheTimestamp < CACHE_TTL) {
     return cachedProjects;
@@ -41,8 +43,30 @@ async function loadProjects(): Promise<HackathonProject[]> {
   }
 
   inflightFetch = fetchSubmissions()
-    .then((issues) => {
-      cachedProjects = issues.map(parseSubmission);
+    .then(async (issues) => {
+      const projects = issues.map(parseSubmission);
+      const issueNumbers = projects.map((p) => p.issueNumber);
+
+      let voteCounts = new Map<number, number>();
+      let userVotes = new Set<number>();
+
+      if (isSupabaseConfigured()) {
+        try {
+          [voteCounts, userVotes] = await Promise.all([
+            fetchProjectVoteCounts(issueNumbers),
+            fetchUserProjectVotes(issueNumbers),
+          ]);
+        } catch {
+          // Supabase fetch failed — fall back to zero votes
+        }
+      }
+
+      cachedProjects = projects.map((p) => ({
+        ...p,
+        upvoteCount: voteCounts.get(p.issueNumber) ?? 0,
+        hasUpvoted: userVotes.has(p.issueNumber),
+      }));
+
       cacheTimestamp = Date.now();
       return cachedProjects;
     })

@@ -1,12 +1,13 @@
 import { Link, useLoaderData } from 'react-router';
 import { MarkdownRenderer } from '../../components/common/MarkdownRenderer';
 import { Tag } from '../../components/common/Tag';
+import { ProjectUpvoteButton } from '../../components/common/ProjectUpvoteButton';
 import { formatDate } from '../../lib/formatters';
-import { assertHackathonProject } from '../../lib/typeGuards';
+import { assertProjectWithVotes } from '../../lib/typeGuards';
 import styles from './ProjectDetail.module.css';
 
 export function ProjectDetail() {
-  const project = assertHackathonProject(useLoaderData());
+  const project = assertProjectWithVotes(useLoaderData());
 
   return (
     <div className={styles.container}>
@@ -29,7 +30,14 @@ export function ProjectDetail() {
             />
             <span>{project.authorLogin}</span>
           </div>
-          <span className={styles.date}>Submitted {formatDate(project.createdAt)}</span>
+          <div className={styles.metaRight}>
+            <span className={styles.date}>Submitted {formatDate(project.createdAt)}</span>
+            <ProjectUpvoteButton
+              issueNumber={project.issueNumber}
+              count={project.upvoteCount}
+              hasUpvoted={project.hasUpvoted}
+            />
+          </div>
         </div>
       </header>
 

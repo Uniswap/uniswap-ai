@@ -43,6 +43,12 @@
   border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
+.metaLeft {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
 .metaRight {
   display: flex;
   align-items: center;

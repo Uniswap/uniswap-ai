@@ -17,6 +17,13 @@ export interface HackathonProject {
   bodyRaw: string;
 }
 
+export interface ProjectWithVotes extends HackathonProject {
+  upvoteCount: number;
+  hasUpvoted: boolean;
+}
+
+export type ProjectSortMode = 'votes' | 'newest' | 'oldest';
+
 export interface GitHubIssue {
   id: number;
   number: number;
