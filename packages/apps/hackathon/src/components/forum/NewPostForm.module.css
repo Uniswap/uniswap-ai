@@ -82,8 +82,7 @@
   font-size: var(--font-size-sm);
   font-weight: 500;
   cursor: pointer;
-  transition: background-color var(--duration-normal) ease,
-    color var(--duration-normal) ease;
+  transition: background-color var(--duration-normal) ease, color var(--duration-normal) ease;
 }
 
 .cancelBtn:hover {

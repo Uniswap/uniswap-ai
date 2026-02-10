@@ -5,8 +5,7 @@
   border-radius: var(--radius-2xl);
   padding: var(--space-5);
   border: 1px solid transparent;
-  transition: background-color var(--duration-normal) ease,
-    border-color var(--duration-normal) ease;
+  transition: background-color var(--duration-normal) ease, border-color var(--duration-normal) ease;
 }
 
 .card:hover {

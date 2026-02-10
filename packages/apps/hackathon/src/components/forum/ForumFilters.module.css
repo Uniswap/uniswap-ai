@@ -14,8 +14,7 @@
   border: 1px solid transparent;
   cursor: pointer;
   white-space: nowrap;
-  transition: background-color var(--duration-normal) ease,
-    color var(--duration-normal) ease,
+  transition: background-color var(--duration-normal) ease, color var(--duration-normal) ease,
     border-color var(--duration-normal) ease;
 }
 

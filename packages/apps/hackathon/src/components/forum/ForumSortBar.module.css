@@ -15,8 +15,7 @@
   color: var(--color-neutral3);
   border: none;
   cursor: pointer;
-  transition: background-color var(--duration-normal) ease,
-    color var(--duration-normal) ease;
+  transition: background-color var(--duration-normal) ease, color var(--duration-normal) ease;
 }
 
 .tab:hover {
