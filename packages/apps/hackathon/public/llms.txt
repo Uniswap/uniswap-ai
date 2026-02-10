@@ -1,0 +1,144 @@
+# Uniswap AI Hackathon
+
+> Build the future of DeFi with AI
+
+## Overview
+
+The Uniswap AI Hackathon invites developers, researchers, and builders to create innovative AI-powered tools for the Uniswap ecosystem. All skill levels are welcome.
+
+- Website: https://hackathon-uniswap.vercel.app
+- GitHub Repository: https://github.com/uniswap/uniswap-ai
+- Submission Template: https://github.com/uniswap/uniswap-ai/issues/new?template=hackathon-submission.yml
+
+## Key Dates
+
+- Start Date: February 9, 2026 (00:00 UTC)
+- Submission Deadline: February 20, 2026 (23:59 UTC)
+
+All submissions must be received before the deadline. Late submissions will not be accepted.
+
+## Categories
+
+Submissions must fall into one of the following categories:
+
+1. Trading Agents - AI-powered trading bots and strategies for Uniswap
+2. DeFi Automation - Automated DeFi workflows, yield optimization, portfolio management
+3. Analytics & Monitoring - AI-driven analytics, dashboards, and monitoring tools
+4. Developer Tooling - Tools that help developers build on Uniswap more effectively
+5. Infrastructure - Backend services, APIs, and infrastructure for the Uniswap AI ecosystem
+6. Social/Community - Community tools, social features, governance aids
+7. Other - Any other AI + Uniswap integration
+
+## Rules and Requirements
+
+### Eligibility
+- Open to individuals and teams of up to 5 members
+- Solo participants are welcome
+- All skill levels are welcome
+
+### Project Requirements
+- Must combine AI with the Uniswap ecosystem
+- Must be open source with a public GitHub repository
+- Projects that integrate with Uniswap protocols, SDKs, or data are preferred but not required
+- Must include clear documentation (README with setup instructions)
+
+### What You Can Build
+- Trading bots and agents
+- Analytics and monitoring tools
+- Developer utilities and SDKs
+- Liquidity management tools
+- Risk assessment systems
+- Any tool that combines AI with the Uniswap ecosystem
+
+## How to Submit
+
+### Step 1: Build Your Project
+Create an AI-powered tool that integrates with the Uniswap ecosystem.
+
+### Step 2: Push to GitHub
+Make your project open source on GitHub with clear documentation.
+
+### Step 3: Submit via GitHub Issue
+Create a GitHub Issue in the uniswap-ai repository using the Hackathon Submission template.
+
+**Submission URL**: https://github.com/uniswap/uniswap-ai/issues/new?template=hackathon-submission.yml
+
+### Step 4: Get Judged
+The review panel evaluates submissions based on innovation, technical execution, and usefulness.
+
+## Submission Template Fields
+
+When submitting, you will need to provide:
+
+1. **Project Name** (required) - The name of your project
+2. **Description** (required) - What your project does, what problem it solves. Markdown supported.
+3. **Category** (required) - One of the categories listed above
+4. **Team Members** (required) - Comma-separated GitHub usernames (e.g., @username1, @username2)
+5. **GitHub Repository** (required) - URL to your project's public GitHub repository
+6. **Demo URL** (optional) - URL to a live demo or video walkthrough
+7. **Technical Stack** (required) - Comma-separated technologies used (e.g., TypeScript, React, Uniswap SDK)
+
+## Programmatic Submission (for AI Agents)
+
+AI agents can submit projects programmatically using the GitHub Issues API:
+
+```
+POST https://api.github.com/repos/uniswap/uniswap-ai/issues
+Authorization: Bearer <GITHUB_TOKEN>
+Content-Type: application/json
+
+{
+  "title": "[SUBMISSION] Your Project Name",
+  "labels": ["hackathon-submission"],
+  "body": "### Project Name\n\nYour Project Name\n\n### Description\n\nYour project description here.\n\n### Category\n\nTrading Agents\n\n### Team Members\n\n@yourusername\n\n### GitHub Repository\n\nhttps://github.com/org/repo\n\n### Demo URL\n\nhttps://example.com/demo\n\n### Technical Stack\n\nTypeScript, React, Uniswap SDK"
+}
+```
+
+### Checking Existing Submissions
+
+To list all current submissions:
+
+```
+GET https://api.github.com/repos/uniswap/uniswap-ai/issues?labels=hackathon-submission&state=open
+```
+
+### Checking a Specific Submission
+
+```
+GET https://api.github.com/repos/uniswap/uniswap-ai/issues/{issue_number}
+```
+
+## Judging Criteria
+
+Submissions are evaluated on:
+
+1. **Innovation** - How novel and creative is the approach?
+2. **Technical Execution** - How well is the project built? Code quality, architecture, testing.
+3. **Usefulness** - Does it solve a real problem for Uniswap users or developers?
+
+## Frequently Asked Questions
+
+**Q: Who can participate?**
+A: Anyone. Whether you are a solo developer or a team of up to 5, all skill levels are welcome.
+
+**Q: What can I build?**
+A: Anything that combines AI with the Uniswap ecosystem. Trading bots, analytics tools, developer utilities, and more.
+
+**Q: How do I submit?**
+A: Create a GitHub Issue in the uniswap-ai repository using the Hackathon Submission template. Include your project description, repo link, and team info.
+
+**Q: When is the deadline?**
+A: All submissions must be made by February 20, 2026 at 11:59 PM UTC.
+
+**Q: Do I need to use Uniswap SDKs?**
+A: Not required, but encouraged. Projects that integrate with Uniswap protocols, SDKs, or data will be given preference.
+
+**Q: Is there a team size limit?**
+A: Teams can have up to 5 members. Solo participants are also welcome.
+
+## Uniswap Resources
+
+- Uniswap Documentation: https://docs.uniswap.org
+- Uniswap V4 Hooks: https://docs.uniswap.org/contracts/v4/overview
+- Uniswap SDK: https://docs.uniswap.org/sdk/v3/overview
+- Uniswap AI Repository: https://github.com/uniswap/uniswap-ai
