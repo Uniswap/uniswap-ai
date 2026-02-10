@@ -8,12 +8,25 @@ type QuickStartPath = 'agent' | 'human';
 
 const SKILL_CURL_COMMAND = 'curl -s https://uniswap-ai-hackathon-2026.vercel.app/skill.md';
 
-const DEVELOPER_SNIPPET = `import { UniswapTrading } from '@uniswap/sdk'
+const DEVELOPER_SNIPPET = `const response = await fetch('https://trade.api.uniswap.org/v1/quote', {
+  method: 'POST',
+  headers: {
+    'x-api-key': 'YOUR_API_KEY',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    tokenIn: '0x0000000000000000000000000000000000000000', // ETH
+    tokenOut: '0xdAC17F958D2ee523a2206206994597C13D831ec7', // USDT
+    tokenInChainId: 1,
+    tokenOutChainId: 1,
+    type: 'EXACT_INPUT',
+    amount: '1000000000000000000', // 1 ETH in wei
+    swapper: '0x...', // User's wallet address
+    slippageTolerance: 0.5 // 0.5%
+  })
+});
 
-const api = new UniswapTrading({ apiKey: '...' })
-const quote = await api.getQuote({
-  tokenIn: 'ETH', tokenOut: 'USDC', amount: '1'
-})`;
+const quote = await response.json();`;
 
 function AgentPath() {
   const [copied, setCopied] = useState(false);
