@@ -16,8 +16,8 @@ export function Footer() {
           <a href={SUBMIT_URL} className={styles.ctaButton}>
             Submit Your Project
           </a>
+          <div className={styles.ctaDecoration} aria-hidden="true" />
         </div>
-        <div className={styles.ctaDecoration} aria-hidden="true" />
       </div>
 
       <div className={styles.bottom}>
