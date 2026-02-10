@@ -32,7 +32,7 @@ export function FAQ() {
               >
                 <span>{item.question}</span>
                 <span className={`${styles.faqIcon}${isOpen ? ` ${styles.faqIconOpen}` : ''}`}>
-                  +
+                  &#x276F;
                 </span>
               </button>
               <div

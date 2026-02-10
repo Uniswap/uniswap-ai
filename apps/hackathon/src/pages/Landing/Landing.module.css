@@ -301,15 +301,16 @@
 }
 
 .faqIcon {
-  font-size: var(--font-size-xl);
+  font-size: var(--font-size-base);
   color: var(--color-neutral3);
   flex-shrink: 0;
   margin-left: var(--space-4);
   transition: transform var(--duration-normal);
+  transform: rotate(90deg);
 }
 
 .faqIconOpen {
-  transform: rotate(45deg);
+  transform: rotate(270deg);
 }
 
 .faqAnswerWrapper {
