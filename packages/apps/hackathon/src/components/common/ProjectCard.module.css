@@ -7,9 +7,7 @@
   text-decoration: none;
   color: inherit;
   border: 1px solid transparent;
-  transition:
-    background-color var(--duration-normal) ease,
-    border-color var(--duration-normal) ease,
+  transition: background-color var(--duration-normal) ease, border-color var(--duration-normal) ease,
     transform var(--duration-normal) ease;
 }
 

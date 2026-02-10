@@ -105,9 +105,7 @@
   text-decoration: none;
   color: inherit;
   border-left: 3px solid var(--color-accent1);
-  transition:
-    background-color var(--duration-normal) ease,
-    border-color var(--duration-normal) ease;
+  transition: background-color var(--duration-normal) ease, border-color var(--duration-normal) ease;
 }
 
 .feedItem:hover {

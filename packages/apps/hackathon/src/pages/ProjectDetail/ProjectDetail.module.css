@@ -92,9 +92,7 @@
   font-size: var(--font-size-sm);
   font-weight: 500;
   text-decoration: none;
-  transition:
-    background-color var(--duration-normal) ease,
-    color var(--duration-normal) ease;
+  transition: background-color var(--duration-normal) ease, color var(--duration-normal) ease;
 }
 
 .linkButtonSecondary:hover {
@@ -137,9 +135,7 @@
   font-size: var(--font-size-sm);
   color: var(--color-neutral2);
   text-decoration: none;
-  transition:
-    background-color var(--duration-fast) ease,
-    color var(--duration-fast) ease;
+  transition: background-color var(--duration-fast) ease, color var(--duration-fast) ease;
 }
 
 .teamMember:hover {
