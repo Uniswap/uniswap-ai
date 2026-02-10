@@ -60,6 +60,9 @@ uniswap-ai/
 │   └── marketplace.json     # Claude Code marketplace config
 ├── .claude/
 │   └── rules/               # Agent rules (agnostic design)
+├── skills/                  # Root-level skill symlinks (skills.sh discovery)
+│   ├── v4-security-foundations -> ../packages/plugins/uniswap-hooks/skills/v4-security-foundations
+│   └── aggregator-hook-creator -> ../packages/plugins/uniswap-hooks/skills/aggregator-hook-creator
 ├── docs/                    # VitePress documentation
 ├── evals/                   # AI tool evaluations (Promptfoo)
 │   ├── rubrics/             # Shared evaluation rubrics
@@ -227,6 +230,38 @@ After changes to files in this repository, update the relevant CLAUDE.md file to
 ### README.md File Management
 
 Check all README.md files in directories with changes and update if appropriate.
+
+## Skills.sh Integration
+
+Skills are discoverable via the [skills.sh CLI](https://skills.sh) (`npx skills add Uniswap/uniswap-ai`).
+
+### How Discovery Works
+
+1. The skills CLI checks root-level `skills/` directory first
+2. Each entry in `skills/` is a symlink to the canonical skill in `packages/plugins/uniswap-hooks/skills/`
+3. The `.claude-plugin/marketplace.json` also lists skills for fallback discovery
+
+### Adding New Skills
+
+1. Create the skill in `packages/plugins/uniswap-hooks/skills/<skill-name>/`
+2. Add a symlink: `ln -s ../packages/plugins/uniswap-hooks/skills/<skill-name> skills/<skill-name>`
+3. Add the skill to `plugin.json` `skills` array
+4. Add `license` and `metadata` fields to frontmatter (see existing skills for format)
+5. CI `validate-skills` job will verify symlink integrity and sync
+
+### Publishing
+
+Merging to main = publishing to skills.sh. The CLI fetches directly from the repo's default branch. No separate publish step is required.
+
+### CI Validation
+
+The `validate-skills` job in PR checks enforces:
+
+- Symlink integrity (every root `skills/` entry resolves)
+- Required frontmatter fields (`name`, `description`)
+- Name consistency (frontmatter name matches directory name)
+- Sync between `plugin.json` skills array and root `skills/` directory
+- Prerequisite existence (referenced skills exist)
 
 ## Nx Guidelines
 

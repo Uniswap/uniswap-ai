@@ -13,7 +13,8 @@
     {
       "name": "uniswap-hooks",
       "source": "./packages/plugins/uniswap-hooks",
-      "description": "AI-powered assistance for creating Uniswap V4 hooks"
+      "description": "AI-powered assistance for creating Uniswap V4 hooks",
+      "skills": ["./skills/v4-security-foundations", "./skills/aggregator-hook-creator"]
     }
   ]
 }
