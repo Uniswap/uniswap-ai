@@ -1,5 +1,7 @@
 .tag {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
   padding: var(--space-1) var(--space-4);
   border-radius: var(--radius-full);
   font-size: var(--font-size-xs);

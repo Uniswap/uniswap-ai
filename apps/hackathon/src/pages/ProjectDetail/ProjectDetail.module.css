@@ -39,6 +39,7 @@
 .meta {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: var(--space-6);
   color: var(--color-neutral3);
   font-size: var(--font-size-sm);
@@ -75,7 +76,7 @@
 
 .linkButton {
   padding: var(--space-3) var(--space-6);
-  background-color: var(--color-accent1);
+  background-color: var(--color-surface3);
   color: var(--color-neutral1);
   border-radius: var(--radius-full);
   font-size: var(--font-size-sm);
@@ -85,7 +86,7 @@
 }
 
 .linkButton:hover {
-  background-color: var(--color-accent1-hovered);
+  background-color: var(--color-surface2-hovered);
   color: var(--color-neutral1);
 }
 
@@ -107,10 +108,8 @@
 }
 
 .section {
-  background-color: var(--color-surface2);
-  border-radius: var(--radius-2xl);
-  padding: var(--space-6);
-  margin-bottom: var(--space-6);
+  padding: var(--space-6) 0;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .section h2 {
@@ -207,6 +206,6 @@
   }
 
   .section {
-    padding: var(--space-4);
+    padding: var(--space-4) 0;
   }
 }
