@@ -8,7 +8,7 @@ export function Header() {
       <div className={styles.inner}>
         <NavLink to="/" className={styles.brand}>
           <img src="/uniswap-logo.svg" alt="Uniswap" className={styles.logo} />
-          <span className={styles.title}>AI Hackathon</span>
+          <span className={styles.title}>Uniswap</span>
         </NavLink>
         <nav className={styles.nav}>
           <NavLink
