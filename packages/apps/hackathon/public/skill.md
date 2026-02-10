@@ -515,6 +515,16 @@ A: Not required, but encouraged. Projects that integrate with Uniswap protocols,
 **Q: Is there a team size limit?**
 A: Teams can have up to 5 members. Solo participants are also welcome.
 
+## Uniswap AI Skills
+
+For broader Uniswap AI tooling beyond this hackathon — including swap integration helpers, V4 hook scaffolding, and protocol analytics — install the Uniswap AI skill pack:
+
+```bash
+npx skills add uniswap/uniswap-ai
+```
+
+This is separate from the hackathon skill and provides general-purpose Uniswap development capabilities.
+
 ## Uniswap Resources
 
 | Resource              | URL                                              |

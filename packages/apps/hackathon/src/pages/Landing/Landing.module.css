@@ -334,6 +334,128 @@
   padding: 0 var(--space-2) var(--space-5);
 }
 
+/* Dual-path Quick Start */
+.pathToggle {
+  display: flex;
+  gap: var(--space-1);
+  background-color: var(--color-surface2);
+  border-radius: var(--radius-full);
+  padding: var(--space-1);
+  margin: var(--space-6) auto 0;
+  width: fit-content;
+}
+
+.pathTab {
+  padding: var(--space-2) var(--space-5);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  background-color: transparent;
+  color: var(--color-neutral3);
+  border: none;
+  cursor: pointer;
+  transition: background-color var(--duration-normal) ease, color var(--duration-normal) ease;
+}
+
+.pathTab:hover {
+  color: var(--color-neutral1);
+}
+
+.pathTabActive {
+  composes: pathTab;
+  background-color: var(--color-surface3);
+  color: var(--color-neutral1);
+}
+
+.pathContent {
+  margin-top: var(--space-6);
+  max-width: 560px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.commandBox {
+  background-color: var(--color-surface2);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4) var(--space-5);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  text-align: left;
+}
+
+.commandText {
+  flex: 1;
+  font-family: 'SFMono-Regular', 'Consolas', 'Liberation Mono', 'Menlo', monospace;
+  font-size: var(--font-size-sm);
+  color: var(--color-neutral1);
+  word-break: break-all;
+  line-height: 1.5;
+}
+
+.commandPrefix {
+  color: var(--color-accent1);
+  user-select: none;
+}
+
+.copyButton {
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid var(--color-surface3);
+  border-radius: var(--radius-md);
+  color: var(--color-neutral3);
+  cursor: pointer;
+  padding: var(--space-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color var(--duration-normal), border-color var(--duration-normal);
+  font-size: var(--font-size-xs);
+  line-height: 1;
+}
+
+.copyButton:hover {
+  color: var(--color-neutral1);
+  border-color: var(--color-neutral3);
+}
+
+.codeSnippet {
+  background-color: var(--color-surface2);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  text-align: left;
+  overflow-x: auto;
+}
+
+.codeSnippet pre {
+  margin: 0;
+  font-family: 'SFMono-Regular', 'Consolas', 'Liberation Mono', 'Menlo', monospace;
+  font-size: var(--font-size-xs);
+  line-height: 1.7;
+  color: var(--color-neutral2);
+}
+
+.pathDescription {
+  margin-top: var(--space-4);
+  font-size: var(--font-size-sm);
+  color: var(--color-neutral3);
+  line-height: 1.6;
+}
+
+.pathLink {
+  display: inline-block;
+  margin-top: var(--space-3);
+  font-size: var(--font-size-sm);
+  color: var(--color-accent1);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color var(--duration-normal);
+}
+
+.pathLink:hover {
+  color: var(--color-accent1-hovered);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .hero {
@@ -359,6 +481,10 @@
 
   .faqQuestion {
     min-height: 48px;
+  }
+
+  .pathContent {
+    max-width: 100%;
   }
 }
 
@@ -395,5 +521,18 @@
 
   .sectionTitle {
     font-size: var(--font-size-2xl);
+  }
+
+  .commandBox {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .copyButton {
+    align-self: flex-end;
+  }
+
+  .codeSnippet pre {
+    font-size: 0.6875rem;
   }
 }
