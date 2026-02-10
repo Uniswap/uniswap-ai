@@ -52,7 +52,7 @@ uniswap-trading/
 
 ## Supported Chains
 
-Mainnet (1), Optimism (10), Polygon (137), Arbitrum (42161), Base (8453), BNB (56), Blast (81457), Unichain (130)
+Ethereum (1), Optimism (10), BNB (56), Unichain (130), Polygon (137), X Layer (196), zkSync (324), World Chain (480), Soneium (1868), Base (8453), Arbitrum (42161), Celo (42220), Avalanche (43114), Blast (81457), Zora (7777777), Monad (143)
 
 ## Related Plugins
 

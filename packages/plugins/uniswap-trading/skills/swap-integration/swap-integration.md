@@ -219,22 +219,33 @@ function validateSwapResponse(response: SwapResponse): void {
 
 ### Supported Chains
 
-| ID  | Chain    | ID    | Chain    |
-| --- | -------- | ----- | -------- |
-| 1   | Mainnet  | 42161 | Arbitrum |
-| 10  | Optimism | 8453  | Base     |
-| 137 | Polygon  | 81457 | Blast    |
-| 56  | BNB      | 130   | Unichain |
+| ID   | Chain    | ID      | Chain       |
+| ---- | -------- | ------- | ----------- |
+| 1    | Ethereum | 8453    | Base        |
+| 10   | Optimism | 42161   | Arbitrum    |
+| 56   | BNB      | 42220   | Celo        |
+| 130  | Unichain | 43114   | Avalanche   |
+| 137  | Polygon  | 81457   | Blast       |
+| 196  | X Layer  | 7777777 | Zora        |
+| 324  | zkSync   | 480     | World Chain |
+| 1868 | Soneium  | 143     | Monad       |
 
-### Swap Types
+### Routing Types
 
-| Value | Type     | Description         |
-| ----- | -------- | ------------------- |
-| 0     | CLASSIC  | Standard AMM swap   |
-| 2     | DUTCH_V2 | Dutch auction order |
-| 4     | WRAP     | ETH to WETH         |
-| 5     | UNWRAP   | WETH to ETH         |
-| 6     | BRIDGE   | Cross-chain bridge  |
+| Type        | Description                                   |
+| ----------- | --------------------------------------------- |
+| CLASSIC     | Standard AMM swap through Uniswap pools       |
+| DUTCH_V2    | UniswapX Dutch auction V2                     |
+| DUTCH_V3    | UniswapX Dutch auction V3                     |
+| PRIORITY    | MEV-protected priority order (Base, Unichain) |
+| DUTCH_LIMIT | UniswapX Dutch limit order                    |
+| LIMIT_ORDER | Limit order                                   |
+| WRAP        | ETH to WETH conversion                        |
+| UNWRAP      | WETH to ETH conversion                        |
+| BRIDGE      | Cross-chain bridge                            |
+| QUICKROUTE  | Fast approximation quote                      |
+
+**UniswapX availability**: UniswapX V2 orders are supported on Ethereum (1), Arbitrum (42161), Base (8453), and Unichain (130). The auction mechanism varies by chain — see [UniswapX Auction Types](#uniswapx-auction-types) below.
 
 ---
 
@@ -478,21 +489,74 @@ Permit2 enables signature-based token approvals instead of on-chain approve() ca
 ### Integration Pattern
 
 ```typescript
+import { getContract, maxUint256, type Address } from 'viem';
+
+const PERMIT2_ADDRESS = '0x000000000022D473030F116dDEE9F6B43aC78BA3' as const;
+
 // Check if Permit2 approval exists
-const allowance = await permit2Contract.allowance(
-  userAddress,
-  tokenAddress,
-  spenderAddress
-)
+const allowance = await publicClient.readContract({
+  address: PERMIT2_ADDRESS,
+  abi: permit2Abi,
+  functionName: 'allowance',
+  args: [userAddress, tokenAddress, spenderAddress],
+});
 
 // If not approved, user must approve Permit2 first
 if (allowance.amount < requiredAmount) {
-  await token.approve(PERMIT2_ADDRESS, ethers.MaxUint256)
+  const hash = await walletClient.writeContract({
+    address: tokenAddress,
+    abi: erc20Abi,
+    functionName: 'approve',
+    args: [PERMIT2_ADDRESS, maxUint256],
+  });
+  await publicClient.waitForTransactionReceipt({ hash });
 }
 
 // Then sign permit for the swap
-const permitSignature = await signPermit(...)
+const permitSignature = await signPermit(...);
 ```
+
+---
+
+## UniswapX Auction Types
+
+UniswapX routes swaps through off-chain fillers who compete to execute orders at better prices than on-chain AMMs. The auction mechanism varies by chain.
+
+### Exclusive Dutch Auction (Ethereum)
+
+- Starts with an RFQ (Request for Quote) phase where permissioned quoters compete
+- Winning quoter receives **exclusive filling rights** for a set period
+- If the exclusive filler doesn't execute, falls back to an open Dutch auction where the price decays each block
+- Best for large swaps where MEV protection matters most
+
+**Trading API routing type**: `DUTCH_V2` or `DUTCH_V3`
+
+### Open Dutch Auction (Arbitrum)
+
+- Direct open auction without an RFQ phase
+- Fillers compete on-chain through a descending price mechanism
+- Leverages Arbitrum's fast 0.25-second block times for rapid price discovery
+- The **Unimind algorithm** sets auction parameters based on historical pair performance
+
+**Trading API routing type**: `DUTCH_V2`
+
+### Priority Gas Auction (Base, Unichain)
+
+- Fillers bid by submitting transactions with varying **priority fees** at a target block
+- Highest priority fee wins the right to fill the order
+- Exploits OP Stack's priority ordering mechanism
+- Effective on chains where block builders respect priority ordering
+
+**Trading API routing type**: `PRIORITY`
+
+### Key Properties (All Auction Types)
+
+- **Gasless for users** — fillers pay gas fees, incorporated into final pricing
+- **No cost on failure** — if a swap doesn't fill, the user pays nothing
+- **MEV protection** — auction mechanics prevent frontrunning and sandwich attacks
+- UniswapX V2 is currently supported on Ethereum (1), Arbitrum (42161), Base (8453), and Unichain (130)
+
+For more detail, see the [UniswapX Auction Types documentation](https://docs.uniswap.org/contracts/uniswapx/auctiontypes).
 
 ---
 
@@ -788,16 +852,22 @@ function useSwap() {
 ### Backend Swap Script (Node.js)
 
 ```typescript
-import { ethers } from 'ethers';
+import { createWalletClient, createPublicClient, http, isAddress, isHex, type Address } from 'viem';
+import { privateKeyToAccount } from 'viem/accounts';
+import { mainnet } from 'viem/chains';
 
 const API_URL = 'https://trade-api.gateway.uniswap.org/v1';
-const API_KEY = process.env.UNISWAP_API_KEY;
+const API_KEY = process.env.UNISWAP_API_KEY!;
+
+const account = privateKeyToAccount(process.env.PRIVATE_KEY as `0x${string}`);
+const publicClient = createPublicClient({ chain: mainnet, transport: http() });
+const walletClient = createWalletClient({ account, chain: mainnet, transport: http() });
 
 // Helper to strip null fields from quote response
-function prepareSwapRequest(quoteResponse: any, signature?: string): object {
+function prepareSwapRequest(quoteResponse: Record<string, unknown>, signature?: string): object {
   const { permitData, permitTransaction, ...cleanQuote } = quoteResponse;
 
-  const request: Record<string, any> = { ...cleanQuote };
+  const request: Record<string, unknown> = { ...cleanQuote };
 
   // CRITICAL: Only include permitData if we have BOTH signature and permitData
   // The API requires both fields to be present or both to be absent
@@ -810,29 +880,28 @@ function prepareSwapRequest(quoteResponse: any, signature?: string): object {
 }
 
 // Validate swap response before broadcasting
-function validateSwap(swap: any): void {
+function validateSwap(swap: { data?: string; to?: string; from?: string }): void {
   if (!swap?.data || swap.data === '' || swap.data === '0x') {
     throw new Error('swap.data is empty - quote may have expired');
   }
-  if (!ethers.isAddress(swap.to) || !ethers.isAddress(swap.from)) {
+  if (!isHex(swap.data)) {
+    throw new Error('swap.data is not valid hex');
+  }
+  if (!swap.to || !isAddress(swap.to) || !swap.from || !isAddress(swap.from)) {
     throw new Error('Invalid address in swap response');
   }
 }
 
-async function executeSwap(
-  wallet: ethers.Wallet,
-  tokenIn: string,
-  tokenOut: string,
-  amount: string,
-  chainId: number
-) {
+async function executeSwap(tokenIn: Address, tokenOut: Address, amount: string, chainId: number) {
+  const ETH_ADDRESS = '0x0000000000000000000000000000000000000000';
+
   // 1. Check approval (for ERC20 tokens, not native ETH)
-  if (tokenIn !== '0x0000000000000000000000000000000000000000') {
+  if (tokenIn !== ETH_ADDRESS) {
     const approvalRes = await fetch(`${API_URL}/check_approval`, {
       method: 'POST',
-      headers: { 'x-api-key': API_KEY!, 'Content-Type': 'application/json' },
+      headers: { 'x-api-key': API_KEY, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        walletAddress: wallet.address,
+        walletAddress: account.address,
         token: tokenIn,
         amount,
         chainId,
@@ -841,17 +910,21 @@ async function executeSwap(
     const approvalData = await approvalRes.json();
 
     if (approvalData.approval) {
-      const approveTx = await wallet.sendTransaction(approvalData.approval);
-      await approveTx.wait();
+      const hash = await walletClient.sendTransaction({
+        to: approvalData.approval.to,
+        data: approvalData.approval.data,
+        value: BigInt(approvalData.approval.value || '0'),
+      });
+      await publicClient.waitForTransactionReceipt({ hash });
     }
   }
 
   // 2. Get quote
   const quoteRes = await fetch(`${API_URL}/quote`, {
     method: 'POST',
-    headers: { 'x-api-key': API_KEY!, 'Content-Type': 'application/json' },
+    headers: { 'x-api-key': API_KEY, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      swapper: wallet.address,
+      swapper: account.address,
       tokenIn,
       tokenOut,
       tokenInChainId: chainId,
@@ -872,7 +945,7 @@ async function executeSwap(
 
   const swapRes = await fetch(`${API_URL}/swap`, {
     method: 'POST',
-    headers: { 'x-api-key': API_KEY!, 'Content-Type': 'application/json' },
+    headers: { 'x-api-key': API_KEY, 'Content-Type': 'application/json' },
     body: JSON.stringify(swapRequest),
   });
   const swapData = await swapRes.json();
@@ -884,8 +957,12 @@ async function executeSwap(
   // 4. Validate before broadcasting
   validateSwap(swapData.swap);
 
-  const tx = await wallet.sendTransaction(swapData.swap);
-  return tx.wait();
+  const hash = await walletClient.sendTransaction({
+    to: swapData.swap.to,
+    data: swapData.swap.data,
+    value: BigInt(swapData.swap.value || '0'),
+  });
+  return publicClient.waitForTransactionReceipt({ hash });
 }
 ```
 
@@ -934,11 +1011,29 @@ contract SwapIntegration {
 
 ## Key Contract Addresses
 
-### Universal Router
+### Universal Router (V4)
 
-| Chain      | Address                                      |
-| ---------- | -------------------------------------------- |
-| All chains | `0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD` |
+Addresses are per-chain. The legacy V1 address `0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD` is deprecated.
+
+| Chain       | ID      | Address                                      |
+| ----------- | ------- | -------------------------------------------- |
+| Ethereum    | 1       | `0x66a9893cc07d91d95644aedd05d03f95e1dba8af` |
+| Unichain    | 130     | `0xef740bf23acae26f6492b10de645d6b98dc8eaf3` |
+| Optimism    | 10      | `0x851116d9223fabed8e56c0e6b8ad0c31d98b3507` |
+| Base        | 8453    | `0x6ff5693b99212da76ad316178a184ab56d299b43` |
+| Arbitrum    | 42161   | `0xa51afafe0263b40edaef0df8781ea9aa03e381a3` |
+| Polygon     | 137     | `0x1095692a6237d83c6a72f3f5efedb9a670c49223` |
+| Blast       | 81457   | `0xeabbcb3e8e415306207ef514f660a3f820025be3` |
+| BNB         | 56      | `0x1906c1d672b88cd1b9ac7593301ca990f94eae07` |
+| Zora        | 7777777 | `0x3315ef7ca28db74abadc6c44570efdf06b04b020` |
+| World Chain | 480     | `0x8ac7bee993bb44dab564ea4bc9ea67bf9eb5e743` |
+| Avalanche   | 43114   | `0x94b75331ae8d42c1b61065089b7d48fe14aa73b7` |
+| Celo        | 42220   | `0xcb695bc5d3aa22cad1e6df07801b061a05a0233a` |
+| Soneium     | 1868    | `0x4cded7edf52c8aa5259a54ec6a3ce7c6d2a455df` |
+| Ink         | 57073   | `0x112908dac86e20e7241b0927479ea3bf935d1fa0` |
+| Monad       | 143     | `0x0d97dc33264bfc1c226207428a79b26757fb9dc3` |
+
+For testnet addresses, see [Uniswap V4 Deployments](https://docs.uniswap.org/contracts/v4/deployments).
 
 ### Permit2
 
