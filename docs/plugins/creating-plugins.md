@@ -143,7 +143,7 @@ prompts:
 
 tests:
   - vars:
-      context: "Test context"
+      context: 'Test context'
     assert:
       - type: llm-rubric
         value: file://../../rubrics/skill-quality.txt
@@ -165,6 +165,7 @@ Invoke /my-skill to accomplish a specific task.
 ## Expected Behavior
 
 The skill should:
+
 - Do X correctly
 - Handle Y appropriately
 - Produce Z output
@@ -262,6 +263,7 @@ npx nx run evals:eval --suite=my-skill
 ### Plugin Validation Fails
 
 Check that:
+
 - `plugin.json` is valid JSON
 - All referenced skills/agents exist
 - Version numbers match between files
@@ -269,6 +271,7 @@ Check that:
 ### Eval Coverage Check Fails
 
 Ensure:
+
 - Eval suite exists in `evals/suites/`
 - `promptfoo.yaml` is properly configured
 - At least one test case exists

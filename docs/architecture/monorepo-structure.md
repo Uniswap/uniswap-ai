@@ -47,9 +47,9 @@ uniswap-ai/
 
 ## Package Scopes
 
-| Type | Scope | npm | Marketplace |
-|------|-------|-----|-------------|
-| Plugins | `@uniswap` | No | Yes (Claude Code Marketplace) |
+| Type    | Scope      | npm | Marketplace                   |
+| ------- | ---------- | --- | ----------------------------- |
+| Plugins | `@uniswap` | No  | Yes (Claude Code Marketplace) |
 
 ## Nx Configuration
 
@@ -114,13 +114,13 @@ suite-name/
 
 ## Key Files
 
-| File | Purpose |
-|------|---------|
-| `CLAUDE.md` | Project guidelines and AI agent instructions |
-| `AGENTS.md` | Symlink to CLAUDE.md for agent-agnostic access |
-| `nx.json` | Nx workspace configuration |
-| `typedoc.json` | API documentation generation config |
-| `.vale.ini` | Prose linting configuration |
+| File           | Purpose                                        |
+| -------------- | ---------------------------------------------- |
+| `CLAUDE.md`    | Project guidelines and AI agent instructions   |
+| `AGENTS.md`    | Symlink to CLAUDE.md for agent-agnostic access |
+| `nx.json`      | Nx workspace configuration                     |
+| `typedoc.json` | API documentation generation config            |
+| `.vale.ini`    | Prose linting configuration                    |
 
 ## Related
 

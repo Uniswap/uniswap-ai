@@ -50,17 +50,17 @@ Every PR runs through these checks:
 
 ### Automated Checks
 
-| Check | Description | Required |
-|-------|-------------|----------|
-| Build | Builds affected packages | ✅ |
-| Lint | Runs ESLint on affected packages | ✅ |
-| Format | Checks Prettier formatting | ✅ |
-| Tests | Runs Jest tests with coverage | ✅ |
-| Plugin Validation | Validates plugin configurations | ✅ |
-| Eval Coverage | Ensures new skills have evals | ✅ |
-| PR Title | Validates conventional commit format | ✅ |
-| Docs Check | Validates documentation updates | ⚠️ |
-| Vale | Checks prose quality | ⚠️ |
+| Check             | Description                          | Required |
+| ----------------- | ------------------------------------ | -------- |
+| Build             | Builds affected packages             | ✅       |
+| Lint              | Runs ESLint on affected packages     | ✅       |
+| Format            | Checks Prettier formatting           | ✅       |
+| Tests             | Runs Jest tests with coverage        | ✅       |
+| Plugin Validation | Validates plugin configurations      | ✅       |
+| Eval Coverage     | Ensures new skills have evals        | ✅       |
+| PR Title          | Validates conventional commit format | ✅       |
+| Docs Check        | Validates documentation updates      | ⚠️       |
+| Vale              | Checks prose quality                 | ⚠️       |
 
 ✅ = Required to pass
 ⚠️ = Advisory (non-blocking)
@@ -74,6 +74,7 @@ PRs automatically receive AI-powered code review:
 - Focuses on security, best practices, and code quality
 
 To request a new review, comment:
+
 ```
 @request-claude-review
 ```
@@ -83,16 +84,19 @@ To request a new review, comment:
 ### What Reviewers Look For
 
 1. **Code Quality**
+
    - TypeScript best practices
    - No `any` types
    - Proper error handling
 
 2. **Security**
+
    - No hardcoded secrets
    - Input validation
    - Safe external interactions
 
 3. **Testing**
+
    - Adequate test coverage
    - Edge cases covered
    - Eval suites for new skills
@@ -129,18 +133,21 @@ After merging to `main`:
 ### CI Failures
 
 **Build fails:**
+
 ```bash
 # Run build locally
 npx nx affected --target=build --verbose
 ```
 
 **Tests fail:**
+
 ```bash
 # Run tests locally
 npx nx affected --target=test --verbose
 ```
 
 **Formatting issues:**
+
 ```bash
 # Fix formatting
 npx nx format:write

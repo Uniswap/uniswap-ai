@@ -52,6 +52,7 @@ npm run docs:dev
 ### Creating Changes
 
 1. **Create a branch** from `main`:
+
    ```bash
    git checkout -b feature/your-feature-name
    ```
@@ -59,6 +60,7 @@ npm run docs:dev
 2. **Make your changes** following the code guidelines
 
 3. **Test your changes**:
+
    ```bash
    # Run affected tests
    npx nx affected --target=test
@@ -117,6 +119,7 @@ mkdir -p packages/plugins/my-plugin
 ```
 
 Each plugin needs:
+
 - `package.json` with plugin metadata
 - `project.json` for Nx configuration
 - `.claude-plugin/plugin.json` manifest
@@ -131,6 +134,7 @@ mkdir -p packages/plugins/uniswap-hooks/skills/my-skill
 ```
 
 Each skill needs:
+
 - `SKILL.md` - The skill definition
 - Corresponding eval suite in `evals/suites/`
 
@@ -160,15 +164,15 @@ We use [Conventional Commits](https://www.conventionalcommits.org/):
 
 ### Types
 
-| Type | Description |
-|------|-------------|
-| `feat` | New feature |
-| `fix` | Bug fix |
-| `docs` | Documentation only |
-| `style` | Formatting changes |
-| `refactor` | Code restructuring |
-| `test` | Adding/updating tests |
-| `chore` | Maintenance tasks |
+| Type       | Description           |
+| ---------- | --------------------- |
+| `feat`     | New feature           |
+| `fix`      | Bug fix               |
+| `docs`     | Documentation only    |
+| `style`    | Formatting changes    |
+| `refactor` | Code restructuring    |
+| `test`     | Adding/updating tests |
+| `chore`    | Maintenance tasks     |
 
 ### Scopes
 

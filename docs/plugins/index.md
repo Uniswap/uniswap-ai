@@ -13,13 +13,14 @@ Plugins are the primary distribution mechanism for Uniswap AI tools. Each plugin
 
 The flagship plugin for Uniswap V4 hook development:
 
-| Feature | Description |
-|---------|-------------|
-| **Skills** | AI-powered hook creation and security analysis |
-| **Agents** | Specialized agents for hook development |
-| **Commands** | Slash commands for common operations |
+| Feature      | Description                                    |
+| ------------ | ---------------------------------------------- |
+| **Skills**   | AI-powered hook creation and security analysis |
+| **Agents**   | Specialized agents for hook development        |
+| **Commands** | Slash commands for common operations           |
 
 **Installation:**
+
 ```bash
 # Via Claude Code Marketplace
 /install @uniswap/uniswap-hooks
@@ -108,7 +109,7 @@ export const command = {
   description: 'What the command does',
   execute: async (args) => {
     // Command implementation
-  }
+  },
 };
 ```
 
@@ -116,13 +117,14 @@ export const command = {
 
 Plugins follow semantic versioning:
 
-| Change | Version Bump |
-|--------|--------------|
-| Bug fixes | Patch (1.0.X) |
+| Change                             | Version Bump  |
+| ---------------------------------- | ------------- |
+| Bug fixes                          | Patch (1.0.X) |
 | New features (backward compatible) | Minor (1.X.0) |
-| Breaking changes | Major (X.0.0) |
+| Breaking changes                   | Major (X.0.0) |
 
 Version is tracked in:
+
 - `package.json` version field
 - `.claude-plugin/plugin.json` version field
 

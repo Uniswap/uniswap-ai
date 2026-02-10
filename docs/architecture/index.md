@@ -77,13 +77,13 @@ uniswap-ai/
 
 ## Key Technologies
 
-| Technology | Purpose |
-|------------|---------|
-| [Nx](https://nx.dev) | Monorepo management, build orchestration |
-| [VitePress](https://vitepress.dev) | Documentation site generation |
-| [Promptfoo](https://github.com/promptfoo/promptfoo) | AI evaluation framework |
-| [TypeScript](https://www.typescriptlang.org) | Type-safe development |
-| [GitHub Actions](https://github.com/features/actions) | CI/CD automation |
+| Technology                                            | Purpose                                  |
+| ----------------------------------------------------- | ---------------------------------------- |
+| [Nx](https://nx.dev)                                  | Monorepo management, build orchestration |
+| [VitePress](https://vitepress.dev)                    | Documentation site generation            |
+| [Promptfoo](https://github.com/promptfoo/promptfoo)   | AI evaluation framework                  |
+| [TypeScript](https://www.typescriptlang.org)          | Type-safe development                    |
+| [GitHub Actions](https://github.com/features/actions) | CI/CD automation                         |
 
 ## Next Steps
 
