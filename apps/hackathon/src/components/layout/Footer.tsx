@@ -8,15 +8,16 @@ export function Footer() {
     <footer className={styles.footer}>
       <div className={styles.cta}>
         <div className={styles.ctaContent}>
-          <h2 className={styles.ctaHeading}>Build with the Uniswap AI Hackathon</h2>
-          <p className={styles.ctaDescription}>
-            Visit the hackathon dashboard to submit your DeFi + AI project and contribute to the
-            future of DeFi.
-          </p>
+          <div className={styles.ctaText}>
+            <h2 className={styles.ctaHeading}>Build with the Uniswap AI Hackathon</h2>
+            <p className={styles.ctaDescription}>
+              Visit the hackathon dashboard to submit your DeFi + AI project and contribute to the
+              future of DeFi.
+            </p>
+          </div>
           <a href={SUBMIT_URL} className={styles.ctaButton}>
             Submit Your Project
           </a>
-          <div className={styles.ctaDecoration} aria-hidden="true" />
         </div>
       </div>
 
