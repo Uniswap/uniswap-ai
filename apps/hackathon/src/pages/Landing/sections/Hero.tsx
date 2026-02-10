@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
+import Prism from 'prismjs';
+import 'prismjs/components/prism-javascript';
 import { CountdownTimer } from '../../../components/common/CountdownTimer';
 import { HACKATHON_CONFIG } from '../../../lib/config';
 import styles from '../Landing.module.css';
@@ -67,6 +69,10 @@ function AgentPath() {
 
 function HumanPath() {
   const [copied, setCopied] = useState(false);
+  const highlightedHtml = useMemo(
+    () => Prism.highlight(DEVELOPER_SNIPPET, Prism.languages.javascript, 'javascript'),
+    []
+  );
 
   function handleCopy() {
     navigator.clipboard.writeText(DEVELOPER_SNIPPET).then(() => {
@@ -78,7 +84,7 @@ function HumanPath() {
   return (
     <>
       <div className={styles.commandBox}>
-        <pre className={styles.commandText}>{DEVELOPER_SNIPPET}</pre>
+        <pre className={styles.commandText} dangerouslySetInnerHTML={{ __html: highlightedHtml }} />
         <button
           type="button"
           className={styles.copyButton}

@@ -77,6 +77,46 @@ h3 {
   outline-offset: 2px;
 }
 
+/* Prism.js syntax highlighting — dark theme */
+.token.keyword {
+  color: #c792ea;
+}
+
+.token.string,
+.token.attr-value {
+  color: #c3e88d;
+}
+
+.token.number,
+.token.boolean {
+  color: #f78c6c;
+}
+
+.token.function {
+  color: #82aaff;
+}
+
+.token.comment {
+  color: rgba(255, 255, 255, 0.35);
+  font-style: italic;
+}
+
+.token.punctuation {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.token.operator {
+  color: #89ddff;
+}
+
+.token.property {
+  color: #f07178;
+}
+
+.token.constant {
+  color: #ff9cac;
+}
+
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   html {

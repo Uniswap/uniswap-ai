@@ -12,6 +12,7 @@
     "@octokit/rest": "^22.0.0",
     "@supabase/supabase-js": "2.95.3",
     "@userback/widget": "0.3.12",
+    "prismjs": "1.30.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-markdown": "^10.1.0",
@@ -20,10 +21,11 @@
     "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
+    "@types/prismjs": "1.26.5",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
-    "@vitejs/plugin-react": "^4.5.0",
     "@vercel/node": "^5.1.8",
+    "@vitejs/plugin-react": "^4.5.0",
     "agentation": "2.2.0",
     "typescript": "5.9.3",
     "vite": "^6.3.0"
