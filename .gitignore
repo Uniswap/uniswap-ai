@@ -55,3 +55,4 @@ bun.lock
 
 # Local Nx cache
 .nx/cache
+.vercel

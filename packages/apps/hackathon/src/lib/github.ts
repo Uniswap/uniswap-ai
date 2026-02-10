@@ -26,6 +26,13 @@ export class GitHubNotFoundError extends Error {
   }
 }
 
+export class GitHubAuthError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'GitHubAuthError';
+  }
+}
+
 export class GitHubApiError extends Error {
   readonly status: number;
 
@@ -54,15 +61,39 @@ export async function fetchSubmissions(): Promise<GitHubIssue[]> {
       const status = (error as { status: number }).status;
 
       if (status === 403) {
-        const headers =
+        const response =
           'response' in error
-            ? (error as { response: { headers: Record<string, string> } }).response?.headers ?? {}
-            : {};
-        const resetHeader = headers['x-ratelimit-reset'];
-        const resetAt = resetHeader
-          ? new Date(Number(resetHeader) * 1000)
-          : new Date(Date.now() + 3600_000);
-        throw new GitHubRateLimitError(resetAt);
+            ? (
+                error as {
+                  response: {
+                    headers: Record<string, string>;
+                    data?: { documentation_url?: string; message?: string };
+                  };
+                }
+              ).response
+            : undefined;
+        const headers = response?.headers ?? {};
+        const data = response?.data;
+
+        const isRateLimit = headers['x-ratelimit-remaining'] === '0';
+        if (isRateLimit) {
+          const resetHeader = headers['x-ratelimit-reset'];
+          const resetAt = resetHeader
+            ? new Date(Number(resetHeader) * 1000)
+            : new Date(Date.now() + 3600_000);
+          throw new GitHubRateLimitError(resetAt);
+        }
+
+        const isSSOError = data?.documentation_url?.includes('saml-single-sign-on');
+        if (isSSOError) {
+          throw new GitHubAuthError(
+            'The GitHub token needs to be authorized for SSO access to the organization.'
+          );
+        }
+
+        throw new GitHubAuthError(
+          data?.message ?? 'Access denied. The GitHub token may lack the required permissions.'
+        );
       }
 
       if (status === 404) {

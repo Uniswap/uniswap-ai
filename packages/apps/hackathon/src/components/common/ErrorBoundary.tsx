@@ -1,5 +1,5 @@
 import { useRouteError, isRouteErrorResponse, Link } from 'react-router';
-import { GitHubRateLimitError } from '../../lib/github';
+import { GitHubRateLimitError, GitHubAuthError } from '../../lib/github';
 import styles from './ErrorBoundary.module.css';
 
 export function ErrorBoundary() {
@@ -18,6 +18,32 @@ export function ErrorBoundary() {
             requests (60 per hour).
           </p>
           <p className={styles.rateLimitMessage}>Resets at {error.resetAt.toLocaleTimeString()}</p>
+          <div className={styles.actions}>
+            <button
+              className={styles.primaryButton}
+              onClick={() => window.location.reload()}
+              type="button"
+            >
+              Try again
+            </button>
+            <Link className={styles.secondaryButton} to="/">
+              Back to home
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error instanceof GitHubAuthError) {
+    return (
+      <div className={styles.container} role="alert">
+        <div className={styles.card}>
+          <div className={styles.icon} aria-hidden="true">
+            &#x1F512;
+          </div>
+          <h1 className={styles.title}>Authentication error</h1>
+          <p className={styles.message}>{error.message}</p>
           <div className={styles.actions}>
             <button
               className={styles.primaryButton}
