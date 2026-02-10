@@ -1,0 +1,85 @@
+name: Generate Documentation
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'evals/framework/**/*.ts'
+      - 'packages/**/*.ts'
+      - 'typedoc.json'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# Prevent concurrent doc generation
+concurrency:
+  group: generate-docs
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    name: Generate API Documentation
+    runs-on: ubuntu-latest
+    # Skip if this is an auto-generated doc commit
+    if: "!startsWith(github.event.head_commit.message, 'docs: auto-generate')"
+    steps:
+      - uses: bullfrogsec/bullfrog@1831f79cce8ad602eef14d2163873f27081ebfb3 # v0.8.4
+
+      - name: Checkout repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          token: ${{ secrets.WORKFLOW_PAT }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
+        with:
+          node-version: ${{ vars.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install npm
+        env:
+          NPM_VERSION: ${{ vars.NPM_VERSION }}
+        run: npm install -g "npm@$NPM_VERSION" # nosemgrep: uniswap.npm-package-in-action-not-pinned-to-commit-sha
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline --no-audit
+
+      - name: Generate API documentation
+        run: npx nx run docs:generate-api-docs
+
+      - name: Check for changes
+        id: changes
+        run: |
+          CHANGES=$(git status --porcelain docs/api)
+          if [ -n "$CHANGES" ]; then
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "Documentation changes detected"
+          else
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "No documentation changes"
+          fi
+
+      - name: Commit and push changes
+        if: steps.changes.outputs.has_changes == 'true'
+        uses: stefanzweifel/git-auto-commit-action@e348103e9026cc0eee72ae06630dbe30c8bf7a79 # v5.1.0
+        with:
+          commit_message: 'docs: auto-generate API documentation [skip ci]'
+          file_pattern: 'docs/api/**'
+          commit_author: 'github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>'
+
+      - name: Summary
+        env:
+          HAS_CHANGES: ${{ steps.changes.outputs.has_changes }}
+        run: |
+          if [ "$HAS_CHANGES" == "true" ]; then
+            echo "## Documentation Generated :white_check_mark:" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "API documentation was updated and committed." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## No Changes :information_source:" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "API documentation is already up to date." >> $GITHUB_STEP_SUMMARY
+          fi
