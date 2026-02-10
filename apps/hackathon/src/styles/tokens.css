@@ -11,7 +11,7 @@
   --color-border: rgba(255, 255, 255, 0.07);
 
   /* Tag background colors */
-  --color-accent1-bg: rgba(252, 114, 255, 0.15);
+  --color-accent1-bg: rgba(255, 55, 199, 0.15);
   --color-success-bg: rgba(33, 201, 94, 0.15);
 
   /* Card accent backgrounds */
@@ -25,17 +25,17 @@
   --color-neutral2: rgba(255, 255, 255, 0.65);
   --color-neutral3: rgba(255, 255, 255, 0.55);
 
-  /* Accent colors */
-  --color-accent1: #fc72ff;
-  --color-accent1-hovered: #ff8ff2;
+  /* Accent colors — from Spore Design System (universe repo) */
+  --color-accent1: #ff37c7;
+  --color-accent1-hovered: #e500a5;
 
   /* Status colors */
   --color-success: #21c95e;
   --color-warning: #ffbf17;
   --color-critical: #ff593c;
 
-  /* Typography */
-  --font-family: 'Inter', -apple-system, system-ui, sans-serif;
+  /* Typography — Basel Grotesk from Spore with Inter fallback */
+  --font-family: 'Basel Grotesk', 'Inter', -apple-system, system-ui, sans-serif;
 
   /* Font size scale */
   --font-size-xs: 0.75rem;

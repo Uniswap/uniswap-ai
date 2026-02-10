@@ -58,7 +58,7 @@
   right: 0;
   width: 300px;
   height: 100%;
-  background: radial-gradient(circle at 80% 50%, rgba(252, 114, 255, 0.12) 0%, transparent 70%);
+  background: radial-gradient(circle at 80% 50%, rgba(255, 55, 199, 0.12) 0%, transparent 70%);
   pointer-events: none;
 }
 
