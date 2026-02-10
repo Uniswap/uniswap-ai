@@ -210,36 +210,15 @@
   position: relative;
   padding: var(--space-8);
   border-radius: var(--radius-2xl);
+  background-color: var(--color-surface2);
+  display: flex;
+  flex-direction: column;
   transition: transform var(--duration-normal), filter var(--duration-normal);
 }
 
 .stepCard:hover {
   transform: translateY(-3px);
   filter: brightness(1.15);
-}
-
-.stepCardTint1 {
-  composes: stepCard;
-  /* Pink tint */
-  background-color: rgba(255, 55, 199, 0.06);
-}
-
-.stepCardTint2 {
-  composes: stepCard;
-  /* Blue tint */
-  background-color: rgba(73, 129, 255, 0.1);
-}
-
-.stepCardTint3 {
-  composes: stepCard;
-  /* Green tint */
-  background-color: rgba(0, 195, 160, 0.1);
-}
-
-.stepCardTint4 {
-  composes: stepCard;
-  /* Purple tint: rgba(158, 98, 255, 0.1) — should be tokenized as --color-tint-purple */
-  background-color: rgba(158, 98, 255, 0.1);
 }
 
 .stepNumber {
@@ -266,6 +245,7 @@
   color: var(--color-neutral2);
   font-size: var(--font-size-sm);
   line-height: 1.6;
+  margin-top: auto;
 }
 
 /* FAQ */
