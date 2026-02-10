@@ -1,4 +1,8 @@
+import path from 'node:path';
 import { defineConfig } from 'vitepress';
+import { generateSidebar } from './sidebar';
+
+const docsDir = path.resolve(import.meta.dirname, '..');
 
 export default defineConfig({
   title: 'Uniswap AI',
@@ -14,39 +18,10 @@ export default defineConfig({
       { text: 'Getting Started', link: '/getting-started/' },
       { text: 'Skills', link: '/skills/' },
       { text: 'Evals', link: '/evals/' },
+      { text: 'API', link: '/api/' },
     ],
 
-    sidebar: {
-      '/getting-started/': [
-        {
-          text: 'Getting Started',
-          items: [
-            { text: 'Introduction', link: '/getting-started/' },
-            { text: 'Installation', link: '/getting-started/installation' },
-            { text: 'Quick Start', link: '/getting-started/quick-start' },
-          ],
-        },
-      ],
-      '/skills/': [
-        {
-          text: 'Skills',
-          items: [
-            { text: 'Overview', link: '/skills/' },
-            { text: 'Aggregator Hook Creator', link: '/skills/aggregator-hook-creator' },
-          ],
-        },
-      ],
-      '/evals/': [
-        {
-          text: 'Evals',
-          items: [
-            { text: 'Overview', link: '/evals/' },
-            { text: 'Writing Evals', link: '/evals/writing-evals' },
-            { text: 'Running Evals', link: '/evals/running-evals' },
-          ],
-        },
-      ],
-    },
+    sidebar: generateSidebar(docsDir),
 
     socialLinks: [{ icon: 'github', link: 'https://github.com/uniswap/uniswap-ai' }],
 

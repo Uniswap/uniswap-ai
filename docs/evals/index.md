@@ -1,3 +1,8 @@
+---
+title: Overview
+order: 1
+---
+
 # Evals
 
 Evals are to AI tools what tests are to traditional code. This framework provides a structured approach to evaluating the quality and reliability of AI-powered skills.
@@ -34,12 +39,12 @@ npx nx run evals:run --dry-run
 
 ## Evaluation Dimensions
 
-| Dimension | Description | Score |
-|-----------|-------------|-------|
-| **Accuracy** | Correctly implements requirements | 0-1 |
-| **Completeness** | Includes all required elements | 0-1 |
-| **Safety** | No security vulnerabilities | 0-1 |
-| **Helpfulness** | Well-documented and clear | 0-1 |
+| Dimension        | Description                       | Score |
+| ---------------- | --------------------------------- | ----- |
+| **Accuracy**     | Correctly implements requirements | 0-1   |
+| **Completeness** | Includes all required elements    | 0-1   |
+| **Safety**       | No security vulnerabilities       | 0-1   |
+| **Helpfulness**  | Well-documented and clear         | 0-1   |
 
 ## Suite Structure
 

@@ -1,3 +1,8 @@
+---
+title: Writing Evals
+order: 2
+---
+
 # Writing Evals
 
 Learn how to create comprehensive evaluations for AI skills.
