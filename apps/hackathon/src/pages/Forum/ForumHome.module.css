@@ -92,11 +92,30 @@
   margin-top: var(--space-6);
 }
 
+.feedContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  animation: feedFadeIn var(--duration-normal) ease;
+}
+
+@keyframes feedFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .empty {
   text-align: center;
   padding: var(--space-16) var(--space-6);
   background-color: var(--color-surface2);
   border-radius: var(--radius-2xl);
+  animation: feedFadeIn var(--duration-normal) ease;
 }
 
 .emptyText {

@@ -39,7 +39,13 @@
 .select:focus,
 .textarea:focus {
   outline: none;
-  border-color: var(--color-accent1);
+  border-color: var(--color-neutral1);
+}
+
+.input::selection,
+.textarea::selection {
+  background-color: var(--color-neutral1);
+  color: var(--color-surface1);
 }
 
 .select {

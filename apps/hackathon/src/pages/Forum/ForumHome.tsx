@@ -1,37 +1,25 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router';
+import { useQuery } from '@tanstack/react-query';
 import { ForumPostCard } from '../../components/forum/ForumPostCard';
 import { ForumFilters } from '../../components/forum/ForumFilters';
 import { ForumSortBar } from '../../components/forum/ForumSortBar';
 import { Skeleton } from '../../components/common/Skeleton';
 import { useAuth } from '../../components/auth/AuthProvider';
 import { fetchPosts } from '../../lib/forum';
-import type { ForumPost, ForumCategory, SortMode } from '../../lib/forum-types';
+import type { ForumCategory, SortMode } from '../../lib/forum-types';
 import styles from './ForumHome.module.css';
 
 export function ForumHome() {
   const { user, configured } = useAuth();
-  const [posts, setPosts] = useState<ForumPost[]>([]);
-  const [loading, setLoading] = useState(true);
   const [sort, setSort] = useState<SortMode>('hot');
   const [category, setCategory] = useState<ForumCategory | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const loadPosts = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await fetchPosts(sort, category ?? undefined);
-      setPosts(data);
-    } catch {
-      // fall through to empty state
-    } finally {
-      setLoading(false);
-    }
-  }, [sort, category]);
-
-  useEffect(() => {
-    loadPosts();
-  }, [loadPosts]);
+  const { data: posts = [], isLoading } = useQuery({
+    queryKey: ['forum-posts', sort, category],
+    queryFn: () => fetchPosts(sort, category ?? undefined),
+  });
 
   const filteredPosts = searchQuery
     ? posts.filter(
@@ -71,7 +59,7 @@ export function ForumHome() {
       <ForumFilters selected={category} onChange={setCategory} />
 
       <div className={styles.feed}>
-        {loading ? (
+        {isLoading ? (
           Array.from({ length: 3 }).map((_, i) => (
             <Skeleton key={i} height="160px" borderRadius="var(--radius-2xl)" />
           ))
@@ -89,7 +77,11 @@ export function ForumHome() {
             )}
           </div>
         ) : (
-          filteredPosts.map((post) => <ForumPostCard key={post.id} post={post} />)
+          <div className={styles.feedContent}>
+            {filteredPosts.map((post) => (
+              <ForumPostCard key={post.id} post={post} />
+            ))}
+          </div>
         )}
       </div>
     </div>
