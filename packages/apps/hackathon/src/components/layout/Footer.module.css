@@ -114,3 +114,13 @@
     text-align: center;
   }
 }
+
+@media (max-width: 480px) {
+  .ctaContent {
+    padding: var(--space-6) var(--space-4);
+  }
+
+  .ctaHeading {
+    font-size: var(--font-size-xl);
+  }
+}

@@ -53,3 +53,19 @@
     font-size: var(--font-size-2xl);
   }
 }
+
+@media (max-width: 360px) {
+  .container {
+    gap: var(--space-1);
+  }
+
+  .card {
+    min-width: 0;
+    flex: 1;
+    padding: var(--space-3);
+  }
+
+  .value {
+    font-size: var(--font-size-xl);
+  }
+}

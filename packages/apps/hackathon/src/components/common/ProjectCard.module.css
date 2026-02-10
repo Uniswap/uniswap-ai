@@ -50,3 +50,13 @@
   font-size: var(--font-size-xs);
   color: var(--color-neutral3);
 }
+
+@media (max-width: 480px) {
+  .card {
+    padding: var(--space-4);
+  }
+
+  .title {
+    font-size: var(--font-size-base);
+  }
+}

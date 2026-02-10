@@ -182,6 +182,9 @@
   .linkButtonSecondary {
     text-align: center;
     justify-content: center;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
   }
 
   .footer {
@@ -195,5 +198,9 @@
   .title {
     font-size: var(--font-size-xl);
     word-break: break-word;
+  }
+
+  .section {
+    padding: var(--space-4);
   }
 }

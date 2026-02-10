@@ -26,3 +26,9 @@
 .pageTransition {
   animation: pageEnter 0.25s ease-out;
 }
+
+@media (max-width: 768px) {
+  .main {
+    padding: var(--space-4) var(--space-2);
+  }
+}

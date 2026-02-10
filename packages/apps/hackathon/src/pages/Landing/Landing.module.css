@@ -126,7 +126,7 @@
 /* About */
 .aboutGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: var(--space-6);
 }
 
@@ -336,6 +336,10 @@
 
 /* Responsive */
 @media (max-width: 768px) {
+  .hero {
+    padding: var(--space-10) var(--space-4) var(--space-8);
+  }
+
   .heroTitle {
     font-size: var(--font-size-4xl);
   }
@@ -351,5 +355,45 @@
   .heroGlow {
     width: 400px;
     height: 300px;
+  }
+
+  .faqQuestion {
+    min-height: 48px;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero {
+    padding: var(--space-8) var(--space-3) var(--space-6);
+  }
+
+  .heroTitle {
+    font-size: var(--font-size-3xl);
+  }
+
+  .heroTagline {
+    font-size: var(--font-size-lg);
+  }
+
+  .heroDescription {
+    font-size: var(--font-size-base);
+  }
+
+  .heroCtas {
+    flex-direction: column;
+  }
+
+  .primaryButton,
+  .secondaryButton {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .section {
+    padding: var(--space-8) var(--space-3);
+  }
+
+  .sectionTitle {
+    font-size: var(--font-size-2xl);
   }
 }

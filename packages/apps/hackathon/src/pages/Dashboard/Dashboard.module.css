@@ -180,3 +180,17 @@
     align-items: flex-start;
   }
 }
+
+@media (max-width: 480px) {
+  .title {
+    font-size: var(--font-size-2xl);
+  }
+
+  .metricCard {
+    padding: var(--space-6) var(--space-4);
+  }
+
+  .metricValue {
+    font-size: var(--font-size-4xl);
+  }
+}

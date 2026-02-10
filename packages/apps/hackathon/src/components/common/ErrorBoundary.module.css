@@ -87,3 +87,16 @@
 .secondaryButton:hover {
   background-color: var(--color-surface2-hovered);
 }
+
+@media (max-width: 768px) {
+  .card {
+    padding: var(--space-8) var(--space-5);
+  }
+}
+
+@media (max-width: 480px) {
+  .actions {
+    flex-direction: column;
+    width: 100%;
+  }
+}
