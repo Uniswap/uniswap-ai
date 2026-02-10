@@ -35,8 +35,8 @@ MVP website for the Uniswap AI Hackathon, built as a React SPA within the `unisw
 
 ## Package Structure
 
-```
-packages/apps/hackathon/
+```text
+apps/hackathon/
   package.json              # @uniswap-ai/hackathon, private
   project.json              # Nx config: dev, build, preview, typecheck targets
   tsconfig.json             # ES2022, bundler resolution, react-jsx, vite/client types
@@ -90,7 +90,7 @@ packages/apps/hackathon/
 
 ## Root-Level Changes
 
-1. **`package.json`** - Added `"packages/apps/*"` to workspaces array
+1. **`package.json`** - Added `"apps/*"` to workspaces array
 2. **`.github/ISSUE_TEMPLATE/hackathon-submission.yml`** - YAML form template with fields: Project Name, Description, Category (dropdown), Team Members, GitHub Repository, Demo URL, Technical Stack
 
 ## Spore Design Tokens
@@ -127,11 +127,11 @@ Follows the `docs/` project pattern with `nx:run-commands` executor:
 
 To deploy, create a new Vercel project with:
 
-- **Root directory**: `packages/apps/hackathon`
+- **Root directory**: `apps/hackathon`
 - **Framework preset**: Vite
-- **Build command**: `cd ../../.. && npx nx run hackathon:build`
+- **Build command**: `cd ../.. && npx nx run hackathon:build`
 - **Output directory**: `dist`
-- **Install command**: `cd ../../.. && npm ci`
+- **Install command**: `cd ../.. && npm ci`
 - **Environment variable** (optional): `VITE_GITHUB_TOKEN` for higher GitHub API rate limits
 
 The `vercel.json` SPA rewrite ensures client-side routing works for direct URL access.

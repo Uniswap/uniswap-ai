@@ -66,6 +66,8 @@ uniswap-ai/
 │   ├── scripts/             # Custom providers and utilities
 │   ├── suites/              # Per-skill eval suites
 │   └── templates/           # Templates for new suites
+├── apps/                    # Standalone applications
+│   └── hackathon/           # Hackathon website (Vite + React SPA)
 ├── packages/
 │   ├── plugins/             # Claude Code plugins
 │   │   └── uniswap-hooks/   # Uniswap V4 hooks plugin
