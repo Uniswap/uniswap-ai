@@ -242,9 +242,10 @@
 - **Notion**: https://www.notion.so/303c52b2548b81cdab41c2949c33b1a0
 - **Reporter**: Phil
 - **Feedback**: Move the button to the right hand side, remove the gradient, shrink the height.
-- **Page**: Projects list page (submit project banner/CTA area)
-- **Status**: BLOCKED
-- **Notes**: Could not identify the banner/CTA element with gradient in the current ProjectsList code. No element matching this description exists in the codebase. May refer to a component not yet built, or need a screenshot to identify the exact element.
+- **Page**: Footer CTA banner (`.ctaContent` in Footer component, visible on /projects)
+- **Status**: DONE
+- **Commit**: `17c82dd`
+- **Notes**: Moved "Submit Your Project" button to right side via flexbox. Removed `.ctaDecoration` radial gradient. Reduced vertical padding from 48px to 32px. Mobile stacks vertically.
 
 ---
 
@@ -272,14 +273,13 @@
 | 18  | Pill consistent sizing                   | DONE    |
 | 19  | Dashboard metric colors                  | DONE    |
 | 20  | Dashboard Body4 typography               | DONE    |
-| 21  | Projects list banner/CTA                 | BLOCKED |
+| 21  | Footer CTA banner layout                 | DONE    |
 
-**19/21 items completed. 2 items blocked (need screenshots/clarification).**
+**20/21 items completed. 1 item blocked (need screenshot/clarification).**
 
 ---
 
 ## Blockers / Questions for Q
 
 1. **Item #6 (inline comments)**: Nick's feedback has inline annotations on a screenshot. Cannot determine which elements need "2px bigger" and "shadows" without viewing the screenshot.
-2. **Item #21 (projects list banner/CTA)**: Could not identify the gradient banner element in current code. Need screenshot or clarification from Phil.
-3. **Basel Grotesk font files**: Font family reference added to tokens.css. Actual font files need to be loaded — may need to copy from universe repo or set up @font-face declarations.
+2. **Basel Grotesk font files**: Font family reference added to tokens.css. Actual font files need to be loaded — may need to copy from universe repo or set up @font-face declarations.
