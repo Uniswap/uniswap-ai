@@ -6,7 +6,7 @@
 
 The Uniswap AI Hackathon invites developers, researchers, and builders to create innovative AI-powered tools for the Uniswap ecosystem. All skill levels are welcome.
 
-- Website: https://hackathon-uniswap.vercel.app
+- Website: https://uniswap-ai-hackathon-2026.vercel.app
 - GitHub Repository: https://github.com/uniswap/uniswap-ai
 - Submission Template: https://github.com/uniswap/uniswap-ai/issues/new?template=hackathon-submission.yml
 
