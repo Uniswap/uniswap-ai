@@ -25,11 +25,8 @@ body:
     attributes:
       label: 'Category'
       options:
-        - Trading Agents
         - DeFi Automation
-        - Analytics & Monitoring
         - Developer Tooling
-        - Infrastructure
         - Social/Community
         - Other
     validations:
