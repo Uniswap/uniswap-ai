@@ -3,14 +3,14 @@ import { FAQ_ITEMS } from '../../../lib/config';
 import styles from '../Landing.module.css';
 
 export function FAQ() {
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const [openIndices, setOpenIndices] = useState<Set<number>>(new Set());
 
   return (
     <section className={styles.section}>
       <h2 className={styles.sectionTitle}>Frequently Asked Questions</h2>
       <div className={styles.faqList}>
         {FAQ_ITEMS.map((item, index) => {
-          const isOpen = openIndex === index;
+          const isOpen = openIndices.has(index);
           const questionId = `faq-question-${index}`;
           const answerId = `faq-answer-${index}`;
 
@@ -19,7 +19,14 @@ export function FAQ() {
               <button
                 id={questionId}
                 className={styles.faqQuestion}
-                onClick={() => setOpenIndex(isOpen ? null : index)}
+                onClick={() =>
+                  setOpenIndices((prev) => {
+                    const next = new Set(prev);
+                    if (next.has(index)) next.delete(index);
+                    else next.add(index);
+                    return next;
+                  })
+                }
                 aria-expanded={isOpen}
                 aria-controls={answerId}
               >
@@ -28,16 +35,16 @@ export function FAQ() {
                   +
                 </span>
               </button>
-              {isOpen && (
-                <div
-                  id={answerId}
-                  role="region"
-                  aria-labelledby={questionId}
-                  className={styles.faqAnswer}
-                >
+              <div
+                id={answerId}
+                role="region"
+                aria-labelledby={questionId}
+                className={`${styles.faqAnswerWrapper}${isOpen ? ` ${styles.faqAnswerOpen}` : ''}`}
+              >
+                <div className={styles.faqAnswer}>
                   <p>{item.answer}</p>
                 </div>
-              )}
+              </div>
             </div>
           );
         })}

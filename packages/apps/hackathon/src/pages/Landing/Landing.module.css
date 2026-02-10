@@ -355,11 +355,26 @@
   transform: rotate(45deg);
 }
 
+.faqAnswerWrapper {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.3s ease-out;
+}
+
+.faqAnswerOpen {
+  grid-template-rows: 1fr;
+}
+
 .faqAnswer {
-  padding: 0 var(--space-2) var(--space-5);
+  overflow: hidden;
+  min-height: 0;
   color: var(--color-neutral2);
   line-height: 1.7;
   font-size: var(--font-size-sm);
+}
+
+.faqAnswer > p {
+  padding: 0 var(--space-2) var(--space-5);
 }
 
 /* Responsive */
