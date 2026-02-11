@@ -1,0 +1,74 @@
+# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
+description: 'viem-integration Skill Evaluation'
+
+# Prompts (eval cases)
+prompts:
+  - file://cases/basic.md
+  - file://cases/wagmi-react.md
+
+# Provider configuration
+providers:
+  - id: anthropic:claude-sonnet-4-5-20250929
+    config:
+      temperature: 0
+
+# Default test configuration applied to all tests
+defaultTest:
+  options:
+    timeout: 120000 # 2 minutes per case
+
+# Test cases with specific assertions
+tests:
+  - vars:
+      scenario: basic-viem-setup
+    assert:
+      # Correctness rubric
+      - type: llm-rubric
+        value: file://rubrics/correctness.txt
+        threshold: 0.8
+        provider: anthropic:claude-sonnet-4-5-20250929
+
+      # Completeness rubric
+      - type: llm-rubric
+        value: file://rubrics/completeness.txt
+        threshold: 0.85
+        provider: anthropic:claude-sonnet-4-5-20250929
+
+      # Deterministic checks for required patterns
+      - type: contains
+        value: 'createPublicClient'
+      - type: contains
+        value: 'viem'
+
+  - vars:
+      scenario: wagmi-react-setup
+    assert:
+      # Correctness rubric
+      - type: llm-rubric
+        value: file://rubrics/correctness.txt
+        threshold: 0.8
+        provider: anthropic:claude-sonnet-4-5-20250929
+
+      # Completeness rubric
+      - type: llm-rubric
+        value: file://rubrics/completeness.txt
+        threshold: 0.85
+        provider: anthropic:claude-sonnet-4-5-20250929
+
+      # Deterministic checks for wagmi-specific patterns
+      - type: contains
+        value: 'WagmiProvider'
+      - type: contains
+        value: 'createConfig'
+      - type: contains
+        value: 'useAccount'
+      - type: contains
+        value: 'useConnect'
+      - type: contains
+        value: 'QueryClientProvider'
+      - type: contains
+        value: 'wagmi'
+
+      # Should not contain common mistakes
+      - type: not-contains
+        value: 'ethers'

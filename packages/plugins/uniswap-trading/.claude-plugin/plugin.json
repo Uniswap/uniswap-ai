@@ -1,0 +1,23 @@
+{
+  "name": "uniswap-trading",
+  "version": "1.1.0",
+  "description": "Integrate Uniswap swaps via Trading API, Universal Router SDK, or direct smart contract calls",
+  "author": {
+    "name": "Uniswap Labs",
+    "email": "ai-services@uniswap.org"
+  },
+  "homepage": "https://github.com/uniswap/uniswap-ai",
+  "keywords": [
+    "uniswap",
+    "swap",
+    "defi",
+    "trading-api",
+    "universal-router",
+    "permit2",
+    "uniswap-viem"
+  ],
+  "license": "MIT",
+  "skills": ["./skills/swap-integration"],
+  "commands": ["./skills/swap-integration/swap-integration.md"],
+  "agents": ["./agents/swap-integration-expert.md"]
+}
