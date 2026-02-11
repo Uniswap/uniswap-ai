@@ -82,8 +82,8 @@ runs:
           # Extract YAML frontmatter (between --- markers)
           FRONTMATTER=$(sed -n '/^---$/,/^---$/p' "$SKILL_MD" | sed '1d;$d')
 
-          FM_NAME=$(echo "$FRONTMATTER" | grep '^name:' | head -1 | sed 's/^name:[[:space:]]*//')
-          FM_DESC=$(echo "$FRONTMATTER" | grep '^description:' | head -1 | sed 's/^description:[[:space:]]*//')
+          FM_NAME=$(echo "$FRONTMATTER" | grep '^name:' | head -1 | sed 's/^name:[[:space:]]*//' || true)
+          FM_DESC=$(echo "$FRONTMATTER" | grep '^description:' | head -1 | sed 's/^description:[[:space:]]*//' || true)
 
           HAS_NAME="yes"
           HAS_DESC="yes"
@@ -107,7 +107,7 @@ runs:
           fi
 
           # --- Check 5: Prerequisite existence ---
-          PREREQ=$(echo "$FRONTMATTER" | grep 'prerequisites:' | head -1 | sed 's/.*prerequisites:[[:space:]]*//')
+          PREREQ=$(echo "$FRONTMATTER" | grep 'prerequisites:' | head -1 | sed 's/.*prerequisites:[[:space:]]*//' || true)
           if [ -n "$PREREQ" ] && [ ! -d "$SKILLS_DIR/$PREREQ" ]; then
             echo "::error::Prerequisite '$PREREQ' not found in $SKILLS_DIR for skill $SKILL_NAME"
             TOTAL_ERRORS=$((TOTAL_ERRORS + 1))

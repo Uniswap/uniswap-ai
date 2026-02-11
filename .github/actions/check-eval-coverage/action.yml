@@ -107,8 +107,8 @@ runs:
         echo "missing_evals=${MISSING_JSON}" >> $GITHUB_OUTPUT
 
         # Count results
-        FOUND_COUNT=$(echo -e "$FOUND_EVALS" | grep -c . || echo 0)
-        MISSING_COUNT=$(echo -e "$MISSING_EVALS" | grep -c . || echo 0)
+        FOUND_COUNT=$(echo -e "$FOUND_EVALS" | grep -c . || true)
+        MISSING_COUNT=$(echo -e "$MISSING_EVALS" | grep -c . || true)
         TOTAL_COUNT=$((FOUND_COUNT + MISSING_COUNT))
 
         echo ""
