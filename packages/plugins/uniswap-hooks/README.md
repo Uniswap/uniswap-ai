@@ -52,6 +52,12 @@ Or describe what you want:
 
 ## Installation
 
+### Via Skills CLI (Any Agent)
+
+```bash
+npx skills add Uniswap/uniswap-ai
+```
+
 ### Via Claude Code Marketplace
 
 ```bash

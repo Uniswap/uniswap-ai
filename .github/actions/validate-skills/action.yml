@@ -1,0 +1,227 @@
+# Composite action to validate skills discovery for the skills.sh CLI
+# Ensures root-level skills/ symlinks resolve correctly, frontmatter is valid,
+# and skills stay in sync between plugin.json and the root skills/ directory.
+
+name: 'Validate Skills Discovery'
+description: 'Validates that all skills are discoverable via the skills.sh CLI'
+
+inputs:
+  skills-dir:
+    description: 'Path to the root skills directory'
+    required: false
+    default: 'skills'
+  plugins-dir:
+    description: 'Path to the plugins directory (scans all plugin.json files within)'
+    required: false
+    default: 'packages/plugins'
+
+outputs:
+  skill-count:
+    description: 'Number of skills validated'
+    value: ${{ steps.validate.outputs.skill_count }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Validate skills discovery
+      id: validate
+      shell: bash
+      env:
+        SKILLS_DIR: ${{ inputs.skills-dir }}
+        PLUGINS_DIR: ${{ inputs.plugins-dir }}
+      run: |
+        echo "=== Validating Skills Discovery ==="
+        echo ""
+
+        TOTAL_ERRORS=0
+        TOTAL_SKILLS=0
+        RESULTS=""
+
+        # --- Check 1: skills/ directory exists ---
+        if [ ! -d "$SKILLS_DIR" ]; then
+          echo "::error::Skills directory not found: $SKILLS_DIR"
+          exit 1
+        fi
+
+        # --- Check 2: Symlink integrity ---
+        echo "--- Checking symlink integrity ---"
+        for entry in "$SKILLS_DIR"/*/; do
+          [ -d "$entry" ] || continue
+          SKILL_NAME=$(basename "$entry")
+          TOTAL_SKILLS=$((TOTAL_SKILLS + 1))
+
+          # Check if it's a symlink
+          if [ ! -L "${entry%/}" ]; then
+            echo "::warning::$SKILL_NAME is not a symlink (expected symlink to plugin skill)"
+          fi
+
+          # Check symlink resolves
+          if [ ! -e "$entry" ]; then
+            echo "::error::Broken symlink: $SKILLS_DIR/$SKILL_NAME"
+            TOTAL_ERRORS=$((TOTAL_ERRORS + 1))
+            RESULTS="$RESULTS| $SKILL_NAME | Broken symlink | - | - | - | - |\n"
+            continue
+          fi
+
+          # Check SKILL.md exists
+          SKILL_MD=""
+          if [ -f "$entry/SKILL.md" ]; then
+            SKILL_MD="$entry/SKILL.md"
+          elif [ -f "$entry/$SKILL_NAME.md" ]; then
+            SKILL_MD="$entry/$SKILL_NAME.md"
+          fi
+
+          if [ -z "$SKILL_MD" ]; then
+            echo "::error::No SKILL.md or $SKILL_NAME.md found in $SKILLS_DIR/$SKILL_NAME"
+            TOTAL_ERRORS=$((TOTAL_ERRORS + 1))
+            RESULTS="$RESULTS| $SKILL_NAME | Missing skill file | - | - | - | - |\n"
+            continue
+          fi
+
+          # --- Check 3: Frontmatter validation ---
+          # Extract YAML frontmatter (between first and second --- markers)
+          # Uses awk to stop at second marker, avoiding false matches from
+          # horizontal rules or --- in code blocks later in the document
+          FRONTMATTER=$(awk '/^---$/{if(++c==2) exit} c==1' "$SKILL_MD")
+
+          FM_NAME=$(echo "$FRONTMATTER" | grep '^name:' | head -1 | sed 's/^name:[[:space:]]*//' || true)
+          FM_DESC=$(echo "$FRONTMATTER" | grep '^description:' | head -1 | sed 's/^description:[[:space:]]*//' || true)
+          FM_LICENSE=$(echo "$FRONTMATTER" | grep '^license:' | head -1 | sed 's/^license:[[:space:]]*//' || true)
+          FM_AUTHOR=$(echo "$FRONTMATTER" | grep '^[[:space:]]*author:' | head -1 | sed 's/^[[:space:]]*author:[[:space:]]*//' || true)
+
+          HAS_NAME="yes"
+          HAS_DESC="yes"
+
+          if [ -z "$FM_NAME" ]; then
+            echo "::error::Missing 'name' in frontmatter: $SKILL_MD"
+            TOTAL_ERRORS=$((TOTAL_ERRORS + 1))
+            HAS_NAME="no"
+          fi
+
+          if [ -z "$FM_DESC" ]; then
+            echo "::error::Missing 'description' in frontmatter: $SKILL_MD"
+            TOTAL_ERRORS=$((TOTAL_ERRORS + 1))
+            HAS_DESC="no"
+          fi
+
+          if [ -z "$FM_LICENSE" ]; then
+            echo "::error::Missing 'license' in frontmatter: $SKILL_MD"
+            TOTAL_ERRORS=$((TOTAL_ERRORS + 1))
+          fi
+
+          if [ -z "$FM_AUTHOR" ]; then
+            echo "::error::Missing 'metadata.author' in frontmatter: $SKILL_MD"
+            TOTAL_ERRORS=$((TOTAL_ERRORS + 1))
+          fi
+
+          # --- Check 4: Name consistency ---
+          if [ -n "$FM_NAME" ] && [ "$FM_NAME" != "$SKILL_NAME" ]; then
+            echo "::error::Frontmatter name '$FM_NAME' does not match directory name '$SKILL_NAME'"
+            TOTAL_ERRORS=$((TOTAL_ERRORS + 1))
+          fi
+
+          # --- Check 5: Prerequisite existence ---
+          # Handles both single-value (prerequisites: skill-a) and YAML list syntax:
+          #   prerequisites:
+          #     - skill-a
+          #     - skill-b
+          PREREQ_LINE=$(echo "$FRONTMATTER" | grep 'prerequisites:' | head -1 | sed 's/.*prerequisites:[[:space:]]*//' || true)
+          PREREQS=""
+          if [ -n "$PREREQ_LINE" ]; then
+            # Single-value syntax: prerequisites: skill-name
+            PREREQS="$PREREQ_LINE"
+          else
+            # Check for YAML list syntax (lines starting with "  - " after prerequisites:)
+            PREREQS=$(echo "$FRONTMATTER" | awk '
+              /prerequisites:/ { found=1; next }
+              found && /^[[:space:]]*- / { gsub(/^[[:space:]]*- /, ""); print; next }
+              found { exit }
+            ' || true)
+          fi
+
+          for prereq in $PREREQS; do
+            if [ -n "$prereq" ] && [ ! -d "$SKILLS_DIR/$prereq" ]; then
+              echo "::error::Prerequisite '$prereq' not found in $SKILLS_DIR for skill $SKILL_NAME"
+              TOTAL_ERRORS=$((TOTAL_ERRORS + 1))
+            fi
+          done
+
+          HAS_LICENSE="yes"
+          HAS_AUTHOR="yes"
+          [ -z "$FM_LICENSE" ] && HAS_LICENSE="no"
+          [ -z "$FM_AUTHOR" ] && HAS_AUTHOR="no"
+
+          if [ "$HAS_NAME" = "yes" ] && [ "$HAS_DESC" = "yes" ] && [ "$HAS_LICENSE" = "yes" ] && [ "$HAS_AUTHOR" = "yes" ]; then
+            STATUS="Passed"
+          else
+            STATUS="Failed"
+          fi
+          RESULTS="$RESULTS| $SKILL_NAME | $STATUS | $HAS_NAME | $HAS_DESC | $HAS_LICENSE | $HAS_AUTHOR |\n"
+
+          echo "  $SKILL_NAME: name=$HAS_NAME desc=$HAS_DESC license=$HAS_LICENSE author=$HAS_AUTHOR"
+        done
+
+        # --- Check 6: Sync check with all plugin.json files ---
+        echo ""
+        echo "--- Checking sync with plugin.json files ---"
+        ALL_PLUGIN_SKILLS=""
+        PLUGIN_JSON_COUNT=0
+        for pjson in "$PLUGINS_DIR"/*/.claude-plugin/plugin.json; do
+          [ -f "$pjson" ] || continue
+          PLUGIN_JSON_COUNT=$((PLUGIN_JSON_COUNT + 1))
+          PLUGIN_NAME=$(basename "$(dirname "$(dirname "$pjson")")")
+          SKILLS_FROM_PLUGIN=$(jq -r '.skills[]?' "$pjson" 2>/dev/null | sed 's|.*/||')
+          echo "  Found plugin: $PLUGIN_NAME ($(echo "$SKILLS_FROM_PLUGIN" | grep -c . || true) skills)"
+
+          # Check each plugin.json skill has a root symlink
+          for ps in $SKILLS_FROM_PLUGIN; do
+            [ -z "$ps" ] && continue
+            ALL_PLUGIN_SKILLS="$ALL_PLUGIN_SKILLS$ps"$'\n'
+            if [ ! -d "$SKILLS_DIR/$ps" ]; then
+              echo "::error::Skill '$ps' listed in $PLUGIN_NAME/plugin.json but missing from $SKILLS_DIR/"
+              TOTAL_ERRORS=$((TOTAL_ERRORS + 1))
+            fi
+          done
+        done
+
+        if [ "$PLUGIN_JSON_COUNT" -eq 0 ]; then
+          echo "::warning::No plugin.json files found in $PLUGINS_DIR — skipping sync check"
+        else
+          echo "  Scanned $PLUGIN_JSON_COUNT plugin(s)"
+
+          # Check each root symlink is in at least one plugin.json
+          for entry in "$SKILLS_DIR"/*/; do
+            [ -d "$entry" ] || continue
+            SKILL_NAME=$(basename "$entry")
+            if ! echo "$ALL_PLUGIN_SKILLS" | grep -qx "$SKILL_NAME"; then
+              echo "::error::Skill '$SKILL_NAME' in $SKILLS_DIR/ but not listed in any plugin.json"
+              TOTAL_ERRORS=$((TOTAL_ERRORS + 1))
+            fi
+          done
+        fi
+
+        echo ""
+        echo "=== Validation Summary ==="
+        echo "Total skills: $TOTAL_SKILLS"
+        echo "Errors: $TOTAL_ERRORS"
+
+        # Set outputs
+        echo "skill_count=$TOTAL_SKILLS" >> "$GITHUB_OUTPUT"
+
+        # Create job summary
+        {
+          echo "## Skills Discovery Validation"
+          echo ""
+          echo "| Skill | Status | Has Name | Has Description | Has License | Has Author |"
+          echo "|-------|--------|----------|-----------------|-------------|------------|"
+          echo -e "$RESULTS"
+          echo ""
+          echo "**Summary:** $TOTAL_SKILLS skill(s) checked, $TOTAL_ERRORS error(s)"
+        } >> "$GITHUB_STEP_SUMMARY"
+
+        if [ $TOTAL_ERRORS -gt 0 ]; then
+          echo "::error::$TOTAL_ERRORS error(s) found during skills validation"
+          exit 1
+        fi
+
+        echo "All skills validated successfully!"

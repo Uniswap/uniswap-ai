@@ -4,16 +4,16 @@ This directory contains GitHub Actions workflows for the uniswap-ai repository. 
 
 ## Workflow Overview
 
-| Workflow                                                           | Trigger              | Purpose                                 |
-| ------------------------------------------------------------------ | -------------------- | --------------------------------------- |
-| [PR Checks](#pr-checks)                                            | PR events            | Build, lint, test, and validate plugins |
-| [Check PR Title](#check-pr-title)                                  | PR events            | Enforce conventional commit format      |
-| [Claude Code Review](#claude-code-review)                          | PR events, comments  | AI-powered code review                  |
-| [Claude Docs Check](#claude-docs-check)                            | PR events            | Validate documentation updates          |
-| [Generate PR Title & Description](#generate-pr-title--description) | PR events            | Auto-generate PR metadata               |
-| [Generate Documentation](#generate-documentation)                  | Push to main, manual | Auto-generate API documentation         |
-| [Deploy Documentation](#deploy-documentation)                      | Push to main         | Build and deploy VitePress docs         |
-| [Publish Packages](#publish-packages)                              | Push to main, manual | Publish npm packages                    |
+| Workflow                                                           | Trigger              | Purpose                                      |
+| ------------------------------------------------------------------ | -------------------- | -------------------------------------------- |
+| [PR Checks](#pr-checks)                                            | PR events            | Build, lint, test, validate plugins & skills |
+| [Check PR Title](#check-pr-title)                                  | PR events            | Enforce conventional commit format           |
+| [Claude Code Review](#claude-code-review)                          | PR events, comments  | AI-powered code review                       |
+| [Claude Docs Check](#claude-docs-check)                            | PR events            | Validate documentation updates               |
+| [Generate PR Title & Description](#generate-pr-title--description) | PR events            | Auto-generate PR metadata                    |
+| [Generate Documentation](#generate-documentation)                  | Push to main, manual | Auto-generate API documentation              |
+| [Deploy Documentation](#deploy-documentation)                      | Push to main         | Build and deploy VitePress docs              |
+| [Publish Packages](#publish-packages)                              | Push to main, manual | Publish npm packages                         |
 
 ## Workflows
 
@@ -29,6 +29,7 @@ Core CI validation workflow that runs on all PRs:
 - Lints documentation prose with Vale (non-blocking)
 - Executes test suites with coverage
 - Validates plugin configurations
+- Validates skills discovery (symlink integrity, frontmatter, sync with plugin.json)
 
 Automated PRs (dependabot, releases) may skip certain checks.
 
