@@ -19,7 +19,8 @@
     {
       "name": "uniswap-driver",
       "source": "./packages/plugins/uniswap-driver",
-      "description": "AI-powered assistance for planning Uniswap swaps and liquidity positions"
+      "description": "AI-powered assistance for planning Uniswap swaps and liquidity positions",
+      "skills": ["./skills/swap-planner", "./skills/liquidity-planner"]
     }
   ]
 }

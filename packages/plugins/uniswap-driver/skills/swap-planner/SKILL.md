@@ -3,6 +3,10 @@ name: swap-planner
 description: This skill should be used when the user asks to "swap tokens", "trade ETH for USDC", "exchange tokens on Uniswap", "buy tokens", "sell tokens", "convert ETH to stablecoins", "find memecoins", "what's trending", "discover tokens", "research tokens", "tokens to buy", "find tokens to swap", "what should I buy", "trending on Base", "trending on Arbitrum", or mentions swapping, trading, researching, discovering, buying, or exchanging tokens on any Uniswap-supported chain. Supports both known token swaps and token discovery workflows. Generates deep links to execute swaps in the Uniswap interface.
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash(curl:*), Bash(jq:*), Bash(cast:*), Bash(xdg-open:*), Bash(open:*), WebFetch, WebSearch, Task(subagent_type:Explore), AskUserQuestion
 model: sonnet
+license: MIT
+metadata:
+  author: uniswap
+  version: '0.2.0'
 ---
 
 # Swap Planning
