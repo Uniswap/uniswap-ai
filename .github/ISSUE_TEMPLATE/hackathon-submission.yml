@@ -32,6 +32,51 @@ body:
     validations:
       required: true
 
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        ### Team Lead Contact (Required for KYC / Prize Distribution)
+        Prizes are paid in USDC. We need the following for KYC verification of the team lead.
+
+  - type: input
+    id: first_name
+    attributes:
+      label: 'First Name'
+      description: 'Team lead first name (required for KYC)'
+      placeholder: 'Jane'
+    validations:
+      required: true
+
+  - type: input
+    id: last_name
+    attributes:
+      label: 'Last Name'
+      description: 'Team lead last name (required for KYC)'
+      placeholder: 'Doe'
+    validations:
+      required: true
+
+  - type: input
+    id: email
+    attributes:
+      label: 'Email'
+      description: 'Team lead email address (required for KYC)'
+      placeholder: 'jane@example.com'
+    validations:
+      required: true
+
+  - type: input
+    id: wallet_address
+    attributes:
+      label: 'Wallet Address'
+      description: 'EVM wallet address for prize distribution (optional)'
+      placeholder: '0x...'
+
+  - type: markdown
+    attributes:
+      value: '---'
+
   - type: input
     id: team_members
     attributes:
