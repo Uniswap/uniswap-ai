@@ -19,12 +19,14 @@
     {
       "name": "uniswap-viem",
       "source": "./packages/plugins/uniswap-viem",
-      "description": "EVM blockchain integration using viem and wagmi"
+      "description": "EVM blockchain integration using viem and wagmi",
+      "skills": ["./skills/viem-integration"]
     },
     {
       "name": "uniswap-trading",
       "source": "./packages/plugins/uniswap-trading",
-      "description": "Integrate Uniswap swaps via Trading API, Universal Router, and SDKs"
+      "description": "Integrate Uniswap swaps via Trading API, Universal Router, and SDKs",
+      "skills": ["./skills/swap-integration"]
     },
     {
       "name": "uniswap-driver",
