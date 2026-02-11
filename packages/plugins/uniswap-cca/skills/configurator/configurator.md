@@ -174,14 +174,16 @@ chmod +x setup.sh
 python3 server.py
 ```
 
-Once the MCP server is running, use the collected `auctionBlocks` and `prebidBlocks` to call the MCP tool (format: `<server-name>__<tool-name>`):
+Once the MCP server is running, call the `cca-supply-schedule__generate_supply_schedule` MCP tool with the collected parameters. The tool expects a JSON object:
 
-```text
-cca-supply-schedule__generate_supply_schedule({
-  auction_blocks: auctionBlocks,
-  prebid_blocks: prebidBlocks,
-})
+```json
+{
+  "auction_blocks": 86400,
+  "prebid_blocks": 0
+}
 ```
+
+Replace the values with the actual `auctionBlocks` and `prebidBlocks` collected from the user.
 
 If the MCP tool is unavailable, use the fallback Python algorithm directly (see Supply Schedule Configuration section).
 
@@ -286,8 +288,15 @@ const NETWORKS = {
   },
 };
 
-// Q96 = 2^96 (JavaScript BigInt notation; in Python use int: 79228162514264337593543950336)
+// Q96 = 2^96 (JavaScript BigInt notation)
 const Q96 = 79228162514264337593543950336n;
+```
+
+Python equivalent:
+
+```python
+# Q96 = 2**96
+Q96 = 79228162514264337593543950336
 ```
 
 ## Overview
