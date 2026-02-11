@@ -1,14 +1,9 @@
 # yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
 description: 'Swap Planner Skill Evaluation'
 
-# Prompts (eval cases)
+# Prompt template that injects skill context + case content via vars
 prompts:
-  - id: file://cases/basic-swap.md
-    label: basic-swap
-  - id: file://cases/token-discovery.md
-    label: token-discovery
-  - id: file://cases/cross-chain-swap.md
-    label: cross-chain-swap
+  - file://prompt-wrapper.txt
 
 # Provider configuration
 providers:
@@ -21,70 +16,62 @@ providers:
 defaultTest:
   options:
     timeout: 120000 # 2 minutes per case
+  vars:
+    skill_content: file://../../../packages/plugins/uniswap-driver/skills/swap-planner/SKILL.md
 
 # Test cases with specific assertions
 tests:
   # Test 1: Basic Token Swap Planning
-  - prompts: ['basic-swap']
-    vars:
-      scenario: basic-swap
+  - vars:
+      case_content: file://cases/basic-swap.md
     assert:
       - type: llm-rubric
         value: file://rubrics/swap-correctness.txt
-        threshold: 0.7
+        threshold: 0.85
         provider: anthropic:claude-sonnet-4-5-20250929
 
-      # Must reference Uniswap
+      # Must include a deep link
       - type: contains-any
         value:
           - 'app.uniswap.org'
           - 'uniswap.org'
-          - 'Uniswap'
-          - 'uniswap'
-      # Must reference token verification or addresses
+      # Must reference token verification
       - type: contains-any
         value:
           - 'dexscreener'
           - 'DexScreener'
           - 'verify'
           - 'contract'
-          - 'address'
-          - '0x'
 
   # Test 2: Token Discovery Workflow
-  - prompts: ['token-discovery']
-    vars:
-      scenario: token-discovery
+  - vars:
+      case_content: file://cases/token-discovery.md
     assert:
       - type: llm-rubric
         value: file://rubrics/discovery-completeness.txt
-        threshold: 0.65
+        threshold: 0.8
         provider: anthropic:claude-sonnet-4-5-20250929
 
-      # Must reference data sources
+      # Must use data providers
       - type: contains-any
         value:
           - 'dexscreener'
           - 'DexScreener'
-          - 'DEX'
-          - 'trending'
-          - 'search'
+          - 'api.dexscreener.com'
       # Must show token details
       - type: contains-any
         value:
           - 'liquidity'
           - 'volume'
           - 'price'
-          - 'market cap'
 
   # Test 3: Cross-Chain Swap
-  - prompts: ['cross-chain-swap']
-    vars:
-      scenario: cross-chain-swap
+  - vars:
+      case_content: file://cases/cross-chain-swap.md
     assert:
       - type: llm-rubric
         value: file://rubrics/swap-correctness.txt
-        threshold: 0.7
+        threshold: 0.8
         provider: anthropic:claude-sonnet-4-5-20250929
 
       # Must include chain specification
@@ -95,10 +82,8 @@ tests:
           - 'Arbitrum'
           - 'Polygon'
           - 'Optimism'
-      # Must reference Uniswap
+      # Must include deep link
       - type: contains-any
         value:
           - 'app.uniswap.org'
           - 'uniswap.org'
-          - 'Uniswap'
-          - 'uniswap'

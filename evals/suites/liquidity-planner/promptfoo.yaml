@@ -1,14 +1,9 @@
 # yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
 description: 'Liquidity Planner Skill Evaluation'
 
-# Prompts (eval cases)
+# Prompt template that injects skill context + case content via vars
 prompts:
-  - id: file://cases/basic-v3-position.md
-    label: basic-v3
-  - id: file://cases/v4-position.md
-    label: v4-position
-  - id: file://cases/full-range-v2.md
-    label: full-range-v2
+  - file://prompt-wrapper.txt
 
 # Provider configuration
 providers:
@@ -21,26 +16,25 @@ providers:
 defaultTest:
   options:
     timeout: 120000 # 2 minutes per case
+  vars:
+    skill_content: file://../../../packages/plugins/uniswap-driver/skills/liquidity-planner/SKILL.md
 
 # Test cases with specific assertions
 tests:
   # Test 1: Basic V3 Concentrated Liquidity Position
-  - prompts: ['basic-v3']
-    vars:
-      scenario: basic-v3-position
+  - vars:
+      case_content: file://cases/basic-v3-position.md
     assert:
       - type: llm-rubric
         value: file://rubrics/position-correctness.txt
-        threshold: 0.7
+        threshold: 0.85
         provider: anthropic:claude-sonnet-4-5-20250929
 
-      # Must reference Uniswap
+      # Must include deep link
       - type: contains-any
         value:
           - 'app.uniswap.org'
           - 'uniswap.org'
-          - 'Uniswap'
-          - 'uniswap'
       # Must reference price range
       - type: contains-any
         value:
@@ -50,16 +44,14 @@ tests:
           - 'max price'
           - 'minPrice'
           - 'maxPrice'
-          - 'concentrated'
 
   # Test 2: V4 Liquidity Position
-  - prompts: ['v4-position']
-    vars:
-      scenario: v4-position
+  - vars:
+      case_content: file://cases/v4-position.md
     assert:
       - type: llm-rubric
         value: file://rubrics/position-correctness.txt
-        threshold: 0.7
+        threshold: 0.8
         provider: anthropic:claude-sonnet-4-5-20250929
 
       # Must mention V4-specific concepts
@@ -68,22 +60,19 @@ tests:
           - 'V4'
           - 'v4'
           - 'hook'
-      # Must reference Uniswap
+      # Must include deep link
       - type: contains-any
         value:
           - 'app.uniswap.org'
           - 'uniswap.org'
-          - 'Uniswap'
-          - 'uniswap'
 
   # Test 3: Full Range V2 Position
-  - prompts: ['full-range-v2']
-    vars:
-      scenario: full-range-v2
+  - vars:
+      case_content: file://cases/full-range-v2.md
     assert:
       - type: llm-rubric
         value: file://rubrics/lp-completeness.txt
-        threshold: 0.65
+        threshold: 0.8
         provider: anthropic:claude-sonnet-4-5-20250929
 
       # Must mention V2 or full range
@@ -92,11 +81,8 @@ tests:
           - 'V2'
           - 'v2'
           - 'full range'
-          - 'full-range'
-      # Must reference Uniswap
+      # Must include deep link
       - type: contains-any
         value:
           - 'app.uniswap.org'
           - 'uniswap.org'
-          - 'Uniswap'
-          - 'uniswap'
