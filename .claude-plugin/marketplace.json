@@ -7,13 +7,14 @@
   },
   "metadata": {
     "description": "Uniswap-specific AI tools (skills, plugins, agents) for external developers and AI agents integrating the Uniswap ecosystem.",
-    "repository": "https://github.com/Uniswap/uniswap-ai"
+    "repository": "https://github.com/uniswap/uniswap-ai"
   },
   "plugins": [
     {
       "name": "uniswap-hooks",
       "source": "./packages/plugins/uniswap-hooks",
-      "description": "AI-powered assistance for creating Uniswap V4 hooks"
+      "description": "AI-powered assistance for creating Uniswap V4 hooks",
+      "skills": ["./skills/v4-security-foundations", "./skills/aggregator-hook-creator"]
     },
     {
       "name": "uniswap-cca",

@@ -1,0 +1,64 @@
+# Security Checklist Completeness Rubric
+
+Evaluate whether the response provides a comprehensive security checklist for V4 hook deployment.
+
+## Required Categories (Must Cover)
+
+Score based on how many of these security categories are adequately addressed:
+
+1. **Access Control**
+   - PoolManager verification (msg.sender check)
+   - Router allowlisting if applicable
+   - Admin function protection
+
+2. **Reentrancy Protection**
+   - Reentrancy guards on functions with external calls
+   - Checks-effects-interactions pattern
+   - Cross-function reentrancy consideration
+
+3. **Delta Accounting**
+   - Deltas sum to zero verification
+   - Proper settlement patterns
+   - No partial settlement states
+
+4. **Input Validation**
+   - Edge case handling (zero amounts, invalid parameters)
+   - Slippage parameter respect
+   - Hook data validation
+
+5. **Gas and Resource Safety**
+   - No unbounded loops
+   - No excessive storage operations
+   - Gas profiling recommendation
+
+6. **Token Handling**
+   - Fee-on-transfer token handling
+   - Safe transfer patterns
+   - Non-standard token considerations
+
+7. **Testing Requirements**
+   - Unit testing requirement
+   - Fuzz testing with Foundry
+   - Invariant testing for delta returns
+   - Fork testing recommendation
+
+8. **Audit Recommendations**
+   - Professional audit for medium+ risk
+   - Static analysis tools (Slither/Mythril)
+   - Bug bounty for high risk hooks
+
+## Scoring Guide
+
+- 8/8 categories covered: 1.0
+- 7/8 categories covered: 0.9
+- 6/8 categories covered: 0.8
+- 5/8 categories covered: 0.7
+- 4/8 categories covered: 0.55
+- 3/8 categories covered: 0.4
+- 2/8 categories covered: 0.25
+- 1/8 categories covered: 0.1
+- 0/8 categories covered: 0.0
+
+## Instructions
+
+Evaluate whether the checklist is comprehensive and actionable. The checklist should cover all major security domains relevant to V4 hooks and provide practical guidance for the development team.

@@ -11,7 +11,7 @@ prompts:
 
 # Provider configuration
 providers:
-  - id: anthropic:claude-sonnet-4-20250514
+  - id: anthropic:claude-sonnet-4-5-20250929
     config:
       temperature: 0
 
@@ -25,7 +25,7 @@ defaultTest:
     # - type: llm-rubric
     #   value: file://rubrics/security.txt
     #   threshold: 1.0
-    #   provider: anthropic:claude-sonnet-4-20250514
+    #   provider: anthropic:claude-sonnet-4-5-20250929
 
 # Test cases with specific assertions
 tests:
@@ -36,13 +36,13 @@ tests:
       - type: llm-rubric
         value: file://rubrics/correctness.txt
         threshold: 0.8
-        provider: anthropic:claude-sonnet-4-20250514
+        provider: anthropic:claude-sonnet-4-5-20250929
 
       # Completeness rubric
       - type: llm-rubric
         value: file://rubrics/completeness.txt
         threshold: 0.85
-        provider: anthropic:claude-sonnet-4-20250514
+        provider: anthropic:claude-sonnet-4-5-20250929
 
       # Deterministic checks (customize for your skill)
       # - type: contains

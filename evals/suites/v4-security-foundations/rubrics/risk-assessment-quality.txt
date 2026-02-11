@@ -1,0 +1,46 @@
+# Permission Flags Risk Assessment Quality Rubric
+
+Evaluate whether the response provides accurate risk assessment of V4 hook permission flags.
+
+## Required Elements (Must Include)
+
+Score based on how many of these are correctly addressed:
+
+1. **Risk Level Categorization**
+   - Correctly categorizes beforeSwapReturnDelta as CRITICAL risk
+   - Correctly categorizes beforeRemoveLiquidity as HIGH risk (can trap funds)
+   - Correctly categorizes beforeSwap as HIGH risk (price manipulation)
+   - Appropriately categorizes other permissions
+
+2. **Threat Explanation**
+   - Explains specific threats for high-risk permissions
+   - Connects permissions to concrete attack scenarios
+   - Identifies which permissions can cause fund loss
+
+3. **Overall Risk Score/Assessment**
+   - Provides an overall risk assessment or score
+   - Considers cumulative risk of multiple enabled permissions
+   - Notes that CRITICAL permissions dominate the assessment
+
+4. **Audit Tier Recommendation**
+   - Recommends appropriate audit level based on risk
+   - For CRITICAL permissions, recommends professional/multiple audits
+   - Provides clear guidance on security measures
+
+5. **Actionable Recommendations**
+   - Suggests which permissions could be disabled if not needed
+   - Recommends specific security patterns for enabled permissions
+   - Provides practical next steps
+
+## Scoring Guide
+
+- 5/5 elements correct: 1.0
+- 4/5 elements correct: 0.85
+- 3/5 elements correct: 0.7
+- 2/5 elements correct: 0.5
+- 1/5 elements correct: 0.3
+- 0/5 elements correct: 0.0
+
+## Instructions
+
+Evaluate whether the risk assessment is technically accurate and provides actionable guidance. The assessment should correctly identify the most dangerous permissions and recommend appropriate security measures.

@@ -1,3 +1,8 @@
+---
+title: Introduction
+order: 1
+---
+
 # Getting Started
 
 Welcome to Uniswap AI - a collection of AI tools for building on the Uniswap protocol.
@@ -24,7 +29,7 @@ The easiest way to get started is through the Claude Code marketplace:
 
 ```bash
 # Add the uniswap-ai marketplace
-/plugin marketplace add Uniswap/uniswap-ai
+/plugin marketplace add uniswap/uniswap-ai
 
 # Install the hooks plugin
 /plugin install uniswap-hooks
@@ -56,14 +61,13 @@ You should see `uniswap-hooks` in the list of installed plugins.
 
 ## Repository Structure
 
-| Directory | Purpose |
-|-----------|---------|
+| Directory           | Purpose             |
+| ------------------- | ------------------- |
 | `packages/plugins/` | Claude Code plugins |
-| `packages/sdk/` | TypeScript SDKs |
-| `evals/` | AI tool evaluations |
-| `docs/` | This documentation |
+| `evals/`            | AI tool evaluations |
+| `docs/`             | This documentation  |
 
 ## Getting Help
 
-- [GitHub Issues](https://github.com/Uniswap/uniswap-ai/issues) - Report bugs or request features
+- [GitHub Issues](https://github.com/uniswap/uniswap-ai/issues) - Report bugs or request features
 - [Uniswap Discord](https://discord.gg/uniswap) - Community support
