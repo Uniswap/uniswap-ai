@@ -3,8 +3,8 @@
 Test the supply schedule generation logic with normalized convex curve.
 """
 
-# Import the logic to test
-from server import (
+# Import the logic to test (from logic.py, not server.py, to avoid mcp dependency)
+from logic import (
     generate_schedule,
     encode_supply_schedule,
     TOTAL_TARGET,

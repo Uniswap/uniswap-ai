@@ -1,0 +1,63 @@
+# Completeness Rubric for CCA Deployer
+
+Evaluate whether the generated deployment guide includes all expected elements and follows best practices.
+
+## Expected Elements (Should Include)
+
+Score based on how many of these are present:
+
+1. **Educational Disclaimer**
+   - Clear "educational purposes only" warning
+   - Explicit acknowledgment requirement before proceeding
+   - Mentions AI-generated commands may contain errors
+
+2. **Private Key Security**
+   - Hardware wallet recommendation (--ledger flag)
+   - Encrypted keystore option (cast wallet import)
+   - Environment variable best practices
+   - Warning against hardcoded keys
+
+3. **Deployment Commands**
+   - Complete forge script command with all flags
+   - RPC URL configuration
+   - Multiple signing options (ledger, keystore, env var)
+
+4. **Network Configuration**
+   - Correct chain-specific details
+   - Block time reference
+   - Supported chains listed
+
+5. **Post-Deployment Verification**
+   - Contract verification on block explorers
+   - onTokensReceived() confirmation
+   - Transaction hash tracking
+
+6. **Troubleshooting Guide**
+   - Common deployment errors and solutions
+   - Gas estimation issues
+   - Configuration validation failures
+
+## Penalties (Should Not Include)
+
+Deduct points for:
+- Hardcoded private keys or mnemonics (-0.2)
+- Missing educational disclaimer (-0.15)
+- Incorrect factory address (-0.15)
+- Missing onTokensReceived() step (-0.1)
+
+## Scoring Guide
+
+Base score from expected elements:
+- 6/6 elements: 1.0
+- 5/6 elements: 0.9
+- 4/6 elements: 0.8
+- 3/6 elements: 0.65
+- 2/6 elements: 0.5
+- 1/6 elements: 0.3
+- 0/6 elements: 0.0
+
+Then subtract any penalties.
+
+## Instructions
+
+Count the expected elements present, then apply any penalties for issues found. Provide the final score.

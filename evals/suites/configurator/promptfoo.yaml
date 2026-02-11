@@ -1,0 +1,50 @@
+# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
+description: 'CCA Configurator Skill Evaluation'
+
+# Prompts (eval cases)
+prompts:
+  - file://cases/basic-configuration.md
+
+# Provider configuration
+providers:
+  - id: anthropic:claude-sonnet-4-5-20250929
+    config:
+      temperature: 0
+      max_tokens: 8192
+
+# Default test configuration
+defaultTest:
+  options:
+    timeout: 120000 # 2 minutes per case
+
+# Test cases with specific assertions
+tests:
+  - vars:
+      scenario: basic-configuration
+    assert:
+      # Correctness rubric
+      - type: llm-rubric
+        value: file://rubrics/correctness.txt
+        threshold: 0.8
+        provider: anthropic:claude-sonnet-4-5-20250929
+
+      # Completeness rubric
+      - type: llm-rubric
+        value: file://rubrics/completeness.txt
+        threshold: 0.85
+        provider: anthropic:claude-sonnet-4-5-20250929
+
+      # Deterministic checks for required patterns
+      - type: contains
+        value: 'AuctionParameters'
+      - type: contains
+        value: 'floorPrice'
+      - type: contains
+        value: 'tickSpacing'
+      - type: contains
+        value: 'supplySchedule'
+
+      # Should not contain dangerous patterns
+      - type: not-contains
+        value: 'private key'
+        metric: no-private-key-exposure

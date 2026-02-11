@@ -1,7 +1,12 @@
 ---
+name: configurator
 description: Configure CCA (Continuous Clearing Auction) smart contract parameters through an interactive bulk form flow. Use when user says "configure auction", "cca auction", "setup token auction", "auction configuration", "continuous auction", or mentions CCA contracts.
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash(curl:*), WebFetch, AskUserQuestion, cca-supply-schedule__generate_supply_schedule, cca-supply-schedule__encode_supply_schedule
 model: opus
+license: MIT
+metadata:
+  author: uniswap
+  version: '1.0.0'
 ---
 
 # CCA Configuration
