@@ -174,7 +174,7 @@ chmod +x setup.sh
 python3 server.py
 ```
 
-Once the MCP server is running, use the collected `auctionBlocks` and `prebidBlocks` to call the MCP tool:
+Once the MCP server is running, use the collected `auctionBlocks` and `prebidBlocks` to call the MCP tool (format: `<server-name>__<tool-name>`):
 
 ```text
 cca-supply-schedule__generate_supply_schedule({
@@ -286,6 +286,7 @@ const NETWORKS = {
   },
 };
 
+// Q96 = 2^96 (JavaScript BigInt notation; in Python use int: 79228162514264337593543950336)
 const Q96 = 79228162514264337593543950336n;
 ```
 

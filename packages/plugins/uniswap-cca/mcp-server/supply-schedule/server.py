@@ -114,14 +114,17 @@ def generate_schedule(
     main_supply_pct = 1.0 - final_block_pct  # e.g., 0.70 for 30% final block
     step_tokens_pct = main_supply_pct / num_steps  # e.g., 0.70 / 12 = 0.058333...
 
-    # Calculate time boundaries from normalized curve C(t) = t^alpha
-    # For each step i, we want cumulative supply = i * step_tokens_pct
-    # Since C(t) = t^alpha, inverse is t = (cumulative_pct)^(1/alpha)
+    # Calculate time boundaries from normalized convex curve C(t) = t^alpha.
+    # We want equal token amounts per step, so cumulative supply at step i = i/num_steps.
+    # Since C(t) = t^alpha maps [0,1] -> [0,1], its inverse t = C^{-1}(s) = s^{1/alpha}
+    # gives the time at which cumulative fraction s of main supply is released.
+    # Because alpha > 1, the curve is convex: early steps span longer durations
+    # (lower MPS) and later steps span shorter durations (higher MPS).
     time_boundaries = [0.0]  # t_0 = 0
     for i in range(1, num_steps + 1):
-        # Cumulative percentage at step i (normalized to main supply)
+        # Cumulative fraction of main supply at step i (normalized to [0,1])
         cum_pct = i * step_tokens_pct / main_supply_pct
-        # Inverse of C(t) = t^alpha gives time boundary
+        # Inverse of C(t) = t^alpha gives the normalized time boundary
         t_i = cum_pct ** (1.0 / alpha)
         time_boundaries.append(t_i)
 
@@ -193,22 +196,30 @@ def encode_supply_schedule(schedule: list[dict[str, int]]) -> str:
     Raises:
         ValueError: If mps exceeds 24-bit max or blockDelta exceeds 40-bit max
     """
+    # Bit layout per uint64 (matching Solidity's parse function):
+    #   [  24 bits: mps  |  40 bits: blockDelta  ] = 64 bits total
+    # Solidity unpacks via: mps = uint24(bytes3(data)), blockDelta = uint40(uint64(data))
+    MPS_BITS = 24
+    BLOCK_DELTA_BITS = 40
+    MPS_MAX = 2**MPS_BITS - 1          # 16,777,215
+    BLOCK_DELTA_MAX = 2**BLOCK_DELTA_BITS - 1  # 1,099,511,627,775
+
     encoded_bytes = b''
 
     for item in schedule:
         mps = item['mps']
         block_delta = item['blockDelta']
 
-        # Validate bounds
-        if mps > 2**24 - 1:
-            raise ValueError(f"mps {mps} exceeds 24-bit max (16777215)")
-        if block_delta > 2**40 - 1:
-            raise ValueError(f"blockDelta {block_delta} exceeds 40-bit max (1099511627775)")
+        # Validate bounds against bit-width constraints
+        if mps > MPS_MAX:
+            raise ValueError(f"mps {mps} exceeds {MPS_BITS}-bit max ({MPS_MAX})")
+        if block_delta > BLOCK_DELTA_MAX:
+            raise ValueError(f"blockDelta {block_delta} exceeds {BLOCK_DELTA_BITS}-bit max ({BLOCK_DELTA_MAX})")
 
-        # Pack into uint64: mps (24 bits) << 40 | blockDelta (40 bits)
-        packed = (mps << 40) | block_delta
+        # Pack into uint64: mps in upper 24 bits, blockDelta in lower 40 bits
+        packed = (mps << BLOCK_DELTA_BITS) | block_delta
 
-        # Convert to 8 bytes (big-endian)
+        # Convert to 8 bytes (big-endian) for abi.encodePacked compatibility
         encoded_bytes += packed.to_bytes(8, byteorder='big')
 
     # Return as hex string with 0x prefix
