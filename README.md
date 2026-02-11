@@ -102,9 +102,8 @@ npx nx run-many -t lint
 
 ```text
 uniswap-ai/
-├── skills/              # Root-level skill symlinks (skills.sh discovery)
 ├── packages/
-│   ├── plugins/         # Claude Code plugins
+│   ├── plugins/         # Claude Code plugins (skills live here)
 │   ├── sdk/             # TypeScript SDKs
 │   ├── prompts/         # Shared prompt templates
 │   └── utils/           # Shared utilities

@@ -29,7 +29,7 @@ Core CI validation workflow that runs on all PRs:
 - Lints documentation prose with Vale (non-blocking)
 - Executes test suites with coverage
 - Validates plugin configurations
-- Validates skills discovery (symlink integrity, frontmatter, sync with plugin.json)
+- Validates skills (frontmatter, consistency with plugin.json)
 
 Automated PRs (dependabot, releases) may skip certain checks.
 

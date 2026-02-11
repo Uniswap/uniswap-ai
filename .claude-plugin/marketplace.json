@@ -13,8 +13,7 @@
     {
       "name": "uniswap-hooks",
       "source": "./packages/plugins/uniswap-hooks",
-      "description": "AI-powered assistance for creating Uniswap V4 hooks",
-      "skills": ["./skills/v4-security-foundations", "./skills/aggregator-hook-creator"]
+      "description": "AI-powered assistance for creating Uniswap V4 hooks"
     },
     {
       "name": "uniswap-cca",
@@ -24,20 +23,17 @@
     {
       "name": "uniswap-viem",
       "source": "./packages/plugins/uniswap-viem",
-      "description": "EVM blockchain integration using viem and wagmi",
-      "skills": ["./skills/viem-integration"]
+      "description": "EVM blockchain integration using viem and wagmi"
     },
     {
       "name": "uniswap-trading",
       "source": "./packages/plugins/uniswap-trading",
-      "description": "Integrate Uniswap swaps via Trading API, Universal Router, and SDKs",
-      "skills": ["./skills/swap-integration"]
+      "description": "Integrate Uniswap swaps via Trading API, Universal Router, and SDKs"
     },
     {
       "name": "uniswap-driver",
       "source": "./packages/plugins/uniswap-driver",
-      "description": "AI-powered assistance for planning Uniswap swaps and liquidity positions",
-      "skills": ["./skills/swap-planner", "./skills/liquidity-planner"]
+      "description": "AI-powered assistance for planning Uniswap swaps and liquidity positions"
     }
   ]
 }

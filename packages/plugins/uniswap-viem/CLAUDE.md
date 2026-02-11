@@ -24,8 +24,7 @@ uniswap-viem/
 │   └── viem-integration-expert.md
 ├── skills/
 │   └── viem-integration/
-│       ├── viem-integration.md
-│       ├── SKILL.md -> viem-integration.md
+│       ├── SKILL.md
 │       └── references/
 │           ├── clients-and-transports.md
 │           ├── reading-data.md

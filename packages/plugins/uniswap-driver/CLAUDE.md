@@ -118,18 +118,6 @@ uniswap-driver/
 └── README.md
 ```
 
-## Skill Discovery
-
-Skills are stored canonically in `./skills/` within this plugin, but the repository also maintains **root-level symlinks** (e.g., `<repo-root>/skills/swap-planner` → `../packages/plugins/uniswap-driver/skills/swap-planner`). The `.claude-plugin/marketplace.json` references these symlink paths (`./skills/swap-planner`) rather than canonical plugin paths.
-
-> **Why?** Claude Code requires skills to be in a root-relative `skills/` directory for slash command auto-population. This is a workaround for [claude-code#17271](https://github.com/anthropics/claude-code/issues/17271). See the root `CLAUDE.md` "Skills.sh Integration" section for full details.
-
-When adding new skills to this plugin:
-
-1. Create the skill in `./skills/<skill-name>/`
-2. Add a root symlink: `ln -s ../packages/plugins/uniswap-driver/skills/<skill-name> skills/<skill-name>`
-3. Add the skill to both `plugin.json` `skills` array and `marketplace.json` `skills` array
-
 ## Related Resources
 
 - [Uniswap Interface](https://app.uniswap.org)

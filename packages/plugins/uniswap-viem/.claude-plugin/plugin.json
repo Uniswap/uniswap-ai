@@ -19,6 +19,5 @@
   ],
   "license": "MIT",
   "skills": ["./skills/viem-integration"],
-  "commands": ["./skills/viem-integration/viem-integration.md"],
   "agents": ["./agents/viem-integration-expert.md"]
 }
