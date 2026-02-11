@@ -16,7 +16,7 @@
 
 ### 1. Update Style Tokens to Match Universe Repo Standards
 
-- **Notion**: https://www.notion.so/303c52b2548b81bdb54fe6f14db8146a
+- **Notion**: <https://www.notion.so/303c52b2548b81bdb54fe6f14db8146a>
 - **Reporter**: Phil
 - **Feedback**: Pink should use accent-1 (#FF37C7) from universe repo. Fonts should use Basel Grotesk, not Inter.
 - **Page**: Global (tokens.css)
@@ -30,7 +30,7 @@
 
 ### 2. Update Widget Colors to Use Spore Accent2 and Accent1
 
-- **Notion**: https://www.notion.so/303c52b2548b818d9f2ac50988108ba6
+- **Notion**: <https://www.notion.so/303c52b2548b818d9f2ac50988108ba6>
 - **Reporter**: Phil
 - **Feedback**: Use accent2 from Spore for bg and accent1 for text.
 - **Page**: Landing (hero area widget — CountdownTimer)
@@ -40,7 +40,7 @@
 
 ### 3. Replace emojis with Universe repo icons
 
-- **Notion**: https://www.notion.so/303c52b2548b81f18f9ffa5f1c212a83
+- **Notion**: <https://www.notion.so/303c52b2548b81f18f9ffa5f1c212a83>
 - **Reporter**: Phil
 - **Feedback**: Don't use emojis, use icons from the Universe repo.
 - **Page**: Landing / About section (emoji icons for AI+DeFi, Open Source, For Everyone)
@@ -50,7 +50,7 @@
 
 ### 4. Standardize Box Colors and Text Alignment
 
-- **Notion**: https://www.notion.so/303c52b2548b81028b4fc99f345b5f3e
+- **Notion**: <https://www.notion.so/303c52b2548b81028b4fc99f345b5f3e>
 - **Reporter**: Phil
 - **Feedback**: Don't use multiple colors, use surface2. Use surface3 for background. Text body aligned to bottom, numbers aligned to top.
 - **Page**: Landing / How to Participate section
@@ -60,7 +60,7 @@
 
 ### 5. Replace + and x icons with chevrons
 
-- **Notion**: https://www.notion.so/303c52b2548b81d198b6c8dcf558951e
+- **Notion**: <https://www.notion.so/303c52b2548b81d198b6c8dcf558951e>
 - **Reporter**: Phil
 - **Feedback**: Change to chevrons instead of + and x in FAQ accordion.
 - **Page**: Landing / FAQ section
@@ -70,7 +70,7 @@
 
 ### 6. See comments inline with the markup on page
 
-- **Notion**: https://www.notion.so/303c52b2548b81d2921cd6b789c6a591
+- **Notion**: <https://www.notion.so/303c52b2548b81d2921cd6b789c6a591>
 - **Reporter**: Nick
 - **Feedback**: 1) Make this 2px bigger. 2) Would be great to add shadow to these.
 - **Page**: Landing page (screenshot needed to determine exact elements)
@@ -83,7 +83,7 @@
 
 ### 7. Update Reference from 'AI Hackathon' to 'Uniswap'
 
-- **Notion**: https://www.notion.so/303c52b2548b810fa351c4b351c022ac
+- **Notion**: <https://www.notion.so/303c52b2548b810fa351c4b351c022ac>
 - **Reporter**: Phil
 - **Feedback**: Replace 'AI Hackathon' with 'Uniswap' in header.
 - **Page**: Header component
@@ -93,7 +93,7 @@
 
 ### 8. Align Tab Styling with Nav Bar in Web App
 
-- **Notion**: https://www.notion.so/303c52b2548b81d4933fceef1bf7c4d9
+- **Notion**: <https://www.notion.so/303c52b2548b81d4933fceef1bf7c4d9>
 - **Reporter**: Phil
 - **Feedback**: Match styling of tabs to the nav bar in the web app. Remove underline, use neutral1 for highlighted tab and neutral2 for unhighlighted.
 - **Page**: Header component (navigation links)
@@ -107,7 +107,7 @@
 
 ### 9. Change active state outline to neutral1 (white)
 
-- **Notion**: https://www.notion.so/303c52b2548b81e2a3b8f38a7d696973
+- **Notion**: <https://www.notion.so/303c52b2548b81e2a3b8f38a7d696973>
 - **Reporter**: Phil
 - **Feedback**: Change active state outline to neutral1 (white) on forum post page.
 - **Page**: Forum post detail page
@@ -117,7 +117,7 @@
 
 ### 10. Request to Change Highlighted State Outline from Pink to White
 
-- **Notion**: https://www.notion.so/303c52b2548b81109308d8ed8a872439
+- **Notion**: <https://www.notion.so/303c52b2548b81109308d8ed8a872439>
 - **Reporter**: Phil
 - **Feedback**: Change highlighted state to use white outline not pink.
 - **Page**: Forum page
@@ -127,7 +127,7 @@
 
 ### 11. Update selected state styling to neutral1 label and outline with surface3 background
 
-- **Notion**: https://www.notion.so/303c52b2548b814ca4b6d014cea70ade
+- **Notion**: <https://www.notion.so/303c52b2548b814ca4b6d014cea70ade>
 - **Reporter**: Phil
 - **Feedback**: Change selected state to neutral1 label with neutral1 outline and surface3 background.
 - **Page**: Forum page (filter chips/tags)
@@ -137,7 +137,7 @@
 
 ### 12. Increase chip component height to 28px
 
-- **Notion**: https://www.notion.so/303c52b2548b81b3bee2eadb89a01653
+- **Notion**: <https://www.notion.so/303c52b2548b81b3bee2eadb89a01653>
 - **Reporter**: Phil
 - **Feedback**: Increase the height of chips to 28px.
 - **Page**: Forum page (filter chips)
@@ -147,7 +147,7 @@
 
 ### 13. Standardize Button Shape Across Interface
 
-- **Notion**: https://www.notion.so/303c52b2548b8134b4d9eb7e0fd37c0a
+- **Notion**: <https://www.notion.so/303c52b2548b8134b4d9eb7e0fd37c0a>
 - **Reporter**: Phil
 - **Feedback**: Use the same button shape as other buttons (shouldn't be fully rounded).
 - **Page**: Forum page
@@ -157,7 +157,7 @@
 
 ### 14. Change button theme to black label on white background
 
-- **Notion**: https://www.notion.so/303c52b2548b8123bcbbf4c1405f9126
+- **Notion**: <https://www.notion.so/303c52b2548b8123bcbbf4c1405f9126>
 - **Reporter**: Phil
 - **Feedback**: Change button theme to black label on white background.
 - **Page**: Forum post detail page
@@ -171,7 +171,7 @@
 
 ### 15. Replace Pink Buttons with Surface3 Background and White Text
 
-- **Notion**: https://www.notion.so/303c52b2548b814fb696ed52768392b6
+- **Notion**: <https://www.notion.so/303c52b2548b814fb696ed52768392b6>
 - **Reporter**: Phil
 - **Feedback**: Replace pink buttons with surface3 bg and white text.
 - **Page**: Project detail page (linkButton)
@@ -181,7 +181,7 @@
 
 ### 16. Remove Section Backgrounds and Add Dividers Between Sections
 
-- **Notion**: https://www.notion.so/303c52b2548b81818f63f8529f2452bd
+- **Notion**: <https://www.notion.so/303c52b2548b81818f63f8529f2452bd>
 - **Reporter**: Phil
 - **Feedback**: Get rid of the bgs behind each section and add a divider between each section.
 - **Page**: Project detail page
@@ -191,7 +191,7 @@
 
 ### 17. Vertically align and right-align element in container
 
-- **Notion**: https://www.notion.so/303c52b2548b81aba9caee78d0ed7934
+- **Notion**: <https://www.notion.so/303c52b2548b81aba9caee78d0ed7934>
 - **Reporter**: Phil
 - **Feedback**: Vertically align this and move it to the right end of the container.
 - **Page**: Project detail page
@@ -201,7 +201,7 @@
 
 ### 18. Ensure Pills Have Consistent Size
 
-- **Notion**: https://www.notion.so/303c52b2548b81dea007e28d127ec156
+- **Notion**: <https://www.notion.so/303c52b2548b81dea007e28d127ec156>
 - **Reporter**: Phil
 - **Feedback**: Make pills consistent size.
 - **Page**: Project detail page (tags/pills in the Tags section)
@@ -215,7 +215,7 @@
 
 ### 19. Change Number Text to White and Gradients to Pink
 
-- **Notion**: https://www.notion.so/303c52b2548b81d69420c7b295759003
+- **Notion**: <https://www.notion.so/303c52b2548b81d69420c7b295759003>
 - **Reporter**: Phil
 - **Feedback**: Use white for the number text, change the gradients to pink.
 - **Page**: Dashboard metric cards
@@ -225,7 +225,7 @@
 
 ### 20. Update Typography to Body4 from Spore
 
-- **Notion**: https://www.notion.so/303c52b2548b819c9de4cdd4271eb248
+- **Notion**: <https://www.notion.so/303c52b2548b819c9de4cdd4271eb248>
 - **Reporter**: Phil
 - **Feedback**: Change to body4 from Spore.
 - **Page**: Dashboard
@@ -239,7 +239,7 @@
 
 ### 21. Suggestions to streamline UI button layout
 
-- **Notion**: https://www.notion.so/303c52b2548b81cdab41c2949c33b1a0
+- **Notion**: <https://www.notion.so/303c52b2548b81cdab41c2949c33b1a0>
 - **Reporter**: Phil
 - **Feedback**: Move the button to the right hand side, remove the gradient, shrink the height.
 - **Page**: Footer CTA banner (`.ctaContent` in Footer component, visible on /projects)

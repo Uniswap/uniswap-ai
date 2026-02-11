@@ -1,8 +1,7 @@
 export const HACKATHON_CONFIG = {
   name: 'Uniswap AI Hackathon',
-  tagline: 'Build the future of DeFi with AI',
-  description:
-    'Join developers, researchers, and builders to create innovative AI-powered tools for the Uniswap ecosystem.',
+  tagline: 'Software with agency.',
+  description: 'Build AI-native tools for the Uniswap ecosystem.',
   deadline: '2026-02-20T23:59:59Z',
   startDate: '2026-02-09T00:00:00Z',
   github: {
@@ -13,12 +12,14 @@ export const HACKATHON_CONFIG = {
   maxDescriptionLength: 150,
 } as const;
 
-export const CATEGORIES = [
-  'DeFi Automation',
-  'Developer Tooling',
-  'Social/Community',
-  'Other',
+export const PRIZES = [
+  { place: '1st place', amount: '$20,000 USDC' },
+  { place: '2nd place', amount: '$15,000 USDC' },
+  { place: '3rd place', amount: '$10,000 USDC' },
+  { place: 'Community Favorite', amount: '$5,000 USDC' },
 ] as const;
+
+export const CATEGORIES = ['DeFi Automation', 'Developer Tooling', 'Community and Social'] as const;
 
 export type Category = (typeof CATEGORIES)[number];
 
@@ -31,7 +32,7 @@ export const FAQ_ITEMS = [
   {
     question: 'What can I build?',
     answer:
-      'Anything that combines AI with the Uniswap ecosystem. Trading bots, analytics tools, developer utilities, and more.',
+      'Anything that combines AI with the Uniswap ecosystem. Trading bots, analytics tools, developer utilities, and more. All projects should integrate the Uniswap Trading API.',
   },
   {
     question: 'How do I submit?',
@@ -57,7 +58,7 @@ export const HOW_TO_STEPS = [
   {
     step: 1,
     title: 'Build Your Project',
-    description: 'Create an AI-powered tool that integrates with the Uniswap ecosystem.',
+    description: 'Create an AI-powered tool that integrates with the Uniswap API and ecosystem.',
   },
   {
     step: 2,
@@ -72,8 +73,8 @@ export const HOW_TO_STEPS = [
   },
   {
     step: 4,
-    title: 'Get Judged',
+    title: 'Project Review',
     description:
-      'Our panel will review submissions based on innovation, technical execution, and usefulness.',
+      'The Uniswap judging panel will review submissions based on innovation, technical execution, and usefulness.',
   },
 ] as const;

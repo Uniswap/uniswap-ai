@@ -1,6 +1,6 @@
 # Uniswap AI Hackathon
 
-> Build the future of DeFi with AI
+> Software with agency.
 
 ## Overview
 
@@ -26,8 +26,7 @@ Submissions must fall into one of the following categories:
 3. Analytics & Monitoring - AI-driven analytics, dashboards, and monitoring tools
 4. Developer Tooling - Tools that help developers build on Uniswap more effectively
 5. Infrastructure - Backend services, APIs, and infrastructure for the Uniswap AI ecosystem
-6. Social/Community - Community tools, social features, governance aids
-7. Other - Any other AI + Uniswap integration
+6. Community and Social - Community tools, social features, governance aids
 
 ## Rules and Requirements
 
@@ -53,7 +52,7 @@ Submissions must fall into one of the following categories:
 ## How to Submit
 
 ### Step 1: Build Your Project
-Create an AI-powered tool that integrates with the Uniswap ecosystem.
+Create an AI-powered tool that integrates with the Uniswap API and ecosystem.
 
 ### Step 2: Push to GitHub
 Make your project open source on GitHub with clear documentation.
@@ -63,8 +62,8 @@ Create a GitHub Issue in the uniswap-ai repository using the Hackathon Submissio
 
 **Submission URL**: https://github.com/uniswap/uniswap-ai/issues/new?template=hackathon-submission.yml
 
-### Step 4: Get Judged
-The review panel evaluates submissions based on innovation, technical execution, and usefulness.
+### Step 4: Project Review
+The Uniswap judging panel will review submissions based on innovation, technical execution, and usefulness.
 
 ## Submission Template Fields
 
@@ -122,7 +121,7 @@ Submissions are evaluated on:
 A: Anyone. Whether you are a solo developer or a team of up to 5, all skill levels are welcome.
 
 **Q: What can I build?**
-A: Anything that combines AI with the Uniswap ecosystem. Trading bots, analytics tools, developer utilities, and more.
+A: Anything that combines AI with the Uniswap ecosystem. Trading bots, analytics tools, developer utilities, and more. All projects should integrate the Uniswap Trading API.
 
 **Q: How do I submit?**
 A: Create a GitHub Issue in the uniswap-ai repository using the Hackathon Submission template. Include your project description, repo link, and team info.

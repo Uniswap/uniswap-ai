@@ -27,8 +27,7 @@ body:
       options:
         - DeFi Automation
         - Developer Tooling
-        - Social/Community
-        - Other
+        - Community and Social
     validations:
       required: true
 

@@ -58,7 +58,7 @@ export function parseSubmission(issue: GitHubIssue): HackathonProject {
 
   const projectName = sections.get('Project Name') ?? title;
   const description = sections.get('Description') ?? body;
-  const category = sections.get('Category') ?? 'Other';
+  const category = sections.get('Category') ?? 'DeFi Automation';
   const teamMembersRaw = sections.get('Team Members') ?? '';
   const repoUrl = sections.get('GitHub Repository') ?? '';
   const demoUrlRaw = sections.get('Demo URL') ?? '';

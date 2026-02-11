@@ -38,37 +38,28 @@ function PersonIcon() {
 export function About() {
   return (
     <section className={styles.section}>
-      <h2 className={styles.sectionTitle}>About the Hackathon</h2>
+      <h2 className={styles.sectionTitle}>Guiding Principles</h2>
       <div className={styles.aboutGrid}>
         <div className={styles.aboutCardPink}>
           <div className={styles.aboutIconPink}>
-            <SparkleIcon />
+            <GlobeIcon />
           </div>
-          <h3>AI + DeFi</h3>
-          <p>
-            Explore the intersection of artificial intelligence and decentralized finance. Build
-            tools that leverage AI to improve the Uniswap ecosystem.
-          </p>
+          <h3>Open by Default</h3>
+          <p>All projects are open source, creating a shared foundation for builders.</p>
         </div>
         <div className={styles.aboutCardBlue}>
           <div className={styles.aboutIconBlue}>
-            <GlobeIcon />
+            <SparkleIcon />
           </div>
-          <h3>Open Source</h3>
-          <p>
-            All submissions must be open source. Share your innovations with the community and
-            contribute to the growing Uniswap developer ecosystem.
-          </p>
+          <h3>Built for What's Next</h3>
+          <p>Agentic AI tools and systems that expand what's possible on Uniswap.</p>
         </div>
         <div className={styles.aboutCardGreen}>
           <div className={styles.aboutIconGreen}>
             <PersonIcon />
           </div>
-          <h3>For Everyone</h3>
-          <p>
-            Whether you are a seasoned DeFi developer or just getting started with AI, there is a
-            place for you. Solo devs and teams welcome.
-          </p>
+          <h3>For Every Developer</h3>
+          <p>Humans, agents, devs, researchers and new builders are all welcome.</p>
         </div>
       </div>
     </section>

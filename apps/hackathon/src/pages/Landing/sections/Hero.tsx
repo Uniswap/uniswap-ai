@@ -121,6 +121,7 @@ export function Hero() {
         </h1>
         <p className={styles.heroTagline}>{HACKATHON_CONFIG.tagline}</p>
         <p className={styles.heroDescription}>{HACKATHON_CONFIG.description}</p>
+        <p className={styles.heroHighlight}>7 days. $50K in prizes.</p>
         <CountdownTimer targetDate={HACKATHON_CONFIG.deadline} />
 
         <div className={styles.pathToggle}>

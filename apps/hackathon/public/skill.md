@@ -12,7 +12,7 @@ metadata:
 
 # Uniswap AI Hackathon
 
-> Build the future of DeFi with AI
+> Software with agency.
 
 ## Overview
 
@@ -23,13 +23,13 @@ The **Uniswap AI Hackathon** invites developers, researchers, and builders to cr
 - **GitHub**: <https://github.com/uniswap/uniswap-ai>
 - **Submission URL**: <https://github.com/uniswap/uniswap-ai/issues/new?template=hackathon-submission.yml>
 
-Join developers, researchers, and builders to create innovative AI-powered tools for the Uniswap ecosystem.
+Build AI-native tools for the Uniswap ecosystem.
 
 ## Quick Start
 
 1. **Read this skill document** thoroughly to understand the hackathon rules, submission format, and available APIs.
-2. **Choose a submission category**: DeFi Automation, Developer Tooling, Social/Community, or Other.
-3. **Build an AI-powered project** that integrates with the Uniswap ecosystem.
+2. **Choose a submission category**: DeFi Automation, Developer Tooling, or Community and Social.
+3. **Build an AI-powered project** that integrates with the Uniswap API and ecosystem.
 4. **Push your project** to a public GitHub repository with clear documentation.
 5. **Submit via the GitHub Issues API** using the exact format described in the [Submitting Your Project](#submitting-your-project) section below.
 
@@ -55,12 +55,11 @@ All submissions must be received before the deadline. Late submissions will not 
 
 ## Submission Categories
 
-| Category          | Description                                                                            |
-| ----------------- | -------------------------------------------------------------------------------------- |
-| DeFi Automation   | Automated DeFi workflows, yield optimization, portfolio management, trading strategies |
-| Developer Tooling | Tools that help developers build on Uniswap more effectively                           |
-| Social/Community  | Community tools, social features, governance aids                                      |
-| Other             | Any other AI + Uniswap integration                                                     |
+| Category             | Description                                                                            |
+| -------------------- | -------------------------------------------------------------------------------------- |
+| DeFi Automation      | Automated DeFi workflows, yield optimization, portfolio management, trading strategies |
+| Developer Tooling    | Tools that help developers build on Uniswap more effectively                           |
+| Community and Social | Community tools, social features, governance aids                                      |
 
 ## What to Build
 
@@ -82,15 +81,12 @@ Build any project that combines **AI** with the **Uniswap ecosystem**. The Unisw
 - SDK wrappers that simplify Uniswap development
 - AI-powered documentation search and code generation
 
-**Social/Community**
+**Community and Social**
 
 - Governance proposal analysis and summarization tools
 - Community sentiment dashboards for Uniswap tokens
 - AI-powered forum moderation or content curation
 - Social trading features and copy-trading agents
-
-**Other**
-
 - Risk assessment and monitoring systems
 - Natural language interfaces for interacting with Uniswap
 - Cross-chain analytics combining Uniswap data with other protocols
@@ -168,15 +164,15 @@ TypeScript, React, Uniswap SDK
 
 ### Field Reference
 
-| Field             | Required | Format          | Notes                                                                               |
-| ----------------- | -------- | --------------- | ----------------------------------------------------------------------------------- |
-| Project Name      | Yes      | Plain text      | Used as display name on the hackathon website                                       |
-| Description       | Yes      | Markdown        | Supports full markdown formatting                                                   |
-| Category          | Yes      | Exact match     | Must be one of: `DeFi Automation`, `Developer Tooling`, `Social/Community`, `Other` |
-| Team Members      | Yes      | Comma-separated | GitHub usernames with `@` prefix (e.g., `@alice, @bob`)                             |
-| GitHub Repository | Yes      | Full URL        | Must be a public GitHub repository URL                                              |
-| Demo URL          | No       | Full URL        | Use `_No response_` or leave content empty if no demo                               |
-| Technical Stack   | Yes      | Comma-separated | Technologies used (e.g., `TypeScript, React, Uniswap SDK`)                          |
+| Field             | Required | Format          | Notes                                                                          |
+| ----------------- | -------- | --------------- | ------------------------------------------------------------------------------ |
+| Project Name      | Yes      | Plain text      | Used as display name on the hackathon website                                  |
+| Description       | Yes      | Markdown        | Supports full markdown formatting                                              |
+| Category          | Yes      | Exact match     | Must be one of: `DeFi Automation`, `Developer Tooling`, `Community and Social` |
+| Team Members      | Yes      | Comma-separated | GitHub usernames with `@` prefix (e.g., `@alice, @bob`)                        |
+| GitHub Repository | Yes      | Full URL        | Must be a public GitHub repository URL                                         |
+| Demo URL          | No       | Full URL        | Use `_No response_` or leave content empty if no demo                          |
+| Technical Stack   | Yes      | Comma-separated | Technologies used (e.g., `TypeScript, React, Uniswap SDK`)                     |
 
 ## Submission via GitHub API
 

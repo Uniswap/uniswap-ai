@@ -54,11 +54,18 @@
 .heroDescription {
   font-size: var(--font-size-lg);
   color: var(--color-neutral3);
-  margin-bottom: var(--space-8);
+  margin-bottom: var(--space-4);
   max-width: 600px;
   margin-left: auto;
   margin-right: auto;
   line-height: 1.6;
+}
+
+.heroHighlight {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--color-neutral1);
+  margin-bottom: var(--space-8);
 }
 
 .heroCtas {
@@ -197,6 +204,51 @@
   color: var(--color-neutral2);
   line-height: 1.7;
   font-size: var(--font-size-sm);
+}
+
+/* Prizes */
+.prizesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-4);
+  max-width: var(--max-width-narrow);
+  margin: 0 auto;
+}
+
+.prizeCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-8) var(--space-4);
+  border-radius: var(--radius-2xl);
+  background-color: var(--color-surface2);
+  transition: transform var(--duration-normal);
+}
+
+.prizeCard:hover {
+  transform: translateY(-3px);
+}
+
+.prizePlace {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-neutral3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.prizeAmount {
+  font-size: var(--font-size-2xl);
+  font-weight: 600;
+  color: var(--color-neutral1);
+}
+
+.prizesNote {
+  text-align: center;
+  margin-top: var(--space-6);
+  font-size: var(--font-size-sm);
+  color: var(--color-neutral3);
 }
 
 /* How to Participate */
