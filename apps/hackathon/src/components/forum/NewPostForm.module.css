@@ -35,19 +35,6 @@
   color: var(--color-neutral3);
 }
 
-.input:focus,
-.select:focus,
-.textarea:focus {
-  outline: none;
-  border-color: var(--color-neutral1);
-}
-
-.input::selection,
-.textarea::selection {
-  background-color: var(--color-neutral1);
-  color: var(--color-surface1);
-}
-
 .select {
   cursor: pointer;
   appearance: none;

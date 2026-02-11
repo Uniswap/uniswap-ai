@@ -26,16 +26,6 @@
   color: var(--color-neutral3);
 }
 
-.textarea:focus {
-  outline: none;
-  border-color: var(--color-neutral1);
-}
-
-.textarea::selection {
-  background-color: var(--color-neutral1);
-  color: var(--color-surface1);
-}
-
 .error {
   color: var(--color-critical);
   font-size: var(--font-size-xs);

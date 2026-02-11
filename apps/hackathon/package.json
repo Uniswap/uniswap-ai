@@ -9,10 +9,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@ai-sdk/openai": "3.0.26",
+    "@ai-sdk/react": "3.0.80",
     "@octokit/rest": "^22.0.0",
     "@supabase/supabase-js": "2.95.3",
     "@tanstack/react-query": "5.90.20",
     "@userback/widget": "0.3.12",
+    "ai": "6.0.78",
     "prismjs": "1.30.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",

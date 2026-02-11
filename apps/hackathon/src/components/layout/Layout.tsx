@@ -2,6 +2,7 @@ import { Outlet, useLocation } from 'react-router';
 import { Agentation } from 'agentation';
 import { Header } from './Header';
 import { Footer } from './Footer';
+import { ChatWidget } from '../chat/ChatWidget';
 import styles from './Layout.module.css';
 
 export function Layout() {
@@ -16,6 +17,7 @@ export function Layout() {
         </div>
       </main>
       <Footer />
+      <ChatWidget />
       {import.meta.env.DEV && <Agentation />}
     </div>
   );
