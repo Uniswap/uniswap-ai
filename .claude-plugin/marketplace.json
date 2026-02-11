@@ -14,6 +14,16 @@
       "name": "uniswap-hooks",
       "source": "./packages/plugins/uniswap-hooks",
       "description": "AI-powered assistance for creating Uniswap V4 hooks"
+    },
+    {
+      "name": "uniswap-viem",
+      "source": "./packages/plugins/uniswap-viem",
+      "description": "EVM blockchain integration using viem and wagmi"
+    },
+    {
+      "name": "uniswap-trading",
+      "source": "./packages/plugins/uniswap-trading",
+      "description": "Integrate Uniswap swaps via Trading API, Universal Router, and SDKs"
     }
   ]
 }

@@ -1,0 +1,29 @@
+{
+  "name": "@uniswap/uniswap-trading",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Integrate Uniswap swaps via Trading API, Universal Router SDK, or direct smart contract calls",
+  "author": "Uniswap Labs <ai-services@uniswap.org>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/uniswap/uniswap-ai.git",
+    "directory": "packages/plugins/uniswap-trading"
+  },
+  "keywords": [
+    "claude-code",
+    "plugin",
+    "uniswap",
+    "swap",
+    "defi",
+    "trading-api",
+    "universal-router",
+    "permit2"
+  ],
+  "files": [
+    ".claude-plugin",
+    "skills",
+    "agents",
+    "README.md"
+  ]
+}
