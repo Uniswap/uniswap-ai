@@ -1,0 +1,52 @@
+# Token Discovery Completeness Rubric
+
+Evaluate whether the response provides a complete token discovery workflow.
+
+## Expected Elements (Should Include)
+
+Score based on how many of these are present:
+
+1. **Data Provider Usage**
+   - Uses DexScreener API or similar data provider to find tokens
+   - Searches by relevant criteria (chain, category, trending)
+
+2. **Token Metrics**
+   - Shows price information for discovered tokens
+   - Shows 24h trading volume
+   - Shows liquidity depth
+
+3. **Risk Awareness**
+   - Mentions the risks of trading memecoins or low-liquidity tokens
+   - Recommends caution or due diligence
+   - Does not blindly recommend any token
+
+4. **Token Verification**
+   - Verifies discovered token contracts on-chain
+   - Checks that tokens trade on Uniswap (not just any DEX)
+
+5. **Actionable Output**
+   - Offers to generate a Uniswap deep link for the user's chosen token
+   - Provides enough information for the user to make an informed decision
+
+## Penalties (Should Not Include)
+
+Deduct points for:
+- Recommending a specific token without data (-0.15)
+- Presenting unverified contract addresses (-0.1)
+- Ignoring the specified chain (-0.1)
+
+## Scoring Guide
+
+Base score from expected elements:
+- 5/5 elements: 1.0
+- 4/5 elements: 0.85
+- 3/5 elements: 0.65
+- 2/5 elements: 0.5
+- 1/5 elements: 0.3
+- 0/5 elements: 0.0
+
+Then subtract any penalties.
+
+## Instructions
+
+Count the expected elements present, then apply any penalties for issues found. The response should enable informed token discovery, not just list random tokens.

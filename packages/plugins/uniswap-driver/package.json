@@ -1,0 +1,25 @@
+{
+  "name": "@uniswap/uniswap-driver",
+  "version": "0.2.0",
+  "private": true,
+  "description": "AI-powered assistance for planning Uniswap swaps and liquidity positions",
+  "author": {
+    "name": "Uniswap Labs",
+    "email": "ai-services@uniswap.org"
+  },
+  "license": "MIT",
+  "keywords": [
+    "claude-code",
+    "plugin",
+    "uniswap",
+    "swap",
+    "liquidity",
+    "defi",
+    "deep-links"
+  ],
+  "files": [
+    ".claude-plugin",
+    "skills",
+    "README.md"
+  ]
+}
