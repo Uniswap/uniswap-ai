@@ -8,11 +8,11 @@ This plugin provides comprehensive guidance for integrating Uniswap swaps into f
 
 ### Skills (./skills/)
 
-- **swap-integration**: Comprehensive guide for integrating Uniswap swaps via Trading API, Universal Router SDK, or direct smart contract calls. Covers frontend hooks, backend scripts, Solidity integrations, Permit2 patterns, and troubleshooting.
+- **swap-integration**: Comprehensive guide for integrating Uniswap swaps via Trading API, Universal Router SDK, or direct smart contract calls. Covers frontend hooks, backend scripts, Solidity integrations, Permit2 patterns, ERC-4337 smart account integration, L2 WETH handling, rate limiting, and troubleshooting.
 
 ### Agents (./agents/)
 
-- **swap-integration-expert**: Expert agent for complex Uniswap swap integration questions, Trading API debugging, Universal Router encoding, and Permit2 patterns.
+- **swap-integration-expert**: Expert agent for complex Uniswap swap integration questions, Trading API debugging, Universal Router encoding, Permit2 patterns, ERC-4337 smart account integration, and L2-specific patterns.
 
 ## File Structure
 
@@ -25,7 +25,9 @@ uniswap-trading/
 ├── skills/
 │   └── swap-integration/
 │       ├── swap-integration.md
-│       └── SKILL.md -> swap-integration.md
+│       ├── SKILL.md -> swap-integration.md
+│       └── references/
+│           └── advanced-patterns.md
 ├── project.json
 ├── package.json
 ├── CLAUDE.md

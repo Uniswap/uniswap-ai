@@ -21,7 +21,7 @@ Build a swap integration that handles native ETH as the input token, including t
 
 ## Constraints
 
-- Must use the Uniswap Trading API (https://trade-api.gateway.uniswap.org/v1)
+- Must use the Uniswap Trading API (<https://trade-api.gateway.uniswap.org/v1>)
 - Must correctly distinguish native ETH from ERC-20 token flows
 - Must handle the value field in the swap response (ETH swaps require msg.value)
 - Must not call /check_approval for native ETH inputs

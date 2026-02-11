@@ -19,7 +19,7 @@ Build a complete swap integration using the Uniswap Trading API.
 
 ## Constraints
 
-- Must use the Uniswap Trading API (https://trade-api.gateway.uniswap.org/v1)
+- Must use the Uniswap Trading API (<https://trade-api.gateway.uniswap.org/v1>)
 - Must handle the 3-step flow: check_approval -> quote -> swap
 - Must strip null permitData fields from the swap request
 - Must validate swap.data is non-empty before broadcasting

@@ -21,6 +21,8 @@ This plugin helps developers build:
 - **Custom Swap Frontends** - React/TypeScript applications with swap functionality
 - **Swap Scripts/Backends** - Node.js scripts for programmatic swaps
 - **Smart Contract Integrations** - Solidity contracts calling Universal Router
+- **Smart Account (ERC-4337) Swaps** - Automated swaps via delegated smart accounts
+- **L2 DeFi Applications** - Handling WETH unwrapping and chain-specific patterns
 
 ## Quick Start
 

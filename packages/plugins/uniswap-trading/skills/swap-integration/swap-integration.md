@@ -22,6 +22,18 @@ This skill assumes familiarity with viem basics (client setup, account managemen
 | Smart contract integration     | Universal Router direct calls |
 | Need full control over routing | Universal Router SDK          |
 
+### Routing Types Quick Reference
+
+| Type     | Description                             | Chains                             |
+| -------- | --------------------------------------- | ---------------------------------- |
+| CLASSIC  | Standard AMM swap through Uniswap pools | All supported chains               |
+| DUTCH_V2 | UniswapX Dutch auction V2               | Ethereum, Arbitrum, Base, Unichain |
+| PRIORITY | MEV-protected priority order            | Base, Unichain                     |
+| WRAP     | ETH to WETH conversion                  | All                                |
+| UNWRAP   | WETH to ETH conversion                  | All                                |
+
+See [Routing Types](#routing-types) for the complete list including DUTCH_V3, DUTCH_LIMIT, LIMIT_ORDER, BRIDGE, and QUICKROUTE.
+
 ## Integration Methods
 
 ### 1. Trading API (Recommended)
@@ -472,6 +484,29 @@ const tx = await wallet.sendTransaction({
 ## Permit2 Integration
 
 Permit2 enables signature-based token approvals instead of on-chain approve() calls.
+
+### Approval Target: Permit2 vs Legacy (Direct to Router)
+
+There are two approval paths. Choose based on your integration type:
+
+| Approach                    | Approve To       | Per-Swap Auth       | Best For                         |
+| --------------------------- | ---------------- | ------------------- | -------------------------------- |
+| **Permit2** (recommended)   | Permit2 contract | EIP-712 signature   | Frontends with user interaction  |
+| **Legacy** (direct approve) | Universal Router | None (pre-approved) | Backend services, smart accounts |
+
+**Permit2 flow** (frontend with user signing):
+
+1. User approves token to Permit2 contract (one-time)
+2. Each swap: user signs an EIP-712 permit message
+3. Universal Router uses the signature to transfer tokens via Permit2
+
+**Legacy flow** (backend services, ERC-4337 smart accounts):
+
+1. Approve token directly to the Universal Router address (one-time)
+2. Each swap: no additional authorization needed
+3. Simpler for automated systems that cannot sign EIP-712 messages
+
+Use the Trading API's `/check_approval` endpoint — it returns the correct approval target based on the routing type.
 
 ### How It Works
 
@@ -1009,6 +1044,122 @@ contract SwapIntegration {
 
 ---
 
+## Advanced Patterns
+
+### Smart Account Integration (ERC-4337)
+
+Execute Trading API swaps through ERC-4337 smart accounts with delegation. The pattern:
+
+1. Get swap calldata from Trading API (standard 3-step flow)
+2. Wrap the calldata in a delegation redemption execution
+3. Submit via bundler as a UserOperation
+
+```typescript
+// After getting swap calldata from Trading API:
+const { to, data, value } = swapResponse.swap;
+
+// Wrap in delegation execution
+const execution = {
+  target: to, // Universal Router
+  callData: data,
+  value: BigInt(value),
+};
+
+// Submit via bundler
+const userOpHash = await bundlerClient.sendUserOperation({
+  account: delegateSmartAccount,
+  calls: [
+    {
+      to: delegationManagerAddress,
+      data: encodeFunctionData({
+        abi: delegationManagerAbi,
+        functionName: 'redeemDelegations',
+        args: [[[signedDelegation]], [0], [[execution]]],
+      }),
+      value: execution.value,
+    },
+  ],
+});
+```
+
+**Key considerations**:
+
+- Use legacy approvals (direct to Universal Router) instead of Permit2 for smart accounts — see [Approval Target](#approval-target-permit2-vs-legacy-direct-to-router)
+- Add 20-30% gas buffer for bundler gas estimation
+- Handle bundler-specific error codes separately from standard transaction errors
+
+See [Advanced Patterns Reference](./references/advanced-patterns.md#smart-account-integration-erc-4337) for the complete implementation with types and error handling.
+
+### WETH Handling on L2s
+
+On L2 chains (Base, Optimism, Arbitrum), swaps outputting ETH may deliver WETH instead of native ETH. Always check and unwrap after swaps:
+
+```typescript
+import { parseAbi, type Address } from 'viem';
+
+const WETH_ABI = parseAbi([
+  'function balanceOf(address) view returns (uint256)',
+  'function withdraw(uint256)',
+]);
+
+const WETH_ADDRESSES: Record<number, Address> = {
+  1: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
+  10: '0x4200000000000000000000000000000000000006',
+  8453: '0x4200000000000000000000000000000000000006',
+  42161: '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1',
+};
+
+// After swap completes on an L2:
+const wethAddress = WETH_ADDRESSES[chainId];
+if (wethAddress) {
+  const wethBalance = await publicClient.readContract({
+    address: wethAddress,
+    abi: WETH_ABI,
+    functionName: 'balanceOf',
+    args: [accountAddress],
+  });
+
+  if (wethBalance > 0n) {
+    const hash = await walletClient.writeContract({
+      address: wethAddress,
+      abi: WETH_ABI,
+      functionName: 'withdraw',
+      args: [wethBalance],
+    });
+    await publicClient.waitForTransactionReceipt({ hash });
+  }
+}
+```
+
+See [Advanced Patterns Reference](./references/advanced-patterns.md#weth-handling-on-l2s) for chain-specific WETH addresses and integration details.
+
+### Rate Limiting
+
+The Trading API enforces rate limits (~10 requests/second per endpoint). For batch operations:
+
+- Add **100-200ms delays** between sequential API calls
+- Implement **exponential backoff with jitter** on 429 responses
+- **Cache approval results** — approvals rarely change between calls
+
+```typescript
+// Exponential backoff for 429 responses
+async function fetchWithRetry(url: string, init: RequestInit, maxRetries = 5): Promise<Response> {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const response = await fetch(url, init);
+    if (response.status !== 429 && response.status < 500) return response;
+    if (attempt === maxRetries) throw new Error(`Failed after ${maxRetries} retries`);
+
+    const delay = Math.min(200 * Math.pow(2, attempt) + Math.random() * 100, 10000);
+    await new Promise((resolve) => setTimeout(resolve, delay));
+  }
+  throw new Error('Unreachable');
+}
+```
+
+See [Advanced Patterns Reference](./references/advanced-patterns.md#rate-limiting-best-practices) for batch operation patterns and full retry implementation.
+
+---
+
 ## Key Contract Addresses
 
 ### Universal Router (V4)
@@ -1047,16 +1198,18 @@ For testnet addresses, see [Uniswap V4 Deployments](https://docs.uniswap.org/con
 
 ### Common Issues
 
-| Issue                                               | Solution                                                         |
-| --------------------------------------------------- | ---------------------------------------------------------------- |
-| "Insufficient allowance"                            | Call /check_approval first and submit approval tx                |
-| "Quote expired"                                     | Increase deadline or re-fetch quote                              |
-| "Slippage exceeded"                                 | Increase slippageTolerance or retry                              |
-| "Insufficient liquidity"                            | Try smaller amount or different route                            |
-| **"Buffer is not defined"**                         | Add Buffer polyfill (see Critical Implementation Notes)          |
-| **On-chain revert with empty data**                 | Validate `swap.data` is non-empty hex before broadcasting        |
-| **"permitData must be of type object"**             | Strip `permitData: null` from request - omit field entirely      |
-| **"quote does not match any of the allowed types"** | Don't wrap quote in `{quote: ...}` - spread it into request body |
+| Issue                                               | Solution                                                                                                  |
+| --------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| "Insufficient allowance"                            | Call /check_approval first and submit approval tx                                                         |
+| "Quote expired"                                     | Increase deadline or re-fetch quote                                                                       |
+| "Slippage exceeded"                                 | Increase slippageTolerance or retry                                                                       |
+| "Insufficient liquidity"                            | Try smaller amount or different route                                                                     |
+| **"Buffer is not defined"**                         | Add Buffer polyfill (see Critical Implementation Notes)                                                   |
+| **On-chain revert with empty data**                 | Validate `swap.data` is non-empty hex before broadcasting                                                 |
+| **"permitData must be of type object"**             | Strip `permitData: null` from request - omit field entirely                                               |
+| **"quote does not match any of the allowed types"** | Don't wrap quote in `{quote: ...}` - spread it into request body                                          |
+| **Received WETH instead of ETH on L2**              | Check and unwrap WETH after swap (see [WETH Handling on L2s](#weth-handling-on-l2s))                      |
+| **429 Too Many Requests**                           | Implement exponential backoff and add delays between batch requests (see [Rate Limiting](#rate-limiting)) |
 
 ### API Validation Errors (400)
 
