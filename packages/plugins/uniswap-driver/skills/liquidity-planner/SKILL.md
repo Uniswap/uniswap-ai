@@ -88,6 +88,15 @@ Resolve token symbols to addresses. See `../../references/chains.md` for common 
 
 For unknown tokens, use web search and verify on-chain.
 
+### Input Validation (Required Before Any Shell Command)
+
+Before interpolating user-provided values into any shell command, validate all inputs:
+
+- **Token addresses** MUST match: `^0x[a-fA-F0-9]{40}$`
+- **Chain/network names** MUST be from the allowed list in `../../references/chains.md`
+- **Amounts** MUST be valid decimal numbers (match: `^[0-9]+\.?[0-9]*$`)
+- **Reject** any input containing shell metacharacters (`;`, `|`, `$`, `` ` ``, `&`, `(`, `)`, `>`, `<`, `\`)
+
 ### Step 3: Discover Available Pools
 
 Before fetching metrics, verify the pool exists and discover available fee tiers.
@@ -96,6 +105,7 @@ Before fetching metrics, verify the pool exists and discover available fee tiers
 
 ```bash
 # Get all Uniswap pools for a token (replace {network} and {address})
+# IMPORTANT: Validate address matches ^0x[a-fA-F0-9]{40}$ and network is from allowed list
 curl -s "https://api.dexscreener.com/token-pairs/v1/{network}/{address}" | \
   jq '[.[] | select(.dexId == "uniswap")] | map({
     pairAddress,
@@ -464,10 +474,10 @@ All Uniswap-supported chains - see `references/position-types.md` for version av
 
 ### URL Encoding
 
-JSON parameters must be URL-encoded. In the deep link:
+JSON parameters in deep links should have **only double quotes encoded** (`"` → `%22`). Do NOT encode braces `{}`, colons `:`, or commas `,`.
 
 ```text
-?priceRange=%7B%22fullRange%22%3Atrue%7D
+?priceRangeState={%22fullRange%22:true}
 ```
 
 Decodes to:
@@ -475,3 +485,5 @@ Decodes to:
 ```json
 { "fullRange": true }
 ```
+
+> **Why?** The Uniswap interface expects JSON-like parameter structure. Full URL encoding of braces and colons breaks parsing. Only quotes need encoding to avoid URL syntax conflicts.

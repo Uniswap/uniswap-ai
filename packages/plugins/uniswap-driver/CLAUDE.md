@@ -44,6 +44,8 @@ Base URL: `https://app.uniswap.org/positions/create`
 
 **URL Encoding**: Only encode quotes (`"` → `%22`). Do NOT encode `{}`, `:`, or `,`.
 
+> **Why?** The Uniswap interface expects JSON-like parameter structure in the URL. Full URL encoding of braces and colons breaks parsing. Only quotes need encoding to avoid URL syntax conflicts.
+
 ### Chain Names for URLs
 
 | Chain     | URL Parameter |
@@ -97,18 +99,22 @@ Example output:
 uniswap-driver/
 ├── .claude-plugin/
 │   └── plugin.json
+├── references/
+│   └── chains.md                    # Shared chain config
 ├── skills/
 │   ├── swap-planner/
 │   │   ├── SKILL.md
 │   │   └── references/
-│   │       └── chains.md
+│   │       └── data-providers.md
 │   └── liquidity-planner/
 │       ├── SKILL.md
 │       └── references/
+│           ├── data-providers.md
 │           └── position-types.md
 ├── project.json
 ├── package.json
 ├── CLAUDE.md
+├── AGENTS.md -> CLAUDE.md           # Symlink for agent-agnostic access
 └── README.md
 ```
 

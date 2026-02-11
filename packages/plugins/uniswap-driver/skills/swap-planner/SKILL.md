@@ -219,13 +219,23 @@ For unknown tokens, use web search to find the contract address, then verify on-
 
 ### Step 3: Verify Token Contracts (Basic)
 
+**Input Validation (Required Before Any Shell Command):**
+
+Before interpolating user-provided values into any shell command, validate all inputs:
+
+- **Token addresses** MUST match: `^0x[a-fA-F0-9]{40}$`
+- **Chain/network names** MUST be from the allowed list in `../../references/chains.md`
+- **Amounts** MUST be valid decimal numbers (match: `^[0-9]+\.?[0-9]*$`)
+- **Reject** any input containing shell metacharacters (`;`, `|`, `$`, `` ` ``, `&`, `(`, `)`, `>`, `<`, `\`)
+
 Verify token contracts exist on-chain using curl (RPC call):
 
 ```bash
 # Check if address is a contract using eth_getCode
-curl -s -X POST <rpc_url> \
+# IMPORTANT: Validate token_address matches ^0x[a-fA-F0-9]{40}$ before use
+curl -s -X POST "$rpc_url" \
   -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","method":"eth_getCode","params":["<token_address>","latest"],"id":1}' \
+  -d "$(jq -n --arg addr "$token_address" '{"jsonrpc":"2.0","method":"eth_getCode","params":[$addr,"latest"],"id":1}')" \
   | jq -r '.result'
 ```
 
@@ -234,7 +244,8 @@ If the result is `0x` or empty, the address is not a valid contract.
 **Alternative with cast** (optional, requires [Foundry](https://book.getfoundry.sh/)):
 
 ```bash
-cast code <token_address> --rpc-url <rpc_url>
+# Validate token_address matches ^0x[a-fA-F0-9]{40}$ before use
+cast code "$token_address" --rpc-url "$rpc_url"
 ```
 
 **Note:** The curl/RPC method above is preferred for broader compatibility. Only use `cast` if already available in the environment.
