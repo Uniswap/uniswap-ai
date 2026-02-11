@@ -209,7 +209,7 @@
 /* Prizes */
 .prizesGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: var(--space-4);
   max-width: var(--max-width-narrow);
   margin: 0 auto;
@@ -499,6 +499,10 @@
     height: 300px;
   }
 
+  .prizesGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
   .faqQuestion {
     min-height: 48px;
   }
@@ -550,6 +554,10 @@
 
   .copyButton {
     align-self: flex-end;
+  }
+
+  .prizesGrid {
+    grid-template-columns: 1fr;
   }
 
   .commandText {
