@@ -1,0 +1,17 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["./evals/framework/types.ts"],
+  "out": "./docs/api",
+  "plugin": ["typedoc-plugin-markdown"],
+  "outputFileStrategy": "modules",
+  "hideBreadcrumbs": true,
+  "hidePageHeader": true,
+  "useCodeBlocks": true,
+  "expandObjects": true,
+  "parametersFormat": "table",
+  "entryFileName": "index",
+  "readme": "none",
+  "name": "Uniswap AI API Reference",
+  "excludePrivate": true,
+  "excludeInternal": true
+}

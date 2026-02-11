@@ -13,9 +13,7 @@ const { readFileSync } = require('fs');
 const { join } = require('path');
 
 // Get required npm version from package.json
-const packageJson = JSON.parse(
-  readFileSync(join(__dirname, '..', 'package.json'), 'utf8')
-);
+const packageJson = JSON.parse(readFileSync(join(__dirname, '..', 'package.json'), 'utf8'));
 const requiredNpmVersion = packageJson.engines?.npm;
 
 if (requiredNpmVersion) {
@@ -35,8 +33,8 @@ if (requiredNpmVersion) {
 
 // Install lefthook if available
 try {
-  // Check if lefthook is installed
-  execSync('npx lefthook --version', { stdio: 'ignore' });
+  // Check if lefthook is installed (lefthook uses 'version' not '--version')
+  execSync('npx lefthook version', { stdio: 'ignore' });
 
   // Install git hooks
   console.log('Installing lefthook git hooks...');

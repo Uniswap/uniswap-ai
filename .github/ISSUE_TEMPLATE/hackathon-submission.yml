@@ -1,0 +1,67 @@
+name: 'Hackathon Submission'
+description: 'Submit your project for the Uniswap AI Hackathon'
+title: '[SUBMISSION] '
+labels: ['hackathon-submission']
+body:
+  - type: input
+    id: project_name
+    attributes:
+      label: 'Project Name'
+      placeholder: 'My Awesome Project'
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 'Description'
+      description: 'Describe your project. Markdown is supported.'
+      placeholder: 'What does your project do? What problem does it solve?'
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: 'Category'
+      options:
+        - DeFi Automation
+        - Developer Tooling
+        - Social/Community
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: team_members
+    attributes:
+      label: 'Team Members'
+      description: 'Comma-separated GitHub usernames'
+      placeholder: '@username1, @username2'
+    validations:
+      required: true
+
+  - type: input
+    id: repo_url
+    attributes:
+      label: 'GitHub Repository'
+      description: "URL to your project's GitHub repository"
+      placeholder: 'https://github.com/org/repo'
+    validations:
+      required: true
+
+  - type: input
+    id: demo_url
+    attributes:
+      label: 'Demo URL'
+      description: 'Optional: URL to a live demo or video'
+      placeholder: 'https://example.com/demo'
+
+  - type: input
+    id: tech_stack
+    attributes:
+      label: 'Technical Stack'
+      description: 'Comma-separated technologies used'
+      placeholder: 'TypeScript, React, Uniswap SDK, ...'
+    validations:
+      required: true

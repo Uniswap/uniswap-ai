@@ -1,3 +1,8 @@
+---
+title: Installation
+order: 2
+---
+
 # Installation
 
 Multiple installation options are available depending on your use case.
@@ -10,7 +15,7 @@ The recommended approach for Claude Code users:
 
 ```bash
 # Add the marketplace
-/plugin marketplace add Uniswap/uniswap-ai
+/plugin marketplace add uniswap/uniswap-ai
 
 # Install specific plugin
 /plugin install uniswap-hooks
@@ -21,7 +26,7 @@ The recommended approach for Claude Code users:
 For development or testing:
 
 ```bash
-/plugin install https://github.com/Uniswap/uniswap-ai.git
+/plugin install https://github.com/uniswap/uniswap-ai.git
 ```
 
 ## npm Packages
@@ -45,7 +50,7 @@ To contribute or develop locally:
 
 ```bash
 # Clone the repository
-git clone https://github.com/Uniswap/uniswap-ai.git
+git clone https://github.com/uniswap/uniswap-ai.git
 cd uniswap-ai
 
 # Install dependencies

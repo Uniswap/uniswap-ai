@@ -101,6 +101,20 @@ jobs:
           npx nx format:check
           echo "✅ Formatting check passed"
 
+      - name: Install Vale
+        run: |
+          echo "Installing Vale..."
+          wget https://github.com/errata-ai/vale/releases/download/v3.0.7/vale_3.0.7_Linux_64-bit.tar.gz
+          tar -xvzf vale_3.0.7_Linux_64-bit.tar.gz
+          sudo mv vale /usr/local/bin/
+          vale --version
+
+      - name: Lint documentation prose (Vale)
+        continue-on-error: true
+        run: |
+          echo "Checking documentation prose quality..."
+          vale docs/ || echo "::warning::Vale found documentation issues - see output above"
+
       - name: Run tests
         run: |
           echo "Running tests..."
@@ -132,6 +146,28 @@ jobs:
         with:
           marketplace-path: '.claude-plugin/marketplace.json'
           fail-on-warning: 'false'
+
+  validate-skills:
+    name: Validate Skills Discovery
+    needs: check-automated
+    if: ${{ needs.check-automated.outputs.should_skip_ci != 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: bullfrogsec/bullfrog@1831f79cce8ad602eef14d2163873f27081ebfb3 # v0.8.4
+
+      - name: Checkout repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
+        with:
+          node-version: ${{ vars.NODE_VERSION }}
+
+      - name: Validate skills discovery
+        uses: ./.github/actions/validate-skills
 
   check-eval-coverage:
     name: Check Eval Coverage

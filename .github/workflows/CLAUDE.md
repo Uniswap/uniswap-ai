@@ -4,15 +4,16 @@ This directory contains GitHub Actions workflows for the uniswap-ai repository. 
 
 ## Workflow Overview
 
-| Workflow                                                           | Trigger              | Purpose                                 |
-| ------------------------------------------------------------------ | -------------------- | --------------------------------------- |
-| [PR Checks](#pr-checks)                                            | PR events            | Build, lint, test, and validate plugins |
-| [Check PR Title](#check-pr-title)                                  | PR events            | Enforce conventional commit format      |
-| [Claude Code Review](#claude-code-review)                          | PR events, comments  | AI-powered code review                  |
-| [Claude Docs Check](#claude-docs-check)                            | PR events            | Validate documentation updates          |
-| [Generate PR Title & Description](#generate-pr-title--description) | PR events            | Auto-generate PR metadata               |
-| [Deploy Documentation](#deploy-documentation)                      | Push to main         | Build and deploy VitePress docs         |
-| [Publish Packages](#publish-packages)                              | Push to main, manual | Publish npm packages                    |
+| Workflow                                                           | Trigger              | Purpose                                      |
+| ------------------------------------------------------------------ | -------------------- | -------------------------------------------- |
+| [PR Checks](#pr-checks)                                            | PR events            | Build, lint, test, validate plugins & skills |
+| [Check PR Title](#check-pr-title)                                  | PR events            | Enforce conventional commit format           |
+| [Claude Code Review](#claude-code-review)                          | PR events, comments  | AI-powered code review                       |
+| [Claude Docs Check](#claude-docs-check)                            | PR events            | Validate documentation updates               |
+| [Generate PR Title & Description](#generate-pr-title--description) | PR events            | Auto-generate PR metadata                    |
+| [Generate Documentation](#generate-documentation)                  | Push to main, manual | Auto-generate API documentation              |
+| [Deploy Documentation](#deploy-documentation)                      | Push to main         | Build and deploy VitePress docs              |
+| [Publish Packages](#publish-packages)                              | Push to main, manual | Publish npm packages                         |
 
 ## Workflows
 
@@ -25,8 +26,10 @@ Core CI validation workflow that runs on all PRs:
 - Validates `package-lock.json` is in sync
 - Builds affected packages with Nx
 - Runs linting and formatting checks
+- Lints documentation prose with Vale (non-blocking)
 - Executes test suites with coverage
 - Validates plugin configurations
+- Validates skills discovery (symlink integrity, frontmatter, sync with plugin.json)
 
 Automated PRs (dependabot, releases) may skip certain checks.
 
@@ -73,6 +76,19 @@ Auto-generates PR titles and descriptions using Claude:
 - Creates conventional commit-style titles based on repository patterns
 - Generates comprehensive descriptions from merged PR templates
 - Skips rebases using patch-ID detection
+
+### Generate Documentation
+
+**File:** `generate-docs.yml`
+
+Automatically generates API documentation using TypeDoc:
+
+- Triggers on push to main when TypeScript files in `evals/framework/**` or `packages/**` change
+- Also accepts `typedoc.json` changes and manual workflow_dispatch triggers
+- Runs `npx nx run docs:generate-api-docs` to generate documentation
+- Auto-commits generated docs to `docs/api/**` with `[skip ci]` flag
+- Skips execution if commit message starts with `docs: auto-generate` to prevent loops
+- Uses concurrency controls to prevent overlapping doc generation
 
 ### Deploy Documentation
 

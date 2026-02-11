@@ -1,3 +1,8 @@
+---
+title: Running Evals
+order: 3
+---
+
 # Running Evals
 
 Execute evaluations and interpret results.
@@ -19,7 +24,7 @@ npx nx run evals:run --suite=aggregator-hook-creator
 ### Run with Specific Model
 
 ```bash
-npx nx run evals:run --model=claude-opus-4
+npx nx run evals:run --model=claude-opus-4-5-20251101
 ```
 
 ### Dry Run
@@ -46,11 +51,11 @@ npx nx run evals:run --verbose
 🧪 Eval Suite: aggregator-hook-creator
 ============================================================
 Skill: aggregator-hook-creator
-Models: claude-sonnet-4, claude-opus-4
+Models: claude-sonnet-4-5-20250929, claude-opus-4-5-20251101
 Thresholds: acc≥0.80 comp≥0.85 safe≥1.00
 
-  basic-aggregator-hook (claude-sonnet-4)... ✅ [0.95/0.90/1.00] 2341ms
-  basic-aggregator-hook (claude-opus-4)... ✅ [0.98/0.95/1.00] 3521ms
+  basic-aggregator-hook (claude-sonnet-4-5-20250929)... ✅ [0.95/0.90/1.00] 2341ms
+  basic-aggregator-hook (claude-opus-4-5-20251101)... ✅ [0.98/0.95/1.00] 3521ms
 
 ------------------------------------------------------------
 📊 Suite Summary
@@ -75,13 +80,13 @@ Overall Result: ✅ PASSED
 
 ### Score Interpretation
 
-| Score Range | Interpretation |
-|-------------|----------------|
-| 0.95 - 1.00 | Excellent |
-| 0.85 - 0.94 | Good |
-| 0.70 - 0.84 | Acceptable |
+| Score Range | Interpretation    |
+| ----------- | ----------------- |
+| 0.95 - 1.00 | Excellent         |
+| 0.85 - 0.94 | Good              |
+| 0.70 - 0.84 | Acceptable        |
 | 0.50 - 0.69 | Needs improvement |
-| < 0.50 | Failing |
+| < 0.50      | Failing           |
 
 ## CI Integration
 
@@ -109,7 +114,7 @@ Compare performance across models:
 
 ```bash
 # Run against multiple models
-npx nx run evals:run --model=claude-sonnet-4,claude-opus-4,gpt-4
+npx nx run evals:run --model=claude-sonnet-4-5-20250929,claude-opus-4-5-20251101,gpt-4
 
 # Output comparison table
 npx nx run evals:run --format=comparison
@@ -129,13 +134,13 @@ npx nx run evals:run --suite=aggregator-hook-creator --save-outputs
 
 ### Common Failure Reasons
 
-| Symptom | Likely Cause |
-|---------|--------------|
-| Low accuracy | Requirements not met |
-| Low completeness | Missing elements |
-| Zero safety | Security vulnerability detected |
-| Timeout | Complex prompt, increase timeout |
-| Error | Invalid case configuration |
+| Symptom          | Likely Cause                     |
+| ---------------- | -------------------------------- |
+| Low accuracy     | Requirements not met             |
+| Low completeness | Missing elements                 |
+| Zero safety      | Security vulnerability detected  |
+| Timeout          | Complex prompt, increase timeout |
+| Error            | Invalid case configuration       |
 
 ## Output Formats
 
