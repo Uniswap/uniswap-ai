@@ -1,14 +1,19 @@
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
+@keyframes shimmer {
+  0% {
+    background-position: -400px 0;
   }
-  50% {
-    opacity: 0.4;
+  100% {
+    background-position: 400px 0;
   }
 }
 
 .skeleton {
-  background-color: var(--color-surface3);
-  animation: pulse 1.5s ease-in-out infinite;
+  background: linear-gradient(
+    90deg,
+    var(--color-surface3) 25%,
+    var(--color-surface2) 50%,
+    var(--color-surface3) 75%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
 }

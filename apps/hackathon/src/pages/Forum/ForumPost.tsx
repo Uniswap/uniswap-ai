@@ -43,16 +43,18 @@ export function ForumPost() {
   if (loading) {
     return (
       <div className={styles.container}>
-        <Skeleton height="32px" width="200px" />
-        <Skeleton height="48px" />
-        <Skeleton height="200px" />
+        <div className={styles.skeletonGroup}>
+          <Skeleton height="32px" width="200px" borderRadius="var(--radius-lg)" />
+          <Skeleton height="48px" borderRadius="var(--radius-lg)" />
+          <Skeleton height="200px" borderRadius="var(--radius-2xl)" />
+        </div>
       </div>
     );
   }
 
   if (notFound || !post) {
     return (
-      <div className={styles.container}>
+      <div className={`${styles.container} ${styles.fadeIn}`}>
         <div className={styles.notFound}>
           <h2>Post not found</h2>
           <p>This post may have been removed or the link is incorrect.</p>
@@ -65,7 +67,7 @@ export function ForumPost() {
   }
 
   return (
-    <div className={styles.container}>
+    <div className={`${styles.container} ${styles.fadeIn}`}>
       <Link to="/forum" className={styles.breadcrumb}>
         &larr; Back to Forum
       </Link>
