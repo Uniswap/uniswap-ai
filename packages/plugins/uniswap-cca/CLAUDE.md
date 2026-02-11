@@ -26,11 +26,9 @@ uniswap-cca/
 │   └── plugin.json
 ├── skills/
 │   ├── configurator/
-│   │   ├── configurator.md          # Configuration skill
-│   │   └── SKILL.md -> configurator.md
+│   │   └── SKILL.md
 │   └── deployer/
-│       ├── deployer.md              # Deployment skill
-│       └── SKILL.md -> deployer.md
+│       └── SKILL.md
 ├── mcp-server/
 │   ├── README.md
 │   └── supply-schedule/

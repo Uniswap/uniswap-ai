@@ -24,8 +24,7 @@ uniswap-trading/
 │   └── swap-integration-expert.md
 ├── skills/
 │   └── swap-integration/
-│       ├── swap-integration.md
-│       ├── SKILL.md -> swap-integration.md
+│       ├── SKILL.md
 │       └── references/
 │           └── advanced-patterns.md
 ├── project.json

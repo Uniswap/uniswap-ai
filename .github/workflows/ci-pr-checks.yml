@@ -148,7 +148,7 @@ jobs:
           fail-on-warning: 'false'
 
   validate-skills:
-    name: Validate Skills Discovery
+    name: Validate Skills
     needs: check-automated
     if: ${{ needs.check-automated.outputs.should_skip_ci != 'true' }}
     runs-on: ubuntu-latest
@@ -166,7 +166,7 @@ jobs:
         with:
           node-version: ${{ vars.NODE_VERSION }}
 
-      - name: Validate skills discovery
+      - name: Validate skills
         uses: ./.github/actions/validate-skills
 
   check-eval-coverage:
