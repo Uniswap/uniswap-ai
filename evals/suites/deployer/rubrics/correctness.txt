@@ -1,0 +1,47 @@
+# Correctness Rubric for CCA Deployer
+
+Evaluate whether the generated deployment guide correctly implements CCA deployment steps.
+
+## Required Elements (Must Include)
+
+Score based on how many of these are correctly implemented:
+
+1. **Factory Contract Details**
+   - Correct factory address: 0xCCccCcCAE7503Cac057829BF2811De42E16e0bD5
+   - Correct function signature: initializeDistribution(address, uint256, bytes, bytes32)
+   - Mentions CREATE2 for deterministic addresses
+
+2. **Deployment Script**
+   - Valid Foundry script structure (forge script command)
+   - Correct parameters passed to initializeDistribution
+   - Includes RPC URL and signing method
+
+3. **Post-Deployment Steps**
+   - Mentions onTokensReceived() call requirement
+   - Provides cast send command for post-deployment
+   - Includes contract verification steps
+
+4. **Safety and Disclaimers**
+   - Educational disclaimer present and prominent
+   - Recommends testnet deployment first
+   - Includes private key security guidance
+   - Mentions audit requirements
+
+5. **Validation Checklist**
+   - Block sequence validation (start < end <= claim)
+   - Floor price alignment check
+   - Supply schedule verification
+   - Address format validation
+
+## Scoring Guide
+
+- 5/5 elements correct: 1.0
+- 4/5 elements correct: 0.8
+- 3/5 elements correct: 0.6
+- 2/5 elements correct: 0.4
+- 1/5 elements correct: 0.2
+- 0/5 elements correct: 0.0
+
+## Instructions
+
+Count how many of the required elements are correctly implemented and provide the corresponding score.

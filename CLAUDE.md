@@ -71,6 +71,7 @@ uniswap-ai/
 │   └── templates/           # Templates for new suites
 ├── packages/
 │   ├── plugins/             # Claude Code plugins
+│   │   ├── uniswap-cca/     # Continuous Clearing Auction (CCA) plugin
 │   │   ├── uniswap-hooks/   # Uniswap V4 hooks plugin
 │   │   ├── uniswap-viem/    # EVM blockchain integration (viem/wagmi)
 │   │   └── uniswap-trading/ # Uniswap swap integration

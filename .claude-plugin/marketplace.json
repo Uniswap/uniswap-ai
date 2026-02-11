@@ -17,6 +17,11 @@
       "skills": ["./skills/v4-security-foundations", "./skills/aggregator-hook-creator"]
     },
     {
+      "name": "uniswap-cca",
+      "source": "./packages/plugins/uniswap-cca",
+      "description": "Configure and deploy Continuous Clearing Auction (CCA) smart contracts for token distribution"
+    },
+    {
       "name": "uniswap-viem",
       "source": "./packages/plugins/uniswap-viem",
       "description": "EVM blockchain integration using viem and wagmi",

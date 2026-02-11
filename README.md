@@ -39,6 +39,19 @@ npm install @uniswap-ai/core
 
 ## Plugins
 
+### uniswap-cca
+
+Configuration and deployment tools for Continuous Clearing Auction (CCA) smart contracts.
+
+**Skills:**
+
+- `configurator` - Interactive bulk form configuration for CCA auction parameters
+- `deployer` - Deployment guidance with safety checks and Factory integration
+
+**MCP Servers:**
+
+- `cca-supply-schedule` - Generate and encode supply schedules using normalized convex curves
+
 ### uniswap-hooks
 
 AI-powered assistance for creating Uniswap V4 hooks.
