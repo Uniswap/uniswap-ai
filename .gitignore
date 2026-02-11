@@ -40,6 +40,9 @@ coverage/
 docs/.vitepress/dist/
 docs/.vitepress/cache/
 
+# Claude Code output
+.claude-output/
+
 # Temporary files
 tmp/
 temp/
