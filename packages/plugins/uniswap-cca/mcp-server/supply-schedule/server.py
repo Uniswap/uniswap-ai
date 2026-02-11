@@ -339,11 +339,6 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
             final_block_mps = schedule[-1]["mps"]
             final_block_percentage = (final_block_mps / TOTAL_TARGET) * 100
 
-            # Calculate main supply (excluding prebid and final block)
-            main_phases = [item for item in schedule if item != schedule[0] or input_data.prebid_blocks == 0]
-            if main_phases:
-                main_phases = main_phases[:-1]  # Exclude final block
-
             # Format output
             output = {
                 "schedule": schedule,

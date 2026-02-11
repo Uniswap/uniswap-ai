@@ -1,6 +1,6 @@
 # Uniswap CCA MCP Servers
 
-This directory contains MCP (Model Context Protocol) servers for the uniswap-builder plugin.
+This directory contains MCP (Model Context Protocol) servers for the uniswap-cca plugin.
 
 ## Structure
 

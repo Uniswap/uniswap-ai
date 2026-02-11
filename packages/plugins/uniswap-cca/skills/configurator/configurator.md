@@ -176,13 +176,11 @@ python3 server.py
 
 Once the MCP server is running, use the collected `auctionBlocks` and `prebidBlocks` to call the MCP tool:
 
-```typescript
-cca -
-  supply -
-  schedule__generate_supply_schedule({
-    auction_blocks: auctionBlocks,
-    prebid_blocks: prebidBlocks,
-  });
+```text
+cca-supply-schedule__generate_supply_schedule({
+  auction_blocks: auctionBlocks,
+  prebid_blocks: prebidBlocks,
+})
 ```
 
 If the MCP tool is unavailable, use the fallback Python algorithm directly (see Supply Schedule Configuration section).

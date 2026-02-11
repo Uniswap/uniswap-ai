@@ -16,6 +16,12 @@
       "options": {
         "command": "node scripts/validate-plugin.cjs packages/plugins/uniswap-cca"
       }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "cd packages/plugins/uniswap-cca/mcp-server/supply-schedule && python3 test_logic.py"
+      }
     }
   }
 }
