@@ -13,6 +13,13 @@ This repository provides Claude Code plugins and AI development tools specifical
 
 ## Installation
 
+### Skills CLI (Any Agent)
+
+```bash
+# Install all Uniswap AI skills via the skills.sh CLI
+npx skills add Uniswap/uniswap-ai
+```
+
 ### Claude Code Marketplace
 
 ```bash
@@ -38,6 +45,7 @@ AI-powered assistance for creating Uniswap V4 hooks.
 
 **Skills:**
 
+- `v4-security-foundations` - Security-first guide for V4 hook development
 - `aggregator-hook-creator` - Create custom aggregator hooks for Uniswap V4
 
 ## Agent-Agnostic Design
@@ -81,6 +89,7 @@ npx nx run-many -t lint
 
 ```text
 uniswap-ai/
+├── skills/              # Root-level skill symlinks (skills.sh discovery)
 ├── packages/
 │   ├── plugins/         # Claude Code plugins
 │   ├── sdk/             # TypeScript SDKs
