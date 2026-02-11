@@ -1,0 +1,40 @@
+# Swap Planning Correctness Rubric
+
+Evaluate whether the response correctly plans a Uniswap token swap.
+
+## Required Elements (Must Include)
+
+Score based on how many of these are correctly implemented:
+
+1. **Token Identification**
+   - Correctly identifies input and output tokens
+   - Uses or verifies correct contract addresses for the target chain
+
+2. **Chain Awareness**
+   - Specifies the correct chain/network
+   - Uses chain-appropriate token addresses (not cross-chain addresses)
+
+3. **Deep Link Generation**
+   - Generates a valid Uniswap deep link (app.uniswap.org)
+   - Includes correct query parameters (inputCurrency, outputCurrency, chain)
+
+4. **Token Verification**
+   - Verifies token contracts using DexScreener, on-chain data, or similar
+   - Does not blindly trust user-provided addresses without verification
+
+5. **User Communication**
+   - Presents the swap plan clearly before generating the link
+   - Displays the deep link prominently so the user can access it
+
+## Scoring Guide
+
+- 5/5 elements correct: 1.0
+- 4/5 elements correct: 0.85
+- 3/5 elements correct: 0.7
+- 2/5 elements correct: 0.5
+- 1/5 elements correct: 0.25
+- 0/5 elements correct: 0.0
+
+## Instructions
+
+Evaluate the response for technical accuracy in planning the swap. The deep link must be properly formatted and target the correct chain. Token addresses must be verified, not assumed.

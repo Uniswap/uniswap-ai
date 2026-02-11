@@ -1,0 +1,94 @@
+# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
+description: 'Liquidity Planner Skill Evaluation'
+
+# Prompts (eval cases)
+prompts:
+  - id: file://cases/basic-v3-position.md
+    label: basic-v3
+  - id: file://cases/v4-position.md
+    label: v4-position
+  - id: file://cases/full-range-v2.md
+    label: full-range-v2
+
+# Provider configuration
+providers:
+  - id: anthropic:claude-sonnet-4-5-20250929
+    config:
+      temperature: 0
+      max_tokens: 4096
+
+# Default test configuration applied to all tests
+defaultTest:
+  options:
+    timeout: 120000 # 2 minutes per case
+
+# Test cases with specific assertions
+tests:
+  # Test 1: Basic V3 Concentrated Liquidity Position
+  - prompts: ['basic-v3']
+    vars:
+      scenario: basic-v3-position
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/position-correctness.txt
+        threshold: 0.85
+        provider: anthropic:claude-sonnet-4-5-20250929
+
+      # Must include deep link
+      - type: contains-any
+        value:
+          - 'app.uniswap.org'
+          - 'uniswap.org'
+      # Must reference price range
+      - type: contains-any
+        value:
+          - 'price range'
+          - 'tick'
+          - 'min price'
+          - 'max price'
+          - 'minPrice'
+          - 'maxPrice'
+
+  # Test 2: V4 Liquidity Position
+  - prompts: ['v4-position']
+    vars:
+      scenario: v4-position
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/position-correctness.txt
+        threshold: 0.8
+        provider: anthropic:claude-sonnet-4-5-20250929
+
+      # Must mention V4-specific concepts
+      - type: contains-any
+        value:
+          - 'V4'
+          - 'v4'
+          - 'hook'
+      # Must include deep link
+      - type: contains-any
+        value:
+          - 'app.uniswap.org'
+          - 'uniswap.org'
+
+  # Test 3: Full Range V2 Position
+  - prompts: ['full-range-v2']
+    vars:
+      scenario: full-range-v2
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/lp-completeness.txt
+        threshold: 0.8
+        provider: anthropic:claude-sonnet-4-5-20250929
+
+      # Must mention V2 or full range
+      - type: contains-any
+        value:
+          - 'V2'
+          - 'v2'
+          - 'full range'
+      # Must include deep link
+      - type: contains-any
+        value:
+          - 'app.uniswap.org'
+          - 'uniswap.org'
