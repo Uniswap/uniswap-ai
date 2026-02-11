@@ -59,7 +59,7 @@ runs:
           if [ ! -e "$entry" ]; then
             echo "::error::Broken symlink: $SKILLS_DIR/$SKILL_NAME"
             TOTAL_ERRORS=$((TOTAL_ERRORS + 1))
-            RESULTS="$RESULTS| $SKILL_NAME | Broken symlink | - | - |\n"
+            RESULTS="$RESULTS| $SKILL_NAME | Broken symlink | - | - | - | - |\n"
             continue
           fi
 
@@ -74,16 +74,20 @@ runs:
           if [ -z "$SKILL_MD" ]; then
             echo "::error::No SKILL.md or $SKILL_NAME.md found in $SKILLS_DIR/$SKILL_NAME"
             TOTAL_ERRORS=$((TOTAL_ERRORS + 1))
-            RESULTS="$RESULTS| $SKILL_NAME | Missing skill file | - | - |\n"
+            RESULTS="$RESULTS| $SKILL_NAME | Missing skill file | - | - | - | - |\n"
             continue
           fi
 
           # --- Check 3: Frontmatter validation ---
-          # Extract YAML frontmatter (between --- markers)
-          FRONTMATTER=$(sed -n '/^---$/,/^---$/p' "$SKILL_MD" | sed '1d;$d')
+          # Extract YAML frontmatter (between first and second --- markers)
+          # Uses awk to stop at second marker, avoiding false matches from
+          # horizontal rules or --- in code blocks later in the document
+          FRONTMATTER=$(awk '/^---$/{if(++c==2) exit} c==1' "$SKILL_MD")
 
           FM_NAME=$(echo "$FRONTMATTER" | grep '^name:' | head -1 | sed 's/^name:[[:space:]]*//' || true)
           FM_DESC=$(echo "$FRONTMATTER" | grep '^description:' | head -1 | sed 's/^description:[[:space:]]*//' || true)
+          FM_LICENSE=$(echo "$FRONTMATTER" | grep '^license:' | head -1 | sed 's/^license:[[:space:]]*//' || true)
+          FM_AUTHOR=$(echo "$FRONTMATTER" | grep '^[[:space:]]*author:' | head -1 | sed 's/^[[:space:]]*author:[[:space:]]*//' || true)
 
           HAS_NAME="yes"
           HAS_DESC="yes"
@@ -100,6 +104,16 @@ runs:
             HAS_DESC="no"
           fi
 
+          if [ -z "$FM_LICENSE" ]; then
+            echo "::error::Missing 'license' in frontmatter: $SKILL_MD"
+            TOTAL_ERRORS=$((TOTAL_ERRORS + 1))
+          fi
+
+          if [ -z "$FM_AUTHOR" ]; then
+            echo "::error::Missing 'metadata.author' in frontmatter: $SKILL_MD"
+            TOTAL_ERRORS=$((TOTAL_ERRORS + 1))
+          fi
+
           # --- Check 4: Name consistency ---
           if [ -n "$FM_NAME" ] && [ "$FM_NAME" != "$SKILL_NAME" ]; then
             echo "::error::Frontmatter name '$FM_NAME' does not match directory name '$SKILL_NAME'"
@@ -107,20 +121,44 @@ runs:
           fi
 
           # --- Check 5: Prerequisite existence ---
-          PREREQ=$(echo "$FRONTMATTER" | grep 'prerequisites:' | head -1 | sed 's/.*prerequisites:[[:space:]]*//' || true)
-          if [ -n "$PREREQ" ] && [ ! -d "$SKILLS_DIR/$PREREQ" ]; then
-            echo "::error::Prerequisite '$PREREQ' not found in $SKILLS_DIR for skill $SKILL_NAME"
-            TOTAL_ERRORS=$((TOTAL_ERRORS + 1))
+          # Handles both single-value (prerequisites: skill-a) and YAML list syntax:
+          #   prerequisites:
+          #     - skill-a
+          #     - skill-b
+          PREREQ_LINE=$(echo "$FRONTMATTER" | grep 'prerequisites:' | head -1 | sed 's/.*prerequisites:[[:space:]]*//' || true)
+          PREREQS=""
+          if [ -n "$PREREQ_LINE" ]; then
+            # Single-value syntax: prerequisites: skill-name
+            PREREQS="$PREREQ_LINE"
+          else
+            # Check for YAML list syntax (lines starting with "  - " after prerequisites:)
+            PREREQS=$(echo "$FRONTMATTER" | awk '
+              /prerequisites:/ { found=1; next }
+              found && /^[[:space:]]*- / { gsub(/^[[:space:]]*- /, ""); print; next }
+              found { exit }
+            ' || true)
           fi
 
-          if [ "$HAS_NAME" = "yes" ] && [ "$HAS_DESC" = "yes" ]; then
+          for prereq in $PREREQS; do
+            if [ -n "$prereq" ] && [ ! -d "$SKILLS_DIR/$prereq" ]; then
+              echo "::error::Prerequisite '$prereq' not found in $SKILLS_DIR for skill $SKILL_NAME"
+              TOTAL_ERRORS=$((TOTAL_ERRORS + 1))
+            fi
+          done
+
+          HAS_LICENSE="yes"
+          HAS_AUTHOR="yes"
+          [ -z "$FM_LICENSE" ] && HAS_LICENSE="no"
+          [ -z "$FM_AUTHOR" ] && HAS_AUTHOR="no"
+
+          if [ "$HAS_NAME" = "yes" ] && [ "$HAS_DESC" = "yes" ] && [ "$HAS_LICENSE" = "yes" ] && [ "$HAS_AUTHOR" = "yes" ]; then
             STATUS="Passed"
           else
             STATUS="Failed"
           fi
-          RESULTS="$RESULTS| $SKILL_NAME | $STATUS | $HAS_NAME | $HAS_DESC |\n"
+          RESULTS="$RESULTS| $SKILL_NAME | $STATUS | $HAS_NAME | $HAS_DESC | $HAS_LICENSE | $HAS_AUTHOR |\n"
 
-          echo "  $SKILL_NAME: name=$HAS_NAME desc=$HAS_DESC"
+          echo "  $SKILL_NAME: name=$HAS_NAME desc=$HAS_DESC license=$HAS_LICENSE author=$HAS_AUTHOR"
         done
 
         # --- Check 6: Sync check with plugin.json ---
@@ -163,8 +201,8 @@ runs:
         {
           echo "## Skills Discovery Validation"
           echo ""
-          echo "| Skill | Status | Has Name | Has Description |"
-          echo "|-------|--------|----------|-----------------|"
+          echo "| Skill | Status | Has Name | Has Description | Has License | Has Author |"
+          echo "|-------|--------|----------|-----------------|-------------|------------|"
           echo -e "$RESULTS"
           echo ""
           echo "**Summary:** $TOTAL_SKILLS skill(s) checked, $TOTAL_ERRORS error(s)"

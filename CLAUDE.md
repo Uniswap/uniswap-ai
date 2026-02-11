@@ -239,7 +239,12 @@ Skills are discoverable via the [skills.sh CLI](https://skills.sh) (`npx skills 
 
 1. The skills CLI checks root-level `skills/` directory first
 2. Each entry in `skills/` is a symlink to the canonical skill in `packages/plugins/uniswap-hooks/skills/`
-3. The `.claude-plugin/marketplace.json` also lists skills for fallback discovery
+3. The `.claude-plugin/marketplace.json` also lists skills via `./skills/` symlink paths for fallback discovery
+
+> **Why symlinks?** The `marketplace.json` references `./skills/` symlink paths (not canonical
+> `./packages/plugins/...` paths) because Claude Code requires skills to be in a root-relative
+> `skills/` directory for slash command auto-population. This is a workaround for
+> [claude-code#17271](https://github.com/anthropics/claude-code/issues/17271).
 
 ### Adding New Skills
 
@@ -258,7 +263,7 @@ Merging to main = publishing to skills.sh. The CLI fetches directly from the rep
 The `validate-skills` job in PR checks enforces:
 
 - Symlink integrity (every root `skills/` entry resolves)
-- Required frontmatter fields (`name`, `description`)
+- Required frontmatter fields (`name`, `description`, `license`, `metadata.author`)
 - Name consistency (frontmatter name matches directory name)
 - Sync between `plugin.json` skills array and root `skills/` directory
 - Prerequisite existence (referenced skills exist)
