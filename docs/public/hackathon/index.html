@@ -422,35 +422,48 @@
       .faq-item:first-child {
         border-top: 1px solid var(--border);
       }
-      details summary {
+      .faq-trigger {
+        width: 100%;
         padding: 20px 0;
         font-size: 15px;
         font-weight: 600;
         cursor: pointer;
-        list-style: none;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        background: none;
+        border: none;
+        color: var(--text);
+        text-align: left;
+        font-family: inherit;
       }
-      details summary::-webkit-details-marker {
-        display: none;
-      }
-      details summary::after {
+      .faq-trigger::after {
         content: '\276F';
         font-size: 13px;
         color: var(--text-dim);
-        transition: transform 0.2s;
+        transition: transform 0.25s ease;
         flex-shrink: 0;
         margin-left: 16px;
       }
-      details[open] summary::after {
+      .faq-item.open .faq-trigger::after {
         transform: rotate(90deg);
       }
-      details .faq-answer {
-        padding: 0 0 20px;
+      .faq-answer-wrapper {
+        display: grid;
+        grid-template-rows: 0fr;
+        transition: grid-template-rows 0.25s ease;
+      }
+      .faq-item.open .faq-answer-wrapper {
+        grid-template-rows: 1fr;
+      }
+      .faq-answer {
+        overflow: hidden;
         font-size: 14px;
         color: var(--text-dim);
         line-height: 1.6;
+      }
+      .faq-answer p {
+        padding: 0 0 20px;
       }
 
       /* ---- CTA ---- */
@@ -795,67 +808,78 @@
       <h2 class="section-title">Frequently Asked Questions</h2>
       <div class="faq-list">
         <div class="faq-item">
-          <details>
-            <summary>Who can participate?</summary>
+          <button class="faq-trigger" aria-expanded="false">Who can participate?</button>
+          <div class="faq-answer-wrapper">
             <div class="faq-answer">
-              Anyone! Whether you are a solo developer or a team of up to 5, all skill levels are
-              welcome.
+              <p>
+                Anyone! Whether you are a solo developer or a team of up to 5, all skill levels are
+                welcome.
+              </p>
             </div>
-          </details>
+          </div>
         </div>
         <div class="faq-item">
-          <details>
-            <summary>What can I build?</summary>
+          <button class="faq-trigger" aria-expanded="false">What can I build?</button>
+          <div class="faq-answer-wrapper">
             <div class="faq-answer">
-              Anything that combines AI with the Uniswap ecosystem. Trading bots, analytics tools,
-              developer utilities, and more. All projects should integrate the Uniswap Trading API.
+              <p>
+                Anything that combines AI with the Uniswap ecosystem. Trading bots, analytics tools,
+                developer utilities, and more. All projects should integrate the Uniswap Trading
+                API.
+              </p>
             </div>
-          </details>
+          </div>
         </div>
         <div class="faq-item">
-          <details>
-            <summary>How do I submit?</summary>
+          <button class="faq-trigger" aria-expanded="false">How do I submit?</button>
+          <div class="faq-answer-wrapper">
             <div class="faq-answer">
-              Create a GitHub Issue in the uniswap-ai repository using the Hackathon Submission
-              template. Include your project description, repo link, team info, and team lead
-              contact details (first name, last name, email) for KYC purposes.
+              <p>
+                Create a GitHub Issue in the uniswap-ai repository using the Hackathon Submission
+                template. Include your project description, repo link, team info, and team lead
+                contact details (first name, last name, email) for KYC purposes.
+              </p>
             </div>
-          </details>
+          </div>
         </div>
         <div class="faq-item">
-          <details>
-            <summary>When is the deadline?</summary>
+          <button class="faq-trigger" aria-expanded="false">When is the deadline?</button>
+          <div class="faq-answer-wrapper">
             <div class="faq-answer">
-              All submissions must be made by February 20, 2026 at 11:59 PM UTC.
+              <p>All submissions must be made by February 20, 2026 at 11:59 PM UTC.</p>
             </div>
-          </details>
+          </div>
         </div>
         <div class="faq-item">
-          <details>
-            <summary>Do I need to use Uniswap SDKs?</summary>
+          <button class="faq-trigger" aria-expanded="false">Do I need to use Uniswap SDKs?</button>
+          <div class="faq-answer-wrapper">
             <div class="faq-answer">
-              Not required, but encouraged. Projects that integrate with Uniswap protocols, SDKs, or
-              data will be given preference.
+              <p>
+                Not required, but encouraged. Projects that integrate with Uniswap protocols, SDKs,
+                or data will be given preference.
+              </p>
             </div>
-          </details>
+          </div>
         </div>
         <div class="faq-item">
-          <details>
-            <summary>Is there a team size limit?</summary>
+          <button class="faq-trigger" aria-expanded="false">Is there a team size limit?</button>
+          <div class="faq-answer-wrapper">
             <div class="faq-answer">
-              Teams can have up to 5 members. Solo participants are also welcome.
+              <p>Teams can have up to 5 members. Solo participants are also welcome.</p>
             </div>
-          </details>
+          </div>
         </div>
         <div class="faq-item">
-          <details>
-            <summary>How are prizes distributed?</summary>
+          <button class="faq-trigger" aria-expanded="false">How are prizes distributed?</button>
+          <div class="faq-answer-wrapper">
             <div class="faq-answer">
-              Prizes are paid in USDC. Winners must complete KYC verification. When submitting your
-              project, you will need to provide the team lead's first name, last name, and email
-              address. Wallet address is optional at submission time.
+              <p>
+                Prizes are paid in USDC. Winners must complete KYC verification. When submitting
+                your project, you will need to provide the team lead's first name, last name, and
+                email address. Wallet address is optional at submission time.
+              </p>
             </div>
-          </details>
+          </div>
         </div>
       </div>
     </section>
@@ -918,6 +942,15 @@
               btn.innerHTML = orig;
             }, 2000);
           });
+        });
+      });
+
+      document.querySelectorAll('.faq-trigger').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var item = btn.parentElement;
+          var isOpen = item.classList.contains('open');
+          item.classList.toggle('open');
+          btn.setAttribute('aria-expanded', !isOpen);
         });
       });
     </script>
