@@ -20,7 +20,8 @@
     "test": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "cd packages/plugins/uniswap-cca/mcp-server/supply-schedule && python3 test_logic.py"
+        "command": "python3 test_logic.py",
+        "cwd": "packages/plugins/uniswap-cca/mcp-server/supply-schedule"
       }
     }
   }
