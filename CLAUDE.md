@@ -72,7 +72,9 @@ uniswap-ai/
 ├── packages/
 │   ├── plugins/             # Claude Code plugins
 │   │   ├── uniswap-cca/     # Continuous Clearing Auction (CCA) plugin
-│   │   └── uniswap-hooks/   # Uniswap V4 hooks plugin
+│   │   ├── uniswap-hooks/   # Uniswap V4 hooks plugin
+│   │   ├── uniswap-viem/    # EVM blockchain integration (viem/wagmi)
+│   │   └── uniswap-trading/ # Uniswap swap integration
 │   ├── sdk/                 # TypeScript SDKs
 │   ├── prompts/             # Shared prompt templates
 │   └── utils/               # Shared utilities

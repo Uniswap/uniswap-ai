@@ -1,0 +1,51 @@
+# Completeness Rubric for viem-integration
+
+Evaluate whether the generated output includes all expected elements and follows viem best practices.
+
+## Expected Elements (Should Include)
+
+Score based on how many of these are present:
+
+1. **Documentation**
+   - Has inline comments explaining key steps
+   - Includes package installation instructions if applicable
+
+2. **Error Handling**
+   - Handles RPC errors gracefully
+   - Handles contract revert cases
+
+3. **Best Practices**
+   - Uses simulateContract before writeContract
+   - Uses parseAbi or typed ABIs instead of raw ABI arrays
+   - Uses chain constants from viem/chains
+
+4. **Maintainability**
+   - Code is readable and well-structured
+   - Variables are descriptively named
+
+5. **Completeness**
+   - Includes all necessary imports
+   - Example is runnable without modification (except env vars)
+
+## Penalties (Should Not Include)
+
+Deduct points for:
+- Using deprecated viem APIs (-0.1)
+- Hardcoding private keys in code (-0.15)
+- Missing await on async operations (-0.1)
+
+## Scoring Guide
+
+Base score from expected elements:
+- 5/5 elements: 1.0
+- 4/5 elements: 0.85
+- 3/5 elements: 0.65
+- 2/5 elements: 0.5
+- 1/5 elements: 0.3
+- 0/5 elements: 0.0
+
+Then subtract any penalties.
+
+## Instructions
+
+Count the expected elements present, then apply any penalties for issues found. Provide the final score.

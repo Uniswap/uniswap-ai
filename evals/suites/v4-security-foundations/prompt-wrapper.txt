@@ -1,0 +1,19 @@
+You are an AI assistant with the following skill loaded. Follow its instructions precisely when responding to the user's request.
+
+{{ skill_content }}
+
+---
+
+Reference material:
+
+{{ vulnerabilities_catalog }}
+
+---
+
+{{ audit_checklist }}
+
+---
+
+User request:
+
+{{ case_content }}

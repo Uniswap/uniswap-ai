@@ -1,0 +1,45 @@
+# Correctness Rubric for swap-integration
+
+Evaluate whether the generated output correctly implements Uniswap swap integration.
+
+## Required Elements (Must Include)
+
+Score based on how many of these are correctly implemented:
+
+1. **Trading API Flow**
+   - Uses correct base URL (https://trade-api.gateway.uniswap.org/v1)
+   - Implements 3-step flow: check_approval -> quote -> swap
+   - Includes x-api-key header
+
+2. **Request Body Format**
+   - Quote response is spread into swap request (not wrapped in {quote: ...})
+   - Null permitData fields are stripped before sending
+   - Permit2 signature and permitData are both present or both absent
+
+3. **Response Validation**
+   - Validates swap.data is non-empty hex before broadcasting
+   - Validates addresses in response
+   - Checks quote freshness considerations
+
+4. **Token Handling**
+   - Handles ERC-20 approval flow
+   - Distinguishes native ETH from ERC-20 tokens
+   - Uses correct amount formatting
+
+5. **Error Handling**
+   - Handles API error responses (400, 401, 404, 429, 500)
+   - Provides meaningful error messages
+   - Includes retry logic or backoff for transient failures
+
+## Scoring Guide
+
+- 5/5 elements correct: 1.0
+- 4/5 elements correct: 0.8
+- 3/5 elements correct: 0.6
+- 2/5 elements correct: 0.4
+- 1/5 elements correct: 0.2
+- 0/5 elements correct: 0.0
+
+## Instructions
+
+Count how many of the required elements are correctly implemented and provide the corresponding score.

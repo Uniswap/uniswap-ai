@@ -1,0 +1,29 @@
+{
+  "name": "@uniswap/uniswap-viem",
+  "version": "0.0.1",
+  "private": true,
+  "description": "EVM blockchain integration using viem and wagmi - client setup, reading/writing data, accounts, contract interactions, and React hooks",
+  "author": "Uniswap Labs <ai-services@uniswap.org>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/uniswap/uniswap-ai.git",
+    "directory": "packages/plugins/uniswap-viem"
+  },
+  "keywords": [
+    "claude-code",
+    "plugin",
+    "viem",
+    "wagmi",
+    "evm",
+    "blockchain",
+    "ethereum",
+    "web3"
+  ],
+  "files": [
+    ".claude-plugin",
+    "skills",
+    "agents",
+    "README.md"
+  ]
+}

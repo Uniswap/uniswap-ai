@@ -10,10 +10,10 @@ inputs:
     description: 'Path to the root skills directory'
     required: false
     default: 'skills'
-  plugin-json-path:
-    description: 'Path to the plugin.json file containing the skills array'
+  plugins-dir:
+    description: 'Path to the plugins directory (scans all plugin.json files within)'
     required: false
-    default: 'packages/plugins/uniswap-hooks/.claude-plugin/plugin.json'
+    default: 'packages/plugins'
 
 outputs:
   skill-count:
@@ -28,7 +28,7 @@ runs:
       shell: bash
       env:
         SKILLS_DIR: ${{ inputs.skills-dir }}
-        PLUGIN_JSON_PATH: ${{ inputs.plugin-json-path }}
+        PLUGINS_DIR: ${{ inputs.plugins-dir }}
       run: |
         echo "=== Validating Skills Discovery ==="
         echo ""
@@ -161,32 +161,43 @@ runs:
           echo "  $SKILL_NAME: name=$HAS_NAME desc=$HAS_DESC license=$HAS_LICENSE author=$HAS_AUTHOR"
         done
 
-        # --- Check 6: Sync check with plugin.json ---
+        # --- Check 6: Sync check with all plugin.json files ---
         echo ""
-        echo "--- Checking sync with plugin.json ---"
-        if [ -f "$PLUGIN_JSON_PATH" ]; then
-          # Get skills from plugin.json
-          PLUGIN_SKILLS=$(jq -r '.skills[]?' "$PLUGIN_JSON_PATH" 2>/dev/null | sed 's|.*/||')
+        echo "--- Checking sync with plugin.json files ---"
+        ALL_PLUGIN_SKILLS=""
+        PLUGIN_JSON_COUNT=0
+        for pjson in "$PLUGINS_DIR"/*/.claude-plugin/plugin.json; do
+          [ -f "$pjson" ] || continue
+          PLUGIN_JSON_COUNT=$((PLUGIN_JSON_COUNT + 1))
+          PLUGIN_NAME=$(basename "$(dirname "$(dirname "$pjson")")")
+          SKILLS_FROM_PLUGIN=$(jq -r '.skills[]?' "$pjson" 2>/dev/null | sed 's|.*/||')
+          echo "  Found plugin: $PLUGIN_NAME ($(echo "$SKILLS_FROM_PLUGIN" | grep -c . || true) skills)"
 
           # Check each plugin.json skill has a root symlink
-          for ps in $PLUGIN_SKILLS; do
+          for ps in $SKILLS_FROM_PLUGIN; do
+            [ -z "$ps" ] && continue
+            ALL_PLUGIN_SKILLS="$ALL_PLUGIN_SKILLS$ps"$'\n'
             if [ ! -d "$SKILLS_DIR/$ps" ]; then
-              echo "::error::Skill '$ps' listed in plugin.json but missing from $SKILLS_DIR/"
+              echo "::error::Skill '$ps' listed in $PLUGIN_NAME/plugin.json but missing from $SKILLS_DIR/"
               TOTAL_ERRORS=$((TOTAL_ERRORS + 1))
             fi
           done
+        done
 
-          # Check each root symlink is in plugin.json
+        if [ "$PLUGIN_JSON_COUNT" -eq 0 ]; then
+          echo "::warning::No plugin.json files found in $PLUGINS_DIR — skipping sync check"
+        else
+          echo "  Scanned $PLUGIN_JSON_COUNT plugin(s)"
+
+          # Check each root symlink is in at least one plugin.json
           for entry in "$SKILLS_DIR"/*/; do
             [ -d "$entry" ] || continue
             SKILL_NAME=$(basename "$entry")
-            if ! echo "$PLUGIN_SKILLS" | grep -qx "$SKILL_NAME"; then
-              echo "::error::Skill '$SKILL_NAME' in $SKILLS_DIR/ but not listed in plugin.json"
+            if ! echo "$ALL_PLUGIN_SKILLS" | grep -qx "$SKILL_NAME"; then
+              echo "::error::Skill '$SKILL_NAME' in $SKILLS_DIR/ but not listed in any plugin.json"
               TOTAL_ERRORS=$((TOTAL_ERRORS + 1))
             fi
           done
-        else
-          echo "::warning::plugin.json not found at $PLUGIN_JSON_PATH — skipping sync check"
         fi
 
         echo ""

@@ -37,6 +37,7 @@ evals/
 ├── suites/
 │   └── <skill-name>/
 │       ├── promptfoo.yaml  # Suite-specific config
+│       ├── prompt-wrapper.txt  # Optional prompt template (see Prompt Template Pattern)
 │       ├── cases/          # Test case prompts (markdown)
 │       │   └── *.md
 │       └── rubrics/        # Skill-specific rubrics (must use .txt)
@@ -96,6 +97,55 @@ nx run evals:setup
 # Then run evals
 nx run evals:eval --suite=aggregator-hook-creator
 ```
+
+## Prompt Template Pattern
+
+For skills that rely on loaded context (SKILL.md, reference materials), use a **prompt template** to inject that context into each test case. This mirrors how skills are loaded in production and produces more realistic evals.
+
+### How It Works
+
+1. Create a `prompt-wrapper.txt` template with Promptfoo `{{ variable }}` placeholders
+2. Set shared variables (skill content, references) in `defaultTest.vars`
+3. Override per-test variables (e.g., `case_content`) in each test entry
+
+```yaml
+# promptfoo.yaml
+prompts:
+  - file://prompt-wrapper.txt
+
+defaultTest:
+  vars:
+    skill_content: file://../../../packages/plugins/<plugin>/skills/<skill>/SKILL.md
+    reference_doc: file://../../../packages/plugins/<plugin>/skills/<skill>/references/doc.md
+
+tests:
+  - vars:
+      case_content: file://cases/my-test-case.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/my-rubric.txt
+```
+
+```text
+# prompt-wrapper.txt
+You are an AI assistant with the following skill loaded.
+
+{{ skill_content }}
+
+---
+
+Reference material:
+
+{{ reference_doc }}
+
+---
+
+User request:
+
+{{ case_content }}
+```
+
+See `suites/v4-security-foundations/` for a working example.
 
 ## Writing Evals
 

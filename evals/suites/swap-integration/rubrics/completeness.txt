@@ -1,0 +1,56 @@
+# Completeness Rubric for swap-integration
+
+Evaluate whether the generated output includes all expected elements for a Uniswap swap integration.
+
+## Expected Elements (Should Include)
+
+Score based on how many of these are present:
+
+1. **Documentation**
+   - Comments explaining the 3-step Trading API flow
+   - Notes about common pitfalls (null permitData, request body format)
+
+2. **Error Handling**
+   - Handles API errors with status code checking
+   - Validates swap response before broadcasting
+   - Handles token approval failures
+
+3. **Best Practices**
+   - Strips null fields from quote response before swap request
+   - Validates swap.data is non-empty hex
+   - Checks both permitData and signature are present/absent together
+   - Uses typed request/response interfaces
+
+4. **Maintainability**
+   - Code is organized into clear helper functions
+   - API URL and configuration are extracted as constants
+   - Logic flow follows the check_approval -> quote -> swap pattern
+
+5. **Completeness**
+   - Includes all necessary imports
+   - Covers the full swap lifecycle
+   - Handles both Permit2 and non-Permit2 flows
+
+## Penalties (Should Not Include)
+
+Deduct points for:
+- Wrapping quote in {quote: quoteResponse} (-0.15)
+- Including permitData: null in swap request (-0.15)
+- Missing pre-broadcast validation (-0.1)
+- Hardcoding API keys in code (-0.1)
+
+## Scoring Guide
+
+Base score from expected elements:
+- 5/5 elements: 1.0
+- 4/5 elements: 0.85
+- 3/5 elements: 0.65
+- 2/5 elements: 0.5
+- 1/5 elements: 0.3
+- 0/5 elements: 0.0
+
+Then subtract any penalties.
+
+## Instructions
+
+Count the expected elements present, then apply any penalties for issues found. Provide the final score.

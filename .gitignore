@@ -58,3 +58,8 @@ bun.lock
 
 # Python
 **/__pycache__/**
+
+# Devenv
+.devenv/
+devenv.lock
+.npm-global/
