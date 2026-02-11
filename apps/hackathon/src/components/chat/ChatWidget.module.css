@@ -14,9 +14,7 @@
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  transition:
-    background var(--duration-fast),
-    transform var(--duration-fast);
+  transition: background var(--duration-fast), transform var(--duration-fast);
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
 }
 
@@ -241,9 +239,7 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition:
-    background var(--duration-fast),
-    opacity var(--duration-fast);
+  transition: background var(--duration-fast), opacity var(--duration-fast);
 }
 
 .sendButton:hover:not(:disabled) {

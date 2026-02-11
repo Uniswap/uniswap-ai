@@ -65,6 +65,13 @@ export async function fetchPosts(
   if (error) throw error;
 
   const posts = (data ?? []).map(mapPostRow);
+  const votedIds = await getUserVotedIds(
+    'post',
+    posts.map((p) => p.id)
+  );
+  for (const post of posts) {
+    post.hasUpvoted = votedIds.has(post.id);
+  }
   return sort === 'hot' ? sortPosts(posts, 'hot') : posts;
 }
 
@@ -83,7 +90,10 @@ export async function fetchPost(postId: string): Promise<ForumPost | null> {
     throw error;
   }
 
-  return mapPostRow(data);
+  const post = mapPostRow(data);
+  const votedIds = await getUserVotedIds('post', [post.id]);
+  post.hasUpvoted = votedIds.has(post.id);
+  return post;
 }
 
 export async function fetchComments(postId: string): Promise<ForumComment[]> {
@@ -98,7 +108,15 @@ export async function fetchComments(postId: string): Promise<ForumComment[]> {
 
   if (error) throw error;
 
-  return buildCommentTree((data ?? []).map(mapCommentRow));
+  const comments = (data ?? []).map(mapCommentRow);
+  const votedIds = await getUserVotedIds(
+    'comment',
+    comments.map((c) => c.id)
+  );
+  for (const comment of comments) {
+    comment.hasUpvoted = votedIds.has(comment.id);
+  }
+  return buildCommentTree(comments);
 }
 
 export async function createPost(input: CreatePostInput): Promise<ForumPost> {
@@ -177,6 +195,30 @@ export async function toggleVote(
     target_id: targetId,
   });
   return true; // added
+}
+
+// ---------------------------------------------------------------------------
+// Vote hydration
+// ---------------------------------------------------------------------------
+
+async function getUserVotedIds(
+  targetType: 'post' | 'comment',
+  targetIds: string[]
+): Promise<Set<string>> {
+  const supabase = getSupabaseClient();
+  if (!supabase || targetIds.length === 0) return new Set();
+
+  const { data: session } = await supabase.auth.getSession();
+  if (!session.session) return new Set();
+
+  const { data } = await supabase
+    .from('forum_votes')
+    .select('target_id')
+    .eq('user_id', session.session.user.id)
+    .eq('target_type', targetType)
+    .in('target_id', targetIds);
+
+  return new Set((data ?? []).map((row: { target_id: string }) => row.target_id));
 }
 
 // ---------------------------------------------------------------------------
