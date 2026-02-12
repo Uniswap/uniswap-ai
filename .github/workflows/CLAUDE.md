@@ -13,6 +13,7 @@ This directory contains GitHub Actions workflows for the uniswap-ai repository. 
 | [Generate PR Title & Description](#generate-pr-title--description) | PR events            | Auto-generate PR metadata                    |
 | [Generate Documentation](#generate-documentation)                  | Push to main, manual | Auto-generate API documentation              |
 | [Publish Packages](#publish-packages)                              | Push to main, manual | Publish npm packages                         |
+| [zizmor](#zizmor)                                                  | Push to main, PRs    | GitHub Actions security analysis             |
 
 ## Workflows
 
@@ -108,6 +109,16 @@ Handles npm package publishing:
 
 - **Auto mode** (push to main): Detects affected packages, publishes with `latest` tag
 - **Force mode** (manual): Publishes specified packages with `next` tag and prerelease versions
+
+### zizmor
+
+**File:** `zizmor.yml`
+
+Static security analysis for GitHub Actions workflows using [zizmor](https://github.com/zizmorcore/zizmor):
+
+- Runs on push to main and all PRs
+- Scans workflows for template injection, credential leakage, permission scope issues
+- Uploads results as SARIF to GitHub Security tab
 
 ## Required Secrets
 
