@@ -8,7 +8,7 @@ export default defineConfig({
   title: 'Uniswap AI',
   description: 'AI tools for building on the Uniswap protocol',
 
-  head: [['link', { rel: 'icon', href: '/favicon.ico' }]],
+  head: [['link', { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }]],
 
   themeConfig: {
     logo: '/logo.svg',

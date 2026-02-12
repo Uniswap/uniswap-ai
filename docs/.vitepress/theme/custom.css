@@ -1,0 +1,355 @@
+/**
+ * Uniswap Spore Design System — VitePress Theme Overrides
+ *
+ * Color tokens sourced from:
+ *   https://github.com/Uniswap/interface/blob/main/packages/ui/src/theme/color/colors.ts
+ *
+ * Typography tokens sourced from:
+ *   https://github.com/Uniswap/interface/blob/main/packages/ui/src/theme/fonts.ts
+ */
+
+/* ========================================================================
+   Typography
+   ======================================================================== */
+
+:root {
+  --vp-font-family-base: -apple-system, system-ui, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
+    Arial, sans-serif;
+  --vp-font-family-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Monaco, 'Cascadia Mono',
+    'Segoe UI Mono', 'Roboto Mono', 'Courier New', monospace;
+}
+
+/* ========================================================================
+   Light Theme (default)
+   ======================================================================== */
+
+:root {
+  /* Brand / Accent — Uniswap Pink */
+  --vp-c-brand-1: #ff37c7;
+  --vp-c-brand-2: #e500a5;
+  --vp-c-brand-3: #c2008a;
+  --vp-c-brand-soft: rgba(255, 55, 199, 0.1);
+
+  /* Default — alias to brand */
+  --vp-c-default-1: var(--vp-c-brand-1);
+  --vp-c-default-2: var(--vp-c-brand-2);
+  --vp-c-default-3: var(--vp-c-brand-3);
+  --vp-c-default-soft: var(--vp-c-brand-soft);
+
+  /* Backgrounds — Spore surfaces */
+  --vp-c-bg: #ffffff;
+  --vp-c-bg-alt: #f9f9f9;
+  --vp-c-bg-elv: #ffffff;
+  --vp-c-bg-soft: #f9f9f9;
+
+  /* Text — Spore neutrals */
+  --vp-c-text-1: #131313;
+  --vp-c-text-2: rgba(19, 19, 19, 0.63);
+  --vp-c-text-3: rgba(19, 19, 19, 0.35);
+
+  /* Borders / Dividers */
+  --vp-c-border: rgba(19, 19, 19, 0.12);
+  --vp-c-divider: rgba(19, 19, 19, 0.08);
+  --vp-c-gutter: #f9f9f9;
+
+  /* Tip — Uniswap accent */
+  --vp-c-tip-1: #ff37c7;
+  --vp-c-tip-2: rgba(255, 55, 199, 0.08);
+  --vp-c-tip-3: rgba(255, 55, 199, 0.12);
+  --vp-c-tip-soft: rgba(255, 55, 199, 0.06);
+
+  /* Warning */
+  --vp-c-warning-1: #996f01;
+  --vp-c-warning-2: rgba(153, 111, 1, 0.12);
+  --vp-c-warning-3: rgba(153, 111, 1, 0.16);
+  --vp-c-warning-soft: rgba(153, 111, 1, 0.06);
+
+  /* Danger / Critical */
+  --vp-c-danger-1: #e10f0f;
+  --vp-c-danger-2: rgba(225, 15, 15, 0.12);
+  --vp-c-danger-3: rgba(225, 15, 15, 0.16);
+  --vp-c-danger-soft: rgba(225, 15, 15, 0.06);
+
+  /* Success (used in custom containers) */
+  --vp-c-success: #0c8911;
+
+  /* Buttons — brand */
+  --vp-button-brand-border: transparent;
+  --vp-button-brand-text: #ffffff;
+  --vp-button-brand-bg: var(--vp-c-brand-1);
+  --vp-button-brand-hover-border: transparent;
+  --vp-button-brand-hover-text: #ffffff;
+  --vp-button-brand-hover-bg: var(--vp-c-brand-2);
+  --vp-button-brand-active-border: transparent;
+  --vp-button-brand-active-text: #ffffff;
+  --vp-button-brand-active-bg: var(--vp-c-brand-3);
+
+  /* Sidebar */
+  --vp-sidebar-bg-color: #ffffff;
+
+  /* Nav */
+  --vp-nav-bg-color: rgba(255, 255, 255, 0.85);
+}
+
+/* ========================================================================
+   Dark Theme
+   ======================================================================== */
+
+.dark {
+  /* Brand / Accent — consistent across themes */
+  --vp-c-brand-1: #ff37c7;
+  --vp-c-brand-2: #ff6dd6;
+  --vp-c-brand-3: #ff99e3;
+  --vp-c-brand-soft: rgba(255, 55, 199, 0.12);
+
+  /* Default — alias to brand */
+  --vp-c-default-1: var(--vp-c-brand-1);
+  --vp-c-default-2: var(--vp-c-brand-2);
+  --vp-c-default-3: var(--vp-c-brand-3);
+  --vp-c-default-soft: var(--vp-c-brand-soft);
+
+  /* Backgrounds — Spore dark surfaces */
+  --vp-c-bg: #131313;
+  --vp-c-bg-alt: #1f1f1f;
+  --vp-c-bg-elv: #1f1f1f;
+  --vp-c-bg-soft: #1f1f1f;
+
+  /* Text — Spore dark neutrals */
+  --vp-c-text-1: #ffffff;
+  --vp-c-text-2: rgba(255, 255, 255, 0.65);
+  --vp-c-text-3: rgba(255, 255, 255, 0.38);
+
+  /* Borders / Dividers */
+  --vp-c-border: rgba(255, 255, 255, 0.12);
+  --vp-c-divider: rgba(255, 255, 255, 0.08);
+  --vp-c-gutter: #1f1f1f;
+
+  /* Tip */
+  --vp-c-tip-1: #ff37c7;
+  --vp-c-tip-2: rgba(255, 55, 199, 0.12);
+  --vp-c-tip-3: rgba(255, 55, 199, 0.16);
+  --vp-c-tip-soft: rgba(255, 55, 199, 0.08);
+
+  /* Warning */
+  --vp-c-warning-1: #ffbf17;
+  --vp-c-warning-2: rgba(255, 191, 23, 0.12);
+  --vp-c-warning-3: rgba(255, 191, 23, 0.16);
+  --vp-c-warning-soft: rgba(255, 191, 23, 0.08);
+
+  /* Danger / Critical */
+  --vp-c-danger-1: #ff593c;
+  --vp-c-danger-2: rgba(255, 89, 60, 0.12);
+  --vp-c-danger-3: rgba(255, 89, 60, 0.16);
+  --vp-c-danger-soft: rgba(255, 89, 60, 0.08);
+
+  /* Success */
+  --vp-c-success: #21c95e;
+
+  /* Buttons — brand */
+  --vp-button-brand-border: transparent;
+  --vp-button-brand-text: #ffffff;
+  --vp-button-brand-bg: var(--vp-c-brand-1);
+  --vp-button-brand-hover-border: transparent;
+  --vp-button-brand-hover-text: #ffffff;
+  --vp-button-brand-hover-bg: var(--vp-c-brand-2);
+  --vp-button-brand-active-border: transparent;
+  --vp-button-brand-active-text: #ffffff;
+  --vp-button-brand-active-bg: var(--vp-c-brand-3);
+
+  /* Sidebar */
+  --vp-sidebar-bg-color: #131313;
+
+  /* Nav */
+  --vp-nav-bg-color: rgba(19, 19, 19, 0.85);
+}
+
+/* ========================================================================
+   Nav Bar
+   ======================================================================== */
+
+.VPNav .VPNavBar {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.VPNavBar .title {
+  font-weight: 535;
+}
+
+/* ========================================================================
+   Sidebar
+   ======================================================================== */
+
+.VPSidebar .group .VPSidebarItem .text {
+  font-weight: 485;
+}
+
+.VPSidebar .is-active > .item > .link > .text {
+  color: var(--vp-c-brand-1);
+  font-weight: 535;
+}
+
+/* ========================================================================
+   Buttons
+   ======================================================================== */
+
+.VPButton.brand {
+  background-color: var(--vp-c-brand-1);
+  border-color: var(--vp-c-brand-1);
+  border-radius: 16px;
+  font-weight: 535;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.VPButton.brand:hover {
+  background-color: var(--vp-c-brand-2);
+  border-color: var(--vp-c-brand-2);
+}
+
+.VPButton.alt {
+  border-radius: 16px;
+  font-weight: 535;
+  border-color: var(--vp-c-border);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.VPButton.alt:hover {
+  border-color: var(--vp-c-brand-1);
+  color: var(--vp-c-brand-1);
+}
+
+/* ========================================================================
+   Hero
+   ======================================================================== */
+
+.VPHero .VPImage {
+  border-radius: 24px;
+}
+
+.VPHero .name .clip {
+  background: linear-gradient(135deg, #ff37c7 0%, #e500a5 50%, #ff6dd6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ========================================================================
+   Content
+   ======================================================================== */
+
+.vp-doc a {
+  color: var(--vp-c-brand-2);
+  text-decoration: none;
+  font-weight: 485;
+  transition: color 0.2s ease;
+}
+
+.vp-doc a:hover {
+  color: var(--vp-c-brand-1);
+  text-decoration: underline;
+}
+
+.dark .vp-doc a {
+  color: var(--vp-c-brand-1);
+}
+
+.dark .vp-doc a:hover {
+  color: var(--vp-c-brand-2);
+}
+
+/* Code blocks */
+.vp-doc div[class*='language-'] {
+  border-radius: 12px;
+  border: 1px solid var(--vp-c-divider);
+}
+
+.vp-doc :not(pre) > code {
+  border-radius: 6px;
+  padding: 2px 6px;
+  background-color: var(--vp-c-bg-soft);
+  color: var(--vp-c-brand-2);
+  font-weight: 485;
+}
+
+.dark .vp-doc :not(pre) > code {
+  color: var(--vp-c-brand-1);
+}
+
+/* Tables */
+.vp-doc table {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.vp-doc tr {
+  border-color: var(--vp-c-divider);
+}
+
+.vp-doc th {
+  font-weight: 535;
+}
+
+/* ========================================================================
+   Custom Containers (tip, warning, danger, info)
+   ======================================================================== */
+
+.vp-doc .custom-block {
+  border-radius: 12px;
+}
+
+.vp-doc .custom-block.tip {
+  border-color: var(--vp-c-brand-1);
+}
+
+.vp-doc .custom-block.tip .custom-block-title {
+  color: var(--vp-c-brand-1);
+}
+
+/* ========================================================================
+   Feature Cards (home page)
+   ======================================================================== */
+
+.VPFeature {
+  border-radius: 16px !important;
+  border: 1px solid var(--vp-c-divider) !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.VPFeature:hover {
+  border-color: var(--vp-c-brand-1) !important;
+  box-shadow: 0 4px 24px rgba(255, 55, 199, 0.08);
+}
+
+.VPFeature .title {
+  font-weight: 535;
+}
+
+/* ========================================================================
+   Footer
+   ======================================================================== */
+
+.VPFooter {
+  border-top-color: var(--vp-c-divider);
+}
+
+/* ========================================================================
+   Scrollbar (webkit)
+   ======================================================================== */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--vp-c-divider);
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--vp-c-border);
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
