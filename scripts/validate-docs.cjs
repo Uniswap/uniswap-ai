@@ -66,9 +66,7 @@ function validateDocs() {
     }
 
     // Read plugin.json for skills
-    const pluginSource = plugin.source.startsWith('./')
-      ? plugin.source.slice(2)
-      : plugin.source;
+    const pluginSource = plugin.source.startsWith('./') ? plugin.source.slice(2) : plugin.source;
     const pluginJsonPath = path.join(process.cwd(), pluginSource, '.claude-plugin', 'plugin.json');
 
     if (fs.existsSync(pluginJsonPath)) {
