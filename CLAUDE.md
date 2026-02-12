@@ -42,11 +42,9 @@ After making any code changes, Claude Code MUST:
 
 ## Package Scopes
 
-| Type    | Scope         | npm | Marketplace                   |
-| ------- | ------------- | --- | ----------------------------- |
-| Plugins | `@uniswap`    | No  | Yes (Claude Code Marketplace) |
-| SDKs    | `@uniswap-ai` | Yes | N/A                           |
-| Utils   | `@uniswap-ai` | Yes | N/A                           |
+| Type    | Scope      | npm | Marketplace                   |
+| ------- | ---------- | --- | ----------------------------- |
+| Plugins | `@uniswap` | No  | Yes (Claude Code Marketplace) |
 
 ## Repository Structure
 
@@ -67,15 +65,12 @@ uniswap-ai/
 │   ├── suites/              # Per-skill eval suites
 │   └── templates/           # Templates for new suites
 ├── packages/
-│   ├── plugins/             # Claude Code plugins
-│   │   ├── uniswap-cca/     # Continuous Clearing Auction (CCA) plugin
-│   │   ├── uniswap-driver/  # Swap & liquidity deep link planning
-│   │   ├── uniswap-hooks/   # Uniswap V4 hooks plugin
-│   │   ├── uniswap-trading/ # Uniswap swap integration
-│   │   └── uniswap-viem/    # EVM blockchain integration (viem/wagmi)
-│   ├── sdk/                 # TypeScript SDKs
-│   ├── prompts/             # Shared prompt templates
-│   └── utils/               # Shared utilities
+│   └── plugins/             # Claude Code plugins
+│       ├── uniswap-cca/     # Continuous Clearing Auction (CCA) plugin
+│       ├── uniswap-driver/  # Swap & liquidity deep link planning
+│       ├── uniswap-hooks/   # Uniswap V4 hooks plugin
+│       ├── uniswap-trading/ # Uniswap swap integration
+│       └── uniswap-viem/    # EVM blockchain integration (viem/wagmi)
 ├── scripts/                 # Build/validation scripts
 ├── nx.json
 ├── package.json
