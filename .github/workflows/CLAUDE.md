@@ -12,7 +12,6 @@ This directory contains GitHub Actions workflows for the uniswap-ai repository. 
 | [Claude Docs Check](#claude-docs-check)                            | PR events            | Validate documentation updates               |
 | [Generate PR Title & Description](#generate-pr-title--description) | PR events            | Auto-generate PR metadata                    |
 | [Generate Documentation](#generate-documentation)                  | Push to main, manual | Auto-generate API documentation              |
-| [Deploy Documentation](#deploy-documentation)                      | Push to main         | Build and deploy VitePress docs              |
 | [Publish Packages](#publish-packages)                              | Push to main, manual | Publish npm packages                         |
 
 ## Workflows
@@ -93,13 +92,13 @@ Automatically generates API documentation using TypeDoc:
 
 ### Deploy Documentation
 
-**File:** `deploy-docs.yml`
+Documentation is deployed via [Vercel](https://vercel.com) (not GitHub Actions). Vercel's GitHub integration automatically:
 
-Builds and deploys VitePress documentation to GitHub Pages:
+- Deploys to production on push to `main` when `docs/` changes
+- Creates preview deployments for every PR
+- Build command: `npx nx run docs:build`
 
-- Triggers on push to main when `docs/` changes
-- Builds with `npm run docs:build`
-- Deploys to GitHub Pages environment
+Configuration is in `vercel.json` at the repo root.
 
 ### Publish Packages
 

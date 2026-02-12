@@ -138,6 +138,6 @@ MIT License - see [LICENSE](./LICENSE) for details.
 
 ## Links
 
-- [Documentation](https://uniswap.github.io/uniswap-ai/)
+- [Documentation](https://uniswap-ai-docs.vercel.app/)
 - [Uniswap V4 Docs](https://docs.uniswap.org/contracts/v4/overview)
 - [Claude Code](https://claude.ai/code)
