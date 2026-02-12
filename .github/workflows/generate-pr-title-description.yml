@@ -26,6 +26,8 @@ concurrency:
   group: pr-metadata-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
+permissions: {}
+
 jobs:
   generate-metadata:
     # Skip conditions:

@@ -41,6 +41,8 @@ concurrency:
   group: publish-${{ github.ref }}
   cancel-in-progress: false
 
+permissions: {}
+
 jobs:
   # Detect which packages to publish
   detect:
@@ -68,6 +70,7 @@ jobs:
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Setup Node.js
         uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
@@ -77,7 +80,9 @@ jobs:
           scope: '@uniswap-ai'
 
       - name: Install npm
-        run: npm install -g npm@${{ vars.NPM_VERSION }}
+        run: npm install -g npm@${VARS_NPM_VERSION}
+        env:
+          VARS_NPM_VERSION: ${{ vars.NPM_VERSION }}
 
       - name: Install dependencies
         run: npm ci --prefer-offline --no-audit
@@ -269,6 +274,7 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ secrets.WORKFLOW_PAT }}
+          persist-credentials: false
 
       - name: Setup Node.js
         uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
@@ -278,7 +284,9 @@ jobs:
           scope: '@uniswap-ai'
 
       - name: Install npm
-        run: npm install -g npm@${{ vars.NPM_VERSION }}
+        run: npm install -g npm@${VARS_NPM_VERSION}
+        env:
+          VARS_NPM_VERSION: ${{ vars.NPM_VERSION }}
 
       - name: Install dependencies
         run: npm ci --prefer-offline --no-audit
