@@ -38,10 +38,10 @@ npm install
 
 ```bash
 # Run tests
-npm test
+npx nx run-many --target=test
 
 # Build all packages
-npm run build
+npx nx run-many --target=build
 
 # Start docs dev server
 npm run docs:dev
@@ -73,6 +73,7 @@ npm run docs:dev
    ```
 
 4. **Commit using conventional commits**:
+
    ```bash
    git commit -m "feat(hooks): add new feature"
    ```
@@ -145,7 +146,7 @@ All new skills **must** have corresponding evaluation suites:
 ```bash
 # Create eval suite for new skill
 mkdir -p evals/suites/my-skill/cases
-mkdir -p evals/suites/my-skill/expected
+mkdir -p evals/suites/my-skill/rubrics
 ```
 
 See [Writing Evals](/evals/writing-evals) for details.
@@ -154,7 +155,7 @@ See [Writing Evals](/evals/writing-evals) for details.
 
 We use [Conventional Commits](https://www.conventionalcommits.org/):
 
-```
+```text
 <type>(<scope>): <description>
 
 [optional body]
@@ -177,6 +178,10 @@ We use [Conventional Commits](https://www.conventionalcommits.org/):
 ### Scopes
 
 - `hooks` - uniswap-hooks plugin
+- `cca` - uniswap-cca plugin
+- `trading` - uniswap-trading plugin
+- `viem` - uniswap-viem plugin
+- `driver` - uniswap-driver plugin
 - `evals` - Evaluation framework
 - `docs` - Documentation
 - `ci` - CI/CD workflows

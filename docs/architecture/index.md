@@ -22,7 +22,7 @@ All tools in this repository are designed to work with any LLM coding agent, not
 
 The codebase is organized into independent packages:
 
-- **Plugins** - Self-contained Claude Code plugins with skills, agents, and commands
+- **Plugins** - Self-contained Claude Code plugins with skills and agents
 - **Evals** - Evaluation suites for testing AI tool quality
 
 ### Nx-Powered
@@ -36,43 +36,52 @@ All packages use [Nx](https://nx.dev) for:
 
 ## High-Level Structure
 
-```
+```text
 uniswap-ai/
 ├── packages/
-│   └── plugins/          # Claude Code plugins
-│       └── uniswap-hooks/  # Uniswap V4 hooks plugin
-├── evals/                # AI tool evaluations
-├── docs/                 # This documentation
-└── .github/              # CI/CD workflows
+│   └── plugins/              # Claude Code plugins
+│       ├── uniswap-hooks/    # V4 hook development
+│       ├── uniswap-cca/      # CCA auction configuration & deployment
+│       ├── uniswap-trading/  # Swap integration
+│       ├── uniswap-viem/     # EVM blockchain integration (viem/wagmi)
+│       └── uniswap-driver/   # Swap & liquidity deep link planning
+├── evals/                    # AI tool evaluations
+├── docs/                     # This documentation
+└── .github/                  # CI/CD workflows
 ```
 
 ## Package Relationships
 
-```
-┌─────────────────────────────────────────────────────┐
-│                   Claude Code                        │
-│                   (Runtime)                          │
-└─────────────────────────────────────────────────────┘
-                         │
-                         ▼
-┌─────────────────────────────────────────────────────┐
-│                    Plugins                           │
-│  ┌─────────────────────────────────────────────┐    │
-│  │           uniswap-hooks                      │    │
-│  │  ┌──────────┐ ┌──────────┐ ┌──────────┐    │    │
-│  │  │  Skills  │ │  Agents  │ │ Commands │    │    │
-│  │  └──────────┘ └──────────┘ └──────────┘    │    │
-│  └─────────────────────────────────────────────┘    │
-└─────────────────────────────────────────────────────┘
-                         │
-                         ▼
-┌─────────────────────────────────────────────────────┐
-│                     Evals                            │
-│  ┌──────────────────────────────────────────────┐   │
-│  │  promptfoo-based evaluation framework         │   │
-│  │  Measures: accuracy, safety, completeness     │   │
-│  └──────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────┘
+```text
+┌───────────────────────────────────────────────────────┐
+│                    Claude Code                         │
+│                    (Runtime)                           │
+└───────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌───────────────────────────────────────────────────────┐
+│                     Plugins                            │
+│  ┌───────────────┐ ┌───────────────┐ ┌─────────────┐ │
+│  │ uniswap-hooks │ │ uniswap-cca   │ │uniswap-viem │ │
+│  │ (2 skills)    │ │ (2 skills +   │ │ (1 skill +  │ │
+│  │               │ │  MCP server)  │ │  1 agent)   │ │
+│  └───────────────┘ └───────────────┘ └─────────────┘ │
+│  ┌─────────────────┐ ┌───────────────┐                │
+│  │uniswap-trading  │ │uniswap-driver │                │
+│  │ (1 skill +      │ │ (2 skills)    │                │
+│  │  1 agent)       │ │               │                │
+│  └─────────────────┘ └───────────────┘                │
+└───────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌───────────────────────────────────────────────────────┐
+│                      Evals                             │
+│  ┌─────────────────────────────────────────────────┐  │
+│  │   Promptfoo-based evaluation framework           │  │
+│  │   One suite per skill                             │  │
+│  │   Measures: accuracy, safety, completeness       │  │
+│  └─────────────────────────────────────────────────┘  │
+└───────────────────────────────────────────────────────┘
 ```
 
 ## Key Technologies

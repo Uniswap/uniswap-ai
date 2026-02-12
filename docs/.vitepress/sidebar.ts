@@ -116,7 +116,6 @@ export function generateSidebar(docsDir: string): Record<string, SidebarItem[]> 
     'skills',
     'evals',
     'contributing',
-    'api',
   ];
 
   for (const section of sections) {

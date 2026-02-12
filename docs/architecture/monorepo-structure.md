@@ -9,7 +9,7 @@ This page details the organization of the uniswap-ai repository.
 
 ## Directory Layout
 
-```
+```text
 uniswap-ai/
 ├── .claude/                # Claude Code configuration
 │   └── rules/              # Agent rules (agnostic design)
@@ -21,7 +21,6 @@ uniswap-ai/
 │   └── vale/               # Prose linting styles
 ├── docs/                   # VitePress documentation
 │   ├── .vitepress/         # VitePress configuration
-│   ├── api/                # Auto-generated API docs
 │   ├── architecture/       # Architecture documentation
 │   ├── contributing/       # Contribution guides
 │   ├── evals/              # Eval framework docs
@@ -29,9 +28,7 @@ uniswap-ai/
 │   ├── plugins/            # Plugin documentation
 │   └── skills/             # Skill documentation
 ├── evals/                  # AI tool evaluations
-│   ├── framework/          # Eval framework types
 │   ├── rubrics/            # Shared evaluation rubrics
-│   ├── scripts/            # Custom providers
 │   ├── suites/             # Per-skill eval suites
 │   └── templates/          # Templates for new suites
 ├── packages/
@@ -41,8 +38,7 @@ uniswap-ai/
 ├── CLAUDE.md               # Project guidelines
 ├── nx.json                 # Nx workspace configuration
 ├── package.json            # Root package configuration
-├── tsconfig.base.json      # Base TypeScript config
-└── typedoc.json            # API documentation config
+└── tsconfig.base.json      # Base TypeScript config
 ```
 
 ## Package Scopes
@@ -82,7 +78,7 @@ Each package has a `project.json` with:
 
 Each plugin in `packages/plugins/` follows this structure:
 
-```
+```text
 plugin-name/
 ├── .claude-plugin/
 │   └── plugin.json        # Plugin manifest
@@ -91,7 +87,6 @@ plugin-name/
 │       ├── SKILL.md       # Skill definition
 │       └── references/    # Supporting materials
 ├── agents/                 # Specialized agents
-├── commands/               # Slash commands
 ├── package.json           # Package metadata
 ├── project.json           # Nx configuration
 └── README.md              # Plugin documentation
@@ -101,26 +96,24 @@ plugin-name/
 
 Evaluation suites in `evals/suites/` follow this structure:
 
-```
+```text
 suite-name/
+├── promptfoo.yaml          # Suite configuration
+├── prompt-wrapper.txt      # Prompt template (injects SKILL.md context)
 ├── cases/                  # Test case prompts
 │   └── test-name.md
-├── expected/               # Expected behaviors
-│   └── test-name.md
-├── rubrics/                # Suite-specific rubrics
-├── promptfoo.yaml          # Suite configuration
-└── README.md               # Suite documentation
+└── rubrics/                # Evaluation rubrics (.txt files)
+    └── rubric-name.txt
 ```
 
 ## Key Files
 
-| File           | Purpose                                        |
-| -------------- | ---------------------------------------------- |
-| `CLAUDE.md`    | Project guidelines and AI agent instructions   |
-| `AGENTS.md`    | Symlink to CLAUDE.md for agent-agnostic access |
-| `nx.json`      | Nx workspace configuration                     |
-| `typedoc.json` | API documentation generation config            |
-| `.vale.ini`    | Prose linting configuration                    |
+| File        | Purpose                                        |
+| ----------- | ---------------------------------------------- |
+| `CLAUDE.md` | Project guidelines and AI agent instructions   |
+| `AGENTS.md` | Symlink to CLAUDE.md for agent-agnostic access |
+| `nx.json`   | Nx workspace configuration                     |
+| `.vale.ini` | Prose linting configuration                    |
 
 ## Related
 

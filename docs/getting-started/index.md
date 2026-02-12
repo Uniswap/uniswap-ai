@@ -11,47 +11,29 @@ Welcome to Uniswap AI - a collection of AI tools for building on the Uniswap pro
 
 Uniswap AI provides Claude Code plugins and AI development tools specifically designed for the Uniswap ecosystem. It helps developers:
 
-- **Create Uniswap V4 hooks** with AI-powered assistance
-- **Design and test** hook implementations efficiently
-- **Follow best practices** for security and gas optimization
+- **Create Uniswap V4 hooks** with security-first AI-powered assistance
+- **Integrate Uniswap swaps** via Trading API, Universal Router, or smart contracts
+- **Configure and deploy CCA auctions** for token distribution
+- **Build on EVM blockchains** with viem and wagmi integration guides
+- **Plan swaps and liquidity positions** with deep link generation
 
 ## Prerequisites
 
 - [Claude Code](https://claude.ai/code) for plugin usage
-- Node.js 22.x for SDK development
-- Familiarity with Uniswap V4 hooks architecture
+- Node.js 22.x for local development
+- Familiarity with the Uniswap protocol
 
-## Installation Options
+## Installation
 
-### Option 1: Claude Code Marketplace
-
-The easiest way to get started is through the Claude Code marketplace:
+Install any plugin via its Git URL in Claude Code:
 
 ```bash
-# Add the uniswap-ai marketplace
-/plugin marketplace add uniswap/uniswap-ai
-
-# Install the hooks plugin
-/plugin install uniswap-hooks
+/install https://github.com/Uniswap/uniswap-ai/tree/main/packages/plugins/<plugin-name>
 ```
 
-### Option 2: npm Packages
+Available plugins: `uniswap-hooks`, `uniswap-cca`, `uniswap-trading`, `uniswap-viem`, `uniswap-driver`
 
-For programmatic integration:
-
-```bash
-npm install @uniswap-ai/core
-```
-
-## Verify Installation
-
-After installing the Claude Code plugin, verify it's working:
-
-```text
-/plugin list
-```
-
-You should see `uniswap-hooks` in the list of installed plugins.
+See [Installation](./installation) for detailed instructions.
 
 ## Next Steps
 
@@ -61,11 +43,13 @@ You should see `uniswap-hooks` in the list of installed plugins.
 
 ## Repository Structure
 
-| Directory           | Purpose             |
-| ------------------- | ------------------- |
-| `packages/plugins/` | Claude Code plugins |
-| `evals/`            | AI tool evaluations |
-| `docs/`             | This documentation  |
+| Directory           | Purpose                              |
+| ------------------- | ------------------------------------ |
+| `packages/plugins/` | Claude Code plugins (5 plugins)      |
+| `evals/`            | AI tool evaluations (Promptfoo)      |
+| `docs/`             | This documentation (VitePress)       |
+| `scripts/`          | Build and validation scripts         |
+| `.github/`          | CI/CD workflows and reusable actions |
 
 ## Getting Help
 
