@@ -13,10 +13,10 @@
    ======================================================================== */
 
 :root {
-  --vp-font-family-base: -apple-system, system-ui, BlinkMacSystemFont, 'Segoe UI',
-    Roboto, Helvetica, Arial, sans-serif;
-  --vp-font-family-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Monaco,
-    'Cascadia Mono', 'Segoe UI Mono', 'Roboto Mono', 'Courier New', monospace;
+  --vp-font-family-base: -apple-system, system-ui, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
+    Arial, sans-serif;
+  --vp-font-family-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Monaco, 'Cascadia Mono',
+    'Segoe UI Mono', 'Roboto Mono', 'Courier New', monospace;
 }
 
 /* ========================================================================
@@ -198,9 +198,7 @@
   border-color: var(--vp-c-brand-1);
   border-radius: 16px;
   font-weight: 535;
-  transition:
-    background-color 0.2s ease,
-    border-color 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
 .VPButton.brand:hover {
@@ -212,9 +210,7 @@
   border-radius: 16px;
   font-weight: 535;
   border-color: var(--vp-c-border);
-  transition:
-    background-color 0.2s ease,
-    border-color 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
 .VPButton.alt:hover {
@@ -316,9 +312,7 @@
 .VPFeature {
   border-radius: 16px !important;
   border: 1px solid var(--vp-c-divider) !important;
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .VPFeature:hover {
