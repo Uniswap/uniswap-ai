@@ -30,6 +30,7 @@ Core CI validation workflow that runs on all PRs:
 - Executes test suites with coverage
 - Validates plugin configurations
 - Validates skills (frontmatter, consistency with plugin.json)
+- Validates documentation pages exist for all plugins and skills
 
 Automated PRs (dependabot, releases) may skip certain checks.
 

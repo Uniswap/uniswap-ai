@@ -1,0 +1,19 @@
+name: 'Validate Documentation Pages'
+description: 'Validates that all plugins and skills have corresponding VitePress doc pages'
+
+inputs:
+  marketplace-path:
+    description: 'Path to the marketplace.json file'
+    required: false
+    default: '.claude-plugin/marketplace.json'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Validate documentation pages
+      shell: bash
+      env:
+        MARKETPLACE_PATH: ${{ inputs.marketplace-path }}
+      run: |
+        echo "=== Validating Documentation Pages ==="
+        node scripts/validate-docs.cjs
