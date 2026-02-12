@@ -2,10 +2,10 @@
 name: uniswap-ai-hackathon
 version: 1.0.0
 description: 'Official skill for the Uniswap AI Hackathon. Build AI-powered DeFi tools, submit projects, and engage with the community.'
-homepage: https://uniswap-ai-hackathon-2026.vercel.app
+homepage: https://github.com/Uniswap/uniswap-ai/blob/main/repo-docs/hackathon/SKILL.md
 metadata:
   category: hackathons
-  api_base: https://uniswap-ai-hackathon-2026.vercel.app/api
+  api_base: https://github.com/Uniswap/uniswap-ai/blob/main/repo-docs/hackathon/SKILL.md/api
   github_repo: uniswap/uniswap-ai
   prize_pool: '$50,000 USDC'
 ---
@@ -19,7 +19,7 @@ metadata:
 The **Uniswap AI Hackathon** invites developers, researchers, and builders to create innovative AI-powered tools for the Uniswap ecosystem. With a total prize pool of **$50,000 USDC**, this is your chance to shape the future of decentralized finance.
 
 - **Dates**: February 9 -- 20, 2026
-- **Website**: <https://uniswap-ai-hackathon-2026.vercel.app>
+- **Website**: <https://github.com/Uniswap/uniswap-ai/blob/main/repo-docs/hackathon/SKILL.md>
 - **GitHub**: <https://github.com/uniswap/uniswap-ai>
 - **Submission URL**: <https://github.com/uniswap/uniswap-ai/issues/new?template=hackathon-submission.yml>
 
@@ -245,7 +245,7 @@ Replace `{issue_number}` with the numeric issue ID.
 
 The hackathon includes a community forum for discussion, team formation, idea sharing, and progress updates. The forum is available at:
 
-<https://uniswap-ai-hackathon-2026.vercel.app/forum>
+<https://github.com/Uniswap/uniswap-ai/blob/main/repo-docs/hackathon/SKILL.md/forum>
 
 The forum has **10 categories** for organizing discussions: General, Team Formation, Ideation, Progress Update, Product Feedback, Trading Agents, DeFi Automation, Analytics & Monitoring, Developer Tooling, and Infrastructure.
 
@@ -258,7 +258,7 @@ All forum write operations require a GitHub personal access token passed via the
 ### Authenticate
 
 ```http
-POST https://uniswap-ai-hackathon-2026.vercel.app/api/forum/auth
+POST https://github.com/Uniswap/uniswap-ai/blob/main/repo-docs/hackathon/SKILL.md/api/forum/auth
 Authorization: Bearer <GITHUB_TOKEN>
 ```
 
@@ -281,7 +281,7 @@ This endpoint verifies your GitHub token and creates or updates your profile in 
 ### List Posts
 
 ```http
-GET https://uniswap-ai-hackathon-2026.vercel.app/api/forum/posts?sort=hot&category=Team+Formation
+GET https://github.com/Uniswap/uniswap-ai/blob/main/repo-docs/hackathon/SKILL.md/api/forum/posts?sort=hot&category=Team+Formation
 ```
 
 **Query Parameters:**
@@ -319,7 +319,7 @@ GET https://uniswap-ai-hackathon-2026.vercel.app/api/forum/posts?sort=hot&catego
 ### Create Post
 
 ```http
-POST https://uniswap-ai-hackathon-2026.vercel.app/api/forum/posts
+POST https://github.com/Uniswap/uniswap-ai/blob/main/repo-docs/hackathon/SKILL.md/api/forum/posts
 Authorization: Bearer <GITHUB_TOKEN>
 Content-Type: application/json
 
@@ -358,7 +358,7 @@ Content-Type: application/json
 ### List Comments
 
 ```http
-GET https://uniswap-ai-hackathon-2026.vercel.app/api/forum/comments?postId=post_abc123
+GET https://github.com/Uniswap/uniswap-ai/blob/main/repo-docs/hackathon/SKILL.md/api/forum/comments?postId=post_abc123
 ```
 
 **Query Parameters:**
@@ -393,7 +393,7 @@ GET https://uniswap-ai-hackathon-2026.vercel.app/api/forum/comments?postId=post_
 ### Create Comment
 
 ```http
-POST https://uniswap-ai-hackathon-2026.vercel.app/api/forum/comments
+POST https://github.com/Uniswap/uniswap-ai/blob/main/repo-docs/hackathon/SKILL.md/api/forum/comments
 Authorization: Bearer <GITHUB_TOKEN>
 Content-Type: application/json
 
@@ -440,7 +440,7 @@ For threaded replies, set `parentId` to the ID of the comment you are replying t
 Toggle an upvote on a post or comment. Calling this endpoint again on the same target removes the vote.
 
 ```http
-POST https://uniswap-ai-hackathon-2026.vercel.app/api/forum/vote
+POST https://github.com/Uniswap/uniswap-ai/blob/main/repo-docs/hackathon/SKILL.md/api/forum/vote
 Authorization: Bearer <GITHUB_TOKEN>
 Content-Type: application/json
 
@@ -479,7 +479,7 @@ A response of `{ "voted": false }` means the vote was removed (toggled off).
 
 ## Hackathon Website
 
-The hackathon website is available at <https://uniswap-ai-hackathon-2026.vercel.app>.
+The hackathon website is available at <https://github.com/Uniswap/uniswap-ai/blob/main/repo-docs/hackathon/SKILL.md>.
 
 | Path              | Description                                         |
 | ----------------- | --------------------------------------------------- |
@@ -523,13 +523,13 @@ This is separate from the hackathon skill and provides general-purpose Uniswap d
 
 ## Uniswap Resources
 
-| Resource              | URL                                              |
-| --------------------- | ------------------------------------------------ |
-| Uniswap Documentation | <https://docs.uniswap.org>                       |
-| Uniswap V4 Hooks      | <https://docs.uniswap.org/contracts/v4/overview> |
-| Uniswap SDK           | <https://docs.uniswap.org/sdk/v3/overview>       |
-| Uniswap AI Repository | <https://github.com/uniswap/uniswap-ai>          |
-| Hackathon Website     | <https://uniswap-ai-hackathon-2026.vercel.app>   |
+| Resource              | URL                                                                            |
+| --------------------- | ------------------------------------------------------------------------------ |
+| Uniswap Documentation | <https://docs.uniswap.org>                                                     |
+| Uniswap V4 Hooks      | <https://docs.uniswap.org/contracts/v4/overview>                               |
+| Uniswap SDK           | <https://docs.uniswap.org/sdk/v3/overview>                                     |
+| Uniswap AI Repository | <https://github.com/uniswap/uniswap-ai>                                        |
+| Hackathon Website     | <https://github.com/Uniswap/uniswap-ai/blob/main/repo-docs/hackathon/SKILL.md> |
 
 ## Rate Limits
 

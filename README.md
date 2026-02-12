@@ -17,7 +17,7 @@ Build AI-native tools for the Uniswap ecosystem. Trading bots, developer tooling
 | 3rd Place          | $10,000 USDC |
 | Community Favorite | $5,000 USDC  |
 
-**[Submit Your Project](https://github.com/uniswap/uniswap-ai/issues/new?template=hackathon-submission.yml)** | **[Hackathon Website](https://uniswap-ai-hackathon-2026.vercel.app)** | **[Full Rules](./repo-docs/hackathon/RULES.md)**
+**[Submit Your Project](https://github.com/uniswap/uniswap-ai/issues/new?template=hackathon-submission.yml)** | **[Full Rules](./repo-docs/hackathon/RULES.md)**
 
 ### For Agents
 
