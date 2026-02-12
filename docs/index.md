@@ -33,7 +33,17 @@ features:
 ### Claude Code Marketplace
 
 ```bash
-/install https://github.com/Uniswap/uniswap-ai/tree/main/packages/plugins/<plugin-name>
+/plugin marketplace add uniswap/uniswap-ai
+```
+
+### Install Individual Plugins
+
+```bash
+/plugin install uniswap-hooks      # V4 hook development
+/plugin install uniswap-trading    # Swap integration
+/plugin install uniswap-cca        # CCA auctions
+/plugin install uniswap-driver     # Swap & liquidity planning
+/plugin install uniswap-viem       # EVM integration (viem/wagmi)
 ```
 
 ## Featured Skills

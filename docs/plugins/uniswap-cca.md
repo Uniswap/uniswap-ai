@@ -10,7 +10,7 @@ Configure and deploy Continuous Clearing Auction (CCA) smart contracts for token
 ## Installation
 
 ```bash
-/install https://github.com/Uniswap/uniswap-ai/tree/main/packages/plugins/uniswap-cca
+/plugin install uniswap-cca
 ```
 
 ## Skills

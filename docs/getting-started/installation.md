@@ -9,23 +9,23 @@ Multiple installation options are available depending on your use case.
 
 ## Claude Code Plugin
 
-### Via Git URL
+### Via Marketplace
 
-Install any plugin directly in Claude Code:
+Install all plugins from the Claude Code Marketplace:
 
 ```bash
-/install https://github.com/Uniswap/uniswap-ai/tree/main/packages/plugins/<plugin-name>
+/plugin marketplace add uniswap/uniswap-ai
 ```
 
-Available plugins:
+### Install Individual Plugins
 
-| Plugin            | Description                            |
-| ----------------- | -------------------------------------- |
-| `uniswap-hooks`   | Uniswap V4 hook development            |
-| `uniswap-cca`     | CCA auction configuration & deployment |
-| `uniswap-trading` | Uniswap swap integration               |
-| `uniswap-viem`    | EVM blockchain integration (viem)      |
-| `uniswap-driver`  | Swap & liquidity deep link planning    |
+```bash
+/plugin install uniswap-hooks      # V4 hook development
+/plugin install uniswap-trading    # Swap integration
+/plugin install uniswap-cca        # CCA auctions
+/plugin install uniswap-driver     # Swap & liquidity planning
+/plugin install uniswap-viem       # EVM integration (viem/wagmi)
+```
 
 ## Development Setup
 
@@ -79,5 +79,5 @@ After plugin installation, the plugin's skills should be available as slash comm
 If skills don't appear after installation:
 
 1. Verify the plugin was installed successfully
-2. Try reinstalling with the full Git URL
+2. Try reinstalling with `/plugin install <plugin-name>`
 3. Check that Claude Code is up to date

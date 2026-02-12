@@ -10,7 +10,7 @@ AI-powered, security-first assistance for creating Uniswap V4 hooks.
 ## Installation
 
 ```bash
-/install https://github.com/Uniswap/uniswap-ai/tree/main/packages/plugins/uniswap-hooks
+/plugin install uniswap-hooks
 ```
 
 ## Skills

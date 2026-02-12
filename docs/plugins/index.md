@@ -20,7 +20,7 @@ Plugins are the primary distribution mechanism for Uniswap AI tools. Each plugin
 **Installation:**
 
 ```bash
-/install https://github.com/Uniswap/uniswap-ai/tree/main/packages/plugins/<plugin-name>
+/plugin marketplace add uniswap/uniswap-ai
 ```
 
 ## Plugin Architecture

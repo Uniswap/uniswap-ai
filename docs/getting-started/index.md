@@ -25,13 +25,21 @@ Uniswap AI provides Claude Code plugins and AI development tools specifically de
 
 ## Installation
 
-Install any plugin via its Git URL in Claude Code:
+Install all plugins from the Claude Code Marketplace:
 
 ```bash
-/install https://github.com/Uniswap/uniswap-ai/tree/main/packages/plugins/<plugin-name>
+/plugin marketplace add uniswap/uniswap-ai
 ```
 
-Available plugins: `uniswap-hooks`, `uniswap-cca`, `uniswap-trading`, `uniswap-viem`, `uniswap-driver`
+Or install individual plugins:
+
+```bash
+/plugin install uniswap-hooks      # V4 hook development
+/plugin install uniswap-trading    # Swap integration
+/plugin install uniswap-cca        # CCA auctions
+/plugin install uniswap-driver     # Swap & liquidity planning
+/plugin install uniswap-viem       # EVM integration (viem/wagmi)
+```
 
 See [Installation](./installation) for detailed instructions.
 

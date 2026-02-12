@@ -84,6 +84,17 @@
   --vp-button-brand-active-text: #ffffff;
   --vp-button-brand-active-bg: var(--vp-c-brand-3);
 
+  /* Buttons — alt */
+  --vp-button-alt-border: var(--vp-c-border);
+  --vp-button-alt-text: #131313;
+  --vp-button-alt-bg: #ffffff;
+  --vp-button-alt-hover-border: var(--vp-c-brand-1);
+  --vp-button-alt-hover-text: var(--vp-c-brand-1);
+  --vp-button-alt-hover-bg: #ffffff;
+  --vp-button-alt-active-border: var(--vp-c-brand-2);
+  --vp-button-alt-active-text: var(--vp-c-brand-2);
+  --vp-button-alt-active-bg: #ffffff;
+
   /* Sidebar */
   --vp-sidebar-bg-color: #ffffff;
 
@@ -155,6 +166,17 @@
   --vp-button-brand-active-border: transparent;
   --vp-button-brand-active-text: #ffffff;
   --vp-button-brand-active-bg: var(--vp-c-brand-3);
+
+  /* Buttons — alt */
+  --vp-button-alt-border: var(--vp-c-border);
+  --vp-button-alt-text: #131313;
+  --vp-button-alt-bg: #ffffff;
+  --vp-button-alt-hover-border: var(--vp-c-brand-1);
+  --vp-button-alt-hover-text: var(--vp-c-brand-1);
+  --vp-button-alt-hover-bg: #ffffff;
+  --vp-button-alt-active-border: var(--vp-c-brand-2);
+  --vp-button-alt-active-text: var(--vp-c-brand-2);
+  --vp-button-alt-active-bg: #ffffff;
 
   /* Sidebar */
   --vp-sidebar-bg-color: #131313;

@@ -190,7 +190,7 @@ Description of what the plugin provides.
 ## Installation
 
 \`\`\`bash
-/install https://github.com/Uniswap/uniswap-ai/tree/main/packages/plugins/my-plugin
+/plugin install my-plugin
 \`\`\`
 
 ## Skills

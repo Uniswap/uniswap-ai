@@ -10,7 +10,7 @@ AI-powered assistance for discovering tokens, planning Uniswap swaps and liquidi
 ## Installation
 
 ```bash
-/install https://github.com/Uniswap/uniswap-ai/tree/main/packages/plugins/uniswap-driver
+/plugin install uniswap-driver
 ```
 
 ## Skills

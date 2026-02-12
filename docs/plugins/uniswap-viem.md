@@ -10,7 +10,7 @@ EVM blockchain integration using viem and wagmi.
 ## Installation
 
 ```bash
-/install https://github.com/Uniswap/uniswap-ai/tree/main/packages/plugins/uniswap-viem
+/plugin install uniswap-viem
 ```
 
 ## Skills

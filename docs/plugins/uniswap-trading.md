@@ -10,7 +10,7 @@ Integrate Uniswap swaps via Trading API, Universal Router SDK, or direct smart c
 ## Installation
 
 ```bash
-/install https://github.com/Uniswap/uniswap-ai/tree/main/packages/plugins/uniswap-trading
+/plugin install uniswap-trading
 ```
 
 ## Skills
