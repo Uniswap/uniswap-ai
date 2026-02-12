@@ -11,9 +11,36 @@ Skills are AI-powered capabilities that help you build on Uniswap. Each skill is
 
 ### uniswap-hooks Plugin
 
-| Skill                                                | Description                           | Invocation                 |
-| ---------------------------------------------------- | ------------------------------------- | -------------------------- |
-| [Aggregator Hook Creator](./aggregator-hook-creator) | Create hooks that aggregate liquidity | `/aggregator-hook-creator` |
+| Skill                                                | Description                                                 | Invocation                 |
+| ---------------------------------------------------- | ----------------------------------------------------------- | -------------------------- |
+| [Aggregator Hook Creator](./aggregator-hook-creator) | Create hooks that aggregate liquidity from multiple sources | `/aggregator-hook-creator` |
+| [V4 Security Foundations](./v4-security-foundations) | Security-first guide for V4 hook development                | `/v4-security-foundations` |
+
+### uniswap-cca Plugin
+
+| Skill                          | Description                                     | Invocation      |
+| ------------------------------ | ----------------------------------------------- | --------------- |
+| [Configurator](./configurator) | Interactive CCA auction parameter configuration | `/configurator` |
+| [Deployer](./deployer)         | CCA contract deployment via Factory pattern     | `/deployer`     |
+
+### uniswap-trading Plugin
+
+| Skill                                  | Description                                                                   | Invocation          |
+| -------------------------------------- | ----------------------------------------------------------------------------- | ------------------- |
+| [Swap Integration](./swap-integration) | Integrate Uniswap swaps via Trading API, Universal Router, or smart contracts | `/swap-integration` |
+
+### uniswap-viem Plugin
+
+| Skill                                  | Description                                     | Invocation          |
+| -------------------------------------- | ----------------------------------------------- | ------------------- |
+| [viem Integration](./viem-integration) | EVM blockchain integration using viem and wagmi | `/viem-integration` |
+
+### uniswap-driver Plugin
+
+| Skill                                    | Description                                 | Invocation           |
+| ---------------------------------------- | ------------------------------------------- | -------------------- |
+| [Swap Planner](./swap-planner)           | Plan token swaps with deep link generation  | `/swap-planner`      |
+| [Liquidity Planner](./liquidity-planner) | Plan LP positions with deep link generation | `/liquidity-planner` |
 
 ## Using Skills
 

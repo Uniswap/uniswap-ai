@@ -9,24 +9,18 @@ Plugins are the primary distribution mechanism for Uniswap AI tools. Each plugin
 
 ## Available Plugins
 
-### uniswap-hooks
-
-The flagship plugin for Uniswap V4 hook development:
-
-| Feature      | Description                                    |
-| ------------ | ---------------------------------------------- |
-| **Skills**   | AI-powered hook creation and security analysis |
-| **Agents**   | Specialized agents for hook development        |
-| **Commands** | Slash commands for common operations           |
+| Plugin                               | Description                                | Skills                                           |
+| ------------------------------------ | ------------------------------------------ | ------------------------------------------------ |
+| [uniswap-hooks](./uniswap-hooks)     | Security-first Uniswap V4 hook development | v4-security-foundations, aggregator-hook-creator |
+| [uniswap-cca](./uniswap-cca)         | CCA auction configuration and deployment   | configurator, deployer                           |
+| [uniswap-trading](./uniswap-trading) | Uniswap swap integration                   | swap-integration                                 |
+| [uniswap-viem](./uniswap-viem)       | EVM blockchain integration with viem/wagmi | viem-integration                                 |
+| [uniswap-driver](./uniswap-driver)   | Swap and liquidity deep link planning      | swap-planner, liquidity-planner                  |
 
 **Installation:**
 
 ```bash
-# Via Claude Code Marketplace
-/install @uniswap/uniswap-hooks
-
-# Via Git URL
-/install https://github.com/Uniswap/uniswap-ai/tree/main/packages/plugins/uniswap-hooks
+/install https://github.com/Uniswap/uniswap-ai/tree/main/packages/plugins/<plugin-name>
 ```
 
 ## Plugin Architecture

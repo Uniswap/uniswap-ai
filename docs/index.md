@@ -15,17 +15,17 @@ hero:
 
 features:
   - icon: 🪝
-    title: Hook Creator Skills
-    details: AI-powered assistance for creating Uniswap V4 hooks, including aggregator hooks, custom fee hooks, and more.
-  - icon: 🤖
-    title: Agent Agnostic
-    details: Designed to work with any LLM coding agent, not just Claude Code. Use with GPT-4, Gemini, and others.
-  - icon: 📊
-    title: Eval Framework
-    details: Comprehensive evaluation framework to test AI tools for accuracy, completeness, and security.
-  - icon: 🛠️
-    title: Developer SDKs
-    details: TypeScript SDKs for integrating Uniswap AI capabilities into your own applications.
+    title: V4 Hook Development
+    details: Security-first Uniswap V4 hook creation with aggregator hooks, audit checklists, and vulnerability analysis.
+  - icon: 💱
+    title: Swap Integration
+    details: Integrate Uniswap swaps via Trading API, Universal Router SDK, or direct smart contract calls.
+  - icon: 🏦
+    title: CCA Auctions
+    details: Configure and deploy Continuous Clearing Auction smart contracts for fair token distribution.
+  - icon: 🔗
+    title: EVM Integration
+    details: Foundational blockchain integration using viem and wagmi for reading, writing, and interacting with smart contracts.
 ---
 
 ## Quick Installation
@@ -53,10 +53,28 @@ Create custom aggregator hooks for Uniswap V4 that route through multiple liquid
 /aggregator-hook-creator
 ```
 
-Or describe what you want:
+### Swap Integration
+
+Integrate Uniswap swaps into your application using the Trading API, Universal Router SDK, or direct smart contract calls.
 
 ```text
-"Create a hook that compares prices across V4 pools and external DEXs"
+/swap-integration
+```
+
+### CCA Configurator
+
+Configure Continuous Clearing Auction parameters for fair and transparent token distribution.
+
+```text
+/configurator
+```
+
+### Swap Planner
+
+Plan token swaps and generate deep links to execute directly in the Uniswap interface.
+
+```text
+/swap-planner
 ```
 
 ## Resources

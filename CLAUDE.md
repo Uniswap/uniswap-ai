@@ -69,9 +69,10 @@ uniswap-ai/
 ├── packages/
 │   ├── plugins/             # Claude Code plugins
 │   │   ├── uniswap-cca/     # Continuous Clearing Auction (CCA) plugin
+│   │   ├── uniswap-driver/  # Swap & liquidity deep link planning
 │   │   ├── uniswap-hooks/   # Uniswap V4 hooks plugin
-│   │   ├── uniswap-viem/    # EVM blockchain integration (viem/wagmi)
-│   │   └── uniswap-trading/ # Uniswap swap integration
+│   │   ├── uniswap-trading/ # Uniswap swap integration
+│   │   └── uniswap-viem/    # EVM blockchain integration (viem/wagmi)
 │   ├── sdk/                 # TypeScript SDKs
 │   ├── prompts/             # Shared prompt templates
 │   └── utils/               # Shared utilities
@@ -223,6 +224,19 @@ Every job running on non-macOS runners MUST have `bullfrogsec/bullfrog` as the F
 
 ## Documentation Management
 
+### VitePress Documentation (`docs/`)
+
+When modifying plugins or skills, update the corresponding VitePress documentation pages:
+
+- **Plugin added/modified**: Update or create `docs/plugins/{plugin-name}.md`
+- **Skill added/modified**: Update or create `docs/skills/{skill-name}.md`
+- **Plugin/skill added or removed**: Update index pages:
+  - `docs/plugins/index.md` - table of all plugins
+  - `docs/skills/index.md` - table of all skills grouped by plugin
+  - `docs/index.md` - featured skills section (if applicable)
+
+Run `node scripts/validate-docs.cjs` to verify all documentation pages exist. This check is enforced in CI.
+
 ### CLAUDE.md File Management
 
 After changes to files in this repository, update the relevant CLAUDE.md file to reflect the changes.
@@ -240,7 +254,9 @@ Skills are discoverable via the [skills.sh CLI](https://skills.sh) (`npx skills 
 1. Create the skill directory in `packages/plugins/<plugin-name>/skills/<skill-name>/`
 2. Add a `SKILL.md` file with required frontmatter (`name`, `description`, `license`, `metadata.author`)
 3. Add the skill to the plugin's `plugin.json` `skills` array
-4. CI `validate-skills` job will verify frontmatter and consistency
+4. Create a documentation page at `docs/skills/<skill-name>.md`
+5. Update `docs/skills/index.md` to include the new skill
+6. CI `validate-skills` and `validate-docs` jobs will verify consistency
 
 ### Publishing
 

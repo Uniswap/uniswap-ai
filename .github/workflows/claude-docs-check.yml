@@ -59,8 +59,8 @@ jobs:
       model: 'claude-sonnet-4-5-20250929'
       # Fail if plugin versions aren't bumped
       fail_on_missing_version: true
-      # Don't fail on missing docs (just warn)
-      fail_on_missing_docs: false
+      # Fail if documentation is not updated
+      fail_on_missing_docs: true
       # Use main branch of ai-toolkit for scripts
       toolkit_ref: 'main'
       plugin_ref: 'main'
