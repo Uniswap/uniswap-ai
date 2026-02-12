@@ -13,7 +13,7 @@ This page details the pull request process for Uniswap AI contributions.
 
 Use descriptive branch names:
 
-```
+```text
 feature/add-aggregator-hook-skill
 fix/eval-timeout-issue
 docs/update-installation-guide
@@ -38,7 +38,7 @@ git commit -m "docs(skills): update aggregator hook examples"
 
 PR titles must also follow conventional commits format:
 
-```
+```text
 feat(hooks): add liquidity aggregator skill
 fix(evals): increase timeout for slow tests
 docs: update installation guide
@@ -75,7 +75,7 @@ PRs automatically receive AI-powered code review:
 
 To request a new review, comment:
 
-```
+```text
 @request-claude-review
 ```
 
@@ -124,9 +124,8 @@ Once approved:
 
 After merging to `main`:
 
-- **Package Publishing**: Changed packages are published to npm
 - **Documentation**: Docs are rebuilt and deployed
-- **API Docs**: TypeDoc generates updated API documentation
+- **Skills Publishing**: Skills become available via the [skills.sh CLI](https://skills.sh) (fetched directly from the default branch)
 
 ## Troubleshooting
 
@@ -159,8 +158,8 @@ If you added a new skill, create the eval suite:
 
 ```bash
 mkdir -p evals/suites/your-skill/cases
-mkdir -p evals/suites/your-skill/expected
-# Add promptfoo.yaml and test cases
+mkdir -p evals/suites/your-skill/rubrics
+# Add promptfoo.yaml, prompt-wrapper.txt, and test cases
 ```
 
 ## Related

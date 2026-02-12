@@ -26,7 +26,6 @@ export default defineConfig({
       },
       { text: 'Skills', link: '/skills/' },
       { text: 'Evals', link: '/evals/' },
-      { text: 'API', link: '/api/' },
     ],
 
     sidebar: generateSidebar(docsDir),

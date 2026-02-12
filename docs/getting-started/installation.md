@@ -9,40 +9,23 @@ Multiple installation options are available depending on your use case.
 
 ## Claude Code Plugin
 
-### Via Marketplace
-
-The recommended approach for Claude Code users:
-
-```bash
-# Add the marketplace
-/plugin marketplace add uniswap/uniswap-ai
-
-# Install specific plugin
-/plugin install uniswap-hooks
-```
-
 ### Via Git URL
 
-For development or testing:
+Install any plugin directly in Claude Code:
 
 ```bash
-/plugin install https://github.com/uniswap/uniswap-ai.git
+/install https://github.com/Uniswap/uniswap-ai/tree/main/packages/plugins/<plugin-name>
 ```
 
-## npm Packages
+Available plugins:
 
-For programmatic integration in your applications:
-
-```bash
-# Core SDK
-npm install @uniswap-ai/core
-
-# Or with yarn
-yarn add @uniswap-ai/core
-
-# Or with pnpm
-pnpm add @uniswap-ai/core
-```
+| Plugin            | Description                            |
+| ----------------- | -------------------------------------- |
+| `uniswap-hooks`   | Uniswap V4 hook development            |
+| `uniswap-cca`     | CCA auction configuration & deployment |
+| `uniswap-trading` | Uniswap swap integration               |
+| `uniswap-viem`    | EVM blockchain integration (viem)      |
+| `uniswap-driver`  | Swap & liquidity deep link planning    |
 
 ## Development Setup
 
@@ -65,60 +48,36 @@ npx nx run-many -t test
 
 ## System Requirements
 
-| Requirement | Version |
-| ----------- | ------- |
-| Node.js     | 22.x    |
-| npm         | 11.7.0  |
-| Claude Code | Latest  |
+| Requirement | Version | Purpose           |
+| ----------- | ------- | ----------------- |
+| Claude Code | Latest  | Plugin runtime    |
+| Node.js     | 22.x    | Local development |
+| npm         | 11.7.0+ | Local development |
 
-### npm Version
+### npm Version (for contributors)
 
-This project requires npm 11.7.0 for OIDC trusted publishing:
+Local development requires npm 11.7.0+:
 
 ```bash
-npm install -g npm@11.7.0
-npm --version  # Should output: 11.7.0
+npm install -g npm@latest
+npm --version  # Should output: 11.7.0 or higher
 ```
 
 ## Verifying Installation
 
-### Verify Plugin Installation
+After plugin installation, the plugin's skills should be available as slash commands. For example, after installing `uniswap-hooks`:
 
-After plugin installation:
-
-```bash
-# List installed plugins
-/plugin list
-
-# Show plugin details
-/plugin info uniswap-hooks
-```
-
-### npm Package
-
-After npm installation:
-
-```typescript
-import { version } from '@uniswap-ai/core';
-
-console.log(`Using @uniswap-ai/core v${version}`);
+```text
+/v4-security-foundations
+/aggregator-hook-creator
 ```
 
 ## Troubleshooting
 
 ### Plugin Not Found
 
-If the plugin doesn't appear after installation:
+If skills don't appear after installation:
 
-1. Refresh Claude Code: `/refresh`
-2. Check marketplace: `/plugin marketplace list`
-3. Try reinstalling: `/plugin uninstall uniswap-hooks && /plugin install uniswap-hooks`
-
-### npm Installation Fails
-
-If npm installation fails:
-
-1. Check Node.js version: `node --version` (should be 22.x)
-2. Check npm version: `npm --version` (should be 11.7.0)
-3. Clear npm cache: `npm cache clean --force`
-4. Try again: `npm install @uniswap-ai/core`
+1. Verify the plugin was installed successfully
+2. Try reinstalling with the full Git URL
+3. Check that Claude Code is up to date

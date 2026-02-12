@@ -5,7 +5,7 @@ order: 1
 
 # Plugins Overview
 
-Plugins are the primary distribution mechanism for Uniswap AI tools. Each plugin is a self-contained package that provides skills, agents, and commands for Claude Code.
+Plugins are the primary distribution mechanism for Uniswap AI tools. Each plugin is a self-contained package that provides skills and agents for Claude Code.
 
 ## Available Plugins
 
@@ -29,7 +29,7 @@ Plugins are the primary distribution mechanism for Uniswap AI tools. Each plugin
 
 Each plugin follows this structure:
 
-```
+```text
 plugin-name/
 ├── .claude-plugin/
 │   └── plugin.json        # Plugin manifest
@@ -37,9 +37,7 @@ plugin-name/
 │   └── skill-name/
 │       ├── SKILL.md       # Skill definition
 │       └── references/    # Supporting materials
-├── agents/                 # Specialized agents
-├── commands/               # Slash commands
-├── hooks/                  # Event hooks
+├── agents/                 # Specialized agents (optional)
 ├── package.json           # Package metadata
 ├── project.json           # Nx configuration
 └── README.md              # Documentation
@@ -51,12 +49,15 @@ The `plugin.json` file defines the plugin:
 
 ```json
 {
-  "name": "Plugin Name",
-  "version": "1.0.0",
-  "description": "Plugin description",
-  "skills": ["skill-name"],
-  "agents": ["agent-name"],
-  "commands": ["command-name"]
+  "name": "uniswap-hooks",
+  "version": "1.3.0",
+  "description": "AI-powered assistance for creating Uniswap V4 hooks",
+  "author": {
+    "name": "Uniswap Labs",
+    "email": "ai-services@uniswap.org"
+  },
+  "license": "MIT",
+  "skills": ["./skills/v4-security-foundations", "./skills/aggregator-hook-creator"]
 }
 ```
 
@@ -70,7 +71,9 @@ Skills are AI-powered capabilities defined in markdown:
 ---
 name: skill-name
 description: What the skill does
-invocation: /skill-name
+license: MIT
+metadata:
+  author: uniswap
 ---
 
 # Skill Name
@@ -82,30 +85,18 @@ See [Skills](/skills/) for available skills.
 
 ### Agents
 
-Agents are specialized AI configurations:
+Agents are specialized AI configurations defined as markdown files in the `agents/` directory. They provide expert-level assistance for specific domains:
 
-```yaml
-name: agent-name
-description: Agent purpose
-model: claude-3-5-sonnet
-tools:
-  - tool1
-  - tool2
+```markdown
+---
+name: swap-integration-expert
+description: Expert agent for complex swap integration questions
+---
+
+Instructions for the agent on how to handle specialized queries...
 ```
 
-### Commands
-
-Commands are slash commands that trigger actions:
-
-```typescript
-export const command = {
-  name: 'command-name',
-  description: 'What the command does',
-  execute: async (args) => {
-    // Command implementation
-  },
-};
-```
+Not all plugins include agents. Currently, `uniswap-trading` and `uniswap-viem` provide specialized expert agents.
 
 ## Versioning
 
@@ -117,10 +108,7 @@ Plugins follow semantic versioning:
 | New features (backward compatible) | Minor (1.X.0) |
 | Breaking changes                   | Major (X.0.0) |
 
-Version is tracked in:
-
-- `package.json` version field
-- `.claude-plugin/plugin.json` version field
+Version is tracked in `.claude-plugin/plugin.json`.
 
 ## Creating Plugins
 

@@ -19,8 +19,6 @@ This guide walks through creating a new plugin for Uniswap AI.
 # Create plugin directory
 mkdir -p packages/plugins/my-plugin/.claude-plugin
 mkdir -p packages/plugins/my-plugin/skills
-mkdir -p packages/plugins/my-plugin/agents
-mkdir -p packages/plugins/my-plugin/commands
 ```
 
 ## Step 2: Create Plugin Manifest
@@ -29,14 +27,15 @@ Create `.claude-plugin/plugin.json`:
 
 ```json
 {
-  "name": "My Plugin",
+  "name": "my-plugin",
   "version": "0.1.0",
   "description": "Description of what your plugin does",
-  "author": "Your Name",
+  "author": {
+    "name": "Your Name",
+    "email": "your-email@example.com"
+  },
   "license": "MIT",
-  "skills": [],
-  "agents": [],
-  "commands": []
+  "skills": []
 }
 ```
 
@@ -78,7 +77,9 @@ Create `skills/my-skill/SKILL.md`:
 ---
 name: my-skill
 description: Brief description of the skill
-invocation: /my-skill
+license: MIT
+metadata:
+  author: uniswap
 ---
 
 # My Skill
@@ -116,7 +117,7 @@ Update `plugin.json` to include the skill:
 
 ```json
 {
-  "skills": ["my-skill"]
+  "skills": ["./skills/my-skill"]
 }
 ```
 
@@ -126,50 +127,56 @@ Every skill needs an evaluation suite:
 
 ```bash
 mkdir -p evals/suites/my-skill/cases
-mkdir -p evals/suites/my-skill/expected
+mkdir -p evals/suites/my-skill/rubrics
+```
+
+Create `evals/suites/my-skill/prompt-wrapper.txt`:
+
+```text
+You are an AI assistant with the following skill loaded. Follow its instructions
+precisely when responding to the user's request.
+
+{{ skill_content }}
+
+---
+
+User request:
+
+{{ case_content }}
 ```
 
 Create `evals/suites/my-skill/promptfoo.yaml`:
 
 ```yaml
-description: Evaluations for my-skill
-
-providers:
-  - id: anthropic:messages:claude-sonnet-4-20250514
-    label: claude-sonnet
+# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
+description: 'My Skill Evaluation'
 
 prompts:
-  - file://cases/basic-test.md
+  - file://prompt-wrapper.txt
+
+providers:
+  - id: anthropic:claude-sonnet-4-5-20250929
+    config:
+      temperature: 0
+      max_tokens: 4096
+
+defaultTest:
+  options:
+    timeout: 120000
+  vars:
+    skill_content: file://../../../packages/plugins/my-plugin/skills/my-skill/SKILL.md
 
 tests:
   - vars:
-      context: 'Test context'
+      case_content: file://cases/basic.md
     assert:
       - type: llm-rubric
-        value: file://../../rubrics/skill-quality.txt
+        value: file://rubrics/correctness.txt
+        threshold: 0.8
+        provider: anthropic:claude-sonnet-4-5-20250929
 ```
 
-Create a test case in `evals/suites/my-skill/cases/basic-test.md`:
-
-```markdown
-# Test: Basic Skill Usage
-
-## Context
-
-{{context}}
-
-## Prompt
-
-Invoke /my-skill to accomplish a specific task.
-
-## Expected Behavior
-
-The skill should:
-
-- Do X correctly
-- Handle Y appropriately
-- Produce Z output
-```
+Create a test case in `evals/suites/my-skill/cases/basic.md` and rubrics in `evals/suites/my-skill/rubrics/`. See [Writing Evals](/evals/writing-evals) for detailed guidance.
 
 ## Step 6: Create README
 
@@ -183,7 +190,7 @@ Description of what the plugin provides.
 ## Installation
 
 \`\`\`bash
-/install @uniswap/my-plugin
+/install https://github.com/Uniswap/uniswap-ai/tree/main/packages/plugins/my-plugin
 \`\`\`
 
 ## Skills
@@ -205,8 +212,9 @@ Add your plugin to `.claude-plugin/marketplace.json`:
 {
   "plugins": [
     {
-      "name": "@uniswap/my-plugin",
-      "path": "packages/plugins/my-plugin"
+      "name": "my-plugin",
+      "source": "./packages/plugins/my-plugin",
+      "description": "Description of what your plugin does"
     }
   ]
 }

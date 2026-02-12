@@ -64,12 +64,11 @@ Claude will recognize this relates to aggregator hooks and apply the relevant sk
 
 ## Skill Structure
 
-Each skill includes:
+Each skill is a `SKILL.md` markdown file with YAML frontmatter and detailed instructions:
 
-- **Description**: When the skill activates
-- **Model**: Which Claude model to use (opus, sonnet, haiku)
-- **Allowed Tools**: What tools the skill can use
-- **Instructions**: Detailed guidance for the task
+- **Frontmatter**: Name, description, license, and metadata
+- **Instructions**: Step-by-step guidance for the AI agent
+- **References**: Supporting materials in a `references/` subdirectory (optional)
 
 ## Contributing Skills
 

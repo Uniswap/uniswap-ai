@@ -33,14 +33,7 @@ features:
 ### Claude Code Marketplace
 
 ```bash
-/plugin marketplace add uniswap/uniswap-ai
-/plugin install uniswap-hooks
-```
-
-### npm Packages
-
-```bash
-npm install @uniswap-ai/core
+/install https://github.com/Uniswap/uniswap-ai/tree/main/packages/plugins/<plugin-name>
 ```
 
 ## Featured Skills
