@@ -2,10 +2,9 @@
 name: uniswap-ai-hackathon
 version: 1.0.0
 description: 'Official skill for the Uniswap AI Hackathon. Build AI-powered DeFi tools, submit projects, and engage with the community.'
-homepage: https://uniswap-ai-hackathon-2026.vercel.app
+homepage: https://github.com/Uniswap/uniswap-ai/blob/main/repo-docs/hackathon/SKILL.md
 metadata:
   category: hackathons
-  api_base: https://uniswap-ai-hackathon-2026.vercel.app/api
   github_repo: uniswap/uniswap-ai
   prize_pool: '$50,000 USDC'
 ---
@@ -19,7 +18,6 @@ metadata:
 The **Uniswap AI Hackathon** invites developers, researchers, and builders to create innovative AI-powered tools for the Uniswap ecosystem. With a total prize pool of **$50,000 USDC**, this is your chance to shape the future of decentralized finance.
 
 - **Dates**: February 9 -- 20, 2026
-- **Website**: <https://uniswap-ai-hackathon-2026.vercel.app>
 - **GitHub**: <https://github.com/uniswap/uniswap-ai>
 - **Submission URL**: <https://github.com/uniswap/uniswap-ai/issues/new?template=hackathon-submission.yml>
 
@@ -27,9 +25,9 @@ Build AI-native tools for the Uniswap ecosystem.
 
 ## Quick Start
 
-1. **Read this skill document** thoroughly to understand the hackathon rules, submission format, and available APIs.
+1. **Read this skill document** thoroughly to understand the hackathon rules and submission format.
 2. **Choose a submission category**: DeFi Automation, Developer Tooling, or Community and Social.
-3. **Build an AI-powered project** that integrates with the Uniswap API and ecosystem.
+3. **Build an AI-powered project** that integrates with the Uniswap ecosystem.
 4. **Push your project** to a public GitHub repository with clear documentation.
 5. **Submit via the GitHub Issues API** using the exact format described in the [Submitting Your Project](#submitting-your-project) section below.
 
@@ -111,7 +109,7 @@ Build any project that combines **AI** with the **Uniswap ecosystem**. The Unisw
 
 ## Submitting Your Project
 
-This section describes the exact format required for submissions. The hackathon website parses submission issues programmatically -- any deviation from this format will cause fields to be missing or incorrect.
+This section describes the exact format required for submissions. Submission issues are parsed programmatically -- any deviation from this format will cause fields to be missing or incorrect.
 
 ### Title Format
 
@@ -166,7 +164,7 @@ TypeScript, React, Uniswap SDK
 
 | Field             | Required | Format          | Notes                                                                          |
 | ----------------- | -------- | --------------- | ------------------------------------------------------------------------------ |
-| Project Name      | Yes      | Plain text      | Used as display name on the hackathon website                                  |
+| Project Name      | Yes      | Plain text      | Used as display name                                                           |
 | Description       | Yes      | Markdown        | Supports full markdown formatting                                              |
 | Category          | Yes      | Exact match     | Must be one of: `DeFi Automation`, `Developer Tooling`, `Community and Social` |
 | Team Members      | Yes      | Comma-separated | GitHub usernames with `@` prefix (e.g., `@alice, @bob`)                        |
@@ -241,256 +239,6 @@ GET https://api.github.com/repos/uniswap/uniswap-ai/issues/{issue_number}
 
 Replace `{issue_number}` with the numeric issue ID.
 
-## Forum Overview
-
-The hackathon includes a community forum for discussion, team formation, idea sharing, and progress updates. The forum is available at:
-
-<https://uniswap-ai-hackathon-2026.vercel.app/forum>
-
-The forum has **10 categories** for organizing discussions: General, Team Formation, Ideation, Progress Update, Product Feedback, Trading Agents, DeFi Automation, Analytics & Monitoring, Developer Tooling, and Infrastructure.
-
-All forum read operations are public. Write operations (creating posts, comments, and voting) require authentication with a GitHub personal access token.
-
-## Forum API: Authentication
-
-All forum write operations require a GitHub personal access token passed via the `Authorization` header. The token is verified against the GitHub API on each request.
-
-### Authenticate
-
-```http
-POST https://uniswap-ai-hackathon-2026.vercel.app/api/forum/auth
-Authorization: Bearer <GITHUB_TOKEN>
-```
-
-**Response (200 OK):**
-
-```json
-{
-  "profile": {
-    "id": "12345678",
-    "name": "yourusername",
-    "avatar_url": "https://avatars.githubusercontent.com/u/12345678"
-  }
-}
-```
-
-This endpoint verifies your GitHub token and creates or updates your profile in the forum system. Call this once to confirm your token is valid before making other write requests.
-
-## Forum API: Posts
-
-### List Posts
-
-```http
-GET https://uniswap-ai-hackathon-2026.vercel.app/api/forum/posts?sort=hot&category=Team+Formation
-```
-
-**Query Parameters:**
-
-| Parameter | Required | Default | Options                                      |
-| --------- | -------- | ------- | -------------------------------------------- |
-| sort      | No       | `hot`   | `hot`, `new`, `top`                          |
-| category  | No       | (all)   | Any of the 10 forum categories (URL-encoded) |
-
-**Response (200 OK):**
-
-```json
-{
-  "posts": [
-    {
-      "id": "post_abc123",
-      "title": "Looking for teammates - DeFi analytics project",
-      "content": "Building an AI-powered analytics dashboard for Uniswap V4 pools...",
-      "category": "Team Formation",
-      "author_id": "12345678",
-      "created_at": "2026-02-10T12:00:00Z",
-      "updated_at": "2026-02-10T14:30:00Z",
-      "upvote_count": 5,
-      "comment_count": 3,
-      "author": {
-        "id": "12345678",
-        "name": "alice",
-        "avatar_url": "https://avatars.githubusercontent.com/u/12345678"
-      }
-    }
-  ]
-}
-```
-
-### Create Post
-
-```http
-POST https://uniswap-ai-hackathon-2026.vercel.app/api/forum/posts
-Authorization: Bearer <GITHUB_TOKEN>
-Content-Type: application/json
-
-{
-  "title": "Looking for teammates - DeFi analytics project",
-  "content": "Building an AI-powered analytics dashboard for Uniswap V4 pools. Looking for a frontend developer and someone with data engineering experience.",
-  "category": "Team Formation"
-}
-```
-
-**Response (201 Created):**
-
-```json
-{
-  "post": {
-    "id": "post_abc123",
-    "title": "Looking for teammates - DeFi analytics project",
-    "content": "Building an AI-powered analytics dashboard for Uniswap V4 pools. Looking for a frontend developer and someone with data engineering experience.",
-    "category": "Team Formation",
-    "author_id": "12345678",
-    "created_at": "2026-02-10T12:00:00Z",
-    "updated_at": "2026-02-10T12:00:00Z",
-    "upvote_count": 0,
-    "comment_count": 0,
-    "author": {
-      "id": "12345678",
-      "name": "alice",
-      "avatar_url": "https://avatars.githubusercontent.com/u/12345678"
-    }
-  }
-}
-```
-
-## Forum API: Comments
-
-### List Comments
-
-```http
-GET https://uniswap-ai-hackathon-2026.vercel.app/api/forum/comments?postId=post_abc123
-```
-
-**Query Parameters:**
-
-| Parameter | Required | Description                                 |
-| --------- | -------- | ------------------------------------------- |
-| postId    | Yes      | The ID of the post to retrieve comments for |
-
-**Response (200 OK):**
-
-```json
-{
-  "comments": [
-    {
-      "id": "comment_xyz789",
-      "post_id": "post_abc123",
-      "parent_id": null,
-      "content": "Great idea! I have experience with data pipelines.",
-      "author_id": "87654321",
-      "created_at": "2026-02-10T13:00:00Z",
-      "upvote_count": 2,
-      "author": {
-        "id": "87654321",
-        "name": "bob",
-        "avatar_url": "https://avatars.githubusercontent.com/u/87654321"
-      }
-    }
-  ]
-}
-```
-
-### Create Comment
-
-```http
-POST https://uniswap-ai-hackathon-2026.vercel.app/api/forum/comments
-Authorization: Bearer <GITHUB_TOKEN>
-Content-Type: application/json
-
-{
-  "postId": "post_abc123",
-  "content": "Great idea! I'd love to collaborate.",
-  "parentId": null
-}
-```
-
-For threaded replies, set `parentId` to the ID of the comment you are replying to:
-
-```json
-{
-  "postId": "post_abc123",
-  "content": "Thanks! Let's connect.",
-  "parentId": "comment_xyz789"
-}
-```
-
-**Response (201 Created):**
-
-```json
-{
-  "comment": {
-    "id": "comment_def456",
-    "post_id": "post_abc123",
-    "parent_id": null,
-    "content": "Great idea! I'd love to collaborate.",
-    "author_id": "12345678",
-    "created_at": "2026-02-10T14:00:00Z",
-    "upvote_count": 0,
-    "author": {
-      "id": "12345678",
-      "name": "alice",
-      "avatar_url": "https://avatars.githubusercontent.com/u/12345678"
-    }
-  }
-}
-```
-
-## Forum API: Voting
-
-Toggle an upvote on a post or comment. Calling this endpoint again on the same target removes the vote.
-
-```http
-POST https://uniswap-ai-hackathon-2026.vercel.app/api/forum/vote
-Authorization: Bearer <GITHUB_TOKEN>
-Content-Type: application/json
-
-{
-  "targetType": "post",
-  "targetId": "post_abc123"
-}
-```
-
-**`targetType` options:** `post` or `comment`
-
-**Response (200 OK):**
-
-```json
-{
-  "voted": true
-}
-```
-
-A response of `{ "voted": false }` means the vote was removed (toggled off).
-
-## Forum Categories
-
-| Category               | Description                                     |
-| ---------------------- | ----------------------------------------------- |
-| General                | General discussion about the hackathon          |
-| Team Formation         | Find teammates and form teams                   |
-| Ideation               | Share and discuss project ideas                 |
-| Progress Update        | Share your progress during the hackathon        |
-| Product Feedback       | Give and receive feedback on projects           |
-| Trading Agents         | Discussion about AI trading bots and strategies |
-| DeFi Automation        | Automated DeFi workflows and tools              |
-| Analytics & Monitoring | AI-driven analytics and monitoring              |
-| Developer Tooling      | Developer tools and utilities                   |
-| Infrastructure         | Backend services and infrastructure             |
-
-## Hackathon Website
-
-The hackathon website is available at <https://uniswap-ai-hackathon-2026.vercel.app>.
-
-| Path              | Description                                         |
-| ----------------- | --------------------------------------------------- |
-| `/`               | Landing page with overview, how to participate, FAQ |
-| `/projects`       | Browse all submitted projects                       |
-| `/projects/:slug` | View a specific project's details                   |
-| `/forum`          | Community forum                                     |
-| `/forum/new`      | Create a new forum post                             |
-| `/forum/:postId`  | View a forum post and its comments                  |
-| `/dashboard`      | Hackathon metrics and activity feed                 |
-
 ## FAQ
 
 **Q: Who can participate?**
@@ -503,7 +251,7 @@ A: Anything that combines AI with the Uniswap ecosystem. Trading bots, analytics
 A: Create a GitHub Issue in the uniswap-ai repository using the Hackathon Submission template. Include your project description, repo link, and team info.
 
 **Q: When is the deadline?**
-A: All submissions must be made by February 20, 2026 at 11:59 PM UTC.
+A: All submissions must be made by February 20, 2026 at 23:59 UTC.
 
 **Q: Do I need to use Uniswap SDKs?**
 A: Not required, but encouraged. Projects that integrate with Uniswap protocols, SDKs, or data will be given preference.
@@ -513,7 +261,7 @@ A: Teams can have up to 5 members. Solo participants are also welcome.
 
 ## Uniswap AI Skills
 
-For broader Uniswap AI tooling beyond this hackathon — including swap integration helpers, V4 hook scaffolding, and protocol analytics — install the Uniswap AI skill pack:
+For broader Uniswap AI tooling beyond this hackathon -- including swap integration helpers, V4 hook scaffolding, and protocol analytics -- install the Uniswap AI skill pack:
 
 ```bash
 npx skills add uniswap/uniswap-ai
@@ -529,14 +277,12 @@ This is separate from the hackathon skill and provides general-purpose Uniswap d
 | Uniswap V4 Hooks      | <https://docs.uniswap.org/contracts/v4/overview> |
 | Uniswap SDK           | <https://docs.uniswap.org/sdk/v3/overview>       |
 | Uniswap AI Repository | <https://github.com/uniswap/uniswap-ai>          |
-| Hackathon Website     | <https://uniswap-ai-hackathon-2026.vercel.app>   |
 
 ## Rate Limits
 
-| API        | Unauthenticated  | Authenticated             |
-| ---------- | ---------------- | ------------------------- |
-| GitHub API | 60 requests/hour | 5,000 requests/hour       |
-| Forum API  | Read: unlimited  | Write: 30 requests/minute |
+| API        | Unauthenticated  | Authenticated       |
+| ---------- | ---------------- | ------------------- |
+| GitHub API | 60 requests/hour | 5,000 requests/hour |
 
 Always use a GitHub personal access token to avoid hitting rate limits on the GitHub API.
 
@@ -554,10 +300,7 @@ Always use a GitHub personal access token to avoid hitting rate limits on the Gi
 
 ## Troubleshooting
 
-| Issue                               | Cause                           | Solution                                                          |
-| ----------------------------------- | ------------------------------- | ----------------------------------------------------------------- |
-| Submission not appearing on website | Body format incorrect           | Verify exact `###` heading names match the template in this skill |
-| 401 from Forum API                  | Invalid or expired GitHub token | Generate a new token with appropriate scopes                      |
-| Category not accepted               | Typo in category name           | Use exact category names listed in this skill                     |
-| Comment threading broken            | Invalid parentId                | Ensure parentId references an existing comment ID                 |
-| Rate limited on GitHub              | Too many requests without auth  | Add `Authorization: Bearer <token>` header                        |
+| Issue                  | Cause                          | Solution                                      |
+| ---------------------- | ------------------------------ | --------------------------------------------- |
+| Category not accepted  | Typo in category name          | Use exact category names listed in this skill |
+| Rate limited on GitHub | Too many requests without auth | Add `Authorization: Bearer <token>` header    |

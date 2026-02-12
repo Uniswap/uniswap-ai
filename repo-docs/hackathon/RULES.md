@@ -6,7 +6,7 @@ Build AI-native tools for the Uniswap ecosystem.
 
 **7 days. $50K in prizes. February 9 -- 20, 2026.**
 
-- **Website**: <https://uniswap-ai-hackathon-2026.vercel.app>
+- **Website**: <https://github.com/Uniswap/uniswap-ai/blob/main/repo-docs/hackathon/SKILL.md>
 - **GitHub**: <https://github.com/uniswap/uniswap-ai>
 - **Submission**: [Submit via GitHub Issue](https://github.com/uniswap/uniswap-ai/issues/new?template=hackathon-submission.yml)
 
@@ -126,10 +126,10 @@ A: Prizes are paid in USDC. Winners must complete KYC verification. When submitt
 
 ## Resources
 
-| Resource              | URL                                              |
-| --------------------- | ------------------------------------------------ |
-| Uniswap Documentation | <https://docs.uniswap.org>                       |
-| Uniswap V4 Hooks      | <https://docs.uniswap.org/contracts/v4/overview> |
-| Uniswap SDK           | <https://docs.uniswap.org/sdk/v3/overview>       |
-| Uniswap AI Repository | <https://github.com/uniswap/uniswap-ai>          |
-| Hackathon Website     | <https://uniswap-ai-hackathon-2026.vercel.app>   |
+| Resource              | URL                                                                            |
+| --------------------- | ------------------------------------------------------------------------------ |
+| Uniswap Documentation | <https://docs.uniswap.org>                                                     |
+| Uniswap V4 Hooks      | <https://docs.uniswap.org/contracts/v4/overview>                               |
+| Uniswap SDK           | <https://docs.uniswap.org/sdk/v3/overview>                                     |
+| Uniswap AI Repository | <https://github.com/uniswap/uniswap-ai>                                        |
+| Hackathon Website     | <https://github.com/Uniswap/uniswap-ai/blob/main/repo-docs/hackathon/SKILL.md> |
