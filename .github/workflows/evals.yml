@@ -136,7 +136,10 @@ jobs:
             fi
 
             # Run eval and capture output
-            npx promptfoo eval \
+            # Pin promptfoo via --package to prevent local bin shadowing from malicious PRs.
+            # This is critical: this job has access to API secrets.
+            # Update the version here when upgrading promptfoo in package.json.
+            npx --package=promptfoo@0.120.22 -- promptfoo eval \
               -c "$suite_dir/promptfoo.yaml" \
               --output "$suite_dir/results.json" \
               --no-progress-bar \
