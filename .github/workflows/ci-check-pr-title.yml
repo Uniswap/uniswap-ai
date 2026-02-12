@@ -1,6 +1,6 @@
 name: 'Check PR Title'
 
-on:
+on: # zizmor: ignore[dangerous-triggers]
   pull_request_target:
     types:
       - opened
@@ -9,6 +9,8 @@ on:
   workflow_run:
     workflows: ['Claude: Generate PR Title & Description']
     types: [completed]
+
+permissions: {}
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
@@ -19,6 +21,9 @@ jobs:
     if: ${{ github.event_name == 'pull_request_target' || github.event.workflow_run.conclusion == 'success' }}
     name: 🔡 Check PR Title
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
     steps:
       - uses: bullfrogsec/bullfrog@1831f79cce8ad602eef14d2163873f27081ebfb3 # v0.8.4
         with:
@@ -29,6 +34,7 @@ jobs:
         with:
           sparse-checkout: .github/actions
           sparse-checkout-cone-mode: false
+          persist-credentials: false
 
       - name: Check for automated PR
         id: check-automated
