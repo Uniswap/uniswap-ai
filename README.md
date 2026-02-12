@@ -30,36 +30,37 @@ npx skills add Uniswap/uniswap-ai
 /plugin install uniswap-hooks
 ```
 
-### npm Packages
-
-```bash
-# Install SDK packages
-npm install @uniswap-ai/core
-```
-
 ## Plugins
-
-### uniswap-cca
-
-Configuration and deployment tools for Continuous Clearing Auction (CCA) smart contracts.
-
-**Skills:**
-
-- `configurator` - Interactive bulk form configuration for CCA auction parameters
-- `deployer` - Deployment guidance with safety checks and Factory integration
-
-**MCP Servers:**
-
-- `cca-supply-schedule` - Generate and encode supply schedules using normalized convex curves
 
 ### uniswap-hooks
 
-AI-powered assistance for creating Uniswap V4 hooks.
+AI-powered, security-first assistance for creating Uniswap V4 hooks.
 
-**Skills:**
+**Skills:** `v4-security-foundations`, `aggregator-hook-creator`
 
-- `v4-security-foundations` - Security-first guide for V4 hook development
-- `aggregator-hook-creator` - Create custom aggregator hooks for Uniswap V4
+### uniswap-trading
+
+Integrate Uniswap swaps via Trading API, Universal Router SDK, or direct smart contract calls.
+
+**Skills:** `swap-integration`
+
+### uniswap-cca
+
+Configure and deploy Continuous Clearing Auction (CCA) smart contracts for token distribution.
+
+**Skills:** `configurator`, `deployer` | **MCP Servers:** `cca-supply-schedule`
+
+### uniswap-driver
+
+Plan Uniswap swaps and liquidity positions with deep link generation for the Uniswap interface.
+
+**Skills:** `swap-planner`, `liquidity-planner`
+
+### uniswap-viem
+
+Foundational EVM blockchain integration using viem and wagmi.
+
+**Skills:** `viem-integration`
 
 ## Agent-Agnostic Design
 
@@ -103,13 +104,10 @@ npx nx run-many -t lint
 ```text
 uniswap-ai/
 ├── packages/
-│   ├── plugins/         # Claude Code plugins (skills live here)
-│   ├── sdk/             # TypeScript SDKs
-│   ├── prompts/         # Shared prompt templates
-│   └── utils/           # Shared utilities
-├── evals/               # AI tool evaluations
+│   └── plugins/         # Claude Code plugins (skills live here)
+├── evals/               # AI tool evaluations (Promptfoo)
 ├── docs/                # VitePress documentation
-└── scripts/             # Build scripts
+└── scripts/             # Build and validation scripts
 ```
 
 ## Contributing
