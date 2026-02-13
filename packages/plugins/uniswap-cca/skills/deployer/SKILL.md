@@ -13,6 +13,8 @@ metadata:
 
 Deploy Continuous Clearing Auction (CCA) smart contracts using the `ContinuousClearingAuctionFactory` with CREATE2 for consistent addresses across chains.
 
+> **Runtime Compatibility:** This skill uses `AskUserQuestion` for interactive prompts. If `AskUserQuestion` is not available in your runtime, collect the same parameters through natural language conversation instead.
+
 ## Instructions for Claude Code
 
 When the user invokes this skill, guide them through the CCA deployment process with appropriate safety warnings and validation.
@@ -52,23 +54,6 @@ This tool and all deployment instructions are provided **for educational purpose
 4. ✅ **Audit your contracts** before deploying with real funds
 
 **Use AskUserQuestion to confirm the user acknowledges these warnings before proceeding with deployment steps.**
-
----
-
-## ⚠️ Pre-Deployment Acknowledgment Required
-
-**STOP: Before proceeding with deployment, you must confirm:**
-
-This deployment guide is provided **for educational purposes only**. AI-generated deployment instructions may contain errors or security vulnerabilities.
-
-**Required Acknowledgments:**
-
-- [ ] I understand this is educational content and may contain errors
-- [ ] I understand that AI-generated parameters may contain errors that may result in loss of funds
-
-**Use AskUserQuestion to have the user explicitly confirm they acknowledge these risks and accept responsibility before providing deployment commands.**
-
-**If the user does not acknowledge, stop and do not provide deployment instructions.**
 
 ---
 
@@ -212,6 +197,97 @@ Where:
 - `amount`: Amount of tokens to sell in the auction
 - `configData`: ABI-encoded `AuctionParameters` struct
 - `salt`: Optional bytes32 value for vanity address mining
+
+#### Step 3.5: Encode Configuration to configData
+
+The factory's `initializeDistribution` expects `configData` as ABI-encoded `AuctionParameters`. Convert your JSON config to encoded bytes:
+
+**Using cast (Foundry CLI):**
+
+```bash
+# Encode the AuctionParameters struct
+cast abi-encode "initializeDistribution(address,uint256,bytes,bytes32)" \
+  "$TOKEN_ADDRESS" \
+  "$TOTAL_SUPPLY" \
+  "$(cast abi-encode "(address,address,address,uint64,uint64,uint64,uint256,address,uint256,uint128,bytes)" \
+    "$CURRENCY" \
+    "$TOKENS_RECIPIENT" \
+    "$FUNDS_RECIPIENT" \
+    "$START_BLOCK" \
+    "$END_BLOCK" \
+    "$CLAIM_BLOCK" \
+    "$TICK_SPACING" \
+    "$VALIDATION_HOOK" \
+    "$FLOOR_PRICE" \
+    "$REQUIRED_CURRENCY_RAISED" \
+    "$ENCODED_SUPPLY_SCHEDULE")" \
+  "0x0000000000000000000000000000000000000000000000000000000000000000"
+```
+
+**Using a Foundry Script:**
+
+```solidity
+// script/DeployAuction.s.sol
+pragma solidity ^0.8.24;
+
+import "forge-std/Script.sol";
+
+interface ICCAFactory {
+    function initializeDistribution(
+        address token,
+        uint256 amount,
+        bytes calldata configData,
+        bytes32 salt
+    ) external returns (address);
+}
+
+contract DeployAuction is Script {
+    function run() external {
+        // Load config values
+        address token = vm.envAddress("TOKEN");
+        uint256 amount = vm.envUint("TOTAL_SUPPLY");
+
+        // Encode AuctionParameters
+        bytes memory configData = abi.encode(
+            vm.envAddress("CURRENCY"),
+            vm.envAddress("TOKENS_RECIPIENT"),
+            vm.envAddress("FUNDS_RECIPIENT"),
+            uint64(vm.envUint("START_BLOCK")),
+            uint64(vm.envUint("END_BLOCK")),
+            uint64(vm.envUint("CLAIM_BLOCK")),
+            vm.envUint("TICK_SPACING"),
+            vm.envAddress("VALIDATION_HOOK"),
+            vm.envUint("FLOOR_PRICE"),
+            uint128(vm.envUint("REQUIRED_CURRENCY_RAISED")),
+            vm.envBytes("ENCODED_SUPPLY_SCHEDULE")
+        );
+
+        vm.startBroadcast();
+
+        // Approve token transfer to factory
+        IERC20(token).approve(
+            0xCCccCcCAE7503Cac057829BF2811De42E16e0bD5,
+            amount
+        );
+
+        // Deploy auction
+        address auction = ICCAFactory(
+            0xCCccCcCAE7503Cac057829BF2811De42E16e0bD5
+        ).initializeDistribution(
+            token,
+            amount,
+            configData,
+            bytes32(0) // salt
+        );
+
+        vm.stopBroadcast();
+
+        console.log("Auction deployed at:", auction);
+    }
+}
+```
+
+**Important:** You must approve the token transfer to the factory before calling `initializeDistribution`. The factory will transfer `amount` tokens from your address to the newly created auction contract.
 
 #### Step 4: Using Foundry Script
 
@@ -357,13 +433,14 @@ After auction ends:
 
 CCA is deployed to canonical addresses across select EVM chains:
 
-| Chain ID | Network  | Block Time |
-| -------- | -------- | ---------- |
-| 1        | Mainnet  | 12s        |
-| 1301     | Unichain | 2s         |
-| 8453     | Base     | 2s         |
-| 42161    | Arbitrum | 2s         |
-| 11155111 | Sepolia  | 12s        |
+| Chain ID | Network          | Block Time |
+| -------- | ---------------- | ---------- |
+| 1        | Mainnet          | 12s        |
+| 130      | Unichain         | 1s         |
+| 1301     | Unichain Sepolia | 2s         |
+| 8453     | Base             | 2s         |
+| 42161    | Arbitrum         | 2s         |
+| 11155111 | Sepolia          | 12s        |
 
 ---
 
