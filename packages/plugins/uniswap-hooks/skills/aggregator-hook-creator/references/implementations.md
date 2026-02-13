@@ -22,7 +22,7 @@ import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/src/types/PoolId.sol";
 import {BalanceDelta} from "v4-core/types/BalanceDelta.sol";
-import {BeforeSwapDelta, BeforeSwapDeltaLibrary} from "v4-core/types/BeforeSwapDelta.sol";
+import {BeforeSwapDelta, BeforeSwapDeltaLibrary, toBeforeSwapDelta} from "v4-core/types/BeforeSwapDelta.sol";
 
 struct ExternalAction {
     address to;
@@ -32,6 +32,9 @@ struct ExternalAction {
 
 contract GenericAggregatorHook is BaseHook {
     using PoolIdLibrary for PoolKey;
+
+    address public owner;
+    mapping(address => bool) public allowedTargets;
 
     // Routing analytics
     mapping(PoolId => uint256) public v4Volume;
@@ -44,7 +47,14 @@ contract GenericAggregatorHook is BaseHook {
         uint256 amount
     );
 
-    constructor(IPoolManager _poolManager) BaseHook(_poolManager) {}
+    constructor(IPoolManager _poolManager) BaseHook(_poolManager) {
+        owner = msg.sender;
+    }
+
+    function setAllowedTarget(address target, bool allowed) external {
+        require(msg.sender == owner, "Not owner");
+        allowedTargets[target] = allowed;
+    }
 
     function getHookPermissions() public pure override returns (Hooks.Permissions memory) {
         return Hooks.Permissions({
@@ -81,7 +91,8 @@ contract GenericAggregatorHook is BaseHook {
 
         // Execute each external action
         for (uint256 i = 0; i < actions.length; i++) {
-            (bool success, ) = actions[i].to.call{value: actions[i].value}(actions[i].data);
+            require(allowedTargets[actions[i].to], "Target not allowed");
+            (bool success, bytes memory result) = actions[i].to.call{value: actions[i].value}(actions[i].data);
             require(success, "External call failed");
         }
 
@@ -114,18 +125,34 @@ contract GenericAggregatorHook is BaseHook {
     }
 
     /// @notice Calculate the balance delta for external routing
-    /// @dev Implementation depends on your routing strategy. This is a placeholder.
+    /// @dev When routing externally, the hook tells PoolManager it handled the swap
+    ///      by returning a delta equal to the specified amount. This prevents
+    ///      PoolManager from also executing the swap in the V4 pool.
+    ///
+    /// Token flow for external routing:
+    ///   1. User sends tokens to PoolManager (via router)
+    ///   2. Hook takes tokens from PoolManager (via take())
+    ///   3. Hook swaps on external DEX
+    ///   4. Hook returns output tokens to PoolManager (via settle())
+    ///   5. PoolManager sends output tokens to user (via router)
     function _calculateDelta(
-        PoolKey calldata, /* key */
-        IPoolManager.SwapParams calldata /* params */
-    ) internal pure returns (BeforeSwapDelta) {
-        // TODO: Implement based on external swap results
-        // For pass-through to V4, return ZERO_DELTA
-        // For full external routing, calculate actual token deltas
-        return BeforeSwapDeltaLibrary.ZERO_DELTA;
+        PoolKey calldata key,
+        IPoolManager.SwapParams calldata params
+    ) internal returns (BeforeSwapDelta) {
+        // The specified amount is what the user wants to swap
+        // For EXACT_INPUT (amountSpecified < 0): we take the input tokens
+        // For EXACT_OUTPUT (amountSpecified > 0): we provide the output tokens
+        int128 specifiedAmount = int128(params.amountSpecified);
+
+        // Return a delta claiming the hook handled the specified amount
+        // This tells PoolManager: "I handled this swap, don't execute it in the pool"
+        // First param = specified token delta, Second param = unspecified token delta
+        return toBeforeSwapDelta(specifiedAmount, 0);
     }
 
-    receive() external payable {}
+    receive() external payable {
+        require(msg.sender == owner || allowedTargets[msg.sender], "Unauthorized ETH sender");
+    }
 }
 ```
 
@@ -185,15 +212,28 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 import {Deployers} from "v4-core/test/utils/Deployers.sol";
-import {GenericAggregatorHook} from "../src/GenericAggregatorHook.sol";
+import {GenericAggregatorHook, ExternalAction} from "../src/GenericAggregatorHook.sol";
+
+interface ICurvePool {
+    function exchange(int128 i, int128 j, uint256 dx, uint256 min_dy) external returns (uint256);
+}
+
+contract MockCurvePool is ICurvePool {
+    function exchange(int128, int128, uint256 dx, uint256) external pure returns (uint256) {
+        return dx; // 1:1 mock exchange
+    }
+}
 
 contract AggregatorHookTest is Test, Deployers {
     GenericAggregatorHook hook;
+    MockCurvePool mockCurvePool;
 
     function setUp() public {
         deployFreshManagerAndRouters();
         hook = new GenericAggregatorHook(manager);
         (key, ) = initPool(currency0, currency1, hook, 3000, SQRT_PRICE_1_1, ZERO_BYTES);
+        mockCurvePool = new MockCurvePool();
+        hook.setAllowedTarget(address(mockCurvePool), true);
     }
 
     function test_curveSwapViaHook() public {
@@ -207,11 +247,31 @@ contract AggregatorHookTest is Test, Deployers {
         swap(key, true, 1e18, hookData);
     }
 
-    function test_volumeTracking() public {
-        // Swap without external routing
+    function test_noExternalRouting() public {
+        // Swap without external routing — should use V4 pool
         swap(key, true, 1e18, "");
         assertEq(hook.v4Volume(key.toId()), 1e18);
         assertEq(hook.externalVolume(key.toId()), 0);
+    }
+
+    function test_volumeTracking() public {
+        // Swap with external routing
+        ExternalAction[] memory actions = new ExternalAction[](1);
+        actions[0] = ExternalAction({
+            to: address(mockCurvePool),
+            value: 0,
+            data: abi.encodeCall(ICurvePool.exchange, (0, 1, 1e18, 0))
+        });
+        swap(key, true, 1e18, abi.encode(actions));
+        assertEq(hook.externalVolume(key.toId()), 1e18);
+    }
+
+    function test_unauthorizedTargetReverts() public {
+        address unauthorized = makeAddr("unauthorized");
+        ExternalAction[] memory actions = new ExternalAction[](1);
+        actions[0] = ExternalAction({to: unauthorized, value: 0, data: ""});
+        vm.expectRevert("Target not allowed");
+        swap(key, true, 1e18, abi.encode(actions));
     }
 }
 ```

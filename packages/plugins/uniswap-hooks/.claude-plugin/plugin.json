@@ -1,6 +1,6 @@
 {
   "name": "uniswap-hooks",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "AI-powered, security-first assistance for creating Uniswap V4 hooks, including aggregator hooks, custom fee hooks, and more",
   "author": {
     "name": "Uniswap Labs",
