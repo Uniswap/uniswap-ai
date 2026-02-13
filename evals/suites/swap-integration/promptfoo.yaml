@@ -1,12 +1,9 @@
 # yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
 description: 'swap-integration Skill Evaluation'
 
-# Prompts (eval cases)
+# Prompt template that injects skill context + case content via vars
 prompts:
-  - file://cases/basic.md
-  - file://cases/eth-to-token-swap.md
-  - file://cases/security-pitfalls.md
-  - file://cases/smart-account-swap.md
+  - file://prompt-wrapper.txt
 
 # Provider configuration
 providers:
@@ -19,11 +16,13 @@ providers:
 defaultTest:
   options:
     timeout: 120000 # 2 minutes per case
+  vars:
+    skill_content: file://../../../packages/plugins/uniswap-trading/skills/swap-integration/SKILL.md
 
 # Test cases with specific assertions
 tests:
   - vars:
-      scenario: basic-trading-api-swap
+      case_content: file://cases/basic.md
     assert:
       # Correctness rubric
       - type: llm-rubric
@@ -48,7 +47,7 @@ tests:
         value: '/swap'
 
   - vars:
-      scenario: eth-to-token-swap
+      case_content: file://cases/eth-to-token-swap.md
     assert:
       # Correctness rubric
       - type: llm-rubric
@@ -79,7 +78,7 @@ tests:
         value: 'quote: quoteResponse'
 
   - vars:
-      scenario: security-pitfalls
+      case_content: file://cases/security-pitfalls.md
     assert:
       # Correctness rubric
       - type: llm-rubric
@@ -114,7 +113,7 @@ tests:
         value: 'quote: quoteResponse'
 
   - vars:
-      scenario: smart-account-swap
+      case_content: file://cases/smart-account-swap.md
     assert:
       # Correctness rubric
       - type: llm-rubric

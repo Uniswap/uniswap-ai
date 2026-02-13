@@ -1,10 +1,9 @@
 # yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
 description: 'viem-integration Skill Evaluation'
 
-# Prompts (eval cases)
+# Prompt template that injects skill context + case content via vars
 prompts:
-  - file://cases/basic.md
-  - file://cases/wagmi-react.md
+  - file://prompt-wrapper.txt
 
 # Provider configuration
 providers:
@@ -16,11 +15,13 @@ providers:
 defaultTest:
   options:
     timeout: 120000 # 2 minutes per case
+  vars:
+    skill_content: file://../../../packages/plugins/uniswap-viem/skills/viem-integration/SKILL.md
 
 # Test cases with specific assertions
 tests:
   - vars:
-      scenario: basic-viem-setup
+      case_content: file://cases/basic.md
     assert:
       # Correctness rubric
       - type: llm-rubric
@@ -41,7 +42,7 @@ tests:
         value: 'viem'
 
   - vars:
-      scenario: wagmi-react-setup
+      case_content: file://cases/wagmi-react.md
     assert:
       # Correctness rubric
       - type: llm-rubric

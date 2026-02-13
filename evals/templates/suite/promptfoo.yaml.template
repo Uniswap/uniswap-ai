@@ -2,12 +2,11 @@
 # Template: Copy this file to evals/suites/<skill-name>/promptfoo.yaml
 description: '{{SKILL_NAME}} Skill Evaluation'
 
-# Prompts (eval cases)
-# Add your test case markdown files here
+# Prompt template that injects skill context + case content via vars
+# If your SKILL.md contains URL-encoded JSON (e.g., {%22...%22}), use
+# prompt-wrapper.js instead to avoid Nunjucks template parsing errors.
 prompts:
-  - file://cases/basic.md
-  # - file://cases/edge-case.md
-  # - file://cases/security-probe.md
+  - file://prompt-wrapper.txt
 
 # Provider configuration
 providers:
@@ -19,6 +18,8 @@ providers:
 defaultTest:
   options:
     timeout: 120000 # 2 minutes per case
+  vars:
+    skill_content: file://../../../packages/plugins/{{PLUGIN_NAME}}/skills/{{SKILL_NAME}}/SKILL.md
   assert:
     # Add shared assertions here
     # Security rubric (if applicable)
@@ -30,7 +31,7 @@ defaultTest:
 # Test cases with specific assertions
 tests:
   - vars:
-      scenario: basic
+      case_content: file://cases/basic.md
     assert:
       # Correctness rubric
       - type: llm-rubric

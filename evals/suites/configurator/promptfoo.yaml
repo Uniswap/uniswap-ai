@@ -1,9 +1,9 @@
 # yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
 description: 'CCA Configurator Skill Evaluation'
 
-# Prompts (eval cases)
+# Prompt template that injects skill context + case content via vars
 prompts:
-  - file://cases/basic-configuration.md
+  - file://prompt-wrapper.txt
 
 # Provider configuration
 providers:
@@ -16,11 +16,13 @@ providers:
 defaultTest:
   options:
     timeout: 120000 # 2 minutes per case
+  vars:
+    skill_content: file://../../../packages/plugins/uniswap-cca/skills/configurator/SKILL.md
 
 # Test cases with specific assertions
 tests:
   - vars:
-      scenario: basic-configuration
+      case_content: file://cases/basic-configuration.md
     assert:
       # Correctness rubric
       - type: llm-rubric
