@@ -183,6 +183,12 @@ Pass rate must be ≥85% for PR to pass. Results include inference cost tracking
 - Use deterministic checks (`contains`, `not-contains`) for required patterns
 - Use LLM rubrics for qualitative assessment
 
+### Prompt Template Pitfalls
+
+- **Never use `---` in `.txt` prompt files.** Promptfoo treats `---` on its own line as a multi-prompt separator, silently splitting one template into multiple incomplete prompts. Use `***` instead.
+- **Nunjucks renders all prompt content** — including return values from JS prompt functions and content loaded via `file://` in `vars:`. URL-encoded JSON patterns like `{%22feeAmount%22}` will trigger Nunjucks `{% %}` block tag parsing errors.
+- **Use `{% raw %}...{% endraw %}`** to protect content containing `{%` patterns. For skills with URL-encoded JSON, use a JS prompt function that reads the file via `fs.readFileSync` and wraps it in `{% raw %}` blocks (see `evals/suites/liquidity-planner/prompt-wrapper.js`).
+
 ## npm Version Requirement
 
 **CRITICAL: This project requires npm >=11.7.0**
