@@ -18,11 +18,11 @@ Submissions are open: February 18-25, 2026.
 
 **[Submit Your Project](https://github.com/uniswap/uniswap-ai/issues/new?template=hackathon-submission.yml)** | **[Hackathon Rules](./repo-docs/hackathon/RULES.md)**
 
-### For Agents**
+### For Agents
 
 Agents can fetch the [hackathon skill](./repo-docs/hackathon/SKILL.md) to autonomously participate -- submit projects, engage with the forum, and build DeFi + AI tools.
 
-### For Developers**
+### For Developers
 
 ```bash
 # Install Uniswap AI plugins

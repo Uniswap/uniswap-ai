@@ -18,7 +18,7 @@ Build AI-native tools for the Uniswap ecosystem.
 
 **Total Prize Pool: $25,000 USDC**
 
-###Timeline
+## Timeline
 
 | Event               | Date                           |
 | ------------------- | ------------------------------ |
@@ -87,25 +87,32 @@ Build any project that combines **AI** with the **Uniswap ecosystem**. The Unisw
 
 ## FAQ
 
-**Who can participate?**
+**Who can participate?** 
+
 Anyone! Whether you are a solo developer or a team of up to 5, all skill levels are welcome.
 
 **What can I build?**
+
 Anything that combines AI with the Uniswap ecosystem. Trading bots, analytics tools, developer utilities, and more.
 
 **How do I submit?**
+
 Create a GitHub Issue in the uniswap-ai repository using the Hackathon Submission template. Include your project description, repo link, team info, and team lead contact details (first name, last name, email) for KYC purposes.
 
 **When is the deadline?**
+
 All submissions must be made by February 25, 2026 at 23:59 EST.
 
 **Do I need to use Uniswap SDKs?**
+
 Not required, but encouraged. Projects that integrate with Uniswap protocols, SDKs, or data will be given preference.
 
 **Is there a team size limit?**
+
 Teams can have up to 5 members. Solo participants are also welcome.
 
 **How are prizes distributed?**
+
 Prizes are paid in USDC. Winners must complete KYC verification. When submitting your project, you will need to provide the team lead's first name, last name, and email address.
 
 ## Resources
