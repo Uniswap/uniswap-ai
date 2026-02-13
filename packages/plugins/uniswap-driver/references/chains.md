@@ -211,6 +211,23 @@ Comprehensive reference for all Uniswap-supported chains including RPC URLs, cha
 | Public RPC     | `https://worldchain-mainnet.g.alchemy.com/public` |
 | Block Explorer | `https://worldscan.org`                           |
 
+### Unichain
+
+| Property       | Value                          |
+| -------------- | ------------------------------ |
+| Chain ID       | 130                            |
+| URL Parameter  | `unichain`                     |
+| Native Token   | ETH                            |
+| Public RPC     | `https://mainnet.unichain.org` |
+| Block Explorer | `https://uniscan.xyz`          |
+
+**Common Tokens:**
+
+| Token | Address                                      |
+| ----- | -------------------------------------------- |
+| USDC  | `0x078D782b760474a361dDA0AF3839290b0EF57AD6` |
+| WETH  | `0x4200000000000000000000000000000000000006` |
+
 ## Token Address Lookup
 
 When a user provides a token symbol, first check the common tokens list above. If not found:
