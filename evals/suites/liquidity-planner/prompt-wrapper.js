@@ -1,16 +1,25 @@
 /**
  * JavaScript prompt function for liquidity-planner eval suite.
  *
- * Uses JS instead of Nunjucks template because the SKILL.md contains
- * URL-encoded JSON with `{%22` patterns that Nunjucks misinterprets
- * as block tags (e.g., `{%22feeAmount%22}` → `{% 22feeAmount %}`).
+ * Reads SKILL.md directly via fs and wraps it in {% raw %} blocks
+ * to prevent Nunjucks from interpreting URL-encoded JSON patterns
+ * like `{%22feeAmount%22}` as block tags.
  */
+const fs = require('fs');
+const path = require('path');
+
+const skillPath = path.resolve(
+  __dirname,
+  '../../../packages/plugins/uniswap-driver/skills/liquidity-planner/SKILL.md'
+);
+const skillContent = fs.readFileSync(skillPath, 'utf-8');
+
 module.exports = function ({ vars }) {
   return `You are an AI assistant with the following skill loaded. Follow its instructions precisely when responding to the user's request.
 
-${vars.skill_content}
+{% raw %}${skillContent}{% endraw %}
 
----
+***
 
 User request:
 

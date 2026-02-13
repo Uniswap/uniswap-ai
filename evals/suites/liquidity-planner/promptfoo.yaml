@@ -16,8 +16,8 @@ providers:
 defaultTest:
   options:
     timeout: 120000 # 2 minutes per case
-  vars:
-    skill_content: file://../../../packages/plugins/uniswap-driver/skills/liquidity-planner/SKILL.md
+  # Note: skill_content is loaded directly by prompt-wrapper.js to bypass
+  # Nunjucks rendering (SKILL.md contains {%22...%22} URL patterns)
 
 # Test cases with specific assertions
 tests:
