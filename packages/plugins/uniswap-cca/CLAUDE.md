@@ -121,7 +121,8 @@ Encodes supply schedules to bytes for onchain deployment.
 ### Network Support
 
 - Ethereum Mainnet (chain ID: 1, 12s blocks)
-- Unichain (chain ID: 1301, 2s blocks)
+- Unichain Mainnet (chain ID: 130, 1s blocks)
+- Unichain Sepolia (chain ID: 1301, 2s blocks)
 - Base (chain ID: 8453, 2s blocks)
 - Arbitrum (chain ID: 42161, 2s blocks)
 - Sepolia (chain ID: 11155111, 12s blocks)
