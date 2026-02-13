@@ -13,6 +13,8 @@ metadata:
 
 Plan and generate deep links for creating liquidity positions on Uniswap V2, V3, and V4.
 
+> **Runtime Compatibility:** This skill uses `AskUserQuestion` for interactive prompts. If `AskUserQuestion` is not available in your runtime, collect the same parameters through natural language conversation instead.
+
 ## Overview
 
 Plan liquidity positions by:
