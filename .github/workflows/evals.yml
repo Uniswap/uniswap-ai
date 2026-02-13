@@ -33,6 +33,8 @@ jobs:
 
       - name: Checkout repository
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          persist-credentials: false
 
       - name: Check for eval-related changes
         id: filter
@@ -59,6 +61,8 @@ jobs:
 
       - name: Checkout repository
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          persist-credentials: false
 
       - name: Setup Node.js
         uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
@@ -132,7 +136,10 @@ jobs:
             fi
 
             # Run eval and capture output
-            npx promptfoo eval \
+            # Pin promptfoo via --package to prevent local bin shadowing from malicious PRs.
+            # This is critical: this job has access to API secrets.
+            # Update the version here when upgrading promptfoo in package.json.
+            npx --package=promptfoo@0.120.22 -- promptfoo eval \
               -c "$suite_dir/promptfoo.yaml" \
               --output "$suite_dir/results.json" \
               --no-progress-bar \
