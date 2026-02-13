@@ -84,6 +84,7 @@ jobs:
       - name: Install npm
         env:
           NPM_VERSION: ${{ vars.NPM_VERSION }}
+        # nosemgrep: uniswap.npm-package-in-action-not-pinned-to-commit-sha -- npm CLI from npm registry, not a git-hosted action
         run: npm install -g "npm@$NPM_VERSION"
 
       - name: Install dependencies
@@ -288,6 +289,7 @@ jobs:
       - name: Install npm
         env:
           NPM_VERSION: ${{ vars.NPM_VERSION }}
+        # nosemgrep: uniswap.npm-package-in-action-not-pinned-to-commit-sha -- npm CLI from npm registry, not a git-hosted action
         run: npm install -g "npm@$NPM_VERSION"
 
       - name: Install dependencies
