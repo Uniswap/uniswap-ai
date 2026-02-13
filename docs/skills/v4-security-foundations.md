@@ -31,13 +31,14 @@ This skill helps you:
 
 ## Threat Model
 
-| Threat Area             | Description                                                | Mitigation                                     |
-| ----------------------- | ---------------------------------------------------------- | ---------------------------------------------- |
-| **Caller Verification** | Only `PoolManager` should invoke hook functions            | Verify `msg.sender == address(poolManager)`    |
-| **Sender Identity**     | `msg.sender` always equals PoolManager, never the end user | Use `sender` parameter for user identity       |
-| **Router Context**      | The `sender` parameter identifies the router, not the user | Implement router allowlisting                  |
-| **State Exposure**      | Hook state is readable during mid-transaction execution    | Avoid storing sensitive data on-chain          |
-| **Reentrancy Surface**  | External calls from hooks can enable reentrancy            | Use reentrancy guards; minimize external calls |
+| Threat Area             | Description                                                     | Mitigation                                     |
+| ----------------------- | --------------------------------------------------------------- | ---------------------------------------------- |
+| **Caller Verification** | Only `PoolManager` should invoke hook functions                 | Verify `msg.sender == address(poolManager)`    |
+| **Sender Identity**     | `msg.sender` always equals PoolManager, never the end user      | Use `sender` parameter for user identity       |
+| **Router Context**      | The `sender` parameter identifies the router, not the user      | Implement router allowlisting                  |
+| **State Exposure**      | Hook state is readable during mid-transaction execution         | Avoid storing sensitive data on-chain          |
+| **Reentrancy Surface**  | External calls from hooks can enable reentrancy                 | Use reentrancy guards; minimize external calls |
+| **tx.origin Phishing**  | `tx.origin` exposes the original signer, enabling relay attacks | Never use `tx.origin` for authorization        |
 
 ## Permission Flags Risk Matrix
 
