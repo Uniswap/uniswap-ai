@@ -53,7 +53,7 @@ Build any project that combines **AI** with the **Uniswap ecosystem**. The Unisw
 - MEV-aware transaction routing
 
 **Developer Tooling**
-- AI code assistants for writing Uniswap V4 hooks
+- AI code assistants for writing Uniswap v4 hooks
 - Smart contract auditing tools for Uniswap integrations
 - SDK wrappers that simplify Uniswap development
 - AI-powered documentation search and code generation

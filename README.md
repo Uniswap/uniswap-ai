@@ -39,7 +39,7 @@ npx skills add Uniswap/uniswap-ai
 /plugin marketplace add uniswap/uniswap-ai
 
 # Install individual plugins
-/plugin install uniswap-hooks      # V4 hook development
+/plugin install uniswap-hooks      # v4 hook development
 /plugin install uniswap-trading    # Swap integration
 /plugin install uniswap-cca        # CCA auctions
 /plugin install uniswap-driver     # Swap & liquidity planning
