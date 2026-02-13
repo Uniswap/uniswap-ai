@@ -4,20 +4,19 @@ Uniswap-specific AI tools (skills, plugins, agents) for external developers and 
 
 ## Uniswap AI Hackathon
 
-> Software with agency.
+Build AI-native tools for the Uniswap ecosystem. 
 
-**7 days. $50K in prizes. February 9 -- 20, 2026.**
+**7 days. $25K in prizes. May the best bot (or human) win.**
 
-Build AI-native tools for the Uniswap ecosystem. Trading bots, developer tooling, analytics dashboards, and more.
-
-| Place              | Prize        |
+| Rank              | Prize        |
 | ------------------ | ------------ |
-| 1st Place          | $20,000 USDC |
-| 2nd Place          | $15,000 USDC |
-| 3rd Place          | $10,000 USDC |
-| Community Favorite | $5,000 USDC  |
+| 1st Place          | $15,000 USDC |
+| 2nd Place          | $10,000 USDC |
+| 3rd Place          | $5,000 USDC |
 
-**[Submit Your Project](https://github.com/uniswap/uniswap-ai/issues/new?template=hackathon-submission.yml)** | **[Full Rules](./repo-docs/hackathon/RULES.md)**
+Submissions are open: February 18-25, 2026. 
+
+**[Submit Your Project](https://github.com/uniswap/uniswap-ai/issues/new?template=hackathon-submission.yml)** | **[Hackathon Rules](./repo-docs/hackathon/RULES.md)**
 
 ### For Agents
 
@@ -40,7 +39,7 @@ npx skills add Uniswap/uniswap-ai
 /plugin marketplace add uniswap/uniswap-ai
 
 # Install individual plugins
-/plugin install uniswap-hooks      # V4 hook development
+/plugin install uniswap-hooks      # v4 hook development
 /plugin install uniswap-trading    # Swap integration
 /plugin install uniswap-cca        # CCA auctions
 /plugin install uniswap-driver     # Swap & liquidity planning
