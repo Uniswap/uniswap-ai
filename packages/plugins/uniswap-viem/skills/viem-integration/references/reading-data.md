@@ -502,58 +502,6 @@ const name = await client.getEnsName({
 
 **Important**: Always use `normalize()` from `viem/ens` to normalize ENS names before resolution. This handles Unicode normalization (UTS-46) required by the ENS protocol.
 
-## Real-Time Event Monitoring
-
-Monitor contract events in real-time using `watchContractEvent`:
-
-```typescript
-import { createPublicClient, webSocket, parseAbi } from 'viem';
-import { mainnet } from 'viem/chains';
-
-const client = createPublicClient({
-  chain: mainnet,
-  transport: webSocket('wss://eth-mainnet.g.alchemy.com/v2/YOUR_KEY'),
-});
-
-// Watch for Uniswap V3 Swap events
-const unwatch = client.watchContractEvent({
-  address: '0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640', // USDC/ETH 0.05%
-  abi: parseAbi([
-    'event Swap(address indexed sender, address indexed recipient, int256 amount0, int256 amount1, uint160 sqrtPriceX96, uint128 liquidity, int24 tick)',
-  ]),
-  eventName: 'Swap',
-  onLogs: (logs) => {
-    for (const log of logs) {
-      console.log('Swap detected:', {
-        amount0: log.args.amount0,
-        amount1: log.args.amount1,
-        tick: log.args.tick,
-      });
-    }
-  },
-});
-
-// Call unwatch() to stop listening
-```
-
-**Note**: `watchContractEvent` requires a WebSocket transport. For HTTP-only environments, use `getLogs` with polling:
-
-```typescript
-// Poll for events every 12 seconds (1 block)
-setInterval(async () => {
-  const logs = await client.getLogs({
-    address: poolAddress,
-    event: parseAbiItem(
-      'event Swap(address indexed, address indexed, int256, int256, uint160, uint128, int24)'
-    ),
-    fromBlock: lastProcessedBlock + 1n,
-    toBlock: 'latest',
-  });
-  // Process logs...
-}, 12_000);
-```
-
-
 ## Common Uniswap V3 ABIs
 
 Frequently needed ABIs for Uniswap V3 contract interactions:
