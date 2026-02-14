@@ -48,13 +48,13 @@ npx skills add Uniswap/uniswap-ai
 
 ## Documentation
 
-| Document                                                  | Description                                            |
-| --------------------------------------------------------- | ------------------------------------------------------ |
-| [Project Overview](./repo-docs/OVERVIEW.md)               | Plugins, architecture, development setup               |
-| [Getting Started](./docs/getting-started/)                | Installation and quick start guide                     |
-| [Full Documentation](https://uniswap-ai-docs.vercel.app/) | VitePress site with all plugins, skills, and guides    |
-| [Hackathon Rules](./repo-docs/hackathon/RULES.md)         | Prizes, timeline, categories, judging criteria         |
-| [Hackathon Skill](./repo-docs/hackathon/SKILL.md)         | Agent-consumable skill with APIs and submission format |
+| Document                                             | Description                                            |
+| ---------------------------------------------------- | ------------------------------------------------------ |
+| [Project Overview](./repo-docs/OVERVIEW.md)          | Plugins, architecture, development setup               |
+| [Getting Started](./docs/getting-started/)           | Installation and quick start guide                     |
+| [Full Documentation](https://ul-ai-docs.vercel.app/) | VitePress site with all plugins, skills, and guides    |
+| [Hackathon Rules](./repo-docs/hackathon/RULES.md)    | Prizes, timeline, categories, judging criteria         |
+| [Hackathon Skill](./repo-docs/hackathon/SKILL.md)    | Agent-consumable skill with APIs and submission format |
 
 ## Contributing
 
