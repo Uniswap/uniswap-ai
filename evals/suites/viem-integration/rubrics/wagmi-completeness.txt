@@ -1,0 +1,51 @@
+# Completeness Rubric for wagmi React Integration
+
+Evaluate whether the generated output includes all expected elements for a wagmi React application.
+
+## Expected Elements (Should Include)
+
+Score based on how many of these are present:
+
+1. **Documentation**
+   - Has inline comments explaining key steps
+   - Includes package installation instructions
+
+2. **State Handling**
+   - Handles wallet connection states (connecting, connected, disconnected)
+   - Handles loading and error states for contract reads
+
+3. **Best Practices**
+   - Uses chain constants from wagmi/chains
+   - Uses parsedAbi or typed ABIs for contract reads
+   - Properly wraps components in required providers
+
+4. **Maintainability**
+   - Code is readable and well-structured
+   - Components follow single-responsibility principle
+
+5. **Completeness**
+   - Includes all necessary imports
+   - Example is runnable without modification (except env vars like WalletConnect project ID)
+
+## Penalties (Should Not Include)
+
+Deduct points for:
+- Using deprecated wagmi APIs (-0.1)
+- Hardcoding private keys in code (-0.15)
+- Using ethers.js instead of wagmi/viem (-0.15)
+
+## Scoring Guide
+
+Base score from expected elements:
+- 5/5 elements: 1.0
+- 4/5 elements: 0.85
+- 3/5 elements: 0.65
+- 2/5 elements: 0.5
+- 1/5 elements: 0.3
+- 0/5 elements: 0.0
+
+Then subtract any penalties.
+
+## Instructions
+
+Count the expected elements present, then apply any penalties for issues found. Provide the final score.

@@ -10,6 +10,7 @@ providers:
   - id: anthropic:claude-sonnet-4-5-20250929
     config:
       temperature: 0
+      max_tokens: 8192
 
 # Default test configuration applied to all tests
 defaultTest:
@@ -44,15 +45,15 @@ tests:
   - vars:
       case_content: file://cases/wagmi-react.md
     assert:
-      # Correctness rubric
+      # Wagmi-specific correctness rubric (evaluates React hooks, not raw viem)
       - type: llm-rubric
-        value: file://rubrics/correctness.txt
+        value: file://rubrics/wagmi-correctness.txt
         threshold: 0.8
         provider: anthropic:claude-sonnet-4-5-20250929
 
-      # Completeness rubric
+      # Wagmi-specific completeness rubric
       - type: llm-rubric
-        value: file://rubrics/completeness.txt
+        value: file://rubrics/wagmi-completeness.txt
         threshold: 0.85
         provider: anthropic:claude-sonnet-4-5-20250929
 

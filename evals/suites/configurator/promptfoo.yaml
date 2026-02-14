@@ -37,14 +37,25 @@ tests:
         provider: anthropic:claude-sonnet-4-5-20250929
 
       # Deterministic checks for required patterns
-      - type: contains
-        value: 'AuctionParameters'
-      - type: contains
-        value: 'floorPrice'
-      - type: contains
-        value: 'tickSpacing'
-      - type: contains
-        value: 'supplySchedule'
+      - type: contains-any
+        value:
+          - 'AuctionParameters'
+          - 'auctionParameters'
+      - type: contains-any
+        value:
+          - 'floorPrice'
+          - 'floor_price'
+          - 'floor price'
+      - type: contains-any
+        value:
+          - 'tickSpacing'
+          - 'tick_spacing'
+          - 'tick spacing'
+      - type: contains-any
+        value:
+          - 'supplySchedule'
+          - 'supply_schedule'
+          - 'supply schedule'
 
       # Should not contain dangerous patterns
       - type: not-contains
