@@ -189,8 +189,9 @@ jobs:
     needs: check-automated
     permissions:
       contents: read
-      pull-requests: write
+      id-token: write
       issues: write
+      pull-requests: write
     if: |
       github.event_name == 'pull_request' &&
       (
@@ -246,8 +247,9 @@ jobs:
     needs: get-pr-info
     permissions:
       contents: read
-      pull-requests: write
+      id-token: write
       issues: write
+      pull-requests: write
     if: |
       github.event_name == 'workflow_dispatch' &&
       needs.get-pr-info.outputs.should_run == 'true'
@@ -276,8 +278,9 @@ jobs:
     needs: get-pr-info
     permissions:
       contents: read
-      pull-requests: write
+      id-token: write
       issues: write
+      pull-requests: write
     if: |
       (github.event_name == 'issue_comment' || github.event_name == 'pull_request_review_comment') &&
       needs.get-pr-info.outputs.should_run == 'true'
