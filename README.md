@@ -4,17 +4,17 @@ Uniswap-specific AI tools (skills, plugins, agents) for external developers and 
 
 ## Uniswap AI Hackathon
 
-Build AI-native tools for the Uniswap ecosystem. 
+Build AI-native tools for the Uniswap ecosystem.
 
 **7 days. $25K in prizes. May the best bot (or human) win.**
 
-| Rank              | Prize        |
-| ------------------ | ------------ |
-| 1st Place          | $15,000 USDC |
-| 2nd Place          | $10,000 USDC |
-| 3rd Place          | $5,000 USDC |
+| Rank      | Prize        |
+| --------- | ------------ |
+| 1st Place | $15,000 USDC |
+| 2nd Place | $10,000 USDC |
+| 3rd Place | $5,000 USDC  |
 
-Submissions are open: February 18-25, 2026. 
+Submissions are open: February 18-25, 2026.
 
 **[Submit Your Project](https://github.com/uniswap/uniswap-ai/issues/new?template=hackathon-submission.yml)** | **[Hackathon Rules](./repo-docs/hackathon/RULES.md)**
 
@@ -48,13 +48,13 @@ npx skills add Uniswap/uniswap-ai
 
 ## Documentation
 
-| Document                                                  | Description                                            |
-| --------------------------------------------------------- | ------------------------------------------------------ |
-| [Project Overview](./repo-docs/OVERVIEW.md)               | Plugins, architecture, development setup               |
-| [Getting Started](./docs/getting-started/)                | Installation and quick start guide                     |
-| [Full Documentation](https://uniswap-ai-docs.vercel.app/) | VitePress site with all plugins, skills, and guides    |
-| [Hackathon Rules](./repo-docs/hackathon/RULES.md)         | Prizes, timeline, categories, judging criteria         |
-| [Hackathon Skill](./repo-docs/hackathon/SKILL.md)         | Agent-consumable skill with APIs and submission format |
+| Document                                             | Description                                            |
+| ---------------------------------------------------- | ------------------------------------------------------ |
+| [Project Overview](./repo-docs/OVERVIEW.md)          | Plugins, architecture, development setup               |
+| [Getting Started](./docs/getting-started/)           | Installation and quick start guide                     |
+| [Full Documentation](https://ul-ai-docs.vercel.app/) | VitePress site with all plugins, skills, and guides    |
+| [Hackathon Rules](./repo-docs/hackathon/RULES.md)    | Prizes, timeline, categories, judging criteria         |
+| [Hackathon Skill](./repo-docs/hackathon/SKILL.md)    | Agent-consumable skill with APIs and submission format |
 
 ## Contributing
 
