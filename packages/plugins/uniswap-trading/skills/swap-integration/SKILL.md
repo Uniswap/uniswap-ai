@@ -6,7 +6,7 @@ model: opus
 license: MIT
 metadata:
   author: uniswap
-  version: '1.1.0'
+  version: '1.1.1'
 ---
 
 # Swap Integration
@@ -621,7 +621,46 @@ import { Trade as RouterTrade } from '@uniswap/router-sdk';
 import { TradeType, Percent } from '@uniswap/sdk-core';
 import { Route as V3Route, Pool } from '@uniswap/v3-sdk';
 
-// 1. Build route and trade (you need pool data from on-chain or subgraph)
+// 1. Fetch pool data (required to construct routes)
+// Using viem to read on-chain pool state:
+const slot0 = await publicClient.readContract({
+  address: poolAddress,
+  abi: [
+    {
+      name: 'slot0',
+      type: 'function',
+      stateMutability: 'view',
+      inputs: [],
+      outputs: [
+        { name: 'sqrtPriceX96', type: 'uint160' },
+        { name: 'tick', type: 'int24' },
+        { name: 'observationIndex', type: 'uint16' },
+        { name: 'observationCardinality', type: 'uint16' },
+        { name: 'observationCardinalityNext', type: 'uint16' },
+        { name: 'feeProtocol', type: 'uint8' },
+        { name: 'unlocked', type: 'bool' },
+      ],
+    },
+  ],
+  functionName: 'slot0',
+});
+const liquidity = await publicClient.readContract({
+  address: poolAddress,
+  abi: [
+    {
+      name: 'liquidity',
+      type: 'function',
+      stateMutability: 'view',
+      inputs: [],
+      outputs: [{ type: 'uint128' }],
+    },
+  ],
+  functionName: 'liquidity',
+});
+
+const pool = new Pool(tokenIn, tokenOut, fee, slot0[0].toString(), liquidity.toString(), slot0[1]);
+
+// 2. Build route and trade
 const route = new V3Route([pool], tokenIn, tokenOut);
 const trade = RouterTrade.createUncheckedTrade({
   route,
@@ -630,14 +669,14 @@ const trade = RouterTrade.createUncheckedTrade({
   tradeType: TradeType.EXACT_INPUT,
 });
 
-// 2. Get calldata
+// 3. Get calldata
 const { calldata, value } = SwapRouter.swapCallParameters(trade, {
   slippageTolerance: new Percent(50, 10000), // 0.5%
   recipient: walletAddress,
   deadline: Math.floor(Date.now() / 1000) + 1800,
 });
 
-// 3. Execute with viem
+// 4. Execute with viem
 const hash = await walletClient.sendTransaction({
   to: UNIVERSAL_ROUTER_ADDRESS,
   data: calldata,
@@ -770,7 +809,7 @@ const ROUTER_ABI = [
 
 async function executeRoute(planner: RoutePlanner, options?: { value?: bigint }) {
   const deadline = BigInt(Math.floor(Date.now() / 1000) + 1800);
-  const routerAddress = UNIVERSAL_ROUTER_ADDRESS(1); // chainId 1 = mainnet
+  const routerAddress = UNIVERSAL_ROUTER_ADDRESS('2.0', 1); // version, chainId
 
   const { request } = await publicClient.simulateContract({
     address: routerAddress,
@@ -818,10 +857,12 @@ async function executeRoute(planner: RoutePlanner, options?: { value?: bigint })
 
 ```typescript
 import { isAddress, isHex } from 'viem';
+import { useWalletClient } from 'wagmi';
 
 const API_URL = 'https://trade-api.gateway.uniswap.org/v1';
 
 function useSwap() {
+  const { data: walletClient } = useWalletClient();
   const [quoteResponse, setQuoteResponse] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -881,8 +922,9 @@ function useSwap() {
       throw new Error('Empty swap data - quote may have expired. Please refresh.');
     }
 
-    // Send transaction via wallet
-    const tx = await signer.sendTransaction(data.swap);
+    // Send transaction via wallet (walletClient from useWalletClient())
+    if (!walletClient) throw new Error('Wallet not connected');
+    const tx = await walletClient.sendTransaction(data.swap);
     return tx;
   };
 
