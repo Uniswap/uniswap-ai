@@ -11,7 +11,7 @@ CCA (Continuous Clearing Auction) is a novel auction mechanism that generalizes 
 - **Interactive Configuration**: Efficient bulk form prompting (up to 4 questions at once)
 - **Supply Schedule Generation**: Automated supply schedule using normalized convex curve
 - **Q96 Price Calculations**: Automatic conversion with decimal adjustment
-- **Multi-chain Support**: Ethereum, Unichain, Base, Arbitrum, Sepolia
+- **Multi-chain Support**: Ethereum, Unichain, Unichain Sepolia, Base, Arbitrum, Sepolia
 - **Factory Deployment**: CREATE2-based deployment for consistent addresses
 - **Validation & Safety**: Comprehensive validation rules and educational disclaimers
 
@@ -158,13 +158,14 @@ Generates supply schedules using a normalized convex curve.
 
 ## Supported Networks
 
-| Network  | Chain ID | Block Time | Factory Address                              |
-| -------- | -------- | ---------- | -------------------------------------------- |
-| Mainnet  | 1        | 12s        | `0xCCccCcCAE7503Cac057829BF2811De42E16e0bD5` |
-| Unichain | 1301     | 2s         | `0xCCccCcCAE7503Cac057829BF2811De42E16e0bD5` |
-| Base     | 8453     | 2s         | `0xCCccCcCAE7503Cac057829BF2811De42E16e0bD5` |
-| Arbitrum | 42161    | 2s         | `0xCCccCcCAE7503Cac057829BF2811De42E16e0bD5` |
-| Sepolia  | 11155111 | 12s        | `0xCCccCcCAE7503Cac057829BF2811De42E16e0bD5` |
+| Network          | Chain ID | Block Time | Factory Address                              |
+| ---------------- | -------- | ---------- | -------------------------------------------- |
+| Mainnet          | 1        | 12s        | `0xCCccCcCAE7503Cac057829BF2811De42E16e0bD5` |
+| Unichain         | 130      | 1s         | `0xCCccCcCAE7503Cac057829BF2811De42E16e0bD5` |
+| Unichain Sepolia | 1301     | 2s         | `0xCCccCcCAE7503Cac057829BF2811De42E16e0bD5` |
+| Base             | 8453     | 2s         | `0xCCccCcCAE7503Cac057829BF2811De42E16e0bD5` |
+| Arbitrum         | 42161    | 2s         | `0xCCccCcCAE7503Cac057829BF2811De42E16e0bD5` |
+| Sepolia          | 11155111 | 12s        | `0xCCccCcCAE7503Cac057829BF2811De42E16e0bD5` |
 
 ## Configuration File Format
 
