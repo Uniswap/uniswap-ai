@@ -9,7 +9,9 @@ APIs for fetching real-time token prices and pool liquidity for swap planning.
 
 No authentication required. 300 requests/minute.
 
-**Network IDs:** `ethereum`, `base`, `arbitrum`, `optimism`, `polygon`, `bsc`, `avalanche`, `unichain`
+**Network IDs:** `ethereum`, `base`, `arbitrum`, `optimism`, `polygon`, `bsc`, `avalanche`, `unichain` (full list with DefiLlama equivalents in `../../references/chains.md`)
+
+**Coverage note:** Ethereum, Base, and Arbitrum have deep Uniswap pool data. Celo, Blast, Zora, and World Chain have limited coverage — expect fewer results and potentially missing pairs.
 
 ### Get Token Price
 
@@ -91,7 +93,9 @@ No authentication required. Use when DexScreener is unavailable or for cross-cha
 curl -s "https://coins.llama.fi/prices/current/{chain}:{address}"
 ```
 
-**Chain IDs:** `ethereum`, `base`, `arbitrum`, `optimism`, `polygon`, `bsc`, `avax`
+**Chain IDs:** `ethereum`, `base`, `arbitrum`, `optimism`, `polygon`, `bsc`, `avax`, `unichain` (full list in `../../references/chains.md`)
+
+**Important:** DefiLlama uses `avax` (not `avalanche`), and Zora/World Chain are not indexed by DefiLlama.
 
 **Example - Get prices for multiple tokens:**
 
