@@ -201,18 +201,20 @@ v4 is newer and has limited pool availability. Check if a v4 pool exists before 
 
 ### Version Support by Chain
 
-| Chain     | v2  | v3  | v4  |
-| --------- | --- | --- | --- |
-| Ethereum  | ✅  | ✅  | ✅  |
-| Base      | ❌  | ✅  | ✅  |
-| Arbitrum  | ✅  | ✅  | ✅  |
-| Optimism  | ❌  | ✅  | ✅  |
-| Polygon   | ✅  | ✅  | 🔜  |
-| BNB Chain | ✅  | ✅  | 🔜  |
-| Avalanche | ❌  | ✅  | 🔜  |
-| Celo      | ✅  | ✅  | ❌  |
-| Blast     | ❌  | ✅  | ✅  |
-| Zora      | ❌  | ✅  | ✅  |
+| Chain       | V2  | V3  | V4  |
+| ----------- | --- | --- | --- |
+| Ethereum    | ✅  | ✅  | ✅  |
+| Base        | ❌  | ✅  | ✅  |
+| Arbitrum    | ✅  | ✅  | ✅  |
+| Optimism    | ❌  | ✅  | ✅  |
+| Polygon     | ✅  | ✅  | 🔜  |
+| BNB Chain   | ✅  | ✅  | 🔜  |
+| Avalanche   | ❌  | ✅  | 🔜  |
+| Celo        | ✅  | ✅  | ❌  |
+| Blast       | ❌  | ✅  | ✅  |
+| Zora        | ❌  | ✅  | ✅  |
+| World Chain | ❌  | ✅  | ✅  |
+| Unichain    | ❌  | ✅  | ✅  |
 
 ### Recommendation by Chain
 
