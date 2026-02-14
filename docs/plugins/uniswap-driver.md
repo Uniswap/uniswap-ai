@@ -48,18 +48,20 @@ Base URL: `https://app.uniswap.org/positions/create`
 
 ## Chain Names
 
-| Chain     | URL Parameter |
-| --------- | ------------- |
-| Ethereum  | `ethereum`    |
-| Base      | `base`        |
-| Arbitrum  | `arbitrum`    |
-| Optimism  | `optimism`    |
-| Polygon   | `polygon`     |
-| BNB Chain | `bnb`         |
-| Avalanche | `avalanche`   |
-| Celo      | `celo`        |
-| Blast     | `blast`       |
-| Zora      | `zora`        |
+| Chain       | URL Parameter |
+| ----------- | ------------- |
+| Ethereum    | `ethereum`    |
+| Base        | `base`        |
+| Arbitrum    | `arbitrum`    |
+| Optimism    | `optimism`    |
+| Polygon     | `polygon`     |
+| BNB Chain   | `bnb`         |
+| Avalanche   | `avalanche`   |
+| Celo        | `celo`        |
+| Blast       | `blast`       |
+| Zora        | `zora`        |
+| World Chain | `worldchain`  |
+| Unichain    | `unichain`    |
 
 ## Output Format
 

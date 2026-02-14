@@ -6,7 +6,7 @@ This directory contains templates for creating new eval suites.
 
 1. Copy this directory to `evals/suites/<skill-name>/`
 2. Rename `.template` files by removing the `.template` extension
-3. Replace `{{SKILL_NAME}}` and `{{DESCRIPTION}}` placeholders
+3. Replace `{{SKILL_NAME}}` and `{{PLUGIN_NAME}}` placeholders
 4. Customize the cases and rubrics for your skill
 
 ## Structure
@@ -14,15 +14,27 @@ This directory contains templates for creating new eval suites.
 ```text
 evals/suites/<skill-name>/
 ├── promptfoo.yaml          # Suite configuration
+├── prompt-wrapper.txt      # Prompt template (injects skill context + case)
 ├── cases/
 │   ├── basic.md            # Basic test case
 │   ├── edge-case.md        # Edge case scenarios
 │   └── security-probe.md   # Security-focused tests (if applicable)
 └── rubrics/
-    ├── correctness.md      # Correctness evaluation criteria
-    ├── completeness.md     # Completeness evaluation criteria
-    └── security.md         # Security evaluation (if applicable)
+    ├── correctness.txt     # Correctness evaluation criteria
+    ├── completeness.txt    # Completeness evaluation criteria
+    └── security.txt        # Security evaluation (if applicable)
 ```
+
+## Prompt Wrapper Pattern
+
+Each eval suite uses a `prompt-wrapper.txt` (or `.js`) template that injects the
+skill's SKILL.md content as context before the user's test case. This ensures the
+model has the skill's instructions when generating responses.
+
+If your SKILL.md contains URL-encoded JSON with `{%22` patterns (e.g., Uniswap
+deep link URLs), use `prompt-wrapper.js` instead of `.txt` to avoid Nunjucks
+template parsing errors. See `evals/suites/liquidity-planner/prompt-wrapper.js`
+for an example.
 
 ## Running Evals
 

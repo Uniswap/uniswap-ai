@@ -2,7 +2,7 @@ You are an AI assistant with the following skill loaded. Follow its instructions
 
 {{ skill_content }}
 
----
+***
 
 User request:
 

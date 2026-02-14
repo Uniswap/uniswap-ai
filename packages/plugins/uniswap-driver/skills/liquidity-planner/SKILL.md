@@ -120,7 +120,7 @@ curl -s "https://api.dexscreener.com/token-pairs/v1/{network}/{address}" | \
   })'
 ```
 
-**Network IDs:** `ethereum`, `base`, `arbitrum`, `optimism`, `polygon`
+**Network IDs:** `ethereum`, `base`, `arbitrum`, `optimism`, `polygon`, `unichain`
 
 **From the results, identify:**
 
