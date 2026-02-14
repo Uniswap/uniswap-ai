@@ -336,6 +336,7 @@ Calculate your hook's risk score (0-33):
 6. **Never use `block.timestamp` for randomness**
 7. **Never hardcode gas limits in calls**
 8. **Never ignore return values from external calls**
+9. **Never use `tx.origin` for authorization** - It's a phishing vector; malicious contracts can relay calls with the original user's `tx.origin`
 
 ## Pre-Deployment Audit Checklist
 
