@@ -1,26 +1,28 @@
 # yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
 description: 'viem-integration Skill Evaluation'
 
-# Prompts (eval cases)
+# Prompt template that injects skill context + case content via vars
 prompts:
-  - file://cases/basic.md
-  - file://cases/wagmi-react.md
+  - file://prompt-wrapper.txt
 
 # Provider configuration
 providers:
   - id: anthropic:claude-sonnet-4-5-20250929
     config:
       temperature: 0
+      max_tokens: 8192
 
 # Default test configuration applied to all tests
 defaultTest:
   options:
     timeout: 120000 # 2 minutes per case
+  vars:
+    skill_content: file://../../../packages/plugins/uniswap-viem/skills/viem-integration/SKILL.md
 
 # Test cases with specific assertions
 tests:
   - vars:
-      scenario: basic-viem-setup
+      case_content: file://cases/basic.md
     assert:
       # Correctness rubric
       - type: llm-rubric
@@ -41,17 +43,17 @@ tests:
         value: 'viem'
 
   - vars:
-      scenario: wagmi-react-setup
+      case_content: file://cases/wagmi-react.md
     assert:
-      # Correctness rubric
+      # Wagmi-specific correctness rubric (evaluates React hooks, not raw viem)
       - type: llm-rubric
-        value: file://rubrics/correctness.txt
+        value: file://rubrics/wagmi-correctness.txt
         threshold: 0.8
         provider: anthropic:claude-sonnet-4-5-20250929
 
-      # Completeness rubric
+      # Wagmi-specific completeness rubric
       - type: llm-rubric
-        value: file://rubrics/completeness.txt
+        value: file://rubrics/wagmi-completeness.txt
         threshold: 0.85
         provider: anthropic:claude-sonnet-4-5-20250929
 

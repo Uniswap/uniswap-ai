@@ -49,6 +49,42 @@ This skill assumes familiarity with:
 
 ## Hook Architecture
 
+### Token Flow (External Routing)
+
+When a swap is routed through an external DEX via the hook, tokens flow as follows:
+
+```text
+User ──[input tokens]──► Router ──► PoolManager
+                                        │
+                                   beforeSwap()
+                                        │
+                                        ▼
+                                   Hook Contract
+                                        │
+                              ┌─────────┴─────────┐
+                              │  External DEX      │
+                              │  (Curve/Balancer/  │
+                              │   Aerodrome)       │
+                              └─────────┬─────────┘
+                                        │
+                                   [output tokens]
+                                        │
+                                        ▼
+                                   Hook Contract
+                                        │
+                                   settle() + take()
+                                        │
+                                        ▼
+                                   PoolManager ──► Router ──[output tokens]──► User
+```
+
+**Key points:**
+
+- The hook uses `beforeSwapReturnDelta` to claim it handled the swap
+- PoolManager tracks credits/debits -- the hook must settle what it owes
+- External DEX calls happen inside the `beforeSwap` callback
+- The hook must have tokens approved for the external DEX
+
 ### Proposal #1: Generic Hook (Single Deployment)
 
 A single hook that accepts encoded external calls via hookData. All routing logic is computed off-chain.

@@ -13,6 +13,8 @@ metadata:
 
 Plan and generate deep links for creating liquidity positions on Uniswap v2, v3, and v4.
 
+> **Runtime Compatibility:** This skill uses `AskUserQuestion` for interactive prompts. If `AskUserQuestion` is not available in your runtime, collect the same parameters through natural language conversation instead.
+
 ## Overview
 
 Plan liquidity positions by:
@@ -120,7 +122,7 @@ curl -s "https://api.dexscreener.com/token-pairs/v1/{network}/{address}" | \
   })'
 ```
 
-**Network IDs:** `ethereum`, `base`, `arbitrum`, `optimism`, `polygon`
+**Network IDs:** `ethereum`, `base`, `arbitrum`, `optimism`, `polygon`, `unichain`
 
 **From the results, identify:**
 

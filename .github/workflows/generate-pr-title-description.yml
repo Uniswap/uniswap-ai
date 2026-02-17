@@ -32,6 +32,7 @@ jobs:
   generate-metadata:
     permissions:
       contents: read
+      id-token: write
       pull-requests: write
     # Skip conditions:
     # - Merge queue PRs (handled separately)

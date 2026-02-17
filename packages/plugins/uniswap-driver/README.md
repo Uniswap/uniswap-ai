@@ -45,6 +45,7 @@ All chains supported by the Uniswap interface:
 - Blast
 - Zora
 - World Chain
+- Unichain
 
 ## How It Works
 

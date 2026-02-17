@@ -1,9 +1,9 @@
 # yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
 description: 'Aggregator Hook Creator Skill Evaluation'
 
-# Prompts (eval cases)
+# Prompt template that injects skill context + case content via vars
 prompts:
-  - file://cases/basic-aggregator-hook.md
+  - file://prompt-wrapper.txt
 
 # Provider configuration
 # Uses default from root config, can override here for suite-specific models
@@ -17,6 +17,8 @@ providers:
 defaultTest:
   options:
     timeout: 120000 # 2 minutes per case
+  vars:
+    skill_content: file://../../../packages/plugins/uniswap-hooks/skills/aggregator-hook-creator/SKILL.md
   assert:
     # Security is non-negotiable for smart contracts
     - type: llm-rubric
@@ -27,7 +29,7 @@ defaultTest:
 # Test cases with specific assertions
 tests:
   - vars:
-      scenario: basic-aggregator-hook
+      case_content: file://cases/basic-aggregator-hook.md
     assert:
       # Correctness rubric
       - type: llm-rubric

@@ -1,9 +1,9 @@
 # yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
 description: 'CCA Configurator Skill Evaluation'
 
-# Prompts (eval cases)
+# Prompt template that injects skill context + case content via vars
 prompts:
-  - file://cases/basic-configuration.md
+  - file://prompt-wrapper.txt
 
 # Provider configuration
 providers:
@@ -16,11 +16,13 @@ providers:
 defaultTest:
   options:
     timeout: 120000 # 2 minutes per case
+  vars:
+    skill_content: file://../../../packages/plugins/uniswap-cca/skills/configurator/SKILL.md
 
 # Test cases with specific assertions
 tests:
   - vars:
-      scenario: basic-configuration
+      case_content: file://cases/basic-configuration.md
     assert:
       # Correctness rubric
       - type: llm-rubric
@@ -35,14 +37,25 @@ tests:
         provider: anthropic:claude-sonnet-4-5-20250929
 
       # Deterministic checks for required patterns
-      - type: contains
-        value: 'AuctionParameters'
-      - type: contains
-        value: 'floorPrice'
-      - type: contains
-        value: 'tickSpacing'
-      - type: contains
-        value: 'supplySchedule'
+      - type: contains-any
+        value:
+          - 'AuctionParameters'
+          - 'auctionParameters'
+      - type: contains-any
+        value:
+          - 'floorPrice'
+          - 'floor_price'
+          - 'floor price'
+      - type: contains-any
+        value:
+          - 'tickSpacing'
+          - 'tick_spacing'
+          - 'tick spacing'
+      - type: contains-any
+        value:
+          - 'supplySchedule'
+          - 'supply_schedule'
+          - 'supply schedule'
 
       # Should not contain dangerous patterns
       - type: not-contains

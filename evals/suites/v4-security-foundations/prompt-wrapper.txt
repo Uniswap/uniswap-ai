@@ -2,17 +2,17 @@ You are an AI assistant with the following skill loaded. Follow its instructions
 
 {{ skill_content }}
 
----
+***
 
 Reference material:
 
 {{ vulnerabilities_catalog }}
 
----
+***
 
 {{ audit_checklist }}
 
----
+***
 
 User request:
 

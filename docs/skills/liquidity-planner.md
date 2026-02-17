@@ -62,6 +62,10 @@ This skill helps you:
 
 The skill presents a position summary with pool analytics (APY, volume, TVL), price range details, and considerations about impermanent loss and rebalancing, followed by a clickable deep link to the Uniswap interface.
 
+## Runtime Compatibility
+
+This skill uses `AskUserQuestion` for interactive prompts. If `AskUserQuestion` is not available in your runtime, the skill collects the same parameters through natural language conversation instead.
+
 ## Related Resources
 
 - [Uniswap Driver Plugin](/plugins/uniswap-driver) - Parent plugin

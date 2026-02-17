@@ -54,7 +54,7 @@ The skill presents a swap summary table with estimated output, pool liquidity, a
 
 ## Supported Chains
 
-Ethereum, Base, Arbitrum, Optimism, Polygon, BNB Chain, Avalanche, Celo, Blast, Zora, and World Chain.
+Ethereum, Base, Arbitrum, Optimism, Polygon, BNB Chain, Avalanche, Celo, Blast, Zora, World Chain, and Unichain.
 
 ## Related Resources
 
