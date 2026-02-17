@@ -1,27 +1,28 @@
-# Uniswap AI Hackathon
+# Uniswap AI Hackathon Rules
 
-Build AI-native tools for Uniswap with the trading API.
+This document outlines the official rules, eligibility requirements, submission format,
+judging criteria, and prize details for the competition. Please read it carefully before
+submitting your project.
 
-**7 days. $25K in prizes. May the best bot (or human) win.**
-
-**[Submit Your Project](https://github.com/uniswap/uniswap-ai/issues/new?template=hackathon-submission.yml)** | **[AI Toolkit](https://github.com/uniswap/uniswap-ai)**
+[Generate API key](https://developer.uniswap.org) | [API docs](https://api-docs.uniswap.org/introduction) | [Submit your project](https://github.com/uniswap/uniswap-ai/issues/new?template=hackathon-submission.yml)
 
 ## Prizes
 
-| Place     | Prize        |
+| Rank      | Prize        |
 | --------- | ------------ |
 | 1st Place | $12,000 USDC |
 | 2nd Place | $8,000 USDC  |
 | 3rd Place | $5,000 USDC  |
 
-**Total Prize Pool: $25,000 USDC**
+**Total prize pool: $25,000 USDC**
 
 ## Timeline
 
-| Event               | Date                         |
-| ------------------- | ---------------------------- |
-| Hackathon Start     | February 24, 2026 at TBD EST |
-| Submission Deadline | March 3, 2026 at 23:59 EST   |
+| Event               | Date                              |
+| ------------------- | --------------------------------- |
+| Hackathon Opens     | February 19, 2026 at 9:00 EST    |
+| Submission Deadline | February 26, 2026 at 23:59 EST   |
+| Winners announced and notified via X | March 2nd, 2026 at 15:00 EST |
 
 All submissions must be received before the deadline. Late submissions will not be accepted.
 
@@ -29,7 +30,7 @@ All submissions must be received before the deadline. Late submissions will not 
 
 1. **Build your project.** Create an AI-powered tool that integrates with the Uniswap API and ecosystem.
 2. **Push to GitHub.** Make your project open source on GitHub with clear documentation.
-3. **Submit via GitHub Issue.** Use the Hackathon Submission template in the uniswap-ai repo to submit your project.
+3. **Submit via GitHub Issue.** Use the [Hackathon Submission template](https://github.com/uniswap/uniswap-ai/issues/new?template=hackathon-submission.yml) in the uniswap-ai repo to submit your project.
 4. **Project Review.** The Uniswap judging panel will review submissions based on innovation, technical execution, and usefulness.
 
 ## Submission Categories
@@ -42,60 +43,35 @@ All submissions must be received before the deadline. Late submissions will not 
 
 ## What to Build
 
-Build any project that combines **AI** with the **Uniswap ecosystem**. The Uniswap ecosystem includes v4 hooks, liquidity pools, trading, token swaps, analytics data, and developer SDKs.
-
-**DeFi Automation**
-
-- AI-powered trading bots that execute strategies on Uniswap
-- Automated yield optimization across Uniswap liquidity pools
-- Portfolio rebalancing agents using Uniswap swaps
-- MEV-aware transaction routing
-
-**Developer Tooling**
-
-- AI code assistants for writing Uniswap v4 hooks
-- Smart contract auditing tools for Uniswap integrations
-- SDK wrappers that simplify Uniswap development
-- AI-powered documentation search and code generation
-
-**Community and Social**
-
-- Governance proposal analysis and summarization tools
-- Community sentiment dashboards for Uniswap tokens
-- AI-powered forum moderation or content curation
-- Social trading features and copy-trading agents
-- Risk assessment and monitoring systems
-- Natural language interfaces for interacting with Uniswap
-- Cross-chain analytics combining Uniswap data with other protocols
-- Educational tools for learning DeFi concepts
+Build any project that combines AI with the Uniswap ecosystem using the Uniswap API. The Uniswap ecosystem includes V4 hooks, liquidity pools, trading, token swaps, analytics data, and developer SDKs.
 
 ## Project Requirements
 
-- Must combine AI with the Uniswap ecosystem in a meaningful way
-- Must integrate the Uniswap Trading API
-- Must be open source with a public GitHub repository
+- Must combine AI with the Uniswap ecosystem in a meaningful way
+- Must integrate the Uniswap API
+- Must be open source with a public GitHub repository
 - Must include clear documentation: a README with setup instructions at minimum
-- Teams of up to 5 members are allowed. Solo participants are welcome
-- Uniswap protocol, SDK, or data integration is preferred but not strictly required
+- Teams of humans and/or agents are allowed to submit projects
+- Uniswap protocol, SDK, or data integration is preferred but not strictly required
 
 ## Judging Criteria
 
-| Criterion           | Weight | Description                                                   |
+| Criteria            | Weight | Description                                                   |
 | ------------------- | ------ | ------------------------------------------------------------- |
 | Innovation          | High   | How novel and creative is the approach?                       |
-| Technical Execution | High   | Code quality, architecture, testing, documentation            |
 | Usefulness          | High   | Does it solve a real problem for Uniswap users or developers? |
+| Technical Execution | Medium | Code quality, architecture, testing, documentation            |
 | Uniswap Integration | Medium | Depth and quality of Uniswap protocol/SDK integration         |
 
 ## FAQ
 
 **Who can participate?**
 
-Anyone! Whether you are a solo developer or a team of up to 5, all skill levels are welcome.
+Anyone! Whether you are an agent, a solo developer, or a team -- all skill levels are welcome.
 
 **What can I build?**
 
-Anything that combines AI with the Uniswap ecosystem. Trading bots, analytics tools, developer utilities, and more.
+Anything that combines AI with the Uniswap API. Trading agents, analytics tools, developer utilities, and more.
 
 **How do I submit?**
 
@@ -103,7 +79,7 @@ Create a GitHub Issue in the uniswap-ai repository using the Hackathon Submissio
 
 **When is the deadline?**
 
-All submissions must be made by March 3, 2026 at 23:59 EST.
+All submissions must be made by February 26, 2026 at 23:59 EST.
 
 **Do I need to use Uniswap SDKs?**
 
@@ -111,7 +87,7 @@ Not required, but encouraged. Projects that integrate with Uniswap protocols, SD
 
 **Is there a team size limit?**
 
-Teams can have up to 5 members. Solo participants are also welcome.
+There is no limit to team size. Solo participants are also welcome.
 
 **How are prizes distributed?**
 
@@ -119,10 +95,24 @@ Prizes are paid in USDC. Winners must complete KYC verification. When submitting
 
 ## Resources
 
-| Resource                  | URL                                              |
-| ------------------------- | ------------------------------------------------ |
-| Uniswap Documentation     | <https://docs.uniswap.org>                       |
-| Uniswap API Documentation | <https://api-docs.uniswap.org/introduction>      |
-| Uniswap v4 Hooks          | <https://docs.uniswap.org/contracts/v4/overview> |
-| Uniswap SDK               | <https://docs.uniswap.org/sdk/v4/overview>       |
-| Uniswap AI Toolkit        | <https://github.com/uniswap/uniswap-ai>          |
+| Resource                     | URL                                                    |
+| ---------------------------- | ------------------------------------------------------ |
+| Uniswap API Docs             | <https://api-docs.uniswap.org/introduction>            |
+| Uniswap AI Repository        | <https://github.com/uniswap/uniswap-ai>               |
+| Hackathon Community & Support | <https://t.me/+Z0XyjVphgEdlMjYx>                     |
+
+## Terms & Conditions
+
+- By submitting a project you are accepting these Terms and Conditions.
+- No purchase necessary.
+- Void where prohibited or restricted by applicable law or sanctions.
+- Open to individuals 18+ (or age of majority).
+- Skill-based competition judged on disclosed criteria; no random drawing. Judges' decisions are final.
+- Projects must be original, open source, and created during the hackathon period.
+- Submissions close on February 26th, 2026 at 11:59pm EST.
+- Uniswap may update the conditions for eligibility at any time.
+- Participants represent they have all necessary rights and comply with applicable law.
+- Prizes (awarded in USDC) are subject to eligibility verification, compliance review, and applicable taxes.
+- Winners may be required to complete documentation.
+- By entering, participants grant Sponsor a non-exclusive license to use submissions for promotional purposes.
+- Sponsor may modify, suspend, or cancel the event.
