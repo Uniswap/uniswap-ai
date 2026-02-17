@@ -6,7 +6,7 @@ Open questions from ongoing research, still to be determined.
 
 How to implement fee collection on aggregator hook swaps?
 
-- V4 has native protocol fee mechanism, but external swaps bypass it
+- v4 has native protocol fee mechanism, but external swaps bypass it
 - Options: take fee in hook before/after external call, or integrate with external protocol's fee system
 
 ## MEV Protection

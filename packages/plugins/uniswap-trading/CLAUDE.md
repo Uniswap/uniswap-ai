@@ -58,7 +58,7 @@ Ethereum (1), Optimism (10), BNB (56), Unichain (130), Polygon (137), X Layer (1
 ## Related Plugins
 
 - **uniswap-viem**: Foundational EVM blockchain integration using viem/wagmi (prerequisite knowledge)
-- **uniswap-hooks**: Uniswap V4 hook development with security-first approach
+- **uniswap-hooks**: Uniswap v4 hook development with security-first approach
 
 ## Key References
 

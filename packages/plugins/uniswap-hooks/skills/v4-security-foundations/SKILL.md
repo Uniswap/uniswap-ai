@@ -1,6 +1,6 @@
 ---
 name: v4-security-foundations
-description: Security-first Uniswap V4 hook development. Use when user mentions "v4 hooks", "hook security", "PoolManager", "beforeSwap", "afterSwap", or asks about V4 hook best practices, vulnerabilities, or audit requirements.
+description: Security-first Uniswap v4 hook development. Use when user mentions "v4 hooks", "hook security", "PoolManager", "beforeSwap", "afterSwap", or asks about V4 hook best practices, vulnerabilities, or audit requirements.
 allowed-tools: Read, Glob, Grep, WebFetch, Task(subagent_type:Explore)
 model: opus
 license: MIT
@@ -9,13 +9,13 @@ metadata:
   version: '1.1.0'
 ---
 
-# V4 Hook Security Foundations
+# v4 Hook Security Foundations
 
-Security-first guide for building Uniswap V4 hooks. Hook vulnerabilities can drain user funds—understand these concepts before writing any hook code.
+Security-first guide for building Uniswap v4 hooks. Hook vulnerabilities can drain user funds—understand these concepts before writing any hook code.
 
 ## Threat Model
 
-Before writing code, understand the V4 security context:
+Before writing code, understand the v4 security context:
 
 | Threat Area             | Description                                                | Mitigation                                     |
 | ----------------------- | ---------------------------------------------------------- | ---------------------------------------------- |
@@ -101,7 +101,7 @@ But each requires careful implementation and audit.
 
 ## Delta Accounting Fundamentals
 
-V4 uses a credit/debit system through the PoolManager:
+v4 uses a credit/debit system through the PoolManager:
 
 ### Core Invariant
 
@@ -373,13 +373,13 @@ Learn from audited, production hooks:
 
 - [v4-core Repository](https://github.com/Uniswap/v4-core)
 - [v4-periphery Repository](https://github.com/Uniswap/v4-periphery)
-- [Uniswap V4 Docs](https://docs.uniswap.org/contracts/v4/overview)
+- [Uniswap v4 Docs](https://docs.uniswap.org/contracts/v4/overview)
 - [Hook Permissions Guide](https://docs.uniswap.org/contracts/v4/concepts/hooks)
 
 ### Security Resources
 
 - [Trail of Bits Audits](https://github.com/trailofbits/publications)
-- [Certora V4 Analysis](https://www.certora.com/)
+- [Certora v4 Analysis](https://www.certora.com/)
 - [ABDK Consulting](https://abdk.consulting/)
 
 ### Community

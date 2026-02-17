@@ -1,10 +1,10 @@
 # uniswap-hooks
 
-AI-powered, security-first assistance for creating Uniswap V4 hooks.
+AI-powered, security-first assistance for creating Uniswap v4 hooks.
 
 ## Overview
 
-This Claude Code plugin provides skills for developing Uniswap V4 hooks with a strong emphasis on security. It covers aggregator hooks, custom fee hooks, and other advanced hook patterns—all built on a foundation of security best practices.
+This Claude Code plugin provides skills for developing Uniswap v4 hooks with a strong emphasis on security. It covers aggregator hooks, custom fee hooks, and other advanced hook patterns—all built on a foundation of security best practices.
 
 **Recommended Learning Path**: Complete `v4-security-foundations` before building specific hook types.
 
@@ -12,7 +12,7 @@ This Claude Code plugin provides skills for developing Uniswap V4 hooks with a s
 
 ### v4-security-foundations
 
-Security-first guide for V4 hook development. Covers:
+Security-first guide for v4 hook development. Covers:
 
 - Threat model framework (5 key threat areas)
 - Permission flags risk matrix (all 14 flags)
@@ -31,12 +31,12 @@ Or ask about security:
 
 ```text
 "What are the security risks of beforeSwapReturnDelta?"
-"How do I prevent NoOp attacks in my V4 hook?"
+"How do I prevent NoOp attacks in my v4 hook?"
 ```
 
 ### aggregator-hook-creator
 
-Create custom aggregator hooks for Uniswap V4 that route through multiple liquidity sources.
+Create custom aggregator hooks for Uniswap v4 that route through multiple liquidity sources.
 
 **Usage:**
 
@@ -47,7 +47,7 @@ Create custom aggregator hooks for Uniswap V4 that route through multiple liquid
 Or describe what you want:
 
 ```text
-"Create a hook that aggregates liquidity from Uniswap V4 and an external DEX"
+"Create a hook that aggregates liquidity from Uniswap v4 and an external DEX"
 ```
 
 ## Installation
@@ -68,12 +68,12 @@ npx skills add Uniswap/uniswap-ai
 ## Requirements
 
 - Claude Code with plugin support
-- Familiarity with Uniswap V4 hooks architecture
+- Familiarity with Uniswap v4 hooks architecture
 
 ## Resources
 
-- [Uniswap V4 Documentation](https://docs.uniswap.org/contracts/v4/overview)
-- [V4 Hooks Guide](https://docs.uniswap.org/contracts/v4/concepts/hooks)
+- [Uniswap v4 Documentation](https://docs.uniswap.org/contracts/v4/overview)
+- [v4 Hooks Guide](https://docs.uniswap.org/contracts/v4/concepts/hooks)
 - [Hook Examples](https://github.com/Uniswap/v4-periphery/tree/main/src/lens)
 
 ## Acknowledgments

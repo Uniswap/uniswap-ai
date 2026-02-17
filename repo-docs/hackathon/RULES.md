@@ -1,29 +1,27 @@
 # Uniswap AI Hackathon
 
-
-Build AI-native tools for the Uniswap ecosystem.
+Build AI-native tools for Uniswap with the trading API.
 
 **7 days. $25K in prizes. May the best bot (or human) win.**
 
-**[Submit Your Project](https://github.com/uniswap/uniswap-ai/issues/new?template=hackathon-submission.yml)** | **[GitHub](https://github.com/uniswap/uniswap-ai)**
-
+**[Submit Your Project](https://github.com/uniswap/uniswap-ai/issues/new?template=hackathon-submission.yml)** | **[AI Toolkit](https://github.com/uniswap/uniswap-ai)**
 
 ## Prizes
 
-| Place              | Prize        |
-| ------------------ | ------------ |
-| 1st Place          | $15,000 USDC |
-| 2nd Place          | $10,000 USDC |
-| 3rd Place          | $5,000 USDC |
+| Place     | Prize        |
+| --------- | ------------ |
+| 1st Place | $12,000 USDC |
+| 2nd Place | $8,000 USDC  |
+| 3rd Place | $5,000 USDC  |
 
 **Total Prize Pool: $25,000 USDC**
 
 ## Timeline
 
-| Event               | Date                           |
-| ------------------- | ------------------------------ |
-| Hackathon Start     | February 18, 2026 at TBD EST  |
-| Submission Deadline | February 25, 2026 at 23:59 EST |
+| Event               | Date                         |
+| ------------------- | ---------------------------- |
+| Hackathon Start     | February 24, 2026 at TBD EST |
+| Submission Deadline | March 3, 2026 at 23:59 EST   |
 
 All submissions must be received before the deadline. Late submissions will not be accepted.
 
@@ -47,18 +45,21 @@ All submissions must be received before the deadline. Late submissions will not 
 Build any project that combines **AI** with the **Uniswap ecosystem**. The Uniswap ecosystem includes v4 hooks, liquidity pools, trading, token swaps, analytics data, and developer SDKs.
 
 **DeFi Automation**
+
 - AI-powered trading bots that execute strategies on Uniswap
 - Automated yield optimization across Uniswap liquidity pools
 - Portfolio rebalancing agents using Uniswap swaps
 - MEV-aware transaction routing
 
 **Developer Tooling**
+
 - AI code assistants for writing Uniswap v4 hooks
 - Smart contract auditing tools for Uniswap integrations
 - SDK wrappers that simplify Uniswap development
 - AI-powered documentation search and code generation
 
 **Community and Social**
+
 - Governance proposal analysis and summarization tools
 - Community sentiment dashboards for Uniswap tokens
 - AI-powered forum moderation or content curation
@@ -69,6 +70,7 @@ Build any project that combines **AI** with the **Uniswap ecosystem**. The Unisw
 - Educational tools for learning DeFi concepts
 
 ## Project Requirements
+
 - Must combine AI with the Uniswap ecosystem in a meaningful way
 - Must integrate the Uniswap Trading API
 - Must be open source with a public GitHub repository
@@ -87,7 +89,7 @@ Build any project that combines **AI** with the **Uniswap ecosystem**. The Unisw
 
 ## FAQ
 
-**Who can participate?** 
+**Who can participate?**
 
 Anyone! Whether you are a solo developer or a team of up to 5, all skill levels are welcome.
 
@@ -101,7 +103,7 @@ Create a GitHub Issue in the uniswap-ai repository using the Hackathon Submissio
 
 **When is the deadline?**
 
-All submissions must be made by February 25, 2026 at 23:59 EST.
+All submissions must be made by March 3, 2026 at 23:59 EST.
 
 **Do I need to use Uniswap SDKs?**
 
@@ -117,9 +119,10 @@ Prizes are paid in USDC. Winners must complete KYC verification. When submitting
 
 ## Resources
 
-| Resource              | URL                                                                            |
-| --------------------- | ------------------------------------------------------------------------------ |
-| Uniswap Documentation | <https://docs.uniswap.org>                                                     |
-| Uniswap v4 Hooks      | <https://docs.uniswap.org/contracts/v4/overview>                               |
-| Uniswap SDK           | <https://docs.uniswap.org/sdk/v4/overview>                                     |
-| Uniswap AI Toolkit | <https://github.com/uniswap/uniswap-ai>                                        |
+| Resource                  | URL                                              |
+| ------------------------- | ------------------------------------------------ |
+| Uniswap Documentation     | <https://docs.uniswap.org>                       |
+| Uniswap API Documentation | <https://api-docs.uniswap.org/introduction>      |
+| Uniswap v4 Hooks          | <https://docs.uniswap.org/contracts/v4/overview> |
+| Uniswap SDK               | <https://docs.uniswap.org/sdk/v4/overview>       |
+| Uniswap AI Toolkit        | <https://github.com/uniswap/uniswap-ai>          |

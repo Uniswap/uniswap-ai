@@ -1,10 +1,10 @@
 # Position Types Reference
 
-Comprehensive reference for Uniswap V2, V3, and V4 liquidity positions.
+Comprehensive reference for Uniswap v2, v3, and v4 liquidity positions.
 
 ## Version Comparison
 
-| Feature                 | V2              | V3                     | V4                   |
+| Feature                 | v2              | v3                     | v4                   |
 | ----------------------- | --------------- | ---------------------- | -------------------- |
 | Liquidity Type          | Full Range      | Concentrated           | Concentrated         |
 | Price Ranges            | No              | Yes                    | Yes                  |
@@ -156,13 +156,13 @@ V3 positions are represented as NFTs (ERC-721):
 - NFT contains position metadata (pool, range, liquidity)
 - Can be transferred, sold, or used as collateral
 
-## V4 Positions
+## v4 Positions
 
-### V4 Basics
+### v4 Basics
 
-V4 introduces hooks - custom smart contracts that can execute logic at various points in the pool lifecycle.
+v4 introduces hooks - custom smart contracts that can execute logic at various points in the pool lifecycle.
 
-### Key Differences from V3
+### Key Differences from v3
 
 1. **Hooks**: Custom logic for swaps, liquidity changes, etc.
 2. **Dynamic Fees**: Fees can change based on conditions
@@ -171,7 +171,7 @@ V4 introduces hooks - custom smart contracts that can execute logic at various p
 
 ### Hook Address Parameter
 
-When creating V4 positions with hooks:
+When creating v4 positions with hooks:
 
 ```json
 {
@@ -179,29 +179,29 @@ When creating V4 positions with hooks:
 }
 ```
 
-The hook address determines which V4 pool to use.
+The hook address determines which v4 pool to use.
 
-### V4 Availability
+### v4 Availability
 
-V4 is newer and has limited pool availability. Check if a V4 pool exists before suggesting it.
+v4 is newer and has limited pool availability. Check if a v4 pool exists before suggesting it.
 
-**Chains with V4 support:**
+**Chains with v4 support:**
 
 - Ethereum Mainnet (limited pools)
 - Base (growing)
 - Other L2s (expanding)
 
-### When to Use V4
+### When to Use v4
 
 - When specific hook functionality is needed
 - For advanced use cases (TWAMM, limit orders, etc.)
-- When V4 pool has better liquidity than V3
+- When v4 pool has better liquidity than v3
 
 ## Chain Availability
 
 ### Version Support by Chain
 
-| Chain     | V2  | V3  | V4  |
+| Chain     | v2  | v3  | v4  |
 | --------- | --- | --- | --- |
 | Ethereum  | ✅  | ✅  | ✅  |
 | Base      | ❌  | ✅  | ✅  |
@@ -216,11 +216,11 @@ V4 is newer and has limited pool availability. Check if a V4 pool exists before 
 
 ### Recommendation by Chain
 
-**For most users on most chains:** V3 with 0.3% fee tier
+**For most users on most chains:** v3 with 0.3% fee tier
 
-**For stablecoin LPs:** V3 with 0.01% or 0.05% fee tier
+**For stablecoin LPs:** v3 with 0.01% or 0.05% fee tier
 
-**For advanced users:** V4 if appropriate hook/pool exists
+**For advanced users:** v4 if appropriate hook/pool exists
 
 ## Impermanent Loss by Range
 
@@ -277,7 +277,7 @@ interface FeeData {
 
 ## URL Encoding Examples
 
-### Full Range V3 Position (ETH/USDC, 0.3% fee)
+### Full Range v3 Position (ETH/USDC, 0.3% fee)
 
 ```text
 https://app.uniswap.org/positions/create

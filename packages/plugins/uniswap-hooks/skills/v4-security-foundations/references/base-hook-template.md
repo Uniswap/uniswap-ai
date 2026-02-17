@@ -1,6 +1,6 @@
 # Base Hook Template
 
-A security-first Solidity template for Uniswap V4 hooks with all permissions disabled by default.
+A security-first Solidity template for Uniswap v4 hooks with all permissions disabled by default.
 
 ## Complete Template
 
@@ -18,7 +18,7 @@ import {BeforeSwapDelta, BeforeSwapDeltaLibrary} from "v4-core/src/types/BeforeS
 import {Currency} from "v4-core/src/types/Currency.sol";
 
 /// @title SecureHook
-/// @notice Security-first V4 hook template
+/// @notice Security-first v4 hook template
 /// @dev All permissions disabled by default - enable only what you need
 contract SecureHook is BaseHook {
     using PoolIdLibrary for PoolKey;
@@ -225,7 +225,7 @@ function beforeSwap(
 
 ### 4. Deploy with correct address
 
-V4 hooks require specific address patterns. Use the hook miner:
+v4 hooks require specific address patterns. Use the hook miner:
 
 ```bash
 forge script script/DeployHook.s.sol --rpc-url $RPC_URL

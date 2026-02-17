@@ -15,7 +15,7 @@ body:
     id: description
     attributes:
       label: 'Description'
-      description: 'Describe your project. Markdown is supported.'
+      description: 'Describe your project. '
       placeholder: 'What does your project do? What problem does it solve?'
     validations:
       required: true

@@ -5,7 +5,7 @@ order: 2
 
 # Aggregator Hook Creator
 
-Create custom aggregator hooks for Uniswap V4 that route through multiple liquidity sources.
+Create custom aggregator hooks for Uniswap v4 that route through multiple liquidity sources.
 
 ## Invocation
 
@@ -16,14 +16,14 @@ Create custom aggregator hooks for Uniswap V4 that route through multiple liquid
 Or describe your requirements naturally:
 
 ```text
-Create a hook that compares prices between Uniswap V4 and an external DEX
+Create a hook that compares prices between Uniswap v4 and an external DEX
 ```
 
 ## What It Does
 
 This skill helps you create hooks that:
 
-- **Compare liquidity sources**: Check prices across V4 pools and external DEXs
+- **Compare liquidity sources**: Check prices across v4 pools and external DEXs
 - **Optimize routing**: Route swaps to the best execution venue
 - **Track analytics**: Monitor routing decisions and volume
 - **Handle edge cases**: Manage slippage, zero liquidity, and failures
@@ -127,7 +127,7 @@ When invoking the skill, you can specify:
 | ------------ | -------------------------------- | ----------- |
 | Pool pair    | Token pair for the hook          | WETH/USDC   |
 | External DEX | Which external source to compare | Mock DEX    |
-| Fee tier     | Uniswap V4 fee tier              | 3000 (0.3%) |
+| Fee tier     | Uniswap v4 fee tier              | 3000 (0.3%) |
 | Chain        | Target deployment chain          | Ethereum    |
 
 ## Best Practices
@@ -141,6 +141,6 @@ The skill follows these best practices:
 
 ## Related Resources
 
-- [V4 Hooks Overview](https://docs.uniswap.org/contracts/v4/concepts/hooks)
+- [v4 Hooks Overview](https://docs.uniswap.org/contracts/v4/concepts/hooks)
 - [Hook Permissions](https://docs.uniswap.org/contracts/v4/concepts/hook-permissions)
 - [BaseHook Contract](https://github.com/Uniswap/v4-periphery/blob/main/src/base/hooks/BaseHook.sol)

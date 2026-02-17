@@ -14,7 +14,7 @@ Skills are AI-powered capabilities that help you build on Uniswap. Each skill is
 | Skill                                                | Description                                                 | Invocation                 |
 | ---------------------------------------------------- | ----------------------------------------------------------- | -------------------------- |
 | [Aggregator Hook Creator](./aggregator-hook-creator) | Create hooks that aggregate liquidity from multiple sources | `/aggregator-hook-creator` |
-| [V4 Security Foundations](./v4-security-foundations) | Security-first guide for V4 hook development                | `/v4-security-foundations` |
+| [V4 Security Foundations](./v4-security-foundations) | Security-first guide for v4 hook development                | `/v4-security-foundations` |
 
 ### uniswap-cca Plugin
 

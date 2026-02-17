@@ -1,15 +1,14 @@
 # Uniswap AI
 
-Uniswap-specific AI tools (skills, plugins, agents) for external developers and AI agents integrating the Uniswap ecosystem.
+Uniswap-specific AI tools (skills, plugins, agents) for developers and AI agents integrating the trading API.
 
 ## Overview
 
-This repository provides Claude Code plugins and AI development tools specifically designed for building on the Uniswap protocol. It complements the general-purpose [ai-toolkit](https://github.com/Uniswap/ai-toolkit) with protocol-specific capabilities.
+This repository provides Claude Code plugins and AI development tools specifically designed for building on the Uniswap protocol.
 
-| Repository   | Focus                                | Audience                       |
-| ------------ | ------------------------------------ | ------------------------------ |
-| `ai-toolkit` | General development workflow plugins | Internal developers            |
-| `uniswap-ai` | Uniswap protocol-specific AI tools   | External developers, AI agents |
+| Repository   | Focus                              | Audience                       |
+| ------------ | ---------------------------------- | ------------------------------ |
+| `uniswap-ai` | Uniswap protocol-specific AI tools | External developers, AI agents |
 
 ## Installation
 
@@ -34,7 +33,7 @@ npx skills add Uniswap/uniswap-ai
 
 ### uniswap-hooks
 
-AI-powered, security-first assistance for creating Uniswap V4 hooks.
+AI-powered, security-first assistance for creating Uniswap v4 hooks.
 
 **Skills:** `v4-security-foundations`, `aggregator-hook-creator`
 
@@ -138,5 +137,6 @@ MIT License - see [LICENSE](./LICENSE) for details.
 ## Links
 
 - [Documentation](https://uniswap-ai-docs.vercel.app/)
-- [Uniswap V4 Docs](https://docs.uniswap.org/contracts/v4/overview)
+- [Uniswap API Docs](https://api-docs.uniswap.org/introduction)
+- [Uniswap v4 Docs](https://docs.uniswap.org/contracts/v4/overview)
 - [Claude Code](https://claude.ai/code)

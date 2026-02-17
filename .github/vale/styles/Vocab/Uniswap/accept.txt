@@ -8,7 +8,7 @@ LPs
 TWAP
 VWAP
 
-# Uniswap V4 specific
+# Uniswap v4 specific
 PoolManager
 PoolKey
 PoolId

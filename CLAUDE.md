@@ -2,12 +2,7 @@
 
 ## Overview
 
-This is the **uniswap-ai** monorepo providing Uniswap-specific AI tools (skills, plugins, agents) for external developers and AI agents integrating the Uniswap ecosystem.
-
-**Differentiation from ai-toolkit:**
-
-- **ai-toolkit** = General development workflow plugins (internal focus)
-- **uniswap-ai** = Uniswap protocol-specific AI tools (external focus)
+This is the **uniswap-ai** monorepo providing Uniswap-specific AI tools (skills, plugins, agents) for developers and AI agents integrating the Uniswap ecosystem.
 
 ## Core Requirements
 

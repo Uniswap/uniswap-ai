@@ -82,7 +82,7 @@ contract GenericAggregatorHook is BaseHook {
         bytes calldata hookData
     ) external override returns (bytes4, BeforeSwapDelta, uint24) {
         if (hookData.length == 0) {
-            // No external routing, proceed with V4
+            // No external routing, proceed with v4
             return (this.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA, 0);
         }
 
@@ -280,7 +280,7 @@ contract AggregatorHookTest is Test, Deployers {
 
 1. **Basic routing**: Correct routing based on hookData presence
 2. **Edge cases**: Zero liquidity, equal prices, empty hookData
-3. **Analytics**: Volume tracking accuracy for both V4 and external
+3. **Analytics**: Volume tracking accuracy for both v4 and external
 4. **Failures**: External DEX unavailable, malformed hookData
 5. **Gas**: Acceptable gas consumption for multi-action swaps
 
