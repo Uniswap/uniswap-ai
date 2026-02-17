@@ -1,6 +1,6 @@
 ---
 name: aggregator-hook-creator
-description: Integrate external DEX liquidity into Uniswap V4 via Aggregator Hooks. Use when user says "aggregator hook", "external liquidity", "wrap Curve/Balancer/Aerodrome", "route through external DEX", "V4 hook for non-Uniswap pools", "compare liquidity sources", or mentions integrating third-party AMM liquidity into Uniswap routing.
+description: Integrate external DEX liquidity into Uniswap v4 via Aggregator Hooks. Use when user says "aggregator hook", "external liquidity", "wrap Curve/Balancer/Aerodrome", "route through external DEX", "v4 hook for non-Uniswap pools", "compare liquidity sources", or mentions integrating third-party AMM liquidity into Uniswap routing.
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash(npm:*), Bash(npx:*), Bash(forge:*), Bash(cast:*), Bash(curl:*), WebFetch, Task(subagent_type:Explore)
 model: opus
 license: MIT
@@ -12,11 +12,11 @@ metadata:
 
 # Aggregator Hook Integration
 
-Integrate external DEX liquidity (Curve, Balancer, Aerodrome, etc.) into Uniswap V4 routing via Aggregator Hooks.
+Integrate external DEX liquidity (Curve, Balancer, Aerodrome, etc.) into Uniswap v4 routing via Aggregator Hooks.
 
 ## Overview
 
-Aggregator Hooks are Uniswap V4 hooks that wrap non-Uniswap pools, allowing the Uniswap router to include external liquidity sources. This improves execution quality by routing through the best available liquidity across multiple protocols.
+Aggregator Hooks are Uniswap v4 hooks that wrap non-Uniswap pools, allowing the Uniswap router to include external liquidity sources. This improves execution quality by routing through the best available liquidity across multiple protocols.
 
 ## Prerequisites
 
@@ -24,7 +24,7 @@ This skill assumes familiarity with:
 
 - viem Integration - EVM basics
 - Swap Integration - Uniswap swap patterns
-- Uniswap V4 hook architecture basics
+- Uniswap v4 hook architecture basics
 - **[v4-security-foundations](../v4-security-foundations/v4-security-foundations.md)** - Complete the security foundations skill before building aggregator hooks. Understanding NoOp attacks, delta accounting, and access control is essential.
 
 ## Quick Decision Guide
@@ -40,9 +40,9 @@ This skill assumes familiarity with:
 
 | Pattern              | Description                              | Callbacks                 |
 | -------------------- | ---------------------------------------- | ------------------------- |
-| **Price Comparison** | Compare V4 price with external source    | `beforeSwap`              |
+| **Price Comparison** | Compare v4 price with external source    | `beforeSwap`              |
 | **Split Routing**    | Split orders across multiple venues      | `beforeSwap`, `afterSwap` |
-| **Fallback Routing** | Route to external if V4 liquidity is low | `beforeSwap`              |
+| **Fallback Routing** | Route to external if v4 liquidity is low | `beforeSwap`              |
 | **Analytics**        | Track routing decisions and volume       | `afterSwap`               |
 
 ---
@@ -190,7 +190,7 @@ For open questions and ongoing research topics, see [references/research-notes.m
 
 ## References
 
-- [Uniswap V4 Hooks](https://docs.uniswap.org/contracts/v4/concepts/hooks)
+- [Uniswap v4 Hooks](https://docs.uniswap.org/contracts/v4/concepts/hooks)
 - [Hook Permissions](https://docs.uniswap.org/contracts/v4/concepts/hook-permissions)
 - [BaseHook Contract](https://github.com/Uniswap/v4-periphery/blob/main/src/base/hooks/BaseHook.sol)
 - [Curve Technical Docs](https://curve.readthedocs.io)

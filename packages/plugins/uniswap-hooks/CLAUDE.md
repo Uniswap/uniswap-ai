@@ -2,16 +2,16 @@
 
 ## Overview
 
-This plugin provides AI-powered, security-first assistance for creating Uniswap V4 hooks. It helps developers design, implement, and test custom hooks for the Uniswap V4 protocol with a strong emphasis on security best practices.
+This plugin provides AI-powered, security-first assistance for creating Uniswap v4 hooks. It helps developers design, implement, and test custom hooks for the Uniswap V4 protocol with a strong emphasis on security best practices.
 
 ## Plugin Components
 
 ### Skills (./skills/)
 
-- **v4-security-foundations**: Security-first guide for V4 hook development (NoOp attacks, delta accounting, access control, audit checklists)
+- **v4-security-foundations**: Security-first guide for v4 hook development (NoOp attacks, delta accounting, access control, audit checklists)
 - **aggregator-hook-creator**: Create custom aggregator hooks that route through multiple liquidity sources
 
-## Uniswap V4 Hooks Architecture
+## Uniswap v4 Hooks Architecture
 
 Hooks are smart contracts that can intercept and modify pool actions at specific points:
 
@@ -59,7 +59,7 @@ function getHookPermissions() public pure override returns (Hooks.Permissions me
 
 ### Hook Address Requirements
 
-V4 hooks must have specific address patterns where the last 14 bits encode which callbacks are enabled. Use the hook miner to find valid addresses.
+v4 hooks must have specific address patterns where the last 14 bits encode which callbacks are enabled. Use the hook miner to find valid addresses.
 
 ### State Management
 
@@ -98,6 +98,6 @@ uniswap-hooks/
 
 ## Related Resources
 
-- [Uniswap V4 Core](https://github.com/Uniswap/v4-core)
-- [V4 Periphery](https://github.com/Uniswap/v4-periphery)
+- [Uniswap v4 Core](https://github.com/Uniswap/v4-core)
+- [v4 Periphery](https://github.com/Uniswap/v4-periphery)
 - [Hook Examples](https://github.com/Uniswap/v4-periphery/tree/main/src/lens)

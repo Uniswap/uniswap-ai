@@ -5,7 +5,7 @@ order: 2
 
 # Aggregator Hook Creator
 
-Create custom aggregator hooks for Uniswap V4 that route through multiple liquidity sources.
+Create custom aggregator hooks for Uniswap v4 that route through multiple liquidity sources.
 
 ## Invocation
 
@@ -127,7 +127,7 @@ When invoking the skill, you can specify:
 | ------------ | -------------------------------- | ----------- |
 | Pool pair    | Token pair for the hook          | WETH/USDC   |
 | External DEX | Which external source to compare | Mock DEX    |
-| Fee tier     | Uniswap V4 fee tier              | 3000 (0.3%) |
+| Fee tier     | Uniswap v4 fee tier              | 3000 (0.3%) |
 | Chain        | Target deployment chain          | Ethereum    |
 
 ## Best Practices

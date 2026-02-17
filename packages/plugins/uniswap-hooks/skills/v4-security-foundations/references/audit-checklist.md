@@ -1,6 +1,6 @@
-# V4 Hook Pre-Deployment Audit Checklist
+# v4 Hook Pre-Deployment Audit Checklist
 
-Comprehensive checklist for auditing Uniswap V4 hooks before deployment.
+Comprehensive checklist for auditing Uniswap v4 hooks before deployment.
 
 ## 1. Access Control
 
@@ -194,7 +194,7 @@ If any delta return permission is enabled:
 - [ ] Slither analysis completed (all findings addressed)
 - [ ] Mythril analysis completed
 - [ ] Solhint linting passed
-- [ ] Custom detectors for V4-specific issues
+- [ ] Custom detectors for v4-specific issues
 
 ### 10.2 Manual Review
 

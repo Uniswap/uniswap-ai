@@ -14,7 +14,7 @@ Build AI-native tools for Uniswap with the trading API.
 | 2nd Place          | $8,000 USDC |
 | 3rd Place          | $5,000 USDC |
 
-Submissions are open: February 24 – March 4, 2026.
+Submissions are open: February 24 – March 3, 2026.
 
 **[Submit Your Project](https://github.com/uniswap/uniswap-ai/issues/new?template=hackathon-submission.yml)** | **[Hackathon Rules](./repo-docs/hackathon/RULES.md)**
 
