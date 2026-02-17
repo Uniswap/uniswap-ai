@@ -21,6 +21,8 @@ on:
   pull_request:
     types: [opened, synchronize, ready_for_review]
 
+permissions: {}
+
 # Concurrency: Cancel in-flight runs for the same PR
 concurrency:
   group: pr-metadata-${{ github.event.pull_request.number }}
@@ -30,6 +32,10 @@ permissions: {}
 
 jobs:
   generate-metadata:
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
     # Skip conditions:
     # - Merge queue PRs (handled separately)
     # - Dependabot PRs (already have proper titles)

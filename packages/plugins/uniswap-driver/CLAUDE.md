@@ -9,7 +9,7 @@ This plugin provides AI-powered assistance for planning Uniswap swaps and liquid
 ### Skills (./skills/)
 
 - **swap-planner**: Plan and generate deep links for token swaps
-- **liquidity-planner**: Plan and generate deep links for LP positions (V2, V3, V4)
+- **liquidity-planner**: Plan and generate deep links for LP positions (v2, v3, v4)
 
 ## Deep Link URL Structures
 
@@ -39,7 +39,7 @@ Base URL: `https://app.uniswap.org/positions/create`
 | `priceRangeState` | JSON with range params     | `{"priceInverted":false,"fullRange":true,...}`          |
 | `depositState`    | JSON with deposit params   | `{"exactField":"TOKEN0",...}`                           |
 | `fee`             | JSON with fee tier         | `{"feeAmount":3000,"tickSpacing":60,"isDynamic":false}` |
-| `hook`            | V4 hook address (optional) | `0x...` or `undefined`                                  |
+| `hook`            | v4 hook address (optional) | `0x...` or `undefined`                                  |
 | `step`            | Flow step                  | `1`                                                     |
 
 **URL Encoding**: Only encode quotes (`"` → `%22`). Do NOT encode `{}`, `:`, or `,`.
@@ -48,18 +48,20 @@ Base URL: `https://app.uniswap.org/positions/create`
 
 ### Chain Names for URLs
 
-| Chain     | URL Parameter |
-| --------- | ------------- |
-| Ethereum  | `ethereum`    |
-| Base      | `base`        |
-| Arbitrum  | `arbitrum`    |
-| Optimism  | `optimism`    |
-| Polygon   | `polygon`     |
-| BNB Chain | `bnb`         |
-| Avalanche | `avalanche`   |
-| Celo      | `celo`        |
-| Blast     | `blast`       |
-| Zora      | `zora`        |
+| Chain       | URL Parameter |
+| ----------- | ------------- |
+| Ethereum    | `ethereum`    |
+| Base        | `base`        |
+| Arbitrum    | `arbitrum`    |
+| Optimism    | `optimism`    |
+| Polygon     | `polygon`     |
+| BNB Chain   | `bnb`         |
+| Avalanche   | `avalanche`   |
+| Celo        | `celo`        |
+| Blast       | `blast`       |
+| Zora        | `zora`        |
+| World Chain | `worldchain`  |
+| Unichain    | `unichain`    |
 
 ## On-Chain Verification
 

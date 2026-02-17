@@ -9,7 +9,7 @@ APIs for fetching real-time token prices and pool liquidity for swap planning.
 
 No authentication required. 300 requests/minute.
 
-**Network IDs:** `ethereum`, `base`, `arbitrum`, `optimism`, `polygon`, `bsc`, `avalanche`
+**Network IDs:** `ethereum`, `base`, `arbitrum`, `optimism`, `polygon`, `bsc`, `avalanche`, `unichain`
 
 ### Get Token Price
 

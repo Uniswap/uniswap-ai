@@ -470,3 +470,80 @@ const results = await client.multicall({
   ],
 });
 ```
+
+---
+
+## ENS Resolution
+
+Resolve ENS names to addresses using viem's ENS utilities:
+
+```typescript
+import { createPublicClient, http } from 'viem';
+import { mainnet } from 'viem/chains';
+import { normalize } from 'viem/ens';
+
+const client = createPublicClient({
+  chain: mainnet,
+  transport: http(),
+});
+
+// Resolve ENS name to address
+const address = await client.getEnsAddress({
+  name: normalize('vitalik.eth'),
+});
+// Returns: '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045'
+
+// Reverse resolve: address to ENS name
+const name = await client.getEnsName({
+  address: '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045',
+});
+// Returns: 'vitalik.eth'
+```
+
+**Important**: Always use `normalize()` from `viem/ens` to normalize ENS names before resolution. This handles Unicode normalization (UTS-46) required by the ENS protocol.
+
+## Common Uniswap V3 ABIs
+
+Frequently needed ABIs for Uniswap V3 contract interactions:
+
+```typescript
+import { parseAbi } from 'viem';
+
+// Uniswap V3 Pool events
+const poolAbi = parseAbi([
+  'event Swap(address indexed sender, address indexed recipient, int256 amount0, int256 amount1, uint160 sqrtPriceX96, uint128 liquidity, int24 tick)',
+  'event Mint(address sender, address indexed owner, int24 indexed tickLower, int24 indexed tickUpper, uint128 amount, uint256 amount0, uint256 amount1)',
+  'event Burn(address indexed owner, int24 indexed tickLower, int24 indexed tickUpper, uint128 amount, uint256 amount0, uint256 amount1)',
+  'event Collect(address indexed owner, address recipient, int24 indexed tickLower, int24 indexed tickUpper, uint128 amount0, uint128 amount1)',
+  'function slot0() view returns (uint160 sqrtPriceX96, int24 tick, uint16 observationIndex, uint16 observationCardinality, uint16 observationCardinalityNext, uint8 feeProtocol, bool unlocked)',
+  'function liquidity() view returns (uint128)',
+  'function fee() view returns (uint24)',
+  'function token0() view returns (address)',
+  'function token1() view returns (address)',
+]);
+
+// Uniswap V3 Factory
+const factoryAbi = parseAbi([
+  'event PoolCreated(address indexed token0, address indexed token1, uint24 indexed fee, int24 tickSpacing, address pool)',
+  'function getPool(address tokenA, address tokenB, uint24 fee) view returns (address pool)',
+]);
+
+// Example: Read pool price
+const [sqrtPriceX96, tick] = await client.readContract({
+  address: '0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640',
+  abi: poolAbi,
+  functionName: 'slot0',
+});
+
+// Example: Find a pool address
+const poolAddress = await client.readContract({
+  address: '0x1F98431c8aD98523631AE4a59f267346ea31F984', // V3 Factory
+  abi: factoryAbi,
+  functionName: 'getPool',
+  args: [
+    '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', // USDC
+    '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', // WETH
+    3000, // 0.3% fee tier
+  ],
+});
+```

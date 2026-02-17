@@ -9,7 +9,7 @@ APIs for fetching pool data to inform LP position decisions. Uses two providers:
 
 No authentication required. 300 requests/minute. Best for pool discovery and real-time metrics.
 
-**Network IDs:** `ethereum`, `base`, `arbitrum`, `optimism`, `polygon`, `bsc`, `avalanche`
+**Network IDs:** `ethereum`, `base`, `arbitrum`, `optimism`, `polygon`, `bsc`, `avalanche`, `unichain`
 
 ### Discover Pools for a Token
 

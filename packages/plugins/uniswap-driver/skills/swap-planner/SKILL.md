@@ -13,6 +13,8 @@ metadata:
 
 Plan and generate deep links for token swaps on Uniswap across all supported chains.
 
+> **Runtime Compatibility:** This skill uses `AskUserQuestion` for interactive prompts. If `AskUserQuestion` is not available in your runtime, collect the same parameters through natural language conversation instead.
+
 ## Overview
 
 Plan token swaps by:
@@ -80,7 +82,7 @@ curl -s "https://api.dexscreener.com/token-pairs/v1/{network}/{address}" | \
   }'
 ```
 
-**Network IDs:** `ethereum`, `base`, `arbitrum`, `optimism`, `polygon`, `bsc`, `avalanche`
+**Network IDs:** `ethereum`, `base`, `arbitrum`, `optimism`, `polygon`, `bsc`, `avalanche`, `unichain`
 
 **Note:** DexScreener's public API doesn't have a "trending" or "top gainers" endpoint. For general discovery, ask the user what type of token they're looking for and search by keyword.
 
@@ -282,7 +284,7 @@ curl -s "https://api.dexscreener.com/token-pairs/v1/{network}/{address}" | \
   }'
 ```
 
-**Network IDs:** `ethereum`, `base`, `arbitrum`, `optimism`, `polygon`, `bsc`, `avalanche`
+**Network IDs:** `ethereum`, `base`, `arbitrum`, `optimism`, `polygon`, `bsc`, `avalanche`, `unichain`
 
 **Liquidity warnings:**
 
@@ -304,13 +306,13 @@ https://app.uniswap.org/swap?chain={chain}&inputCurrency={input}&outputCurrency=
 
 **URL Parameters:**
 
-| Parameter        | Description                  | Values                                                                                             |
-| ---------------- | ---------------------------- | -------------------------------------------------------------------------------------------------- |
-| `chain`          | Network name                 | `ethereum`, `base`, `arbitrum`, `optimism`, `polygon`, `bnb`, `avalanche`, `celo`, `blast`, `zora` |
-| `inputCurrency`  | Input token                  | Address or `NATIVE`                                                                                |
-| `outputCurrency` | Output token                 | Address or `NATIVE`                                                                                |
-| `value`          | Amount                       | Decimal number (e.g., `1.5`)                                                                       |
-| `field`          | Which field value applies to | `INPUT` or `OUTPUT`                                                                                |
+| Parameter        | Description                  | Values                                                                                                                       |
+| ---------------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `chain`          | Network name                 | `ethereum`, `base`, `arbitrum`, `optimism`, `polygon`, `bnb`, `avalanche`, `celo`, `blast`, `zora`, `unichain`, `worldchain` |
+| `inputCurrency`  | Input token                  | Address or `NATIVE`                                                                                                          |
+| `outputCurrency` | Output token                 | Address or `NATIVE`                                                                                                          |
+| `value`          | Amount                       | Decimal number (e.g., `1.5`)                                                                                                 |
+| `field`          | Which field value applies to | `INPUT` or `OUTPUT`                                                                                                          |
 
 ### Step 7: Present Output and Open Browser
 
@@ -397,6 +399,7 @@ All chains supported by the Uniswap interface:
 - Blast (`blast`)
 - Zora (`zora`)
 - World Chain (`worldchain`)
+- Unichain (`unichain`)
 
 ## Additional Resources
 

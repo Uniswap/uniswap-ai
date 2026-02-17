@@ -132,18 +132,20 @@ You are an AI assistant with the following skill loaded.
 
 {{ skill_content }}
 
----
+***
 
 Reference material:
 
 {{ reference_doc }}
 
----
+***
 
 User request:
 
 {{ case_content }}
 ```
+
+> **Important**: Use `***` (not `---`) as section separators in prompt templates. Promptfoo treats `---` on its own line as a **multi-prompt separator**, which splits one template into multiple incomplete prompts. `***` renders as a markdown horizontal rule without triggering this behavior.
 
 See `suites/v4-security-foundations/` for a working example.
 
@@ -304,6 +306,59 @@ Pass rate must be ≥85% for PR to pass. Results include:
 5. **Set appropriate thresholds**: Security = 1.0, correctness ≥ 0.8, completeness ≥ 0.85
 6. **Review transcripts**: Regularly read eval outputs to validate rubric quality
 
+## Common Pitfalls
+
+### `---` Splits Prompts
+
+Promptfoo treats `---` on its own line in `.txt` prompt files as a **multi-prompt separator**. This silently splits one template into multiple incomplete prompts, causing evals to fail with confusing results (e.g., one prompt has skill context but no user request, another has the user request but no context).
+
+**Fix**: Always use `***` for visual separators in prompt template files.
+
+### Nunjucks Renders Everything
+
+Promptfoo runs Nunjucks template rendering on **all prompt content**, including:
+
+- `.txt` template files
+- Return values from JavaScript prompt functions
+- Content loaded via `file://` in `vars:`
+
+This means URL-encoded JSON patterns like `{%22feeAmount%22}` in skill content will be interpreted as Nunjucks `{% %}` block tags, causing `Template render error: unknown block tag` errors.
+
+**Fix**: For skills containing `{%` patterns (common in URL-encoded JSON), use a **JavaScript prompt function** that reads the file via `fs.readFileSync` and wraps it in `{% raw %}...{% endraw %}` blocks:
+
+```javascript
+// prompt-wrapper.js
+const fs = require('fs');
+const path = require('path');
+
+const skillPath = path.resolve(
+  __dirname,
+  '../../../packages/plugins/<plugin>/skills/<skill>/SKILL.md'
+);
+const skillContent = fs.readFileSync(skillPath, 'utf-8');
+
+module.exports = function ({ vars }) {
+  return `You are an AI assistant with the following skill loaded.
+
+{% raw %}${skillContent}{% endraw %}
+
+***
+
+User request:
+
+${vars.case_content}`;
+};
+```
+
+Then reference it in `promptfoo.yaml`:
+
+```yaml
+prompts:
+  - file://prompt-wrapper.js
+```
+
+See `suites/liquidity-planner/` for a working example.
+
 ## Troubleshooting
 
 ### Eval not finding config
@@ -317,6 +372,14 @@ Set either `ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN` environment variable
 ### Rubric scoring seems off
 
 Review the rubric instructions - LLM judges need clear scoring guidelines.
+
+### Evals show multiple prompt columns
+
+If the results table shows two or more prompt columns instead of one, check for `---` in your prompt template files. Replace with `***`.
+
+### Template render error: unknown block tag
+
+The skill content likely contains `{%` patterns (e.g., URL-encoded JSON `{%22key%22}`). Use a JavaScript prompt function with `{% raw %}` blocks instead of a `.txt` template. See "Common Pitfalls" above.
 
 ### Cost concerns
 

@@ -54,6 +54,8 @@ on:
         type: boolean
         default: true
 
+permissions: {}
+
 # Ensure only one review runs at a time per PR
 # New reviews wait for the current one to complete before starting
 concurrency:
@@ -78,7 +80,7 @@ jobs:
       - uses: bullfrogsec/bullfrog@1831f79cce8ad602eef14d2163873f27081ebfb3 # v0.8.4
 
       - name: Checkout repository (for composite action)
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           sparse-checkout: .github/actions
           sparse-checkout-cone-mode: false
@@ -96,6 +98,9 @@ jobs:
   get-pr-info:
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'issue_comment' || github.event_name == 'pull_request_review_comment'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
     outputs:
       base_ref: ${{ steps.pr-info.outputs.base_ref }}
       head_ref: ${{ steps.pr-info.outputs.head_ref }}
@@ -184,6 +189,12 @@ jobs:
   # Review categories: deps (dependabot/renovate), and all non-automated PRs
   claude-review-auto:
     needs: check-automated
+    permissions:
+      actions: read
+      contents: read
+      id-token: write
+      issues: write
+      pull-requests: write
     if: |
       github.event_name == 'pull_request' &&
       (
@@ -221,6 +232,7 @@ jobs:
       needs.check-automated.outputs.is_automated == 'true' &&
       needs.check-automated.outputs.category != 'deps'
     runs-on: ubuntu-latest
+    permissions: {}
     steps:
       - uses: bullfrogsec/bullfrog@1831f79cce8ad602eef14d2163873f27081ebfb3 # v0.8.4
 
@@ -236,6 +248,12 @@ jobs:
   # Note: Manual triggers bypass automated PR checks - if you explicitly request a review, you get one
   claude-review-manual:
     needs: get-pr-info
+    permissions:
+      actions: read
+      contents: read
+      id-token: write
+      issues: write
+      pull-requests: write
     if: |
       github.event_name == 'workflow_dispatch' &&
       needs.get-pr-info.outputs.should_run == 'true'
@@ -262,6 +280,12 @@ jobs:
   # Note: Comment triggers bypass automated PR checks - if you explicitly request a review, you get one
   claude-review-comment:
     needs: get-pr-info
+    permissions:
+      actions: read
+      contents: read
+      id-token: write
+      issues: write
+      pull-requests: write
     if: |
       (github.event_name == 'issue_comment' || github.event_name == 'pull_request_review_comment') &&
       needs.get-pr-info.outputs.should_run == 'true'
@@ -289,7 +313,7 @@ jobs:
     needs: claude-review-auto
     if: |
       github.event_name == 'pull_request' &&
-      github.actor == 'dependabot[bot]' &&
+      github.event.pull_request.user.login == 'dependabot[bot]' &&
       (contains(github.event.pull_request.title, 'security') || contains(github.event.pull_request.title, 'Bump')) &&
       needs.claude-review-auto.result == 'success'
     runs-on: ubuntu-latest

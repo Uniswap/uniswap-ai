@@ -48,6 +48,8 @@ Best for: Frontends, backends, scripts. Handles routing optimization automatical
 
 **Authentication**: `x-api-key: <your-api-key>` header required
 
+**Getting an API Key**: The Trading API requires an API key for authentication. Visit the [Uniswap Developer Portal](https://developer.uniswap.org/) to register and obtain your API key. Keys are typically available for immediate use after registration. Include it as an `x-api-key` header in all API requests.
+
 **3-Step Flow**:
 
 ```text
@@ -407,7 +409,7 @@ Without this setup, you'll see: `ReferenceError: Buffer is not defined`
 
 ## Universal Router Reference
 
-The Universal Router is a unified interface for swapping across Uniswap V2, V3, and V4.
+The Universal Router is a unified interface for swapping across Uniswap v2, v3, and v4.
 
 ### Core Function
 
@@ -433,11 +435,11 @@ Each command is a single byte:
 
 | Code | Command           | Description               |
 | ---- | ----------------- | ------------------------- |
-| 0x00 | V3_SWAP_EXACT_IN  | V3 swap with exact input  |
-| 0x01 | V3_SWAP_EXACT_OUT | V3 swap with exact output |
-| 0x08 | V2_SWAP_EXACT_IN  | V2 swap with exact input  |
-| 0x09 | V2_SWAP_EXACT_OUT | V2 swap with exact output |
-| 0x10 | V4_SWAP           | V4 swap                   |
+| 0x00 | V3_SWAP_EXACT_IN  | v3 swap with exact input  |
+| 0x01 | V3_SWAP_EXACT_OUT | v3 swap with exact output |
+| 0x08 | V2_SWAP_EXACT_IN  | v2 swap with exact input  |
+| 0x09 | V2_SWAP_EXACT_OUT | v2 swap with exact output |
+| 0x10 | V4_SWAP           | v4 swap                   |
 
 ### Token Operations
 
@@ -1166,9 +1168,9 @@ See [Advanced Patterns Reference](./references/advanced-patterns.md#rate-limitin
 
 ## Key Contract Addresses
 
-### Universal Router (V4)
+### Universal Router (v4)
 
-Addresses are per-chain. The legacy V1 address `0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD` is deprecated.
+Addresses are per-chain. The legacy v1 address `0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD` is deprecated.
 
 | Chain       | ID      | Address                                      |
 | ----------- | ------- | -------------------------------------------- |
@@ -1188,7 +1190,7 @@ Addresses are per-chain. The legacy V1 address `0x3fC91A3afd70395Cd496C647d5a6CC
 | Ink         | 57073   | `0x112908dac86e20e7241b0927479ea3bf935d1fa0` |
 | Monad       | 143     | `0x0d97dc33264bfc1c226207428a79b26757fb9dc3` |
 
-For testnet addresses, see [Uniswap V4 Deployments](https://docs.uniswap.org/contracts/v4/deployments).
+For testnet addresses, see [Uniswap v4 Deployments](https://docs.uniswap.org/contracts/v4/deployments).
 
 ### Permit2
 

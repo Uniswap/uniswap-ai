@@ -3,6 +3,8 @@ name: PR Checks
 on:
   pull_request:
 
+permissions: {}
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
@@ -68,9 +70,10 @@ jobs:
           cache: 'npm'
 
       - name: Install npm
-        run: npm install -g npm@${VARS_NPM_VERSION}
         env:
-          VARS_NPM_VERSION: ${{ vars.NPM_VERSION }}
+          NPM_VERSION: ${{ vars.NPM_VERSION }}
+        # nosemgrep: uniswap.npm-package-in-action-not-pinned-to-commit-sha -- npm CLI from npm registry, not a git-hosted action
+        run: npm install -g "npm@$NPM_VERSION"
 
       - name: Verify package-lock.json
         run: |
@@ -89,22 +92,24 @@ jobs:
           npm ci --prefer-offline --no-audit
           echo "✅ npm ci completed successfully"
 
+      # Pin nx via --package to prevent local bin shadowing from malicious PRs.
+      # Update the version here when upgrading nx in package.json.
       - name: Build changed packages
         run: |
           echo "Building changed packages..."
-          npx nx affected --target=build --verbose
+          npx --package=nx@22.0.2 -- nx affected --target=build --verbose
           echo "✅ Build(s) completed successfully"
 
       - name: Run linting
         run: |
           echo "Running linters..."
-          npx nx affected --target=lint --verbose
+          npx --package=nx@22.0.2 -- nx affected --target=lint --verbose
           echo "✅ Linting passed"
 
       - name: Check formatting
         run: |
           echo "Checking code formatting..."
-          npx nx format:check
+          npx --package=nx@22.0.2 -- nx format:check
           echo "✅ Formatting check passed"
 
       - name: Install Vale
@@ -124,7 +129,7 @@ jobs:
       - name: Run tests
         run: |
           echo "Running tests..."
-          npx nx affected --target=test --parallel=3 --coverage --verbose
+          npx --package=nx@22.0.2 -- nx affected --target=test --parallel=3 --coverage --verbose
           echo "✅ Tests passed"
 
   validate-plugins:
@@ -232,6 +237,7 @@ jobs:
     needs: check-automated
     if: ${{ needs.check-automated.outputs.should_skip_ci == 'true' }}
     runs-on: ubuntu-latest
+    permissions: {}
     steps:
       - uses: bullfrogsec/bullfrog@1831f79cce8ad602eef14d2163873f27081ebfb3 # v0.8.4
 

@@ -2,12 +2,7 @@
 
 ## Overview
 
-This is the **uniswap-ai** monorepo providing Uniswap-specific AI tools (skills, plugins, agents) for external developers and AI agents integrating the Uniswap ecosystem.
-
-**Differentiation from ai-toolkit:**
-
-- **ai-toolkit** = General development workflow plugins (internal focus)
-- **uniswap-ai** = Uniswap protocol-specific AI tools (external focus)
+This is the **uniswap-ai** monorepo providing Uniswap-specific AI tools (skills, plugins, agents) for developers and AI agents integrating the Uniswap ecosystem.
 
 ## Core Requirements
 
@@ -71,6 +66,7 @@ uniswap-ai/
 │       ├── uniswap-hooks/   # Uniswap V4 hooks plugin
 │       ├── uniswap-trading/ # Uniswap swap integration
 │       └── uniswap-viem/    # EVM blockchain integration (viem/wagmi)
+├── repo-docs/               # Standalone documents (hackathon, overview)
 ├── scripts/                 # Build/validation scripts
 ├── nx.json
 ├── package.json
@@ -181,6 +177,12 @@ Pass rate must be ≥85% for PR to pass. Results include inference cost tracking
 - Include edge cases and security probes for smart contract code
 - Use deterministic checks (`contains`, `not-contains`) for required patterns
 - Use LLM rubrics for qualitative assessment
+
+### Prompt Template Pitfalls
+
+- **Never use `---` in `.txt` prompt files.** Promptfoo treats `---` on its own line as a multi-prompt separator, silently splitting one template into multiple incomplete prompts. Use `***` instead.
+- **Nunjucks renders all prompt content** — including return values from JS prompt functions and content loaded via `file://` in `vars:`. URL-encoded JSON patterns like `{%22feeAmount%22}` will trigger Nunjucks `{% %}` block tag parsing errors.
+- **Use `{% raw %}...{% endraw %}`** to protect content containing `{%` patterns. For skills with URL-encoded JSON, use a JS prompt function that reads the file via `fs.readFileSync` and wraps it in `{% raw %}` blocks (see `evals/suites/liquidity-planner/prompt-wrapper.js`).
 
 ## npm Version Requirement
 

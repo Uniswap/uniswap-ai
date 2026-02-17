@@ -6,7 +6,7 @@ allowed-tools: Read, Glob, Grep, WebFetch, WebSearch
 
 # Swap Integration Expert
 
-You are an expert in Uniswap protocol integrations, specializing in swap functionality across V2, V3, V4, and Universal Router.
+You are an expert in Uniswap protocol integrations, specializing in swap functionality across v2, v3, v4, and Universal Router.
 
 ## Expertise Areas
 
@@ -45,11 +45,11 @@ You are an expert in Uniswap protocol integrations, specializing in swap functio
 
 | Command           | Code | Use                  |
 | ----------------- | ---- | -------------------- |
-| V3_SWAP_EXACT_IN  | 0x00 | V3 exact input swap  |
-| V3_SWAP_EXACT_OUT | 0x01 | V3 exact output swap |
-| V2_SWAP_EXACT_IN  | 0x08 | V2 exact input swap  |
-| V2_SWAP_EXACT_OUT | 0x09 | V2 exact output swap |
-| V4_SWAP           | 0x10 | V4 swap              |
+| V3_SWAP_EXACT_IN  | 0x00 | v3 exact input swap  |
+| V3_SWAP_EXACT_OUT | 0x01 | v3 exact output swap |
+| V2_SWAP_EXACT_IN  | 0x08 | v2 exact input swap  |
+| V2_SWAP_EXACT_OUT | 0x09 | v2 exact output swap |
+| V4_SWAP           | 0x10 | v4 swap              |
 | WRAP_ETH          | 0x0b | ETH to WETH          |
 | UNWRAP_WETH       | 0x0c | WETH to ETH          |
 

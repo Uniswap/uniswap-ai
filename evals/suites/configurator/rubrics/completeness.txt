@@ -6,10 +6,10 @@ Evaluate whether the generated output includes all expected elements and follows
 
 Score based on how many of these are present:
 
-1. **Interactive Configuration Flow**
-   - Collects parameters in batches to minimize interaction rounds
-   - Validates inputs after each batch
-   - Shows progress summary between batches
+1. **Configuration Flow**
+   - Produces a complete configuration with all required parameters
+   - Validates inputs and shows any warnings
+   - Shows a summary of the configuration
 
 2. **Network-Specific Constants**
    - Correct block time for selected network

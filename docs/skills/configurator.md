@@ -64,13 +64,14 @@ The skill produces a JSON configuration keyed by chain ID:
 
 ## Supported Networks
 
-| Network  | Chain ID | Block Time |
-| -------- | -------- | ---------- |
-| Ethereum | 1        | 12s        |
-| Unichain | 1301     | 2s         |
-| Base     | 8453     | 2s         |
-| Arbitrum | 42161    | 2s         |
-| Sepolia  | 11155111 | 12s        |
+| Network          | Chain ID | Block Time |
+| ---------------- | -------- | ---------- |
+| Ethereum         | 1        | 12s        |
+| Unichain         | 130      | 1s         |
+| Unichain Sepolia | 1301     | 2s         |
+| Base             | 8453     | 2s         |
+| Arbitrum         | 42161    | 2s         |
+| Sepolia          | 11155111 | 12s        |
 
 ## Related Resources
 

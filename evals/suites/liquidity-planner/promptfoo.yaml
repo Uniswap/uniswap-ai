@@ -1,9 +1,9 @@
 # yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
 description: 'Liquidity Planner Skill Evaluation'
 
-# Prompt template that injects skill context + case content via vars
+# Prompt function (JS) to avoid Nunjucks template errors from {%22 in SKILL.md URLs
 prompts:
-  - file://prompt-wrapper.txt
+  - file://prompt-wrapper.js
 
 # Provider configuration
 providers:
@@ -16,8 +16,8 @@ providers:
 defaultTest:
   options:
     timeout: 120000 # 2 minutes per case
-  vars:
-    skill_content: file://../../../packages/plugins/uniswap-driver/skills/liquidity-planner/SKILL.md
+  # Note: skill_content is loaded directly by prompt-wrapper.js to bypass
+  # Nunjucks rendering (SKILL.md contains {%22...%22} URL patterns)
 
 # Test cases with specific assertions
 tests:

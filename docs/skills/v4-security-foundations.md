@@ -1,11 +1,11 @@
 ---
-title: V4 Security Foundations
+title: v4 Security Foundations
 order: 3
 ---
 
-# V4 Security Foundations
+# v4 Security Foundations
 
-Security-first guide for building Uniswap V4 hooks. Hook vulnerabilities can drain user funds -- understand these concepts before writing any hook code.
+Security-first guide for building Uniswap v4 hooks. Hook vulnerabilities can drain user funds -- understand these concepts before writing any hook code.
 
 ## Invocation
 
@@ -16,14 +16,14 @@ Security-first guide for building Uniswap V4 hooks. Hook vulnerabilities can dra
 Or describe your requirements naturally:
 
 ```text
-Review the security of my V4 hook before deployment
+Review the security of my v4 hook before deployment
 ```
 
 ## What It Does
 
 This skill helps you:
 
-- **Understand the V4 threat model**: Caller verification, sender identity, router context, state exposure, and reentrancy surfaces
+- **Understand the v4 threat model**: Caller verification, sender identity, router context, state exposure, and reentrancy surfaces
 - **Assess permission risk**: All 14 hook permissions mapped to risk levels from LOW to CRITICAL
 - **Prevent NoOp rug pull attacks**: Detect and avoid the most dangerous hook vulnerability (`beforeSwapReturnDelta`)
 - **Implement access control**: PoolManager verification, router allowlisting, and user identity patterns
@@ -31,13 +31,14 @@ This skill helps you:
 
 ## Threat Model
 
-| Threat Area             | Description                                                | Mitigation                                     |
-| ----------------------- | ---------------------------------------------------------- | ---------------------------------------------- |
-| **Caller Verification** | Only `PoolManager` should invoke hook functions            | Verify `msg.sender == address(poolManager)`    |
-| **Sender Identity**     | `msg.sender` always equals PoolManager, never the end user | Use `sender` parameter for user identity       |
-| **Router Context**      | The `sender` parameter identifies the router, not the user | Implement router allowlisting                  |
-| **State Exposure**      | Hook state is readable during mid-transaction execution    | Avoid storing sensitive data on-chain          |
-| **Reentrancy Surface**  | External calls from hooks can enable reentrancy            | Use reentrancy guards; minimize external calls |
+| Threat Area             | Description                                                     | Mitigation                                     |
+| ----------------------- | --------------------------------------------------------------- | ---------------------------------------------- |
+| **Caller Verification** | Only `PoolManager` should invoke hook functions                 | Verify `msg.sender == address(poolManager)`    |
+| **Sender Identity**     | `msg.sender` always equals PoolManager, never the end user      | Use `sender` parameter for user identity       |
+| **Router Context**      | The `sender` parameter identifies the router, not the user      | Implement router allowlisting                  |
+| **State Exposure**      | Hook state is readable during mid-transaction execution         | Avoid storing sensitive data on-chain          |
+| **Reentrancy Surface**  | External calls from hooks can enable reentrancy                 | Use reentrancy guards; minimize external calls |
+| **tx.origin Phishing**  | `tx.origin` exposes the original signer, enabling relay attacks | Never use `tx.origin` for authorization        |
 
 ## Permission Flags Risk Matrix
 
@@ -70,6 +71,6 @@ This skill helps you:
 ## Related Resources
 
 - [Uniswap Hooks Plugin](/plugins/uniswap-hooks) - Parent plugin
-- [Uniswap V4 Docs](https://docs.uniswap.org/contracts/v4/overview) - Official documentation
+- [Uniswap v4 Docs](https://docs.uniswap.org/contracts/v4/overview) - Official documentation
 - [v4-core Repository](https://github.com/Uniswap/v4-core) - Source code
 - [Hook Permissions Guide](https://docs.uniswap.org/contracts/v4/concepts/hooks) - Permission reference

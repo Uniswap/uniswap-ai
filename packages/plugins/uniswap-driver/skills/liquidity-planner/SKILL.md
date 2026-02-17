@@ -1,6 +1,6 @@
 ---
 name: liquidity-planner
-description: This skill should be used when the user asks to "provide liquidity", "create LP position", "add liquidity to pool", "become a liquidity provider", "create V3 position", "create V4 position", "concentrated liquidity", "set price range", or mentions providing liquidity, LP positions, or liquidity pools on Uniswap. Generates deep links to create positions in the Uniswap interface.
+description: This skill should be used when the user asks to "provide liquidity", "create LP position", "add liquidity to pool", "become a liquidity provider", "create v3 position", "create v4 position", "concentrated liquidity", "set price range", or mentions providing liquidity, LP positions, or liquidity pools on Uniswap. Generates deep links to create positions in the Uniswap interface.
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash(curl:*), Bash(jq:*), Bash(cast:*), Bash(xdg-open:*), Bash(open:*), WebFetch, WebSearch, Task(subagent_type:Explore), AskUserQuestion
 model: sonnet
 license: MIT
@@ -11,7 +11,9 @@ metadata:
 
 # Liquidity Position Planning
 
-Plan and generate deep links for creating liquidity positions on Uniswap V2, V3, and V4.
+Plan and generate deep links for creating liquidity positions on Uniswap v2, v3, and v4.
+
+> **Runtime Compatibility:** This skill uses `AskUserQuestion` for interactive prompts. If `AskUserQuestion` is not available in your runtime, collect the same parameters through natural language conversation instead.
 
 ## Overview
 
@@ -38,7 +40,7 @@ Extract from the user's request:
 | Token B     | Yes      | -        | USDC, WBTC, address     |
 | Amount      | Yes      | -        | 1 ETH, $1000            |
 | Chain       | No       | Ethereum | Base, Arbitrum          |
-| Version     | No       | V3       | V2, V3, V4              |
+| Version     | No       | V3       | v2, v3, v4              |
 | Fee Tier    | No       | Auto     | 0.05%, 0.3%, 1%         |
 | Price Range | No       | Suggest  | Full range, ±5%, custom |
 
@@ -120,7 +122,7 @@ curl -s "https://api.dexscreener.com/token-pairs/v1/{network}/{address}" | \
   })'
 ```
 
-**Network IDs:** `ethereum`, `base`, `arbitrum`, `optimism`, `polygon`
+**Network IDs:** `ethereum`, `base`, `arbitrum`, `optimism`, `polygon`, `unichain`
 
 **From the results, identify:**
 
@@ -280,7 +282,7 @@ If multiple fee tiers exist for the pair, let the user choose using pool data fr
 | 0.30% (3000)  | 60           | Most pairs (default)         |
 | 1.00% (10000) | 200          | Exotic/volatile pairs        |
 
-**V4 Fee Tiers:** Dynamic fees possible with hooks. Default to similar V3 tiers.
+**v4 Fee Tiers:** Dynamic fees possible with hooks. Default to similar V3 tiers.
 
 If pool data shows one tier with significantly higher APY or volume, recommend that tier.
 
@@ -300,7 +302,7 @@ Construct the Uniswap position creation URL:
 | `priceRangeState` | Range configuration        | JSON (encode quotes only) |
 | `depositState`    | Deposit amounts            | JSON (encode quotes only) |
 | `fee`             | Fee tier configuration     | JSON (encode quotes only) |
-| `hook`            | V4 hook address (optional) | Address or `undefined`    |
+| `hook`            | v4 hook address (optional) | Address or `undefined`    |
 | `step`            | Flow step                  | `1` (for create)          |
 
 **IMPORTANT: URL Encoding**
@@ -431,7 +433,7 @@ Always present the summary and URL so users can review and create the position.
 
 ## Version Selection
 
-For detailed version comparison (V2/V3/V4 differences, fee tiers, tick spacing), see `references/position-types.md`.
+For detailed version comparison (v2/v3/v4 differences, fee tiers, tick spacing), see `references/position-types.md`.
 
 **Quick Guide:**
 
@@ -473,7 +475,7 @@ All Uniswap-supported chains - see `references/position-types.md` for version av
 ### Reference Files
 
 - **`../../references/chains.md`** - Chain configuration and token addresses (shared with swap-planner)
-- **`references/position-types.md`** - V2/V3/V4 differences, fee tiers, tick spacing
+- **`references/position-types.md`** - v2/v3/v4 differences, fee tiers, tick spacing
 - **`references/data-providers.md`** - DexScreener and DefiLlama APIs for pool discovery and yields
 
 ### URL Encoding

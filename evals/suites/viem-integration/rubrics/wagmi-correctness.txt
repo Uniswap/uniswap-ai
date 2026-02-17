@@ -1,0 +1,40 @@
+# Correctness Rubric for wagmi React Integration
+
+Evaluate whether the generated output correctly implements wagmi React hooks for blockchain interactions.
+
+## Required Elements (Must Include)
+
+Score based on how many of these are correctly implemented:
+
+1. **Config Setup**
+   - Uses createConfig with correct chains and transports
+   - Includes appropriate connectors (injected, walletConnect, coinbaseWallet)
+
+2. **Provider Wrapping**
+   - Uses WagmiProvider with the config
+   - Includes QueryClientProvider from @tanstack/react-query
+
+3. **Wallet Connection**
+   - Uses useAccount to access connection state
+   - Uses useConnect for connecting wallets
+
+4. **Contract Reading**
+   - Uses useReadContract with correct ABI and parameters
+   - Handles loading and error states
+
+5. **Type Safety**
+   - Uses TypeScript types correctly
+   - Proper wagmi type registration (Register interface) or typed config
+
+## Scoring Guide
+
+- 5/5 elements correct: 1.0
+- 4/5 elements correct: 0.8
+- 3/5 elements correct: 0.6
+- 2/5 elements correct: 0.4
+- 1/5 elements correct: 0.2
+- 0/5 elements correct: 0.0
+
+## Instructions
+
+Count how many of the required elements are correctly implemented and provide the corresponding score.

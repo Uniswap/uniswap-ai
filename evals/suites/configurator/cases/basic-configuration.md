@@ -11,12 +11,12 @@ Configure a Continuous Clearing Auction for a new token launch on Base.
 
 ## Requirements
 
-1. Guide the user through auction parameter configuration
-2. Calculate correct Q96 floor price accounting for decimal differences (18 - 6 = 12 decimal adjustment)
-3. Calculate tick spacing as a percentage of floor price
-4. Round floor price to be evenly divisible by tick spacing
-5. Generate a supply schedule with 12 steps and ~30% final block
-6. Produce a valid JSON configuration with all AuctionParameters fields
+1. Calculate correct Q96 floor price accounting for decimal differences (18 - 6 = 12 decimal adjustment). Use a floor price of $0.01 per token.
+2. Calculate tick spacing as a percentage of floor price
+3. Round floor price to be evenly divisible by tick spacing
+4. Generate a supply schedule with 12 steps and ~30% final block
+5. Produce a valid JSON configuration with all AuctionParameters fields
+6. Output the complete configuration directly — do not ask follow-up questions
 
 ## Constraints
 
