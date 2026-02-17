@@ -193,8 +193,10 @@ jobs:
       id-token: write
       issues: write
       pull-requests: write
+    # Skip fork PRs (no secrets available)
     if: |
       github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
       (
         needs.check-automated.outputs.is_automated != 'true' ||
         needs.check-automated.outputs.category == 'deps'
