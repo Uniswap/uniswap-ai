@@ -10,6 +10,8 @@ Comprehensive reference for all Uniswap-supported chains including RPC URLs, cha
 | -------------- | -------------------------- |
 | Chain ID       | 1                          |
 | URL Parameter  | `ethereum`                 |
+| DexScreener ID | `ethereum`                 |
+| DefiLlama ID   | `ethereum`                 |
 | Native Token   | ETH                        |
 | Public RPC     | `https://eth.llamarpc.com` |
 | Block Explorer | `https://etherscan.io`     |
@@ -31,6 +33,8 @@ Comprehensive reference for all Uniswap-supported chains including RPC URLs, cha
 | -------------- | -------------------------- |
 | Chain ID       | 8453                       |
 | URL Parameter  | `base`                     |
+| DexScreener ID | `base`                     |
+| DefiLlama ID   | `base`                     |
 | Native Token   | ETH                        |
 | Public RPC     | `https://mainnet.base.org` |
 | Block Explorer | `https://basescan.org`     |
@@ -52,6 +56,8 @@ Comprehensive reference for all Uniswap-supported chains including RPC URLs, cha
 | -------------- | ------------------------------ |
 | Chain ID       | 42161                          |
 | URL Parameter  | `arbitrum`                     |
+| DexScreener ID | `arbitrum`                     |
+| DefiLlama ID   | `arbitrum`                     |
 | Native Token   | ETH                            |
 | Public RPC     | `https://arb1.arbitrum.io/rpc` |
 | Block Explorer | `https://arbiscan.io`          |
@@ -73,6 +79,8 @@ Comprehensive reference for all Uniswap-supported chains including RPC URLs, cha
 | -------------- | --------------------------------- |
 | Chain ID       | 10                                |
 | URL Parameter  | `optimism`                        |
+| DexScreener ID | `optimism`                        |
+| DefiLlama ID   | `optimism`                        |
 | Native Token   | ETH                               |
 | Public RPC     | `https://mainnet.optimism.io`     |
 | Block Explorer | `https://optimistic.etherscan.io` |
@@ -94,6 +102,8 @@ Comprehensive reference for all Uniswap-supported chains including RPC URLs, cha
 | -------------- | ------------------------- |
 | Chain ID       | 137                       |
 | URL Parameter  | `polygon`                 |
+| DexScreener ID | `polygon`                 |
+| DefiLlama ID   | `polygon`                 |
 | Native Token   | MATIC                     |
 | Public RPC     | `https://polygon-rpc.com` |
 | Block Explorer | `https://polygonscan.com` |
@@ -115,6 +125,8 @@ Comprehensive reference for all Uniswap-supported chains including RPC URLs, cha
 | -------------- | ---------------------------------- |
 | Chain ID       | 56                                 |
 | URL Parameter  | `bnb`                              |
+| DexScreener ID | `bsc`                              |
+| DefiLlama ID   | `bsc`                              |
 | Native Token   | BNB                                |
 | Public RPC     | `https://bsc-dataseed.binance.org` |
 | Block Explorer | `https://bscscan.com`              |
@@ -135,6 +147,8 @@ Comprehensive reference for all Uniswap-supported chains including RPC URLs, cha
 | -------------- | --------------------------------------- |
 | Chain ID       | 43114                                   |
 | URL Parameter  | `avalanche`                             |
+| DexScreener ID | `avalanche`                             |
+| DefiLlama ID   | `avax`                                  |
 | Native Token   | AVAX                                    |
 | Public RPC     | `https://api.avax.network/ext/bc/C/rpc` |
 | Block Explorer | `https://snowtrace.io`                  |
@@ -155,6 +169,8 @@ Comprehensive reference for all Uniswap-supported chains including RPC URLs, cha
 | -------------- | ------------------------ |
 | Chain ID       | 42220                    |
 | URL Parameter  | `celo`                   |
+| DexScreener ID | `celo`                   |
+| DefiLlama ID   | `celo`                   |
 | Native Token   | CELO                     |
 | Public RPC     | `https://forno.celo.org` |
 | Block Explorer | `https://celoscan.io`    |
@@ -174,6 +190,8 @@ Comprehensive reference for all Uniswap-supported chains including RPC URLs, cha
 | -------------- | ---------------------- |
 | Chain ID       | 81457                  |
 | URL Parameter  | `blast`                |
+| DexScreener ID | `blast`                |
+| DefiLlama ID   | `blast`                |
 | Native Token   | ETH                    |
 | Public RPC     | `https://rpc.blast.io` |
 | Block Explorer | `https://blastscan.io` |
@@ -191,6 +209,8 @@ Comprehensive reference for all Uniswap-supported chains including RPC URLs, cha
 | -------------- | ------------------------------ |
 | Chain ID       | 7777777                        |
 | URL Parameter  | `zora`                         |
+| DexScreener ID | `zora`                         |
+| DefiLlama ID   | n/a                            |
 | Native Token   | ETH                            |
 | Public RPC     | `https://rpc.zora.energy`      |
 | Block Explorer | `https://explorer.zora.energy` |
@@ -207,6 +227,8 @@ Comprehensive reference for all Uniswap-supported chains including RPC URLs, cha
 | -------------- | ------------------------------------------------- |
 | Chain ID       | 480                                               |
 | URL Parameter  | `worldchain`                                      |
+| DexScreener ID | `worldchain`                                      |
+| DefiLlama ID   | n/a                                               |
 | Native Token   | ETH                                               |
 | Public RPC     | `https://worldchain-mainnet.g.alchemy.com/public` |
 | Block Explorer | `https://worldscan.org`                           |
@@ -217,6 +239,8 @@ Comprehensive reference for all Uniswap-supported chains including RPC URLs, cha
 | -------------- | ------------------------------ |
 | Chain ID       | 130                            |
 | URL Parameter  | `unichain`                     |
+| DexScreener ID | `unichain`                     |
+| DefiLlama ID   | `unichain`                     |
 | Native Token   | ETH                            |
 | Public RPC     | `https://mainnet.unichain.org` |
 | Block Explorer | `https://uniscan.xyz`          |
@@ -227,6 +251,31 @@ Comprehensive reference for all Uniswap-supported chains including RPC URLs, cha
 | ----- | -------------------------------------------- |
 | USDC  | `0x078D782b760474a361dDA0AF3839290b0EF57AD6` |
 | WETH  | `0x4200000000000000000000000000000000000006` |
+
+## Provider ID Quick Reference
+
+Use the correct chain identifier for each data provider API:
+
+| Chain     | DexScreener ID | DefiLlama ID | Notes                                         |
+| --------- | -------------- | ------------ | --------------------------------------------- |
+| Ethereum  | `ethereum`     | `ethereum`   |                                               |
+| Base      | `base`         | `base`       |                                               |
+| Arbitrum  | `arbitrum`     | `arbitrum`   |                                               |
+| Optimism  | `optimism`     | `optimism`   |                                               |
+| Polygon   | `polygon`      | `polygon`    |                                               |
+| BNB Chain | `bsc`          | `bsc`        | Not `bnb` — both providers use `bsc`          |
+| Avalanche | `avalanche`    | `avax`       | IDs differ — DexScreener and DefiLlama differ |
+| Celo      | `celo`         | `celo`       | Limited DexScreener Uniswap data              |
+| Blast     | `blast`        | `blast`      | Limited DexScreener Uniswap data              |
+| Zora      | `zora`         | n/a          | Not on DefiLlama; DexScreener data limited    |
+| World     | `worldchain`   | n/a          | Not on DefiLlama; DexScreener data limited    |
+| Unichain  | `unichain`     | `unichain`   | Newer chain — pool data still growing         |
+
+**Key discrepancies:**
+
+- **Avalanche**: DexScreener uses `avalanche`, DefiLlama uses `avax`
+- **BNB Chain**: Both providers use `bsc`, not `bnb` (the URL parameter for Uniswap deep links is `bnb`)
+- **Zora/World Chain**: Not indexed by DefiLlama — DexScreener only, with limited Uniswap pool data
 
 ## Token Address Lookup
 
