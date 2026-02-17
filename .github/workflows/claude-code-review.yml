@@ -188,6 +188,7 @@ jobs:
   claude-review-auto:
     needs: check-automated
     permissions:
+      actions: read
       contents: read
       id-token: write
       issues: write
@@ -246,6 +247,7 @@ jobs:
   claude-review-manual:
     needs: get-pr-info
     permissions:
+      actions: read
       contents: read
       id-token: write
       issues: write
@@ -277,6 +279,7 @@ jobs:
   claude-review-comment:
     needs: get-pr-info
     permissions:
+      actions: read
       contents: read
       id-token: write
       issues: write
