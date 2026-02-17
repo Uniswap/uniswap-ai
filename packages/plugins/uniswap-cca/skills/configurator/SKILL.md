@@ -13,6 +13,8 @@ metadata:
 
 Configure Continuous Clearing Auction (CCA) smart contract parameters for fair and transparent token distribution.
 
+> **Runtime Compatibility:** This skill uses `AskUserQuestion` for interactive prompts. If `AskUserQuestion` is not available in your runtime, collect the same parameters through natural language conversation instead.
+
 ## Instructions for Claude Code
 
 When the user invokes this skill, guide them through a **bulk interactive form configuration flow** using AskUserQuestion. Collect parameters in batches to minimize user interaction rounds.
@@ -48,7 +50,7 @@ Collect parameters in these batches:
 **Question 1: Network**
 
 - Prompt: "Which network to deploy on?"
-- Options: "Ethereum Mainnet", "Unichain", "Base", "Arbitrum", "Sepolia"
+- Options: "Ethereum Mainnet", "Unichain (Mainnet)", "Unichain Sepolia (Testnet)", "Base", "Arbitrum", "Sepolia"
 - Store: `chainId`, `blockTime`, `rpcUrl`, `currencyDecimals` (for selected currency)
 
 **Question 2: Token Address**
@@ -267,10 +269,16 @@ const NETWORKS = {
     rpc: 'https://ethereum-rpc.publicnode.com',
     usdc: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
   },
-  1301: {
+  130: {
     name: 'Unichain',
+    blockTime: 1,
+    rpc: 'https://mainnet.unichain.org',
+    usdc: '0x078D782b760474a361dDA0AF3839290b0EF57AD6',
+  },
+  1301: {
+    name: 'Unichain Sepolia (Testnet)',
     blockTime: 2,
-    rpc: 'https://unichain-rpc.publicnode.com',
+    rpc: 'https://sepolia.unichain.org',
     usdc: '0x078D782b760474a361dDA0AF3839290b0EF57AD6',
   },
   8453: {

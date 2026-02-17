@@ -46,7 +46,8 @@ deployer (deploy via Factory)
 | Network          | Chain ID | Block Time |
 | ---------------- | -------- | ---------- |
 | Ethereum Mainnet | 1        | 12s        |
-| Unichain         | 1301     | 2s         |
+| Unichain         | 130      | 1s         |
+| Unichain Sepolia | 1301     | 2s         |
 | Base             | 8453     | 2s         |
 | Arbitrum         | 42161    | 2s         |
 | Sepolia          | 11155111 | 12s        |
