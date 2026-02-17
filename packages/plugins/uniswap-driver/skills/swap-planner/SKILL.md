@@ -1,12 +1,12 @@
 ---
 name: swap-planner
-description: This skill should be used when the user asks to "swap tokens", "trade ETH for USDC", "exchange tokens on Uniswap", "buy tokens", "sell tokens", "convert ETH to stablecoins", "find memecoins", "what's trending", "discover tokens", "research tokens", "tokens to buy", "find tokens to swap", "what should I buy", "trending on Base", "trending on Arbitrum", or mentions swapping, trading, researching, discovering, buying, or exchanging tokens on any Uniswap-supported chain. Supports both known token swaps and token discovery workflows. Generates deep links to execute swaps in the Uniswap interface.
+description: This skill should be used when the user asks to "swap tokens", "trade ETH for USDC", "exchange tokens on Uniswap", "buy tokens", "sell tokens", "convert ETH to stablecoins", "find memecoins", "discover tokens", "research tokens", "tokens to buy", "find tokens to swap", "what should I buy", or mentions swapping, trading, researching, discovering, buying, or exchanging tokens on any Uniswap-supported chain. Supports both known token swaps and token discovery workflows (discovery uses keyword search and web search — there is no live "trending" feed). Generates deep links to execute swaps in the Uniswap interface.
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash(curl:*), Bash(jq:*), Bash(cast:*), Bash(xdg-open:*), Bash(open:*), WebFetch, WebSearch, Task(subagent_type:Explore), AskUserQuestion
 model: sonnet
 license: MIT
 metadata:
   author: uniswap
-  version: '0.2.0'
+  version: '0.2.1'
 ---
 
 # Swap Planning
@@ -82,9 +82,11 @@ curl -s "https://api.dexscreener.com/token-pairs/v1/{network}/{address}" | \
   }'
 ```
 
-**Network IDs:** `ethereum`, `base`, `arbitrum`, `optimism`, `polygon`, `bsc`, `avalanche`, `unichain`
+**Network IDs:** See `references/chains.md` for the full list with DexScreener and DefiLlama provider IDs. Common IDs: `ethereum`, `base`, `arbitrum`, `optimism`, `polygon`, `bsc`, `avalanche`, `unichain`.
 
-**Note:** DexScreener's public API doesn't have a "trending" or "top gainers" endpoint. For general discovery, ask the user what type of token they're looking for and search by keyword.
+**DexScreener coverage varies by chain.** Ethereum, Base, and Arbitrum have deep Uniswap data. Celo, Blast, Zora, and World Chain have limited Uniswap pool coverage — fewer results and potentially missing pairs. Fall back to DefiLlama for price data when DexScreener returns empty results (see `references/data-providers.md`).
+
+**Note:** DexScreener's public API doesn't have a "trending" or "top gainers" endpoint. Token discovery uses keyword search (`/latest/dex/search`) and web search as a fallback. For general discovery, ask the user what type of token they're looking for and search by keyword.
 
 #### Category-Based Discovery
 
