@@ -1,14 +1,14 @@
 # Uniswap AI
 
-Uniswap-specific AI tools (skills, plugins, agents) for developers and AI agents integrating the trading API. 
+Uniswap-specific AI tools (skills, plugins, agents) for developers and AI agents integrating the trading API.
 
 ## Overview
 
-This repository provides Claude Code plugins and AI development tools specifically designed for building on the Uniswap protocol. 
+This repository provides Claude Code plugins and AI development tools specifically designed for building on the Uniswap protocol.
 
-| Repository   | Focus                                | Audience                       |
-| ------------ | ------------------------------------ | ------------------------------ |
-| `uniswap-ai` | Uniswap protocol-specific AI tools   | External developers, AI agents |
+| Repository   | Focus                              | Audience                       |
+| ------------ | ---------------------------------- | ------------------------------ |
+| `uniswap-ai` | Uniswap protocol-specific AI tools | External developers, AI agents |
 
 ## Installation
 

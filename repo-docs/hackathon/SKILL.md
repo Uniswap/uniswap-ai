@@ -11,7 +11,7 @@ metadata:
 
 # Uniswap AI Hackathon
 
-Build AI-native tools for Uniswap with the trading API. 
+Build AI-native tools for Uniswap with the trading API.
 
 ## Overview
 
@@ -33,21 +33,20 @@ Build AI-native tools for the Uniswap ecosystem.
 
 ## Prizes
 
-| Place              | Prize        |
-| ------------------ | ------------ |
-| 1st Place          | $12,000 USDC |
-| 2nd Place          | $8,000 USDC |
-| 3rd Place          | $5,000 USDC |
+| Place     | Prize        |
+| --------- | ------------ |
+| 1st Place | $12,000 USDC |
+| 2nd Place | $8,000 USDC  |
+| 3rd Place | $5,000 USDC  |
 
 **Total Prize Pool: $25,000 USDC**
 
 ## Timeline
 
-| Event               | Date                           |
-| ------------------- | ------------------------------ |
-| Hackathon Start     | February 24, 2026 at TBD EST   |
-| Submission Deadline | March 3, 2026 at 23:59 EST     |
-
+| Event               | Date                         |
+| ------------------- | ---------------------------- |
+| Hackathon Start     | February 24, 2026 at TBD EST |
+| Submission Deadline | March 3, 2026 at 23:59 EST   |
 
 All submissions must be received before the deadline. Late submissions will not be accepted.
 

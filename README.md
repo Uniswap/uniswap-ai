@@ -4,15 +4,15 @@ Uniswap-specific AI tools (skills, plugins, agents) for developers and AI agents
 
 ## Uniswap AI Hackathon
 
-Build AI-native tools for Uniswap with the trading API. 
+Build AI-native tools for Uniswap with the trading API.
 
 **7 days. $25K in prizes. May the best bot (or human) win.**
 
-| Rank              | Prize        |
-| ------------------ | ------------ |
-| 1st Place          | $12,000 USDC |
-| 2nd Place          | $8,000 USDC |
-| 3rd Place          | $5,000 USDC |
+| Rank      | Prize        |
+| --------- | ------------ |
+| 1st Place | $12,000 USDC |
+| 2nd Place | $8,000 USDC  |
+| 3rd Place | $5,000 USDC  |
 
 Submissions are open: February 24 – March 3, 2026.
 
