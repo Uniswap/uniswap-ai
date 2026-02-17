@@ -1,19 +1,19 @@
 # Uniswap AI Hackathon
 
 
-Build AI-native tools for the Uniswap ecosystem.
+Build AI-native tools for Uniswap with the trading API. 
 
 **7 days. $25K in prizes. May the best bot (or human) win.**
 
-**[Submit Your Project](https://github.com/uniswap/uniswap-ai/issues/new?template=hackathon-submission.yml)** | **[GitHub](https://github.com/uniswap/uniswap-ai)**
+**[Submit Your Project](https://github.com/uniswap/uniswap-ai/issues/new?template=hackathon-submission.yml)** | **[AI Toolkit](https://github.com/uniswap/uniswap-ai)**
 
 
 ## Prizes
 
 | Place              | Prize        |
 | ------------------ | ------------ |
-| 1st Place          | $15,000 USDC |
-| 2nd Place          | $10,000 USDC |
+| 1st Place          | $12,000 USDC |
+| 2nd Place          | $8,000 USDC |
 | 3rd Place          | $5,000 USDC |
 
 **Total Prize Pool: $25,000 USDC**
@@ -22,8 +22,8 @@ Build AI-native tools for the Uniswap ecosystem.
 
 | Event               | Date                           |
 | ------------------- | ------------------------------ |
-| Hackathon Start     | February 18, 2026 at TBD EST  |
-| Submission Deadline | February 25, 2026 at 23:59 EST |
+| Hackathon Start     | February 24, 2026 at TBD EST   |
+| Submission Deadline | March 3, 2026 at 23:59 EST     |
 
 All submissions must be received before the deadline. Late submissions will not be accepted.
 
@@ -101,7 +101,7 @@ Create a GitHub Issue in the uniswap-ai repository using the Hackathon Submissio
 
 **When is the deadline?**
 
-All submissions must be made by February 25, 2026 at 23:59 EST.
+All submissions must be made by March 3, 2026 at 23:59 EST.
 
 **Do I need to use Uniswap SDKs?**
 
@@ -120,6 +120,7 @@ Prizes are paid in USDC. Winners must complete KYC verification. When submitting
 | Resource              | URL                                                                            |
 | --------------------- | ------------------------------------------------------------------------------ |
 | Uniswap Documentation | <https://docs.uniswap.org>                                                     |
+| Uniswap API Documentation      | <https://api-docs.uniswap.org/introduction>                               |
 | Uniswap v4 Hooks      | <https://docs.uniswap.org/contracts/v4/overview>                               |
 | Uniswap SDK           | <https://docs.uniswap.org/sdk/v4/overview>                                     |
 | Uniswap AI Toolkit | <https://github.com/uniswap/uniswap-ai>                                        |

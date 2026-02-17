@@ -5,7 +5,7 @@ order: 9
 
 # Liquidity Planner
 
-Plan liquidity positions and generate deep links that open directly in the Uniswap interface with parameters pre-filled. Supports V2, V3, and V4 positions.
+Plan liquidity positions and generate deep links that open directly in the Uniswap interface with parameters pre-filled. Supports v2, v3, and v4 positions.
 
 ## Invocation
 
@@ -45,9 +45,9 @@ This skill helps you:
 
 | Version | Liquidity Type         | Key Feature                       |
 | ------- | ---------------------- | --------------------------------- |
-| V2      | Full range only        | Simplest, lowest gas              |
-| V3      | Concentrated liquidity | Most common, customizable ranges  |
-| V4      | Concentrated + hooks   | Advanced features, limited chains |
+| v2      | Full range only        | Simplest, lowest gas              |
+| v3      | Concentrated liquidity | Most common, customizable ranges  |
+| v4      | Concentrated + hooks   | Advanced features, limited chains |
 
 ## Fee Tier Guidelines
 

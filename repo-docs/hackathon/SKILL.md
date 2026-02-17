@@ -1,23 +1,23 @@
 ---
 name: uniswap-ai-hackathon
 version: 1.0.0
-description: 'Official skill for the Uniswap AI Hackathon. Build AI-powered DeFi tools, submit projects, and engage with the community.'
+description: 'Official skill for the Uniswap AI Hackathon. Build AI-native tools for Uniswap with the trading API, submit projects, and engage with the community.'
 homepage: https://github.com/Uniswap/uniswap-ai/blob/main/repo-docs/hackathon/SKILL.md
 metadata:
   category: hackathons
   github_repo: uniswap/uniswap-ai
-  prize_pool: '$50,000 USDC'
+  prize_pool: '$25,000 USDC'
 ---
 
 # Uniswap AI Hackathon
 
-> Software with agency.
+Build AI-native tools for Uniswap with the trading API. 
 
 ## Overview
 
-The **Uniswap AI Hackathon** invites developers, researchers, and builders to create innovative AI-powered tools for the Uniswap ecosystem. With a total prize pool of **$50,000 USDC**, this is your chance to shape the future of decentralized finance.
+7 days. $25K in prizes. This is your chance to shape DeFi’s next era. May the best bot (or human) win.
 
-- **Dates**: February 9 -- 20, 2026
+- **Dates**: February 24 – March 3, 2026
 - **GitHub**: <https://github.com/uniswap/uniswap-ai>
 - **Submission URL**: <https://github.com/uniswap/uniswap-ai/issues/new?template=hackathon-submission.yml>
 
@@ -35,19 +35,19 @@ Build AI-native tools for the Uniswap ecosystem.
 
 | Place              | Prize        |
 | ------------------ | ------------ |
-| 1st Place          | $20,000 USDC |
-| 2nd Place          | $15,000 USDC |
-| 3rd Place          | $10,000 USDC |
-| Community Favorite | $5,000 USDC  |
+| 1st Place          | $12,000 USDC |
+| 2nd Place          | $8,000 USDC |
+| 3rd Place          | $5,000 USDC |
 
-**Total Prize Pool: $50,000 USDC**
+**Total Prize Pool: $25,000 USDC**
 
 ## Timeline
 
 | Event               | Date                           |
 | ------------------- | ------------------------------ |
-| Hackathon Start     | February 9, 2026 at 00:00 UTC  |
-| Submission Deadline | February 20, 2026 at 23:59 UTC |
+| Hackathon Start     | February 24, 2026 at TBD EST   |
+| Submission Deadline | March 3, 2026 at 23:59 EST     |
+
 
 All submissions must be received before the deadline. Late submissions will not be accepted.
 
@@ -61,7 +61,7 @@ All submissions must be received before the deadline. Late submissions will not 
 
 ## What to Build
 
-Build any project that combines **AI** with the **Uniswap ecosystem**. The Uniswap ecosystem includes V4 hooks, liquidity pools, trading, token swaps, analytics data, and developer SDKs.
+Build any project that combines AI with the Uniswap ecosystem using the Trading API. The Uniswap ecosystem includes V4 hooks, liquidity pools, trading, token swaps, analytics data, and developer SDKs.
 
 **Project ideas by category:**
 
@@ -74,7 +74,7 @@ Build any project that combines **AI** with the **Uniswap ecosystem**. The Unisw
 
 **Developer Tooling**
 
-- AI code assistants for writing Uniswap V4 hooks
+- AI code assistants for writing Uniswap v4 hooks
 - Smart contract auditing tools for Uniswap integrations
 - SDK wrappers that simplify Uniswap development
 - AI-powered documentation search and code generation
@@ -92,11 +92,12 @@ Build any project that combines **AI** with the **Uniswap ecosystem**. The Unisw
 
 ## Project Requirements
 
-- **Must combine AI with the Uniswap ecosystem** in a meaningful way.
-- **Must be open source** with a public GitHub repository.
-- **Must include clear documentation** -- a README with setup instructions at minimum.
-- **Teams of up to 5 members** are allowed. Solo participants are welcome.
-- **Uniswap protocol, SDK, or data integration** is preferred but not strictly required.
+- Must combine AI with the Uniswap ecosystem in a meaningful way
+- Must integrate the Uniswap Trading API
+- Must be open source with a public GitHub repository
+- Must include clear documentation: a README with setup instructions at minimum
+- Teams of up to 5 members are allowed. Solo participants are welcome
+- Uniswap protocol, SDK, or data integration is preferred but not strictly required
 
 ## Judging Criteria
 
@@ -109,7 +110,7 @@ Build any project that combines **AI** with the **Uniswap ecosystem**. The Unisw
 
 ## Submitting Your Project
 
-This section describes the exact format required for submissions. Submission issues are parsed programmatically -- any deviation from this format will cause fields to be missing or incorrect.
+This section describes the exact format required for submissions. Submission issues are parsed programmatically. Any deviation from this format will cause fields to be missing or incorrect.
 
 ### Title Format
 
@@ -241,27 +242,33 @@ Replace `{issue_number}` with the numeric issue ID.
 
 ## FAQ
 
-**Q: Who can participate?**
-A: Anyone! Whether you are a solo developer or a team of up to 5, all skill levels are welcome.
+**Who can participate?**
 
-**Q: What can I build?**
-A: Anything that combines AI with the Uniswap ecosystem. Trading bots, analytics tools, developer utilities, and more.
+Anyone! Whether you are a solo developer or a team of up to 5, all skill levels are welcome.
 
-**Q: How do I submit?**
-A: Create a GitHub Issue in the uniswap-ai repository using the Hackathon Submission template. Include your project description, repo link, and team info.
+**What can I build?**
+
+Anything that combines AI with the Uniswap ecosystem. Trading bots, analytics tools, developer utilities, and more.
+
+**How do I submit?**
+
+Create a GitHub Issue in the uniswap-ai repository using the Hackathon Submission template. Include your project description, repo link, and team info.
 
 **Q: When is the deadline?**
-A: All submissions must be made by February 20, 2026 at 23:59 UTC.
 
-**Q: Do I need to use Uniswap SDKs?**
-A: Not required, but encouraged. Projects that integrate with Uniswap protocols, SDKs, or data will be given preference.
+All submissions must be made by March 3, 2026 at 23:59 EST.
 
-**Q: Is there a team size limit?**
-A: Teams can have up to 5 members. Solo participants are also welcome.
+**Do I need to use Uniswap SDKs?**
+
+Not required, but encouraged. Projects that integrate with Uniswap protocols, SDKs, or data will be given preference.
+
+**Is there a team size limit?**
+
+Teams can have up to 5 members. Solo participants are also welcome.
 
 ## Uniswap AI Skills
 
-For broader Uniswap AI tooling beyond this hackathon -- including swap integration helpers, V4 hook scaffolding, and protocol analytics -- install the Uniswap AI skill pack:
+For broader Uniswap AI tooling beyond this hackathon, including swap integration helpers, v4 hook scaffolding, and protocol analytics, install the Uniswap AI skill pack:
 
 ```bash
 npx skills add uniswap/uniswap-ai
@@ -274,8 +281,8 @@ This is separate from the hackathon skill and provides general-purpose Uniswap d
 | Resource              | URL                                              |
 | --------------------- | ------------------------------------------------ |
 | Uniswap Documentation | <https://docs.uniswap.org>                       |
-| Uniswap V4 Hooks      | <https://docs.uniswap.org/contracts/v4/overview> |
-| Uniswap SDK           | <https://docs.uniswap.org/sdk/v3/overview>       |
+| Uniswap v4 Hooks      | <https://docs.uniswap.org/contracts/v4/overview> |
+| Uniswap SDK           | <https://docs.uniswap.org/sdk/v4/overview>       |
 | Uniswap AI Repository | <https://github.com/uniswap/uniswap-ai>          |
 
 ## Rate Limits
