@@ -13,6 +13,7 @@ This directory contains GitHub Actions workflows for the uniswap-ai repository. 
 | [Generate PR Title & Description](#generate-pr-title--description) | PR events            | Auto-generate PR metadata                    |
 | [Generate Documentation](#generate-documentation)                  | Push to main, manual | Auto-generate API documentation              |
 | [Publish Packages](#publish-packages)                              | Push to main, manual | Publish npm packages                         |
+| [Evals](#evals)                                                    | PR events, manual    | LLM evaluation of AI skills                  |
 | [zizmor](#zizmor)                                                  | Push to main, PRs    | GitHub Actions security analysis             |
 
 ## Workflows
@@ -110,6 +111,20 @@ Handles npm package publishing:
 - **Auto mode** (push to main): Detects affected packages, publishes with `latest` tag
 - **Force mode** (manual): Publishes specified packages with `next` tag and prerelease versions
 
+### Evals
+
+**File:** `evals.yml`
+
+LLM-based evaluation of AI skills using [Promptfoo](https://github.com/promptfoo/promptfoo):
+
+- Runs on PRs that modify `packages/plugins/**`, `evals/**`, or `evals.yml`
+- Each eval suite runs through a per-suite Nx target (`eval-suite:<name>`) with `cache: true`
+- Nx compares suite inputs (config, cases, rubrics, and referenced skill files) against its cache
+- If inputs haven't changed, Nx restores the cached `results.json` without making LLM API calls
+- GitHub Actions cache persists the Nx cache between CI runs
+- Aggregates pass/fail across all suites; requires ≥85% pass rate
+- Manual trigger supports: specific suite, skip cache, multi-model mode
+
 ### zizmor
 
 **File:** `zizmor.yml`
@@ -122,12 +137,13 @@ Static security analysis for GitHub Actions workflows using [zizmor](https://git
 
 ## Required Secrets
 
-| Secret                            | Purpose                            | Required By                          |
-| --------------------------------- | ---------------------------------- | ------------------------------------ |
-| `CLAUDE_CODE_OAUTH_TOKEN`         | Claude AI authentication           | Code Review, Docs Check, PR Metadata |
-| `WORKFLOW_PAT`                    | Push commits/tags, branch creation | Docs Check, PR Metadata, Publish     |
-| `NODE_AUTH_TOKEN`                 | npm publishing (OIDC fallback)     | Publish                              |
-| `SERVICE_ACCOUNT_GPG_PRIVATE_KEY` | Signing commits/tags               | Publish                              |
+| Secret                            | Purpose                            | Required By                                 |
+| --------------------------------- | ---------------------------------- | ------------------------------------------- |
+| `ANTHROPIC_API_KEY`               | Anthropic API authentication       | Evals                                       |
+| `CLAUDE_CODE_OAUTH_TOKEN`         | Claude AI authentication           | Code Review, Docs Check, PR Metadata, Evals |
+| `WORKFLOW_PAT`                    | Push commits/tags, branch creation | Docs Check, PR Metadata, Publish            |
+| `NODE_AUTH_TOKEN`                 | npm publishing (OIDC fallback)     | Publish                                     |
+| `SERVICE_ACCOUNT_GPG_PRIVATE_KEY` | Signing commits/tags               | Publish                                     |
 
 ## Repository Variables
 
