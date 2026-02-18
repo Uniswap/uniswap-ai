@@ -127,11 +127,11 @@ PRs are automatically validated by several workflows:
 
 If the docs check flags missing documentation updates, you can apply the suggested changes directly from the PR comments.
 
-See [.github/workflows/CLAUDE.md](.github/workflows/CLAUDE.md) for detailed CI documentation.
+See [.github/workflows/CLAUDE.md](https://github.com/Uniswap/uniswap-ai/blob/main/.github/workflows/CLAUDE.md) for detailed CI documentation.
 
 ## License
 
-MIT License - see [LICENSE](./LICENSE) for details.
+MIT License - see [LICENSE](https://github.com/Uniswap/uniswap-ai/blob/main/LICENSE) for details.
 
 ## Links
 
