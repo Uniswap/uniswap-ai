@@ -71,9 +71,9 @@ All tools in this repository are designed to work with any LLM coding agent, not
 
 ## Documentation
 
-- [Getting Started](./docs/getting-started/index.md)
-- [Skills Reference](./docs/skills/index.md)
-- [Evals Guide](./docs/evals/index.md)
+- [Getting Started](./getting-started/index.md)
+- [Skills Reference](./skills/index.md)
+- [Evals Guide](./evals/index.md)
 
 ## Development
 
@@ -106,7 +106,6 @@ uniswap-ai/
 │   └── plugins/         # Claude Code plugins (skills live here)
 ├── evals/               # AI tool evaluations (Promptfoo)
 ├── docs/                # VitePress documentation
-├── repo-docs/           # Standalone documents (hackathon, overview)
 └── scripts/             # Build and validation scripts
 ```
 
