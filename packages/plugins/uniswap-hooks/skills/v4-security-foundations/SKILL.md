@@ -303,6 +303,42 @@ Before deploying any hook:
 | 12  | Fuzz testing completed                                | [ ]    |
 | 13  | Invariant testing completed                           | [ ]    |
 
+## Gas Budget Guidelines
+
+Hook callbacks execute inside the PoolManager's transaction context. Excessive gas consumption can make swaps revert or become economically unviable.
+
+### Gas Budgets by Callback
+
+| Callback                      | Target Budget | Hard Ceiling | Notes                         |
+| ----------------------------- | ------------- | ------------ | ----------------------------- |
+| `beforeSwap`                  | < 50,000 gas  | 150,000 gas  | Runs on every swap; keep lean |
+| `afterSwap`                   | < 30,000 gas  | 100,000 gas  | Analytics/tracking only       |
+| `beforeAddLiquidity`          | < 50,000 gas  | 200,000 gas  | May include access control    |
+| `afterAddLiquidity`           | < 30,000 gas  | 100,000 gas  | Reward tracking               |
+| `beforeRemoveLiquidity`       | < 50,000 gas  | 200,000 gas  | Lock validation               |
+| `afterRemoveLiquidity`        | < 30,000 gas  | 100,000 gas  | Tracking/accounting           |
+| Callbacks with external calls | < 100,000 gas | 300,000 gas  | External DEX routing, oracles |
+
+### Common Gas Pitfalls
+
+1. **Unbounded loops**: Iterating over dynamic arrays (e.g., all active positions) can exceed block gas limits. Cap array sizes or use pagination.
+2. **SSTORE in hot paths**: Each new storage slot costs ~20,000 gas. Prefer transient storage (`tstore`/`tload`) for data that doesn't persist beyond the transaction. Requires Solidity >= 0.8.24 with EVM target set to `cancun` or later.
+3. **External calls**: Each cross-contract call adds ~2,600 gas base cost plus the callee's execution. Batch calls where possible.
+4. **String operations**: Avoid `string` manipulation in callbacks; use `bytes32` for identifiers.
+5. **Redundant reads**: Cache `poolManager` calls — repeated `getSlot0()` or `getLiquidity()` reads cost gas each time.
+
+### Measuring Gas
+
+```bash
+# Profile a specific hook callback with Foundry
+forge test --match-test test_beforeSwapGas --gas-report
+
+# Snapshot gas usage across all tests
+forge snapshot --match-contract MyHookTest
+```
+
+---
+
 ## Risk Scoring System
 
 Calculate your hook's risk score (0-33):
