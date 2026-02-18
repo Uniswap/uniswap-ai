@@ -118,7 +118,7 @@ Static security analysis for GitHub Actions workflows using [zizmor](https://git
 
 - Runs on push to main and all PRs
 - Scans workflows for template injection, credential leakage, permission scope issues
-- Uploads results as SARIF to GitHub Security tab
+- Reports findings as GitHub annotations on PRs
 
 ## Required Secrets
 
