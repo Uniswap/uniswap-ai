@@ -321,6 +321,46 @@ const client = createPublicClient({
 });
 ```
 
+### Rate Limits and Best Practices
+
+Public RPCs and free-tier provider plans enforce rate limits. Exceeding them causes `429 Too Many Requests` errors or silent throttling.
+
+| Provider         | Free Tier Limit      | Notes                                         |
+| ---------------- | -------------------- | --------------------------------------------- |
+| Public RPCs      | ~5-10 req/s          | Shared across all users; avoid for production |
+| Alchemy (free)   | 330 CU/s (~30 req/s) | Compute Units vary by method                  |
+| Infura (free)    | 10 req/s             | Per-second burst limit                        |
+| QuickNode (free) | 25 req/s             | Varies by plan                                |
+
+**Mitigation strategies:**
+
+1. **Use `batch.multicall`** — Batches multiple `eth_call` reads into a single Multicall3 contract call, dramatically reducing request count.
+2. **Use the `fallback` transport** — Automatically retries on a backup RPC when the primary is rate-limited.
+3. **Set `retryCount` and `retryDelay`** on transports to handle transient 429s gracefully.
+4. **Cache aggressively** — The `cacheTime` option on `createPublicClient` avoids redundant calls for data that doesn't change within the cache window.
+
+```typescript
+// Production-ready client with rate limit resilience
+const client = createPublicClient({
+  chain: mainnet,
+  transport: fallback([
+    http('https://eth-mainnet.g.alchemy.com/v2/KEY', {
+      retryCount: 3,
+      retryDelay: 500,
+    }),
+    http('https://mainnet.infura.io/v3/KEY', {
+      retryCount: 2,
+      retryDelay: 1000,
+    }),
+    http(), // Public RPC last resort
+  ]),
+  batch: {
+    multicall: true,
+  },
+  cacheTime: 4_000,
+});
+```
+
 ---
 
 ## Multi-Chain Setup

@@ -27,6 +27,134 @@
         }
       }
     },
+    "eval-suite:aggregator-hook-creator": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": [
+        "{projectRoot}/suites/aggregator-hook-creator/**/*",
+        "{workspaceRoot}/packages/plugins/uniswap-hooks/skills/aggregator-hook-creator/**/*"
+      ],
+      "outputs": ["{projectRoot}/suites/aggregator-hook-creator/results.json"],
+      "options": {
+        "command": "npx promptfoo eval -c suites/aggregator-hook-creator/promptfoo.yaml --output suites/aggregator-hook-creator/results.json --no-progress-bar",
+        "cwd": "evals"
+      },
+      "metadata": {
+        "description": "Run aggregator-hook-creator eval suite"
+      }
+    },
+    "eval-suite:configurator": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": [
+        "{projectRoot}/suites/configurator/**/*",
+        "{workspaceRoot}/packages/plugins/uniswap-cca/skills/configurator/**/*"
+      ],
+      "outputs": ["{projectRoot}/suites/configurator/results.json"],
+      "options": {
+        "command": "npx promptfoo eval -c suites/configurator/promptfoo.yaml --output suites/configurator/results.json --no-progress-bar",
+        "cwd": "evals"
+      },
+      "metadata": {
+        "description": "Run configurator eval suite"
+      }
+    },
+    "eval-suite:deployer": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": [
+        "{projectRoot}/suites/deployer/**/*",
+        "{workspaceRoot}/packages/plugins/uniswap-cca/skills/deployer/**/*"
+      ],
+      "outputs": ["{projectRoot}/suites/deployer/results.json"],
+      "options": {
+        "command": "npx promptfoo eval -c suites/deployer/promptfoo.yaml --output suites/deployer/results.json --no-progress-bar",
+        "cwd": "evals"
+      },
+      "metadata": {
+        "description": "Run deployer eval suite"
+      }
+    },
+    "eval-suite:liquidity-planner": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": [
+        "{projectRoot}/suites/liquidity-planner/**/*",
+        "{workspaceRoot}/packages/plugins/uniswap-driver/skills/liquidity-planner/**/*"
+      ],
+      "outputs": ["{projectRoot}/suites/liquidity-planner/results.json"],
+      "options": {
+        "command": "npx promptfoo eval -c suites/liquidity-planner/promptfoo.yaml --output suites/liquidity-planner/results.json --no-progress-bar",
+        "cwd": "evals"
+      },
+      "metadata": {
+        "description": "Run liquidity-planner eval suite"
+      }
+    },
+    "eval-suite:swap-integration": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": [
+        "{projectRoot}/suites/swap-integration/**/*",
+        "{workspaceRoot}/packages/plugins/uniswap-trading/skills/swap-integration/**/*"
+      ],
+      "outputs": ["{projectRoot}/suites/swap-integration/results.json"],
+      "options": {
+        "command": "npx promptfoo eval -c suites/swap-integration/promptfoo.yaml --output suites/swap-integration/results.json --no-progress-bar",
+        "cwd": "evals"
+      },
+      "metadata": {
+        "description": "Run swap-integration eval suite"
+      }
+    },
+    "eval-suite:swap-planner": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": [
+        "{projectRoot}/suites/swap-planner/**/*",
+        "{workspaceRoot}/packages/plugins/uniswap-driver/skills/swap-planner/**/*"
+      ],
+      "outputs": ["{projectRoot}/suites/swap-planner/results.json"],
+      "options": {
+        "command": "npx promptfoo eval -c suites/swap-planner/promptfoo.yaml --output suites/swap-planner/results.json --no-progress-bar",
+        "cwd": "evals"
+      },
+      "metadata": {
+        "description": "Run swap-planner eval suite"
+      }
+    },
+    "eval-suite:v4-security-foundations": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": [
+        "{projectRoot}/suites/v4-security-foundations/**/*",
+        "{workspaceRoot}/packages/plugins/uniswap-hooks/skills/v4-security-foundations/**/*"
+      ],
+      "outputs": ["{projectRoot}/suites/v4-security-foundations/results.json"],
+      "options": {
+        "command": "npx promptfoo eval -c suites/v4-security-foundations/promptfoo.yaml --output suites/v4-security-foundations/results.json --no-progress-bar",
+        "cwd": "evals"
+      },
+      "metadata": {
+        "description": "Run v4-security-foundations eval suite"
+      }
+    },
+    "eval-suite:viem-integration": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": [
+        "{projectRoot}/suites/viem-integration/**/*",
+        "{workspaceRoot}/packages/plugins/uniswap-viem/skills/viem-integration/**/*"
+      ],
+      "outputs": ["{projectRoot}/suites/viem-integration/results.json"],
+      "options": {
+        "command": "npx promptfoo eval -c suites/viem-integration/promptfoo.yaml --output suites/viem-integration/results.json --no-progress-bar",
+        "cwd": "evals"
+      },
+      "metadata": {
+        "description": "Run viem-integration eval suite"
+      }
+    },
     "eval:all": {
       "executor": "nx:run-commands",
       "options": {

@@ -66,7 +66,6 @@ uniswap-ai/
 │       ├── uniswap-hooks/   # Uniswap V4 hooks plugin
 │       ├── uniswap-trading/ # Uniswap swap integration
 │       └── uniswap-viem/    # EVM blockchain integration (viem/wagmi)
-├── repo-docs/               # Standalone documents (hackathon, overview)
 ├── scripts/                 # Build/validation scripts
 ├── nx.json
 ├── package.json
@@ -147,11 +146,18 @@ export CLAUDE_CODE_OAUTH_TOKEN=<token>    # Local development
 ### Running Evals
 
 ```bash
-nx run evals:eval --suite=aggregator-hook-creator  # Run specific suite
+nx run evals:eval --suite=aggregator-hook-creator  # Run specific suite (no caching)
+nx run evals:eval-suite:swap-planner               # Run specific suite (with Nx caching)
 nx run evals:eval:all                               # Run all suites
 nx run evals:eval:view                              # Open results viewer
-nx run evals:eval:cache-clear                       # Clear cache
+nx run evals:eval:cache-clear                       # Clear promptfoo cache
 ```
+
+### Nx Caching
+
+Each eval suite has a dedicated `eval-suite:<name>` Nx target with `cache: true`. Nx tracks the suite's inputs (promptfoo config, cases, rubrics, and the referenced skill files) and caches `results.json`. When inputs haven't changed, Nx restores the cached result without making LLM API calls.
+
+To force a re-run (skip cache): `nx run evals:eval-suite:swap-planner --skip-nx-cache`
 
 ### Creating New Eval Suites
 
@@ -161,6 +167,7 @@ nx run evals:eval:cache-clear                       # Clear cache
 4. Add test cases in `cases/` directory
 5. Define rubrics in `rubrics/` directory
 6. Update `promptfoo.yaml` with your prompts and assertions
+7. Add an `eval-suite:<skill-name>` target to `evals/project.json` with proper `inputs` pointing to the skill directory
 
 ### CI Integration
 
@@ -169,7 +176,7 @@ Evals run automatically on PRs that modify:
 - `packages/plugins/**`
 - `evals/**`
 
-Pass rate must be ≥85% for PR to pass. Results include inference cost tracking.
+Each suite runs through its Nx `eval-suite:*` target. The Nx cache is persisted between CI runs via GitHub Actions cache, so suites whose inputs haven't changed since the last run are served from cache (no LLM API calls). Pass rate must be ≥85% for PR to pass. Results include inference cost tracking.
 
 ### Writing Good Eval Cases
 

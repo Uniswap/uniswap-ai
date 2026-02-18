@@ -145,6 +145,18 @@ CCA instances are deployed via the `ContinuousClearingAuctionFactory` contract, 
 
 ### Deploying an Auction Instance
 
+#### Step 0: Clone the CCA Repository
+
+If you don't already have the CCA contracts locally, clone the repository and install dependencies:
+
+```bash
+git clone https://github.com/Uniswap/continuous-clearing-auction.git
+cd continuous-clearing-auction
+forge install
+```
+
+This gives you access to the deployment scripts, contract ABIs, and test helpers referenced in later steps.
+
 #### Step 1: Prepare Configuration
 
 Ensure you have a valid configuration file (generated via the `configurator` skill or manually created).
