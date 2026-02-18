@@ -71,9 +71,9 @@ All tools in this repository are designed to work with any LLM coding agent, not
 
 ## Documentation
 
-- [Getting Started](./docs/getting-started/index.md)
-- [Skills Reference](./docs/skills/index.md)
-- [Evals Guide](./docs/evals/index.md)
+- [Getting Started](./getting-started/index.md)
+- [Skills Reference](./skills/index.md)
+- [Evals Guide](./evals/index.md)
 
 ## Development
 
@@ -106,7 +106,6 @@ uniswap-ai/
 │   └── plugins/         # Claude Code plugins (skills live here)
 ├── evals/               # AI tool evaluations (Promptfoo)
 ├── docs/                # VitePress documentation
-├── repo-docs/           # Standalone documents (hackathon, overview)
 └── scripts/             # Build and validation scripts
 ```
 
@@ -128,11 +127,11 @@ PRs are automatically validated by several workflows:
 
 If the docs check flags missing documentation updates, you can apply the suggested changes directly from the PR comments.
 
-See [.github/workflows/CLAUDE.md](.github/workflows/CLAUDE.md) for detailed CI documentation.
+See [.github/workflows/CLAUDE.md](https://github.com/Uniswap/uniswap-ai/blob/main/.github/workflows/CLAUDE.md) for detailed CI documentation.
 
 ## License
 
-MIT License - see [LICENSE](./LICENSE) for details.
+MIT License - see [LICENSE](https://github.com/Uniswap/uniswap-ai/blob/main/LICENSE) for details.
 
 ## Links
 

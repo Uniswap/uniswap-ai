@@ -66,7 +66,6 @@ uniswap-ai/
 │       ├── uniswap-hooks/   # Uniswap V4 hooks plugin
 │       ├── uniswap-trading/ # Uniswap swap integration
 │       └── uniswap-viem/    # EVM blockchain integration (viem/wagmi)
-├── repo-docs/               # Standalone documents (hackathon, overview)
 ├── scripts/                 # Build/validation scripts
 ├── nx.json
 ├── package.json
