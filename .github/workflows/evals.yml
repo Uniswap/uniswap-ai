@@ -13,6 +13,11 @@ on:
         required: false
         default: false
         type: boolean
+      skip_cache:
+        description: 'Skip Nx cache and re-run all suites'
+        required: false
+        default: false
+        type: boolean
 
 concurrency:
   group: evals-${{ github.workflow }}-${{ github.head_ref || github.ref }}
@@ -80,6 +85,14 @@ jobs:
       - name: Install dependencies
         run: npm ci --prefer-offline --no-audit
 
+      - name: Restore Nx cache
+        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        with:
+          path: node_modules/.cache/nx
+          key: nx-evals-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            nx-evals-${{ runner.os }}-
+
       - name: Run evaluations
         id: eval
         env:
@@ -87,69 +100,76 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           SUITE_INPUT: ${{ github.event.inputs.suite }}
+          SKIP_CACHE: ${{ github.event.inputs.skip_cache }}
         run: |
-          cd evals
-
           # Verify required dependencies
           command -v jq >/dev/null 2>&1 || { echo "::error::jq is required but not installed"; exit 1; }
           command -v bc >/dev/null 2>&1 || { echo "::error::bc is required but not installed"; exit 1; }
 
           # Verify suites directory exists
-          if [ ! -d "suites" ]; then
+          if [ ! -d "evals/suites" ]; then
             echo "::error::evals/suites directory not found"
             exit 1
           fi
 
-          # Validate suite input (only alphanumeric, dash, and underscore allowed)
+          # Build skip-cache flag
+          NX_CACHE_FLAG=""
+          if [ "$SKIP_CACHE" = "true" ]; then
+            NX_CACHE_FLAG="--skip-nx-cache"
+            echo "::notice::Nx cache skipped (manual override)"
+          fi
+
+          # Determine which suites to run
           if [ -n "$SUITE_INPUT" ]; then
+            # Validate suite input (only alphanumeric, dash, and underscore allowed)
             if ! echo "$SUITE_INPUT" | grep -qE '^[a-zA-Z0-9_-]+$'; then
               echo "::error::Invalid suite name. Only alphanumeric, dash, and underscore allowed"
               exit 1
             fi
             echo "Running specific suite: $SUITE_INPUT"
-            SUITES="suites/$SUITE_INPUT"
+            SUITE_NAMES="$SUITE_INPUT"
           else
             echo "Running all suites"
-            SUITES=$(ls -d suites/*/ 2>/dev/null || echo "")
+            SUITE_NAMES=$(ls -d evals/suites/*/ 2>/dev/null | xargs -I{} basename {} || echo "")
           fi
 
-          if [ -z "$SUITES" ]; then
+          if [ -z "$SUITE_NAMES" ]; then
             echo "No eval suites found"
-            echo "status=skipped" >> $GITHUB_OUTPUT
+            echo "status=skipped" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
-          # Run evals for each suite
-          TOTAL_PASS=0
-          TOTAL_FAIL=0
-          TOTAL_COST=0
-          RESULTS_SUMMARY=""
-
-          for suite_dir in $SUITES; do
-            suite_name=$(basename "$suite_dir")
+          # Run each suite through Nx (enables per-suite caching)
+          for suite_name in $SUITE_NAMES; do
             echo "::group::Running $suite_name"
 
-            if [ ! -f "$suite_dir/promptfoo.yaml" ]; then
+            if [ ! -f "evals/suites/$suite_name/promptfoo.yaml" ]; then
               echo "::warning::Skipping $suite_name - no promptfoo.yaml found"
               echo "::endgroup::"
               continue
             fi
 
-            # Run eval and capture output
-            # Pin promptfoo via --package to prevent local bin shadowing from malicious PRs.
-            # This is critical: this job has access to API secrets.
-            # Update the version here when upgrading promptfoo in package.json.
-            npx --package=promptfoo@0.120.22 -- promptfoo eval \
-              -c "$suite_dir/promptfoo.yaml" \
-              --output "$suite_dir/results.json" \
-              --no-progress-bar \
-              || true
+            # Run via Nx target for caching. Nx compares inputs (suite config +
+            # skill files) against its cache. If unchanged, it restores the
+            # cached results.json without making any LLM API calls.
+            # shellcheck disable=SC2086
+            npx nx run "evals:eval-suite:$suite_name" $NX_CACHE_FLAG || true
 
-            if [ -f "$suite_dir/results.json" ]; then
-              # Extract stats using jq
-              PASS=$(jq '.results.stats.successes // 0' "$suite_dir/results.json")
-              FAIL=$(jq '.results.stats.failures // 0' "$suite_dir/results.json")
-              COST=$(jq '.results.stats.totalCost // 0' "$suite_dir/results.json")
+            echo "::endgroup::"
+          done
+
+          # Aggregate results from all suites
+          TOTAL_PASS=0
+          TOTAL_FAIL=0
+          TOTAL_COST=0
+          RESULTS_SUMMARY=""
+
+          for suite_name in $SUITE_NAMES; do
+            results_file="evals/suites/$suite_name/results.json"
+            if [ -f "$results_file" ]; then
+              PASS=$(jq '.results.stats.successes // 0' "$results_file")
+              FAIL=$(jq '.results.stats.failures // 0' "$results_file")
+              COST=$(jq '.results.stats.totalCost // 0' "$results_file")
 
               TOTAL_PASS=$((TOTAL_PASS + PASS))
               TOTAL_FAIL=$((TOTAL_FAIL + FAIL))
@@ -157,8 +177,6 @@ jobs:
 
               RESULTS_SUMMARY="${RESULTS_SUMMARY}| ${suite_name} | ${PASS} | ${FAIL} | \$${COST} |\n"
             fi
-
-            echo "::endgroup::"
           done
 
           # Calculate pass rate
@@ -180,10 +198,10 @@ jobs:
           echo "**Pass Rate:** ${PASS_RATE}%" >> "$GITHUB_STEP_SUMMARY"
 
           # Set outputs
-          echo "pass_rate=$PASS_RATE" >> $GITHUB_OUTPUT
-          echo "total_pass=$TOTAL_PASS" >> $GITHUB_OUTPUT
-          echo "total_fail=$TOTAL_FAIL" >> $GITHUB_OUTPUT
-          echo "total_cost=$TOTAL_COST" >> $GITHUB_OUTPUT
+          echo "pass_rate=$PASS_RATE" >> "$GITHUB_OUTPUT"
+          echo "total_pass=$TOTAL_PASS" >> "$GITHUB_OUTPUT"
+          echo "total_fail=$TOTAL_FAIL" >> "$GITHUB_OUTPUT"
+          echo "total_cost=$TOTAL_COST" >> "$GITHUB_OUTPUT"
 
           # Fail if below threshold (85%)
           if [ "$TOTAL" -gt 0 ]; then
@@ -194,7 +212,7 @@ jobs:
             fi
           fi
 
-          echo "status=success" >> $GITHUB_OUTPUT
+          echo "status=success" >> "$GITHUB_OUTPUT"
 
       - name: Upload eval results
         if: always()
