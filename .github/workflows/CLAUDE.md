@@ -67,7 +67,7 @@ Validates that PR documentation is properly updated:
 - Verifies README.md files reflect current state
 - Ensures plugin versions are bumped when plugin code changes
 
-Uses the shared workflow from [ai-toolkit](https://github.com/Uniswap/ai-toolkit).
+Uses a shared reusable workflow.
 
 ### Generate PR Title & Description
 
@@ -163,7 +163,7 @@ All workflows follow security best practices:
 
 ## Shared Workflows
 
-Several workflows use reusable workflows from [ai-toolkit](https://github.com/Uniswap/ai-toolkit):
+Several workflows use external reusable workflows:
 
 - `_claude-docs-check.yml` - Documentation validation
 - `_generate-pr-metadata.yml` - PR title/description generation

@@ -107,7 +107,7 @@ jobs:
       - name: Check formatting
         run: |
           echo "Checking code formatting..."
-          npx --package=nx@22.0.2 -- nx format:check
+          npx --package=nx@22.0.2 -- nx format:check --base=$NX_BASE --head=$NX_HEAD
           echo "✅ Formatting check passed"
 
       - name: Install Vale

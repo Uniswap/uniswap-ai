@@ -6,10 +6,6 @@ Uniswap-specific AI tools (skills, plugins, agents) for developers and AI agents
 
 This repository provides Claude Code plugins and AI development tools specifically designed for building on the Uniswap protocol.
 
-| Repository   | Focus                              | Audience                       |
-| ------------ | ---------------------------------- | ------------------------------ |
-| `uniswap-ai` | Uniswap protocol-specific AI tools | External developers, AI agents |
-
 ## Installation
 
 ### Skills CLI (Any Agent)
@@ -135,7 +131,7 @@ MIT License - see [LICENSE](https://github.com/Uniswap/uniswap-ai/blob/main/LICE
 
 ## Links
 
-- [Documentation](https://uniswap-ai-docs.vercel.app/)
+- [Documentation](https://ul-ai-docs.vercel.app/)
 - [Uniswap API Docs](https://api-docs.uniswap.org/introduction)
 - [Uniswap v4 Docs](https://docs.uniswap.org/contracts/v4/overview)
 - [Claude Code](https://claude.ai/code)
