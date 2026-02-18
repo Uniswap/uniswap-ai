@@ -35,11 +35,13 @@ jobs:
       id-token: write
       pull-requests: write
     # Skip conditions:
+    # - Fork PRs (no secrets available)
     # - Merge queue PRs (handled separately)
     # - Dependabot PRs (already have proper titles)
     # - Release PRs (have their own format)
     # - Production promotion PRs (have their own format)
     if: |
+      github.event.pull_request.head.repo.full_name == github.repository &&
       !contains(github.head_ref, 'gh-readonly-queue/') &&
       !contains(github.head_ref, 'dependabot/') &&
       !contains(github.head_ref, 'release/') &&
