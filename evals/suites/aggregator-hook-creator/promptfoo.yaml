@@ -11,7 +11,7 @@ providers:
   - id: anthropic:claude-sonnet-4-5-20250929
     config:
       temperature: 0
-      max_tokens: 8192 # Solidity contracts need more tokens for complete implementation
+      max_tokens: 16384 # Solidity contracts need more tokens for complete implementation
 
 # Default test configuration
 defaultTest:
