@@ -1,0 +1,28 @@
+{
+  "name": "eval-suite-deployer",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "tags": ["type:eval-suite"],
+  "implicitDependencies": ["uniswap-cca", "evals"],
+  "targets": {
+    "eval": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": [
+        "{projectRoot}/**/*",
+        "{workspaceRoot}/packages/plugins/uniswap-cca/skills/deployer/**/*",
+        "{workspaceRoot}/evals/scripts/**/*",
+        "{workspaceRoot}/evals/rubrics/**/*",
+        "{workspaceRoot}/evals/promptfoo.yaml"
+      ],
+      "outputs": ["{projectRoot}/results.json"],
+      "options": {
+        "command": "npx promptfoo eval -c suites/deployer/promptfoo.yaml --output suites/deployer/results.json --no-progress-bar",
+        "cwd": "evals"
+      },
+      "metadata": {
+        "description": "Run deployer eval suite"
+      }
+    }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "name": "eval-suite-swap-integration",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "tags": ["type:eval-suite"],
+  "implicitDependencies": ["uniswap-trading", "evals"],
+  "targets": {
+    "eval": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": [
+        "{projectRoot}/**/*",
+        "{workspaceRoot}/packages/plugins/uniswap-trading/skills/swap-integration/**/*",
+        "{workspaceRoot}/evals/scripts/**/*",
+        "{workspaceRoot}/evals/rubrics/**/*",
+        "{workspaceRoot}/evals/promptfoo.yaml"
+      ],
+      "outputs": ["{projectRoot}/results.json"],
+      "options": {
+        "command": "npx promptfoo eval -c suites/swap-integration/promptfoo.yaml --output suites/swap-integration/results.json --no-progress-bar",
+        "cwd": "evals"
+      },
+      "metadata": {
+        "description": "Run swap-integration eval suite"
+      }
+    }
+  }
+}

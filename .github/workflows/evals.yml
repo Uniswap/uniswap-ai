@@ -29,7 +29,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       should_run: ${{ steps.filter.outputs.evals }}
-      affected_suites: ${{ steps.suites.outputs.suites }}
     permissions:
       contents: read
       pull-requests: read
@@ -51,62 +50,6 @@ jobs:
               - 'packages/plugins/**'
               - 'evals/**'
               - '.github/workflows/evals.yml'
-            evals-framework:
-              - 'evals/promptfoo.yaml'
-              - 'evals/scripts/**'
-              - 'evals/rubrics/**'
-              - 'evals/framework/**'
-              - '.github/workflows/evals.yml'
-            uniswap-hooks:
-              - 'packages/plugins/uniswap-hooks/**'
-              - 'evals/suites/aggregator-hook-creator/**'
-              - 'evals/suites/v4-security-foundations/**'
-            uniswap-cca:
-              - 'packages/plugins/uniswap-cca/**'
-              - 'evals/suites/configurator/**'
-              - 'evals/suites/deployer/**'
-            uniswap-driver:
-              - 'packages/plugins/uniswap-driver/**'
-              - 'evals/suites/liquidity-planner/**'
-              - 'evals/suites/swap-planner/**'
-            uniswap-trading:
-              - 'packages/plugins/uniswap-trading/**'
-              - 'evals/suites/swap-integration/**'
-            uniswap-viem:
-              - 'packages/plugins/uniswap-viem/**'
-              - 'evals/suites/viem-integration/**'
-
-      - name: Determine affected suites
-        id: suites
-        env:
-          EVALS_FRAMEWORK: ${{ steps.filter.outputs.evals-framework }}
-          HOOKS: ${{ steps.filter.outputs.uniswap-hooks }}
-          CCA: ${{ steps.filter.outputs.uniswap-cca }}
-          DRIVER: ${{ steps.filter.outputs.uniswap-driver }}
-          TRADING: ${{ steps.filter.outputs.uniswap-trading }}
-          VIEM: ${{ steps.filter.outputs.uniswap-viem }}
-        run: |
-          if [ "$EVALS_FRAMEWORK" = "true" ]; then
-            echo "Evals framework changed — running all suites"
-            echo "suites=all" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          SUITES=""
-          [ "$HOOKS" = "true" ] && SUITES="$SUITES aggregator-hook-creator v4-security-foundations"
-          [ "$CCA" = "true" ] && SUITES="$SUITES configurator deployer"
-          [ "$DRIVER" = "true" ] && SUITES="$SUITES liquidity-planner swap-planner"
-          [ "$TRADING" = "true" ] && SUITES="$SUITES swap-integration"
-          [ "$VIEM" = "true" ] && SUITES="$SUITES viem-integration"
-
-          SUITES=$(echo "$SUITES" | xargs)
-          if [ -z "$SUITES" ]; then
-            echo "No plugin-specific changes — running all suites"
-            echo "suites=all" >> "$GITHUB_OUTPUT"
-          else
-            echo "Affected suites: $SUITES"
-            echo "suites=$SUITES" >> "$GITHUB_OUTPUT"
-          fi
 
   eval:
     name: Run Evaluations
@@ -125,6 +68,7 @@ jobs:
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           persist-credentials: false
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
@@ -158,17 +102,11 @@ jobs:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           SUITE_INPUT: ${{ github.event.inputs.suite }}
           SKIP_CACHE: ${{ github.event.inputs.skip_cache }}
-          AFFECTED_SUITES: ${{ needs.check-paths.outputs.affected_suites }}
+          EVENT_NAME: ${{ github.event_name }}
         run: |
           # Verify required dependencies
           command -v jq >/dev/null 2>&1 || { echo "::error::jq is required but not installed"; exit 1; }
           command -v bc >/dev/null 2>&1 || { echo "::error::bc is required but not installed"; exit 1; }
-
-          # Verify suites directory exists
-          if [ ! -d "evals/suites" ]; then
-            echo "::error::evals/suites directory not found"
-            exit 1
-          fi
 
           # Build skip-cache flag
           NX_CACHE_FLAG=""
@@ -177,68 +115,64 @@ jobs:
             echo "::notice::Nx cache skipped (manual override)"
           fi
 
-          # Determine which suites to run
+          # Clear previous results so aggregation only counts suites that ran
+          rm -f evals/suites/*/results.json
+
+          # Run eval suites via Nx
+          # - PR: nx affected uses the project graph to run only suites whose
+          #   plugin or eval dependencies changed (defaultBase: origin/main)
+          # - Manual (specific suite): nx run targets the exact suite
+          # - Manual (all): nx run-many runs all eval-suite-* projects
           if [ -n "$SUITE_INPUT" ]; then
-            # Manual override: specific suite
+            # Validate suite input (only alphanumeric, dash, and underscore allowed)
             if ! echo "$SUITE_INPUT" | grep -qE '^[a-zA-Z0-9_-]+$'; then
               echo "::error::Invalid suite name. Only alphanumeric, dash, and underscore allowed"
               exit 1
             fi
-            echo "Running specific suite: $SUITE_INPUT"
-            SUITE_NAMES="$SUITE_INPUT"
-          elif [ "$AFFECTED_SUITES" = "all" ] || [ -z "$AFFECTED_SUITES" ]; then
-            echo "Running all suites"
-            SUITE_NAMES=$(ls -d evals/suites/*/ 2>/dev/null | xargs -I{} basename {} || echo "")
-          else
-            echo "Running affected suites: $AFFECTED_SUITES"
-            SUITE_NAMES="$AFFECTED_SUITES"
-          fi
-
-          if [ -z "$SUITE_NAMES" ]; then
-            echo "No eval suites found"
-            echo "status=skipped" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          # Run each suite through Nx (enables per-suite caching)
-          for suite_name in $SUITE_NAMES; do
-            echo "::group::Running $suite_name"
-
-            if [ ! -f "evals/suites/$suite_name/promptfoo.yaml" ]; then
-              echo "::warning::Skipping $suite_name - no promptfoo.yaml found"
-              echo "::endgroup::"
-              continue
-            fi
-
-            # Run via Nx target for caching. Nx compares inputs (suite config +
-            # skill files) against its cache. If unchanged, it restores the
-            # cached results.json without making any LLM API calls.
+            echo "::group::Running specific suite: $SUITE_INPUT"
             # shellcheck disable=SC2086
-            npx nx run "evals:eval-suite:$suite_name" $NX_CACHE_FLAG || true
-
+            npx nx run "eval-suite-$SUITE_INPUT:eval" $NX_CACHE_FLAG || true
             echo "::endgroup::"
-          done
+          elif [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "::group::Running all eval suites (manual trigger)"
+            # shellcheck disable=SC2086
+            npx nx run-many -t eval --projects='tag:type:eval-suite' $NX_CACHE_FLAG || true
+            echo "::endgroup::"
+          else
+            echo "::group::Running affected eval suites"
+            # shellcheck disable=SC2086
+            npx nx affected -t eval --exclude=evals $NX_CACHE_FLAG || true
+            echo "::endgroup::"
+          fi
 
-          # Aggregate results from all suites
+          # Aggregate results from suites that produced output
           TOTAL_PASS=0
           TOTAL_FAIL=0
           TOTAL_COST=0
           RESULTS_SUMMARY=""
+          SUITES_RAN=0
 
-          for suite_name in $SUITE_NAMES; do
-            results_file="evals/suites/$suite_name/results.json"
-            if [ -f "$results_file" ]; then
-              PASS=$(jq '.results.stats.successes // 0' "$results_file")
-              FAIL=$(jq '.results.stats.failures // 0' "$results_file")
-              COST=$(jq '.results.stats.totalCost // 0' "$results_file")
+          for results_file in evals/suites/*/results.json; do
+            [ -f "$results_file" ] || continue
+            suite_name=$(basename "$(dirname "$results_file")")
 
-              TOTAL_PASS=$((TOTAL_PASS + PASS))
-              TOTAL_FAIL=$((TOTAL_FAIL + FAIL))
-              TOTAL_COST=$(echo "$TOTAL_COST + $COST" | bc -l)
+            PASS=$(jq '.results.stats.successes // 0' "$results_file")
+            FAIL=$(jq '.results.stats.failures // 0' "$results_file")
+            COST=$(jq '.results.stats.totalCost // 0' "$results_file")
 
-              RESULTS_SUMMARY="${RESULTS_SUMMARY}| ${suite_name} | ${PASS} | ${FAIL} | \$${COST} |\n"
-            fi
+            TOTAL_PASS=$((TOTAL_PASS + PASS))
+            TOTAL_FAIL=$((TOTAL_FAIL + FAIL))
+            TOTAL_COST=$(echo "$TOTAL_COST + $COST" | bc -l)
+            SUITES_RAN=$((SUITES_RAN + 1))
+
+            RESULTS_SUMMARY="${RESULTS_SUMMARY}| ${suite_name} | ${PASS} | ${FAIL} | \$${COST} |\n"
           done
+
+          if [ "$SUITES_RAN" -eq 0 ]; then
+            echo "No eval suites were affected"
+            echo "status=skipped" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
 
           # Calculate pass rate
           TOTAL=$((TOTAL_PASS + TOTAL_FAIL))
@@ -256,7 +190,7 @@ jobs:
           echo -e "$RESULTS_SUMMARY" >> "$GITHUB_STEP_SUMMARY"
           echo "| **Total** | **$TOTAL_PASS** | **$TOTAL_FAIL** | **\$${TOTAL_COST}** |" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "**Pass Rate:** ${PASS_RATE}%" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Pass Rate:** ${PASS_RATE}% ($SUITES_RAN suite(s) evaluated)" >> "$GITHUB_STEP_SUMMARY"
 
           # Set outputs
           echo "pass_rate=$PASS_RATE" >> "$GITHUB_OUTPUT"
