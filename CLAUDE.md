@@ -146,7 +146,7 @@ export CLAUDE_CODE_OAUTH_TOKEN=<token>    # Local development
 ### Running Evals
 
 ```bash
-nx run evals:eval --suite=aggregator-hook-creator  # Run specific suite (no caching)
+nx run evals:eval --suite=v4-security-foundations   # Run specific suite (no caching)
 nx run evals:eval-suite:swap-planner               # Run specific suite (with Nx caching)
 nx run evals:eval:all                               # Run all suites
 nx run evals:eval:view                              # Open results viewer

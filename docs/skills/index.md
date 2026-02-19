@@ -11,10 +11,9 @@ Skills are AI-powered capabilities that help you build on Uniswap. Each skill is
 
 ### uniswap-hooks Plugin
 
-| Skill                                                | Description                                                 | Invocation                 |
-| ---------------------------------------------------- | ----------------------------------------------------------- | -------------------------- |
-| [Aggregator Hook Creator](./aggregator-hook-creator) | Create hooks that aggregate liquidity from multiple sources | `/aggregator-hook-creator` |
-| [V4 Security Foundations](./v4-security-foundations) | Security-first guide for v4 hook development                | `/v4-security-foundations` |
+| Skill                                                | Description                                  | Invocation                 |
+| ---------------------------------------------------- | -------------------------------------------- | -------------------------- |
+| [V4 Security Foundations](./v4-security-foundations) | Security-first guide for v4 hook development | `/v4-security-foundations` |
 
 ### uniswap-cca Plugin
 
@@ -49,7 +48,7 @@ Skills are AI-powered capabilities that help you build on Uniswap. Each skill is
 Use the slash command to invoke a skill directly:
 
 ```text
-/aggregator-hook-creator
+/v4-security-foundations
 ```
 
 ### Contextual Activation
@@ -57,10 +56,10 @@ Use the slash command to invoke a skill directly:
 Skills also activate contextually when you describe what you want:
 
 ```text
-Create a hook that routes swaps through multiple liquidity sources
+What are the security risks of beforeSwapReturnDelta?
 ```
 
-Claude will recognize this relates to aggregator hooks and apply the relevant skill.
+Claude will recognize this relates to v4 hook security and apply the relevant skill.
 
 ## Skill Structure
 

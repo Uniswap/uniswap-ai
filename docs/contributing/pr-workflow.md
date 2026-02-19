@@ -14,7 +14,7 @@ This page details the pull request process for Uniswap AI contributions.
 Use descriptive branch names:
 
 ```text
-feature/add-aggregator-hook-skill
+feature/add-v4-security-skill
 fix/eval-timeout-issue
 docs/update-installation-guide
 ```
@@ -25,13 +25,13 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/):
 
 ```bash
 # Feature
-git commit -m "feat(hooks): add liquidity aggregator skill"
+git commit -m "feat(hooks): add dynamic fee hook skill"
 
 # Bug fix
 git commit -m "fix(evals): increase timeout for slow tests"
 
 # Documentation
-git commit -m "docs(skills): update aggregator hook examples"
+git commit -m "docs(skills): update v4 security examples"
 ```
 
 ### 3. PR Title
@@ -39,7 +39,7 @@ git commit -m "docs(skills): update aggregator hook examples"
 PR titles must also follow conventional commits format:
 
 ```text
-feat(hooks): add liquidity aggregator skill
+feat(hooks): add dynamic fee hook skill
 fix(evals): increase timeout for slow tests
 docs: update installation guide
 ```
