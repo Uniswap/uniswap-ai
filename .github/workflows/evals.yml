@@ -74,12 +74,12 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
         with:
-          node-version: ${{ vars.NODE_VERSION }}
+          node-version: ${{ vars.NODE_VERSION || '22' }}
           cache: 'npm'
 
       - name: Install npm
         env:
-          NPM_VERSION: ${{ vars.NPM_VERSION }}
+          NPM_VERSION: ${{ vars.NPM_VERSION || '11.7.0' }}
         # NPM_VERSION is a repository variable controlled by admins
         # Safe to use because: (1) admin-controlled (2) validated by npm version parser
         run: npm install -g "npm@$NPM_VERSION" # nosemgrep: uniswap.npm-package-in-action-not-pinned-to-commit-sha

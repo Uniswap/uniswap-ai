@@ -48,10 +48,12 @@ permissions: {}
 
 jobs:
   docs-check:
-    # Skip if PR is from a bot (e.g., dependabot)
+    # Skip if PR is from a bot (e.g., dependabot) or a fork (no secrets available)
     if: |
       github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'pull_request' && !contains(github.event.pull_request.user.login, '[bot]'))
+      (github.event_name == 'pull_request' &&
+       !contains(github.event.pull_request.user.login, '[bot]') &&
+       github.event.pull_request.head.repo.full_name == github.repository)
     uses: Uniswap/ai-toolkit/.github/workflows/_claude-docs-check.yml@40b7cda9c5816be0587e47734fc450447c5aaeba # main
     with:
       pr_number: ${{ github.event.pull_request.number || github.event.inputs.pr_number }}
