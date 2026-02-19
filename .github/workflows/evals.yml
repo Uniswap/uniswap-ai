@@ -29,6 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       should_run: ${{ steps.filter.outputs.evals }}
+      affected_suites: ${{ steps.suites.outputs.suites }}
     permissions:
       contents: read
       pull-requests: read
@@ -50,6 +51,62 @@ jobs:
               - 'packages/plugins/**'
               - 'evals/**'
               - '.github/workflows/evals.yml'
+            evals-framework:
+              - 'evals/promptfoo.yaml'
+              - 'evals/scripts/**'
+              - 'evals/rubrics/**'
+              - 'evals/framework/**'
+              - '.github/workflows/evals.yml'
+            uniswap-hooks:
+              - 'packages/plugins/uniswap-hooks/**'
+              - 'evals/suites/aggregator-hook-creator/**'
+              - 'evals/suites/v4-security-foundations/**'
+            uniswap-cca:
+              - 'packages/plugins/uniswap-cca/**'
+              - 'evals/suites/configurator/**'
+              - 'evals/suites/deployer/**'
+            uniswap-driver:
+              - 'packages/plugins/uniswap-driver/**'
+              - 'evals/suites/liquidity-planner/**'
+              - 'evals/suites/swap-planner/**'
+            uniswap-trading:
+              - 'packages/plugins/uniswap-trading/**'
+              - 'evals/suites/swap-integration/**'
+            uniswap-viem:
+              - 'packages/plugins/uniswap-viem/**'
+              - 'evals/suites/viem-integration/**'
+
+      - name: Determine affected suites
+        id: suites
+        env:
+          EVALS_FRAMEWORK: ${{ steps.filter.outputs.evals-framework }}
+          HOOKS: ${{ steps.filter.outputs.uniswap-hooks }}
+          CCA: ${{ steps.filter.outputs.uniswap-cca }}
+          DRIVER: ${{ steps.filter.outputs.uniswap-driver }}
+          TRADING: ${{ steps.filter.outputs.uniswap-trading }}
+          VIEM: ${{ steps.filter.outputs.uniswap-viem }}
+        run: |
+          if [ "$EVALS_FRAMEWORK" = "true" ]; then
+            echo "Evals framework changed — running all suites"
+            echo "suites=all" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          SUITES=""
+          [ "$HOOKS" = "true" ] && SUITES="$SUITES aggregator-hook-creator v4-security-foundations"
+          [ "$CCA" = "true" ] && SUITES="$SUITES configurator deployer"
+          [ "$DRIVER" = "true" ] && SUITES="$SUITES liquidity-planner swap-planner"
+          [ "$TRADING" = "true" ] && SUITES="$SUITES swap-integration"
+          [ "$VIEM" = "true" ] && SUITES="$SUITES viem-integration"
+
+          SUITES=$(echo "$SUITES" | xargs)
+          if [ -z "$SUITES" ]; then
+            echo "No plugin-specific changes — running all suites"
+            echo "suites=all" >> "$GITHUB_OUTPUT"
+          else
+            echo "Affected suites: $SUITES"
+            echo "suites=$SUITES" >> "$GITHUB_OUTPUT"
+          fi
 
   eval:
     name: Run Evaluations
@@ -86,7 +143,7 @@ jobs:
         run: npm ci --prefer-offline --no-audit
 
       - name: Restore Nx cache
-        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
         with:
           path: node_modules/.cache/nx
           key: nx-evals-${{ runner.os }}-${{ github.sha }}
@@ -101,6 +158,7 @@ jobs:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           SUITE_INPUT: ${{ github.event.inputs.suite }}
           SKIP_CACHE: ${{ github.event.inputs.skip_cache }}
+          AFFECTED_SUITES: ${{ needs.check-paths.outputs.affected_suites }}
         run: |
           # Verify required dependencies
           command -v jq >/dev/null 2>&1 || { echo "::error::jq is required but not installed"; exit 1; }
@@ -121,16 +179,19 @@ jobs:
 
           # Determine which suites to run
           if [ -n "$SUITE_INPUT" ]; then
-            # Validate suite input (only alphanumeric, dash, and underscore allowed)
+            # Manual override: specific suite
             if ! echo "$SUITE_INPUT" | grep -qE '^[a-zA-Z0-9_-]+$'; then
               echo "::error::Invalid suite name. Only alphanumeric, dash, and underscore allowed"
               exit 1
             fi
             echo "Running specific suite: $SUITE_INPUT"
             SUITE_NAMES="$SUITE_INPUT"
-          else
+          elif [ "$AFFECTED_SUITES" = "all" ] || [ -z "$AFFECTED_SUITES" ]; then
             echo "Running all suites"
             SUITE_NAMES=$(ls -d evals/suites/*/ 2>/dev/null | xargs -I{} basename {} || echo "")
+          else
+            echo "Running affected suites: $AFFECTED_SUITES"
+            SUITE_NAMES="$AFFECTED_SUITES"
           fi
 
           if [ -z "$SUITE_NAMES" ]; then
@@ -213,6 +274,13 @@ jobs:
           fi
 
           echo "status=success" >> "$GITHUB_OUTPUT"
+
+      - name: Save Nx cache
+        if: always()
+        uses: actions/cache/save@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        with:
+          path: node_modules/.cache/nx
+          key: nx-evals-${{ runner.os }}-${{ github.sha }}
 
       - name: Upload eval results
         if: always()

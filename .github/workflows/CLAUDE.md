@@ -118,12 +118,25 @@ Handles npm package publishing:
 LLM-based evaluation of AI skills using [Promptfoo](https://github.com/promptfoo/promptfoo):
 
 - Runs on PRs that modify `packages/plugins/**`, `evals/**`, or `evals.yml`
+- **Path-based suite selection**: Only runs eval suites whose plugin or suite files changed, avoiding unnecessary LLM API calls for unrelated plugins
 - Each eval suite runs through a per-suite Nx target (`eval-suite:<name>`) with `cache: true`
 - Nx compares suite inputs (config, cases, rubrics, and referenced skill files) against its cache
 - If inputs haven't changed, Nx restores the cached `results.json` without making LLM API calls
-- GitHub Actions cache persists the Nx cache between CI runs
-- Aggregates pass/fail across all suites; requires ≥85% pass rate
+- **Persistent Nx cache**: Uses split `cache/restore` + `cache/save` (with `if: always()`) so cache is preserved even when the job fails
+- Aggregates pass/fail across affected suites; requires ≥85% pass rate
 - Manual trigger supports: specific suite, skip cache, multi-model mode
+
+**Plugin-to-suite mapping:**
+
+| Plugin            | Eval Suites                                          |
+| ----------------- | ---------------------------------------------------- |
+| `uniswap-hooks`   | `aggregator-hook-creator`, `v4-security-foundations` |
+| `uniswap-cca`     | `configurator`, `deployer`                           |
+| `uniswap-driver`  | `liquidity-planner`, `swap-planner`                  |
+| `uniswap-trading` | `swap-integration`                                   |
+| `uniswap-viem`    | `viem-integration`                                   |
+
+Changes to shared eval framework files (`evals/scripts/**`, `evals/rubrics/**`, `evals/promptfoo.yaml`, or `evals.yml`) trigger all suites.
 
 ### zizmor
 

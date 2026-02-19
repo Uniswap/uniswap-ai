@@ -176,7 +176,7 @@ Evals run automatically on PRs that modify:
 - `packages/plugins/**`
 - `evals/**`
 
-Each suite runs through its Nx `eval-suite:*` target. The Nx cache is persisted between CI runs via GitHub Actions cache, so suites whose inputs haven't changed since the last run are served from cache (no LLM API calls). Pass rate must be ≥85% for PR to pass. Results include inference cost tracking.
+Only eval suites affected by the PR's changed files are run (path-based selection maps plugins to their suites). Each suite runs through its Nx `eval-suite:*` target. The Nx cache is persisted between CI runs via split `cache/restore` + `cache/save` (saves even on job failure), so suites whose inputs haven't changed since the last run are served from cache (no LLM API calls). Pass rate must be ≥85% for PR to pass. Results include inference cost tracking.
 
 ### Writing Good Eval Cases
 
