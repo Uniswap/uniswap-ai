@@ -31,7 +31,7 @@ npx skills add Uniswap/uniswap-ai
 
 AI-powered, security-first assistance for creating Uniswap v4 hooks.
 
-**Skills:** `v4-security-foundations`, `aggregator-hook-creator`
+**Skills:** `v4-security-foundations`
 
 ### uniswap-trading
 

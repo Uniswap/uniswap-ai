@@ -64,7 +64,7 @@ export CLAUDE_CODE_OAUTH_TOKEN="..."
 
 ```bash
 # Run a specific suite
-nx run evals:eval --suite=aggregator-hook-creator
+nx run evals:eval --suite=v4-security-foundations
 
 # Run all suites
 nx run evals:eval:all
@@ -95,7 +95,7 @@ eval $(op signin)
 nx run evals:setup
 
 # Then run evals
-nx run evals:eval --suite=aggregator-hook-creator
+nx run evals:eval --suite=v4-security-foundations
 ```
 
 ## Prompt Template Pattern

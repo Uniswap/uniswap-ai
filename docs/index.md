@@ -16,7 +16,7 @@ hero:
 features:
   - icon: 🪝
     title: V4 Hook Development
-    details: Security-first Uniswap V4 hook creation with aggregator hooks, audit checklists, and vulnerability analysis.
+    details: Security-first Uniswap V4 hook creation with audit checklists, vulnerability analysis, and best practices.
   - icon: 💱
     title: Swap Integration
     details: Integrate Uniswap swaps via Trading API, Universal Router SDK, or direct smart contract calls.
@@ -48,12 +48,12 @@ features:
 
 ## Featured Skills
 
-### Aggregator Hook Creator
+### V4 Security Foundations
 
-Create custom aggregator hooks for Uniswap V4 that route through multiple liquidity sources.
+Security-first guide for Uniswap V4 hook development covering threat models, permission flags, and audit checklists.
 
 ```text
-/aggregator-hook-creator
+/v4-security-foundations
 ```
 
 ### Swap Integration

@@ -15,10 +15,9 @@ AI-powered, security-first assistance for creating Uniswap V4 hooks.
 
 ## Skills
 
-| Skill                                                        | Description                                                                   | Invocation                 |
-| ------------------------------------------------------------ | ----------------------------------------------------------------------------- | -------------------------- |
-| [V4 Security Foundations](../skills/v4-security-foundations) | Security-first guide for V4 hook development                                  | `/v4-security-foundations` |
-| [Aggregator Hook Creator](../skills/aggregator-hook-creator) | Create custom aggregator hooks for routing through multiple liquidity sources | `/aggregator-hook-creator` |
+| Skill                                                        | Description                                  | Invocation                 |
+| ------------------------------------------------------------ | -------------------------------------------- | -------------------------- |
+| [V4 Security Foundations](../skills/v4-security-foundations) | Security-first guide for V4 hook development | `/v4-security-foundations` |
 
 ## Hook Callbacks
 

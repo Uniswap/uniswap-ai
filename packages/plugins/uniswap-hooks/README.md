@@ -4,7 +4,7 @@ AI-powered, security-first assistance for creating Uniswap v4 hooks.
 
 ## Overview
 
-This Claude Code plugin provides skills for developing Uniswap v4 hooks with a strong emphasis on security. It covers aggregator hooks, custom fee hooks, and other advanced hook patterns—all built on a foundation of security best practices.
+This Claude Code plugin provides skills for developing Uniswap v4 hooks with a strong emphasis on security. It covers custom fee hooks and other advanced hook patterns—all built on a foundation of security best practices.
 
 **Recommended Learning Path**: Complete `v4-security-foundations` before building specific hook types.
 
@@ -32,22 +32,6 @@ Or ask about security:
 ```text
 "What are the security risks of beforeSwapReturnDelta?"
 "How do I prevent NoOp attacks in my v4 hook?"
-```
-
-### aggregator-hook-creator
-
-Create custom aggregator hooks for Uniswap v4 that route through multiple liquidity sources.
-
-**Usage:**
-
-```text
-/aggregator-hook-creator
-```
-
-Or describe what you want:
-
-```text
-"Create a hook that aggregates liquidity from Uniswap v4 and an external DEX"
 ```
 
 ## Installation

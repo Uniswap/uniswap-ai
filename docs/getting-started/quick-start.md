@@ -20,12 +20,6 @@ Start by telling Claude what you want to build:
 Create a simple hook that logs swap events and tracks total volume
 ```
 
-Or use the dedicated skill:
-
-```text
-/aggregator-hook-creator
-```
-
 ## Step 2: Review the Generated Code
 
 Claude will generate a complete hook implementation. Review the key components:
