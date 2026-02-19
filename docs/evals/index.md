@@ -25,7 +25,7 @@ Traditional software tests verify deterministic behavior. AI tools are probabili
 npx nx run evals:run
 
 # Run specific suite
-npx nx run evals:run --suite=aggregator-hook-creator
+npx nx run evals:run --suite=v4-security-foundations
 
 # Dry run (show what would be evaluated)
 npx nx run evals:run --dry-run

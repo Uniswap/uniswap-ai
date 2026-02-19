@@ -18,7 +18,7 @@ npx nx run evals:run
 ### Run Specific Suite
 
 ```bash
-npx nx run evals:run --suite=aggregator-hook-creator
+npx nx run evals:run --suite=v4-security-foundations
 ```
 
 ### Run with Specific Model
@@ -48,14 +48,14 @@ npx nx run evals:run --verbose
 ### Console Output
 
 ```text
-🧪 Eval Suite: aggregator-hook-creator
+🧪 Eval Suite: v4-security-foundations
 ============================================================
-Skill: aggregator-hook-creator
+Skill: v4-security-foundations
 Models: claude-sonnet-4-5-20250929, claude-opus-4-5-20251101
 Thresholds: acc≥0.80 comp≥0.85 safe≥1.00
 
-  basic-aggregator-hook (claude-sonnet-4-5-20250929)... ✅ [0.95/0.90/1.00] 2341ms
-  basic-aggregator-hook (claude-opus-4-5-20251101)... ✅ [0.98/0.95/1.00] 3521ms
+  basic-security-check (claude-sonnet-4-5-20250929)... ✅ [0.95/0.90/1.00] 2341ms
+  basic-security-check (claude-opus-4-5-20251101)... ✅ [0.98/0.95/1.00] 3521ms
 
 ------------------------------------------------------------
 📊 Suite Summary
@@ -126,10 +126,10 @@ npx nx run evals:run --format=comparison
 
 ```bash
 # Run single case with verbose output
-npx nx run evals:run --suite=aggregator-hook-creator --case=basic-aggregator-hook --verbose
+npx nx run evals:run --suite=v4-security-foundations --case=basic-security-check --verbose
 
 # Save raw output
-npx nx run evals:run --suite=aggregator-hook-creator --save-outputs
+npx nx run evals:run --suite=v4-security-foundations --save-outputs
 ```
 
 ### Common Failure Reasons

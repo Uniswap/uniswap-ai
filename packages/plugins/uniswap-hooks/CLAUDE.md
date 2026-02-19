@@ -9,7 +9,6 @@ This plugin provides AI-powered, security-first assistance for creating Uniswap 
 ### Skills (./skills/)
 
 - **v4-security-foundations**: Security-first guide for v4 hook development (NoOp attacks, delta accounting, access control, audit checklists)
-- **aggregator-hook-creator**: Create custom aggregator hooks that route through multiple liquidity sources
 
 ## Uniswap v4 Hooks Architecture
 
@@ -81,15 +80,12 @@ uniswap-hooks/
 ├── .claude-plugin/
 │   └── plugin.json
 ├── skills/
-│   ├── v4-security-foundations/
-│   │   ├── SKILL.md
-│   │   └── references/
-│   │       ├── audit-checklist.md
-│   │       ├── base-hook-template.md
-│   │       └── vulnerabilities-catalog.md
-│   └── aggregator-hook-creator/
+│   └── v4-security-foundations/
 │       ├── SKILL.md
 │       └── references/
+│           ├── audit-checklist.md
+│           ├── base-hook-template.md
+│           └── vulnerabilities-catalog.md
 ├── project.json
 ├── package.json
 ├── CLAUDE.md

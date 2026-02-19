@@ -84,4 +84,4 @@ fi
 
 echo ""
 log_info "Setup complete! You can now run evals:"
-echo "  nx run evals:eval --suite=aggregator-hook-creator"
+echo "  nx run evals:eval --suite=v4-security-foundations"

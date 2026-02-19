@@ -9,13 +9,13 @@ Plugins are the primary distribution mechanism for Uniswap AI tools. Each plugin
 
 ## Available Plugins
 
-| Plugin                               | Description                                | Skills                                           |
-| ------------------------------------ | ------------------------------------------ | ------------------------------------------------ |
-| [uniswap-hooks](./uniswap-hooks)     | Security-first Uniswap V4 hook development | v4-security-foundations, aggregator-hook-creator |
-| [uniswap-cca](./uniswap-cca)         | CCA auction configuration and deployment   | configurator, deployer                           |
-| [uniswap-trading](./uniswap-trading) | Uniswap swap integration                   | swap-integration                                 |
-| [uniswap-viem](./uniswap-viem)       | EVM blockchain integration with viem/wagmi | viem-integration                                 |
-| [uniswap-driver](./uniswap-driver)   | Swap and liquidity deep link planning      | swap-planner, liquidity-planner                  |
+| Plugin                               | Description                                | Skills                          |
+| ------------------------------------ | ------------------------------------------ | ------------------------------- |
+| [uniswap-hooks](./uniswap-hooks)     | Security-first Uniswap V4 hook development | v4-security-foundations         |
+| [uniswap-cca](./uniswap-cca)         | CCA auction configuration and deployment   | configurator, deployer          |
+| [uniswap-trading](./uniswap-trading) | Uniswap swap integration                   | swap-integration                |
+| [uniswap-viem](./uniswap-viem)       | EVM blockchain integration with viem/wagmi | viem-integration                |
+| [uniswap-driver](./uniswap-driver)   | Swap and liquidity deep link planning      | swap-planner, liquidity-planner |
 
 **Installation:**
 
@@ -57,7 +57,7 @@ The `plugin.json` file defines the plugin:
     "email": "ai-services@uniswap.org"
   },
   "license": "MIT",
-  "skills": ["./skills/v4-security-foundations", "./skills/aggregator-hook-creator"]
+  "skills": ["./skills/v4-security-foundations"]
 }
 ```
 

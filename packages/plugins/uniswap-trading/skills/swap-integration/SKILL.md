@@ -6,7 +6,7 @@ model: opus
 license: MIT
 metadata:
   author: uniswap
-  version: '1.1.1'
+  version: '1.2.0'
 ---
 
 # Swap Integration
@@ -49,6 +49,14 @@ Best for: Frontends, backends, scripts. Handles routing optimization automatical
 **Authentication**: `x-api-key: <your-api-key>` header required
 
 **Getting an API Key**: The Trading API requires an API key for authentication. Visit the [Uniswap Developer Portal](https://developer.uniswap.org/) to register and obtain your API key. Keys are typically available for immediate use after registration. Include it as an `x-api-key` header in all API requests.
+
+**Required Headers** — Include these in ALL Trading API requests:
+
+```text
+Content-Type: application/json
+x-api-key: <your-api-key>
+x-universal-router-version: 2.0
+```
 
 **3-Step Flow**:
 
@@ -138,22 +146,27 @@ POST /quote
   "swapper": "0x...",
   "tokenIn": "0x...",
   "tokenOut": "0x...",
-  "tokenInChainId": 1,
-  "tokenOutChainId": 1,
+  "tokenInChainId": "1",
+  "tokenOutChainId": "1",
   "amount": "1000000000000000000",
   "type": "EXACT_INPUT",
-  "slippageTolerance": 0.5
+  "slippageTolerance": 0.5,
+  "routingPreference": "BEST_PRICE"
 }
 ```
 
+> **Note**: `tokenInChainId` and `tokenOutChainId` must be **strings** (e.g., `"1"`), not numbers.
+
 **Key Parameters**:
 
-| Parameter           | Description                        |
-| ------------------- | ---------------------------------- |
-| `type`              | `EXACT_INPUT` or `EXACT_OUTPUT`    |
-| `slippageTolerance` | 0-100 percentage                   |
-| `protocols`         | Optional: `["V2", "V3", "V4"]`     |
-| `routingPreference` | `BEST_PRICE`, `FASTEST`, `CLASSIC` |
+| Parameter           | Description                                                       |
+| ------------------- | ----------------------------------------------------------------- |
+| `type`              | `EXACT_INPUT` or `EXACT_OUTPUT`                                   |
+| `slippageTolerance` | 0-100 percentage                                                  |
+| `protocols`         | Optional: `["V2", "V3", "V4"]`                                    |
+| `routingPreference` | `BEST_PRICE`, `FASTEST`, `CLASSIC`                                |
+| `autoSlippage`      | `true` to auto-calculate slippage (overrides `slippageTolerance`) |
+| `urgency`           | `normal` or `fast` — affects UniswapX auction timing              |
 
 **Response**:
 
@@ -165,11 +178,15 @@ POST /quote
     "output": { "token": "0x...", "amount": "999000000" },
     "slippage": 0.5,
     "route": [],
-    "gasFee": "5000000000000000"
+    "gasFee": "5000000000000000",
+    "gasFeeUSD": "0.01",
+    "gasUseEstimate": "150000"
   },
   "permitData": {}
 }
 ```
+
+> **Display tip**: Use `gasFeeUSD` (a string with the USD value) for gas cost display. Do **not** manually convert `gasFee` (wei) using a hardcoded ETH price — this leads to wildly inaccurate estimates (e.g., ~$87 instead of ~$0.01).
 
 ### Step 3: Execute Swap
 
@@ -397,6 +414,64 @@ export default defineConfig({
 ```
 
 Without this setup, you'll see: `ReferenceError: Buffer is not defined`
+
+#### CORS Proxy Configuration
+
+The Trading API does not support browser CORS preflight requests — `OPTIONS` requests return `415 Unsupported Media Type`. Direct `fetch()` calls from a browser will always fail. You **must** proxy API requests through your own server or dev server.
+
+**Vite dev proxy** (merge into the same `vite.config.ts` used for the Buffer polyfill above):
+
+```typescript
+export default defineConfig({
+  server: {
+    proxy: {
+      '/api/uniswap': {
+        target: 'https://trade-api.gateway.uniswap.org/v1',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/uniswap/, ''),
+      },
+    },
+  },
+});
+```
+
+Then use `/api/uniswap/quote` instead of the full URL in your frontend code.
+
+**Vercel production proxy** (`vercel.json`):
+
+```json
+{
+  "rewrites": [
+    {
+      "source": "/api/uniswap/:path*",
+      "destination": "https://trade-api.gateway.uniswap.org/v1/:path*"
+    }
+  ]
+}
+```
+
+**Cloudflare Pages** (`public/_redirects`):
+
+```text
+/api/uniswap/* https://trade-api.gateway.uniswap.org/v1/:splat 200
+```
+
+**Next.js** (`next.config.js`):
+
+```javascript
+module.exports = {
+  async rewrites() {
+    return [
+      {
+        source: '/api/uniswap/:path*',
+        destination: 'https://trade-api.gateway.uniswap.org/v1/:path*',
+      },
+    ];
+  },
+};
+```
+
+Without a proxy, you'll see: `415 Unsupported Media Type` on preflight or CORS errors in the browser console.
 
 ### 6. Quote Freshness
 
@@ -853,12 +928,14 @@ async function executeRoute(planner: RoutePlanner, options?: { value?: bigint })
 
 ### Frontend Swap Hook (React)
 
-**Note**: Ensure you've set up the Buffer polyfill (see Critical Implementation Notes).
+**Note**: Ensure you've set up the Buffer polyfill and CORS proxy (see Critical Implementation Notes). For wagmi v2 `useWalletClient()` pitfalls, see [wagmi v2 Integration Pitfalls](#wagmi-v2-integration-pitfalls) below.
 
 ```typescript
 import { isAddress, isHex } from 'viem';
 import { useWalletClient } from 'wagmi';
 
+// In browser apps, use your CORS proxy path instead (see CORS Proxy Configuration)
+// e.g., const API_URL = '/api/uniswap';
 const API_URL = 'https://trade-api.gateway.uniswap.org/v1';
 
 function useSwap() {
@@ -876,6 +953,7 @@ function useSwap() {
         headers: {
           'Content-Type': 'application/json',
           'x-api-key': API_KEY,
+          'x-universal-router-version': '2.0',
         },
         body: JSON.stringify(params),
       });
@@ -895,7 +973,7 @@ function useSwap() {
     // CRITICAL: Strip null fields and spread quote response into body
     const { permitData, permitTransaction, ...cleanQuote } = quoteResponse;
 
-    const swapRequest: Record<string, any> = {
+    const swapRequest: Record<string, unknown> = {
       ...cleanQuote,
     };
 
@@ -911,6 +989,7 @@ function useSwap() {
       headers: {
         'Content-Type': 'application/json',
         'x-api-key': API_KEY,
+        'x-universal-router-version': '2.0',
       },
       body: JSON.stringify(swapRequest),
     });
@@ -931,6 +1010,47 @@ function useSwap() {
   return { quote: quoteResponse?.quote, loading, error, getQuote, executeSwap };
 }
 ```
+
+### wagmi v2 Integration Pitfalls
+
+The `useWalletClient()` hook from wagmi v2 can return `undefined` even when the wallet is connected — it resolves asynchronously. This causes "wallet not connected" errors at swap time. Additionally, the returned client needs a `chain` for `sendTransaction()` to work.
+
+**Recommended pattern** — use `@wagmi/core` action functions at swap time instead of hooks:
+
+```typescript
+import { getWalletClient, getPublicClient, switchChain } from '@wagmi/core';
+import type { Config } from 'wagmi';
+
+async function executeSwapTransaction(
+  config: Config,
+  chainId: number,
+  swapTx: { to: string; data: string; value: string }
+) {
+  // 1. Ensure the wallet is on the correct chain
+  await switchChain(config, { chainId });
+
+  // 2. Get wallet client with explicit chainId — avoids undefined and missing chain
+  const walletClient = await getWalletClient(config, { chainId });
+
+  // 3. Execute the swap
+  const hash = await walletClient.sendTransaction({
+    to: swapTx.to as `0x${string}`,
+    data: swapTx.data as `0x${string}`,
+    value: BigInt(swapTx.value || '0'),
+  });
+
+  // 4. Wait for confirmation
+  const publicClient = getPublicClient(config, { chainId });
+  if (!publicClient) throw new Error(`No public client configured for chainId ${chainId}`);
+  return publicClient.waitForTransactionReceipt({ hash });
+}
+```
+
+**Why this matters**:
+
+- `useWalletClient()` hook returns `{ data: undefined }` during async resolution, even after `useAccount()` shows connected
+- `getWalletClient(config, { chainId })` is a promise that resolves only when the client is ready, and includes the chain
+- `switchChain()` prevents "chain mismatch" errors when the wallet is on a different network than the swap
 
 ### Backend Swap Script (Node.js)
 
@@ -982,7 +1102,11 @@ async function executeSwap(tokenIn: Address, tokenOut: Address, amount: string, 
   if (tokenIn !== ETH_ADDRESS) {
     const approvalRes = await fetch(`${API_URL}/check_approval`, {
       method: 'POST',
-      headers: { 'x-api-key': API_KEY, 'Content-Type': 'application/json' },
+      headers: {
+        'x-api-key': API_KEY,
+        'Content-Type': 'application/json',
+        'x-universal-router-version': '2.0',
+      },
       body: JSON.stringify({
         walletAddress: account.address,
         token: tokenIn,
@@ -1005,13 +1129,17 @@ async function executeSwap(tokenIn: Address, tokenOut: Address, amount: string, 
   // 2. Get quote
   const quoteRes = await fetch(`${API_URL}/quote`, {
     method: 'POST',
-    headers: { 'x-api-key': API_KEY, 'Content-Type': 'application/json' },
+    headers: {
+      'x-api-key': API_KEY,
+      'Content-Type': 'application/json',
+      'x-universal-router-version': '2.0',
+    },
     body: JSON.stringify({
       swapper: account.address,
       tokenIn,
       tokenOut,
-      tokenInChainId: chainId,
-      tokenOutChainId: chainId,
+      tokenInChainId: String(chainId),
+      tokenOutChainId: String(chainId),
       amount,
       type: 'EXACT_INPUT',
       slippageTolerance: 0.5,
@@ -1028,7 +1156,11 @@ async function executeSwap(tokenIn: Address, tokenOut: Address, amount: string, 
 
   const swapRes = await fetch(`${API_URL}/swap`, {
     method: 'POST',
-    headers: { 'x-api-key': API_KEY, 'Content-Type': 'application/json' },
+    headers: {
+      'x-api-key': API_KEY,
+      'Content-Type': 'application/json',
+      'x-universal-router-version': '2.0',
+    },
     body: JSON.stringify(swapRequest),
   });
   const swapData = await swapRes.json();
@@ -1246,18 +1378,22 @@ For testnet addresses, see [Uniswap v4 Deployments](https://docs.uniswap.org/con
 
 ### Common Issues
 
-| Issue                                               | Solution                                                                                                  |
-| --------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| "Insufficient allowance"                            | Call /check_approval first and submit approval tx                                                         |
-| "Quote expired"                                     | Increase deadline or re-fetch quote                                                                       |
-| "Slippage exceeded"                                 | Increase slippageTolerance or retry                                                                       |
-| "Insufficient liquidity"                            | Try smaller amount or different route                                                                     |
-| **"Buffer is not defined"**                         | Add Buffer polyfill (see Critical Implementation Notes)                                                   |
-| **On-chain revert with empty data**                 | Validate `swap.data` is non-empty hex before broadcasting                                                 |
-| **"permitData must be of type object"**             | Strip `permitData: null` from request - omit field entirely                                               |
-| **"quote does not match any of the allowed types"** | Don't wrap quote in `{quote: ...}` - spread it into request body                                          |
-| **Received WETH instead of ETH on L2**              | Check and unwrap WETH after swap (see [WETH Handling on L2s](#weth-handling-on-l2s))                      |
-| **429 Too Many Requests**                           | Implement exponential backoff and add delays between batch requests (see [Rate Limiting](#rate-limiting)) |
+| Issue                                                  | Solution                                                                                                                                                 |
+| ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| "Insufficient allowance"                               | Call /check_approval first and submit approval tx                                                                                                        |
+| "Quote expired"                                        | Increase deadline or re-fetch quote                                                                                                                      |
+| "Slippage exceeded"                                    | Increase slippageTolerance or retry                                                                                                                      |
+| "Insufficient liquidity"                               | Try smaller amount or different route                                                                                                                    |
+| **"Buffer is not defined"**                            | Add Buffer polyfill (see Critical Implementation Notes)                                                                                                  |
+| **On-chain revert with empty data**                    | Validate `swap.data` is non-empty hex before broadcasting                                                                                                |
+| **"permitData must be of type object"**                | Strip `permitData: null` from request - omit field entirely                                                                                              |
+| **"quote does not match any of the allowed types"**    | Don't wrap quote in `{quote: ...}` - spread it into request body                                                                                         |
+| **Received WETH instead of ETH on L2**                 | Check and unwrap WETH after swap (see [WETH Handling on L2s](#weth-handling-on-l2s))                                                                     |
+| **429 Too Many Requests**                              | Implement exponential backoff and add delays between batch requests (see [Rate Limiting](#rate-limiting))                                                |
+| **415 on OPTIONS preflight / CORS error**              | Set up a CORS proxy (see [CORS Proxy Configuration](#cors-proxy-configuration) in Browser Environment Setup)                                             |
+| **walletClient is undefined when wallet is connected** | Use `getWalletClient()` from `@wagmi/core` instead of the `useWalletClient()` hook (see [wagmi v2 Integration Pitfalls](#wagmi-v2-integration-pitfalls)) |
+| **"Please provide a chain with the chain argument"**   | Pass `chainId` to `getWalletClient(config, { chainId })`                                                                                                 |
+| **Chain mismatch error on swap**                       | Call `switchChain()` before `getWalletClient()` (see [wagmi v2 Integration Pitfalls](#wagmi-v2-integration-pitfalls))                                    |
 
 ### API Validation Errors (400)
 

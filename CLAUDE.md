@@ -147,7 +147,7 @@ export CLAUDE_CODE_OAUTH_TOKEN=<token>    # Local development
 
 ```bash
 nx run eval-suite-swap-planner:eval                 # Run specific suite (with Nx caching)
-nx run evals:eval --suite=aggregator-hook-creator   # Run specific suite (no caching)
+nx run evals:eval --suite=v4-security-foundations   # Run specific suite (no caching)
 nx run-many -t eval --projects='tag:type:eval-suite' # Run all suites
 nx run evals:eval:view                               # Open results viewer
 nx run evals:eval:cache-clear                        # Clear promptfoo cache
