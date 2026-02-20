@@ -145,4 +145,4 @@ Claude: I'll review the implementation for gas optimizations...
 
 - Explore [more skills](/skills/)
 - Learn about [evaluations](/evals/)
-- Read the [V4 Hooks Guide](https://docs.uniswap.org/contracts/v4/concepts/hooks)
+- Read the [v4 Hooks Guide](https://docs.uniswap.org/contracts/v4/concepts/hooks)

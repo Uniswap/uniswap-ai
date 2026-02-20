@@ -15,8 +15,8 @@ hero:
 
 features:
   - icon: 🪝
-    title: V4 Hook Development
-    details: Security-first Uniswap V4 hook creation with audit checklists, vulnerability analysis, and best practices.
+    title: v4 Hook Development
+    details: Security-first Uniswap v4 hook creation with audit checklists, vulnerability analysis, and best practices.
   - icon: 💱
     title: Swap Integration
     details: Integrate Uniswap swaps via Trading API, Universal Router SDK, or direct smart contract calls.
@@ -39,7 +39,7 @@ features:
 ### Install Individual Plugins
 
 ```bash
-/plugin install uniswap-hooks      # V4 hook development
+/plugin install uniswap-hooks      # v4 hook development
 /plugin install uniswap-trading    # Swap integration
 /plugin install uniswap-cca        # CCA auctions
 /plugin install uniswap-driver     # Swap & liquidity planning
@@ -48,9 +48,9 @@ features:
 
 ## Featured Skills
 
-### V4 Security Foundations
+### v4 Security Foundations
 
-Security-first guide for Uniswap V4 hook development covering threat models, permission flags, and audit checklists.
+Security-first guide for Uniswap v4 hook development covering threat models, permission flags, and audit checklists.
 
 ```text
 /v4-security-foundations
@@ -82,6 +82,7 @@ Plan token swaps and generate deep links to execute directly in the Uniswap inte
 
 ## Resources
 
-- [Uniswap V4 Documentation](https://docs.uniswap.org/contracts/v4/overview)
-- [V4 Hooks Guide](https://docs.uniswap.org/contracts/v4/concepts/hooks)
+- [Uniswap API Documentation](https://api-docs.uniswap.org/introduction)
+- [Uniswap v4 Documentation](https://docs.uniswap.org/contracts/v4/overview)
+- [v4 Hooks Guide](https://docs.uniswap.org/contracts/v4/concepts/hooks)
 - [Claude Code](https://claude.ai/code)

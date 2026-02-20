@@ -11,7 +11,7 @@ Welcome to Uniswap AI - a collection of AI tools for building on the Uniswap pro
 
 Uniswap AI provides Claude Code plugins and AI development tools specifically designed for the Uniswap ecosystem. It helps developers:
 
-- **Create Uniswap V4 hooks** with security-first AI-powered assistance
+- **Create Uniswap v4 hooks** with security-first AI-powered assistance
 - **Integrate Uniswap swaps** via Trading API, Universal Router, or smart contracts
 - **Configure and deploy CCA auctions** for token distribution
 - **Build on EVM blockchains** with viem and wagmi integration guides
