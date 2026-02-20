@@ -15,7 +15,7 @@ Plugins are the primary distribution mechanism for Uniswap AI tools. Each plugin
 | [uniswap-cca](./uniswap-cca)         | CCA auction configuration and deployment   | configurator, deployer          |
 | [uniswap-trading](./uniswap-trading) | Uniswap swap integration                   | swap-integration                |
 | [uniswap-viem](./uniswap-viem)       | EVM blockchain integration with viem/wagmi | viem-integration                |
-| [uniswap-driver](./uniswap-driver)   | Swap and liquidity deep link planning      | swap-planner, liquidity-planner |
+| [uniswap-driver](./uniswap-driver)   | Swap deep link planning                    | swap-planner                    |
 
 **Installation:**
 

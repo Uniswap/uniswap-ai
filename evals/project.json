@@ -59,22 +59,6 @@
         "description": "Run deployer eval suite"
       }
     },
-    "eval-suite:liquidity-planner": {
-      "executor": "nx:run-commands",
-      "cache": true,
-      "inputs": [
-        "{projectRoot}/suites/liquidity-planner/**/*",
-        "{workspaceRoot}/packages/plugins/uniswap-driver/skills/liquidity-planner/**/*"
-      ],
-      "outputs": ["{projectRoot}/suites/liquidity-planner/results.json"],
-      "options": {
-        "command": "npx promptfoo eval -c suites/liquidity-planner/promptfoo.yaml --output suites/liquidity-planner/results.json --no-progress-bar",
-        "cwd": "evals"
-      },
-      "metadata": {
-        "description": "Run liquidity-planner eval suite"
-      }
-    },
     "eval-suite:swap-integration": {
       "executor": "nx:run-commands",
       "cache": true,

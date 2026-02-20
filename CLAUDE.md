@@ -189,7 +189,7 @@ Each suite runs through its Nx `eval-suite:*` target. The Nx cache is persisted 
 
 - **Never use `---` in `.txt` prompt files.** Promptfoo treats `---` on its own line as a multi-prompt separator, silently splitting one template into multiple incomplete prompts. Use `***` instead.
 - **Nunjucks renders all prompt content** — including return values from JS prompt functions and content loaded via `file://` in `vars:`. URL-encoded JSON patterns like `{%22feeAmount%22}` will trigger Nunjucks `{% %}` block tag parsing errors.
-- **Use `{% raw %}...{% endraw %}`** to protect content containing `{%` patterns. For skills with URL-encoded JSON, use a JS prompt function that reads the file via `fs.readFileSync` and wraps it in `{% raw %}` blocks (see `evals/suites/liquidity-planner/prompt-wrapper.js`).
+- **Use `{% raw %}...{% endraw %}`** to protect content containing `{%` patterns. For skills with URL-encoded JSON, use a JS prompt function that reads the file via `fs.readFileSync` and wraps it in `{% raw %}` blocks (see `evals/suites/swap-planner/` for prompt structure).
 
 ## npm Version Requirement
 

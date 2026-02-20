@@ -5,7 +5,7 @@ order: 7
 
 # Uniswap Driver
 
-AI-powered assistance for discovering tokens, planning Uniswap swaps and liquidity positions, and generating deep links.
+AI-powered assistance for discovering tokens, planning Uniswap swaps, and generating deep links.
 
 ## Installation
 
@@ -15,10 +15,9 @@ AI-powered assistance for discovering tokens, planning Uniswap swaps and liquidi
 
 ## Skills
 
-| Skill                                            | Description                                                | Invocation           |
-| ------------------------------------------------ | ---------------------------------------------------------- | -------------------- |
-| [Swap Planner](../skills/swap-planner)           | Plan and generate deep links for token swaps               | `/swap-planner`      |
-| [Liquidity Planner](../skills/liquidity-planner) | Plan and generate deep links for LP positions (v2, v3, v4) | `/liquidity-planner` |
+| Skill                                  | Description                                  | Invocation      |
+| -------------------------------------- | -------------------------------------------- | --------------- |
+| [Swap Planner](../skills/swap-planner) | Plan and generate deep links for token swaps | `/swap-planner` |
 
 ## Deep Link URL Structures
 
