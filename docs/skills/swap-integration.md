@@ -79,3 +79,4 @@ Additional types include DUTCH_V3, DUTCH_LIMIT, LIMIT_ORDER, BRIDGE, and QUICKRO
 - [viem Integration](/skills/viem-integration) - Prerequisite EVM blockchain setup
 - [Universal Router GitHub](https://github.com/Uniswap/universal-router) - Source code
 - [Uniswap Docs](https://docs.uniswap.org) - Official documentation
+- [Uniswap API Docs](https://api-docs.uniswap.org/introduction) - Official API documentation

@@ -5,7 +5,7 @@ order: 3
 
 # Uniswap Hooks
 
-AI-powered, security-first assistance for creating Uniswap V4 hooks.
+AI-powered, security-first assistance for creating Uniswap v4 hooks.
 
 ## Installation
 
@@ -17,7 +17,7 @@ AI-powered, security-first assistance for creating Uniswap V4 hooks.
 
 | Skill                                                        | Description                                  | Invocation                 |
 | ------------------------------------------------------------ | -------------------------------------------- | -------------------------- |
-| [V4 Security Foundations](../skills/v4-security-foundations) | Security-first guide for V4 hook development | `/v4-security-foundations` |
+| [v4 Security Foundations](../skills/v4-security-foundations) | Security-first guide for V4 hook development | `/v4-security-foundations` |
 
 ## Hook Callbacks
 
@@ -54,7 +54,7 @@ function getHookPermissions() public pure override returns (Hooks.Permissions me
 
 ## Development Guidelines
 
-- **Address requirements**: V4 hooks must have specific address patterns where the last 14 bits encode enabled callbacks
+- **Address requirements**: v4 hooks must have specific address patterns where the last 14 bits encode enabled callbacks
 - **State management**: Use transient storage for temporary data; consider gas costs for persistent state
 - **Security**: Validate all inputs, guard against reentrancy, consider MEV implications
 - **Testing**: Test edge cases with extreme tick ranges
@@ -63,5 +63,5 @@ function getHookPermissions() public pure override returns (Hooks.Permissions me
 
 - [Plugins Overview](/plugins/) - All available plugins
 - [Skills](/skills/) - All available skills
-- [Uniswap V4 Core](https://github.com/Uniswap/v4-core)
-- [V4 Periphery](https://github.com/Uniswap/v4-periphery)
+- [Uniswap v4 Core](https://github.com/Uniswap/v4-core)
+- [v4 Periphery](https://github.com/Uniswap/v4-periphery)

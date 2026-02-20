@@ -63,7 +63,7 @@ uniswap-ai/
 │   └── plugins/             # Claude Code plugins
 │       ├── uniswap-cca/     # Continuous Clearing Auction (CCA) plugin
 │       ├── uniswap-driver/  # Swap & liquidity deep link planning
-│       ├── uniswap-hooks/   # Uniswap V4 hooks plugin
+│       ├── uniswap-hooks/   # Uniswap v4 hooks plugin
 │       ├── uniswap-trading/ # Uniswap swap integration
 │       └── uniswap-viem/    # EVM blockchain integration (viem/wagmi)
 ├── scripts/                 # Build/validation scripts

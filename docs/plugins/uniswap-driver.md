@@ -18,7 +18,7 @@ AI-powered assistance for discovering tokens, planning Uniswap swaps and liquidi
 | Skill                                            | Description                                                | Invocation           |
 | ------------------------------------------------ | ---------------------------------------------------------- | -------------------- |
 | [Swap Planner](../skills/swap-planner)           | Plan and generate deep links for token swaps               | `/swap-planner`      |
-| [Liquidity Planner](../skills/liquidity-planner) | Plan and generate deep links for LP positions (V2, V3, V4) | `/liquidity-planner` |
+| [Liquidity Planner](../skills/liquidity-planner) | Plan and generate deep links for LP positions (v2, v3, v4) | `/liquidity-planner` |
 
 ## Deep Link URL Structures
 
@@ -44,7 +44,7 @@ Base URL: `https://app.uniswap.org/positions/create`
 | `currencyA` | First token address        | `0xA0b8...` or `NATIVE`               |
 | `currencyB` | Second token address       | `0xA0b8...`                           |
 | `fee`       | JSON with fee tier         | `{"feeAmount":3000,"tickSpacing":60}` |
-| `hook`      | V4 hook address (optional) | `0x...`                               |
+| `hook`      | v4 hook address (optional) | `0x...`                               |
 
 ## Chain Names
 

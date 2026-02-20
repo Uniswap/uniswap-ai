@@ -48,5 +48,5 @@ Ethereum (1), Optimism (10), BNB (56), Unichain (130), Polygon (137), X Layer (1
 
 - [Plugins Overview](/plugins/) - All available plugins
 - [Uniswap Viem](/plugins/uniswap-viem) - Foundational EVM integration (prerequisite)
-- [Uniswap Hooks](/plugins/uniswap-hooks) - V4 hook development
+- [Uniswap Hooks](/plugins/uniswap-hooks) - v4 hook development
 - [Skills](/skills/) - All available skills

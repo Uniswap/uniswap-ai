@@ -50,5 +50,5 @@ All EVM-compatible chains including Ethereum, Arbitrum, Optimism, Base, Polygon,
 
 - [Plugins Overview](/plugins/) - All available plugins
 - [Uniswap Trading](/plugins/uniswap-trading) - Swap integration (builds on viem basics)
-- [Uniswap Hooks](/plugins/uniswap-hooks) - V4 hook development
+- [Uniswap Hooks](/plugins/uniswap-hooks) - v4 hook development
 - [Skills](/skills/) - All available skills

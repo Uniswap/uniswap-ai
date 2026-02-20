@@ -48,7 +48,7 @@ Best for: Frontends, backends, scripts. Handles routing optimization automatical
 
 **Authentication**: `x-api-key: <your-api-key>` header required
 
-**Getting an API Key**: The Trading API requires an API key for authentication. Visit the [Uniswap Developer Portal](https://developer.uniswap.org/) to register and obtain your API key. Keys are typically available for immediate use after registration. Include it as an `x-api-key` header in all API requests.
+**Getting an API Key**: The Trading API requires an API key for authentication. Visit the [Uniswap Developer Portal](https://developers.uniswap.org/) to register and obtain your API key. Keys are typically available for immediate use after registration. Include it as an `x-api-key` header in all API requests.
 
 **Required Headers** — Include these in ALL Trading API requests:
 
