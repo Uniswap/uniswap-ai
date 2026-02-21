@@ -146,18 +146,18 @@ export CLAUDE_CODE_OAUTH_TOKEN=<token>    # Local development
 ### Running Evals
 
 ```bash
+nx run eval-suite-swap-planner:eval                 # Run specific suite (with Nx caching)
 nx run evals:eval --suite=v4-security-foundations   # Run specific suite (no caching)
-nx run evals:eval-suite:swap-planner               # Run specific suite (with Nx caching)
-nx run evals:eval:all                               # Run all suites
-nx run evals:eval:view                              # Open results viewer
-nx run evals:eval:cache-clear                       # Clear promptfoo cache
+nx run-many -t eval --projects='tag:type:eval-suite' # Run all suites
+nx run evals:eval:view                               # Open results viewer
+nx run evals:eval:cache-clear                        # Clear promptfoo cache
 ```
 
 ### Nx Caching
 
-Each eval suite has a dedicated `eval-suite:<name>` Nx target with `cache: true`. Nx tracks the suite's inputs (promptfoo config, cases, rubrics, and the referenced skill files) and caches `results.json`. When inputs haven't changed, Nx restores the cached result without making LLM API calls.
+Each eval suite is its own Nx project (`eval-suite-<name>`) with `cache: true`. Nx tracks the suite's inputs (promptfoo config, cases, rubrics, referenced skill files, and shared eval infra) and caches `results.json`. When inputs haven't changed, Nx restores the cached result without making LLM API calls.
 
-To force a re-run (skip cache): `nx run evals:eval-suite:swap-planner --skip-nx-cache`
+To force a re-run (skip cache): `nx run eval-suite-swap-planner:eval --skip-nx-cache`
 
 ### Creating New Eval Suites
 
@@ -167,7 +167,7 @@ To force a re-run (skip cache): `nx run evals:eval-suite:swap-planner --skip-nx-
 4. Add test cases in `cases/` directory
 5. Define rubrics in `rubrics/` directory
 6. Update `promptfoo.yaml` with your prompts and assertions
-7. Add an `eval-suite:<skill-name>` target to `evals/project.json` with proper `inputs` pointing to the skill directory
+7. Add a `project.json` to the suite directory with `implicitDependencies` on the plugin and `evals`, an `eval` target, and `"tags": ["type:eval-suite"]`
 
 ### CI Integration
 
@@ -176,7 +176,7 @@ Evals run automatically on PRs that modify:
 - `packages/plugins/**`
 - `evals/**`
 
-Each suite runs through its Nx `eval-suite:*` target. The Nx cache is persisted between CI runs via GitHub Actions cache, so suites whose inputs haven't changed since the last run are served from cache (no LLM API calls). Pass rate must be ≥85% for PR to pass. Results include inference cost tracking.
+Each eval suite is a separate Nx project with `implicitDependencies` on its plugin. CI runs `nx affected -t eval` to select only suites whose dependencies changed. The Nx cache is persisted between CI runs via split `cache/restore` + `cache/save` (saves even on job failure), so suites whose inputs haven't changed since the last run are served from cache (no LLM API calls). Pass rate must be ≥85% for PR to pass. Results include inference cost tracking.
 
 ### Writing Good Eval Cases
 
