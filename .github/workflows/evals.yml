@@ -23,6 +23,8 @@ concurrency:
   group: evals-${{ github.workflow }}-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 
+permissions: {}
+
 jobs:
   check-paths:
     name: Check Changed Paths

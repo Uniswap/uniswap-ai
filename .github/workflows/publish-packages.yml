@@ -43,6 +43,8 @@ concurrency:
   group: publish-${{ github.ref }}
   cancel-in-progress: false
 
+permissions: {}
+
 jobs:
   # Detect which packages to publish
   detect:

@@ -62,6 +62,8 @@ concurrency:
   group: claude-review-${{ github.event.pull_request.number || github.event.issue.number || inputs.pr_number }}
   cancel-in-progress: false
 
+permissions: {}
+
 jobs:
   # Pre-check job for automatic reviews to detect automated PRs
   # Only runs for pull_request events (not manual/comment triggers)
