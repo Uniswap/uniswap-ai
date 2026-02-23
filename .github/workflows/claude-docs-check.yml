@@ -44,6 +44,8 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 
+permissions: {}
+
 jobs:
   docs-check:
     # Skip if PR is from a bot (e.g., dependabot) or a fork (no secrets available)
