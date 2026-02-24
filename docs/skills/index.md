@@ -36,10 +36,9 @@ Skills are AI-powered capabilities that help you build on Uniswap. Each skill is
 
 ### uniswap-driver Plugin
 
-| Skill                                    | Description                                 | Invocation           |
-| ---------------------------------------- | ------------------------------------------- | -------------------- |
-| [Swap Planner](./swap-planner)           | Plan token swaps with deep link generation  | `/swap-planner`      |
-| [Liquidity Planner](./liquidity-planner) | Plan LP positions with deep link generation | `/liquidity-planner` |
+| Skill                          | Description                                | Invocation      |
+| ------------------------------ | ------------------------------------------ | --------------- |
+| [Swap Planner](./swap-planner) | Plan token swaps with deep link generation | `/swap-planner` |
 
 ## Using Skills
 
