@@ -33,7 +33,7 @@ model has the skill's instructions when generating responses.
 
 If your SKILL.md contains URL-encoded JSON with `{%22` patterns (e.g., Uniswap
 deep link URLs), use `prompt-wrapper.js` instead of `.txt` to avoid Nunjucks
-template parsing errors. See `evals/suites/swap-planner/` for prompt structure
+template parsing errors. See `evals/suites/liquidity-planner/prompt-wrapper.js`
 for an example.
 
 ## Running Evals

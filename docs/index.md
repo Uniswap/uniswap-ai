@@ -42,7 +42,7 @@ features:
 /plugin install uniswap-hooks      # v4 hook development
 /plugin install uniswap-trading    # Swap integration
 /plugin install uniswap-cca        # CCA auctions
-/plugin install uniswap-driver     # Swap planning
+/plugin install uniswap-driver     # Swap & liquidity planning
 /plugin install uniswap-viem       # EVM integration (viem/wagmi)
 ```
 

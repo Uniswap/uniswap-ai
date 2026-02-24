@@ -9,6 +9,7 @@ This plugin provides AI-powered assistance for planning Uniswap swaps and liquid
 ### Skills (./skills/)
 
 - **swap-planner**: Plan and generate deep links for token swaps
+- **liquidity-planner**: Plan and generate deep links for LP positions (v2, v3, v4)
 
 ## Deep Link URL Structures
 
@@ -103,10 +104,15 @@ uniswap-driver/
 ├── references/
 │   └── chains.md                    # Shared chain config
 ├── skills/
-│   └── swap-planner/
+│   ├── swap-planner/
+│   │   ├── SKILL.md
+│   │   └── references/
+│   │       └── data-providers.md
+│   └── liquidity-planner/
 │       ├── SKILL.md
 │       └── references/
-│           └── data-providers.md
+│           ├── data-providers.md
+│           └── position-types.md
 ├── project.json
 ├── package.json
 ├── CLAUDE.md

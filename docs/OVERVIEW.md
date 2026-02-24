@@ -49,7 +49,7 @@ Configure and deploy Continuous Clearing Auction (CCA) smart contracts for token
 
 Plan Uniswap swaps and liquidity positions with deep link generation for the Uniswap interface.
 
-**Skills:** `swap-planner`
+**Skills:** `swap-planner`, `liquidity-planner`
 
 ### uniswap-viem
 

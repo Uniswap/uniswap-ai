@@ -357,7 +357,7 @@ prompts:
   - file://prompt-wrapper.js
 ```
 
-See `suites/swap-planner/` for a working example.
+See `suites/liquidity-planner/` for a working example.
 
 ## Troubleshooting
 
