@@ -1,7 +1,7 @@
 {
   "name": "uniswap-driver",
   "version": "0.4.0",
-  "description": "AI-powered assistance for discovering tokens, planning Uniswap swaps and liquidity positions, generating deep links to execute in the Uniswap interface",
+  "description": "AI-powered assistance for discovering tokens, planning Uniswap swaps, and generating deep links to execute in the Uniswap interface",
   "author": {
     "name": "Uniswap Labs",
     "email": "ai-services@uniswap.org"
