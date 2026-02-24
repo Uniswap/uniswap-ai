@@ -16,8 +16,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 
-permissions: {}
-
 jobs:
   check-pr-title:
     if: ${{ github.event_name == 'pull_request_target' || github.event.workflow_run.conclusion == 'success' }}

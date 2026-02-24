@@ -9,8 +9,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 
-permissions: {}
-
 jobs:
   # Pre-check job to detect automated PRs
   check-automated:

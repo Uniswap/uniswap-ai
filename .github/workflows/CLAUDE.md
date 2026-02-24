@@ -14,7 +14,7 @@ This directory contains GitHub Actions workflows for the uniswap-ai repository. 
 | [Generate Documentation](#generate-documentation)                  | Push to main, manual | Auto-generate API documentation              |
 | [Publish Packages](#publish-packages)                              | Push to main, manual | Publish npm packages                         |
 | [Evals](#evals)                                                    | PR events, manual    | LLM evaluation of AI skills                  |
-| [zizmor](#zizmor)                                                  | Push to main, PRs    | GitHub Actions security analysis             |
+| [GitHub Actions Analysis](#github-actions-analysis)                | Push to main, PRs    | Security analysis & syntax validation        |
 
 ## Workflows
 
@@ -126,14 +126,15 @@ LLM-based evaluation of AI skills using [Promptfoo](https://github.com/promptfoo
 - Aggregates pass/fail across affected suites; requires ≥85% pass rate
 - Manual trigger supports: specific suite (`nx run eval-suite-<name>:eval`), skip cache, multi-model mode
 
-### zizmor
+### GitHub Actions Analysis
 
 **File:** `zizmor.yml`
 
-Static security analysis for GitHub Actions workflows using [zizmor](https://github.com/zizmorcore/zizmor):
+Validates GitHub Actions workflows for security and syntax correctness:
 
+- **zizmor**: Static security analysis using [zizmor](https://github.com/zizmorcore/zizmor) — scans for template injection, credential leakage, permission scope issues
+- **actionlint**: Syntax validation using [actionlint](https://github.com/rhysd/actionlint) — catches YAML syntax errors, invalid event types, type errors, and expression issues
 - Runs on push to main and all PRs
-- Scans workflows for template injection, credential leakage, permission scope issues
 - Reports findings as GitHub annotations on PRs
 
 ## Required Secrets
