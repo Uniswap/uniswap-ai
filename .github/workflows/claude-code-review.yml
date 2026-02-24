@@ -62,8 +62,6 @@ concurrency:
   group: claude-review-${{ github.event.pull_request.number || github.event.issue.number || inputs.pr_number }}
   cancel-in-progress: false
 
-permissions: {}
-
 jobs:
   # Pre-check job for automatic reviews to detect automated PRs
   # Only runs for pull_request events (not manual/comment triggers)
@@ -209,7 +207,7 @@ jobs:
         github.event.pull_request.user.login == 'claude[bot]'
       )
 
-    uses: Uniswap/ai-toolkit/.github/workflows/_claude-code-review.yml@2cb5e4389c24b2984b2d6d3392ebf3649597e271
+    uses: Uniswap/ai-toolkit/.github/workflows/_claude-code-review.yml@67b486309c919eb75802a656ea51711b716d654a
     with:
       pr_number: ${{ github.event.pull_request.number }}
       base_ref: ${{ github.base_ref }}
@@ -260,7 +258,7 @@ jobs:
       github.event_name == 'workflow_dispatch' &&
       needs.get-pr-info.outputs.should_run == 'true'
 
-    uses: Uniswap/ai-toolkit/.github/workflows/_claude-code-review.yml@2cb5e4389c24b2984b2d6d3392ebf3649597e271
+    uses: Uniswap/ai-toolkit/.github/workflows/_claude-code-review.yml@67b486309c919eb75802a656ea51711b716d654a
     with:
       pr_number: ${{ needs.get-pr-info.outputs.pr_number }}
       base_ref: ${{ needs.get-pr-info.outputs.base_ref }}
@@ -292,7 +290,7 @@ jobs:
       (github.event_name == 'issue_comment' || github.event_name == 'pull_request_review_comment') &&
       needs.get-pr-info.outputs.should_run == 'true'
 
-    uses: Uniswap/ai-toolkit/.github/workflows/_claude-code-review.yml@2cb5e4389c24b2984b2d6d3392ebf3649597e271
+    uses: Uniswap/ai-toolkit/.github/workflows/_claude-code-review.yml@67b486309c919eb75802a656ea51711b716d654a
     with:
       pr_number: ${{ needs.get-pr-info.outputs.pr_number }}
       base_ref: ${{ needs.get-pr-info.outputs.base_ref }}
@@ -323,6 +321,8 @@ jobs:
       contents: write
       pull-requests: write
     steps:
+      - uses: bullfrogsec/bullfrog@1831f79cce8ad602eef14d2163873f27081ebfb3 # v0.8.4
+
       - name: Enable auto-merge for Dependabot updates
         run: gh pr merge --auto --squash "$PR_NUMBER"
         env:

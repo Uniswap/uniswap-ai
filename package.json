@@ -19,6 +19,7 @@
     "docs:preview": "nx run docs:preview",
     "docs:api": "nx run evals:generate-api-docs",
     "docs:lint": "vale docs/",
+    "lint:actions": "actionlint -shellcheck=\"\"",
     "prepare": "node scripts/prepare.cjs",
     "lefthook": "npx lefthook run pre-commit"
   },
