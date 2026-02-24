@@ -118,12 +118,13 @@ Handles npm package publishing:
 LLM-based evaluation of AI skills using [Promptfoo](https://github.com/promptfoo/promptfoo):
 
 - Runs on PRs that modify `packages/plugins/**`, `evals/**`, or `evals.yml`
-- Each eval suite runs through a per-suite Nx target (`eval-suite:<name>`) with `cache: true`
-- Nx compares suite inputs (config, cases, rubrics, and referenced skill files) against its cache
+- **Per-suite Nx projects**: Each eval suite is its own Nx project (`eval-suite-<name>`) with `implicitDependencies` on its corresponding plugin and the `evals` project
+- Uses `nx affected -t eval` to run only suites whose plugin or eval dependencies changed
+- Nx compares suite inputs (config, cases, rubrics, skill files, and shared eval infra) against its cache
 - If inputs haven't changed, Nx restores the cached `results.json` without making LLM API calls
-- GitHub Actions cache persists the Nx cache between CI runs
-- Aggregates pass/fail across all suites; requires ≥85% pass rate
-- Manual trigger supports: specific suite, skip cache, multi-model mode
+- **Persistent Nx cache**: Uses split `cache/restore` + `cache/save` (with `if: always()`) so cache is preserved even when the job fails
+- Aggregates pass/fail across affected suites; requires ≥85% pass rate
+- Manual trigger supports: specific suite (`nx run eval-suite-<name>:eval`), skip cache, multi-model mode
 
 ### zizmor
 
