@@ -19,6 +19,17 @@ Plan token swaps across any Uniswap-supported chain. The skill:
 
 **Trigger phrases**: "swap ETH for USDC", "trade tokens", "exchange on Uniswap", "buy WBTC with USDC"
 
+### liquidity-planner
+
+Plan liquidity positions for Uniswap V2, V3, or V4 pools. The skill:
+
+- Understands your LP intent (token pair, amount, version)
+- Checks current pool price and liquidity
+- Suggests price ranges based on current price
+- Generates a deep link to create the position in the Uniswap interface
+
+**Trigger phrases**: "provide liquidity", "create LP position", "add liquidity to pool", "become a liquidity provider"
+
 ## Supported Chains
 
 All chains supported by the Uniswap interface:
