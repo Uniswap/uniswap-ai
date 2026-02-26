@@ -21,11 +21,10 @@ npx skills add Uniswap/uniswap-ai
 
 ## Documentation
 
-| Document                                             | Description                                         |
-| ---------------------------------------------------- | --------------------------------------------------- |
-| [Project Overview](./docs/OVERVIEW.md)               | Plugins, architecture, development setup            |
-| [Getting Started](./docs/getting-started/)           | Installation and quick start guide                  |
-| [Full Documentation](https://ul-ai-docs.vercel.app/) | VitePress site with all plugins, skills, and guides |
+| Document                                   | Description                              |
+| ------------------------------------------ | ---------------------------------------- |
+| [Project Overview](./docs/OVERVIEW.md)     | Plugins, architecture, development setup |
+| [Getting Started](./docs/getting-started/) | Installation and quick start guide       |
 
 ## Contributing
 
