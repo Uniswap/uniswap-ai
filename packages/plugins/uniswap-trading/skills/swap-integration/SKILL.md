@@ -6,7 +6,7 @@ model: opus
 license: MIT
 metadata:
   author: uniswap
-  version: '1.2.0'
+  version: '1.3.0'
 ---
 
 # Swap Integration
@@ -168,7 +168,9 @@ POST /quote
 | `autoSlippage`      | `true` to auto-calculate slippage (overrides `slippageTolerance`) |
 | `urgency`           | `normal` or `fast` — affects UniswapX auction timing              |
 
-**Response**:
+**Response** — the shape differs by routing type. `BEST_PRICE` routing on Ethereum mainnet typically returns UniswapX (DUTCH_V2), not CLASSIC.
+
+**CLASSIC response**:
 
 ```json
 {
@@ -182,11 +184,49 @@ POST /quote
     "gasFeeUSD": "0.01",
     "gasUseEstimate": "150000"
   },
-  "permitData": {}
+  "permitData": null
 }
 ```
 
-> **Display tip**: Use `gasFeeUSD` (a string with the USD value) for gas cost display. Do **not** manually convert `gasFee` (wei) using a hardcoded ETH price — this leads to wildly inaccurate estimates (e.g., ~$87 instead of ~$0.01).
+**UniswapX (DUTCH_V2/V3/PRIORITY) response** — different `quote` shape, no `quote.output`:
+
+```json
+{
+  "routing": "DUTCH_V2",
+  "quote": {
+    "orderInfo": {
+      "reactor": "0x...",
+      "swapper": "0x...",
+      "nonce": "...",
+      "deadline": 1772031054,
+      "cosigner": "0x...",
+      "input": {
+        "token": "0x...",
+        "startAmount": "1000000000000000000",
+        "endAmount": "1000000000000000000"
+      },
+      "outputs": [
+        {
+          "token": "0x...",
+          "startAmount": "999000000",
+          "endAmount": "994000000",
+          "recipient": "0x..."
+        }
+      ],
+      "chainId": 1
+    },
+    "encodedOrder": "0x...",
+    "orderHash": "0x..."
+  },
+  "permitData": { "domain": {}, "types": {}, "values": {} }
+}
+```
+
+> **UniswapX output amount**: Use `quote.orderInfo.outputs[0].startAmount` for the best-case fill amount. The `endAmount` is the floor after full auction decay. There is no `quote.output.amount` on UniswapX responses — accessing it will throw at runtime.
+>
+> **Display tip**: For CLASSIC routes, use `gasFeeUSD` (a string with the USD value) for gas cost display. Do **not** manually convert `gasFee` (wei) using a hardcoded ETH price — this leads to wildly inaccurate estimates (e.g., ~$87 instead of ~$0.01). UniswapX routes are gasless for the swapper.
+
+See [QuoteResponse TypeScript Types](#7-quoteresponse-typescript-types) for compile-time type safety across routing types.
 
 ### Step 3: Execute Swap
 
@@ -200,29 +240,36 @@ POST /swap
 // CORRECT: Spread the quote response, strip null fields
 const quoteResponse = await fetchQuote(params);
 
-// Remove null permitData/permitTransaction (API rejects null values)
+// Always strip permitData/permitTransaction — handle them explicitly by routing type
 const { permitData, permitTransaction, ...cleanQuote } = quoteResponse;
+const swapRequest: Record<string, unknown> = { ...cleanQuote };
 
-const swapRequest = {
-  ...cleanQuote,
-  // Only include permitData if it's a valid object (not null)
-  ...(permitData && { permitData }),
-};
+const isUniswapX =
+  quoteResponse.routing === 'DUTCH_V2' ||
+  quoteResponse.routing === 'DUTCH_V3' ||
+  quoteResponse.routing === 'PRIORITY';
 
-// If using Permit2 signature, include BOTH signature and permitData
-if (permit2Signature && permitData) {
-  swapRequest.signature = permit2Signature;
-  swapRequest.permitData = permitData;
+if (isUniswapX) {
+  // UniswapX: signature only — permitData must NOT go to /swap
+  if (permit2Signature) swapRequest.signature = permit2Signature;
+} else {
+  // CLASSIC: both signature and permitData, or neither
+  if (permit2Signature && permitData && typeof permitData === 'object') {
+    swapRequest.signature = permit2Signature;
+    swapRequest.permitData = permitData;
+  }
 }
 ```
 
 **Critical**: Do NOT wrap the quote in `{quote: quoteResponse}`. The API expects the quote response fields spread into the request body.
 
-**Permit2 Rules**:
+**Permit2 Rules** (CLASSIC routes):
 
 - `signature` and `permitData` must BOTH be present, or BOTH be absent
-- Never set `permitData: null` - omit the field entirely
-- The quote response often includes `permitData: null` - strip this before sending
+- Never set `permitData: null` — omit the field entirely
+- The quote response often includes `permitData: null` — strip this before sending
+
+**UniswapX Routes** (DUTCH_V2/V3/PRIORITY): `permitData` is used locally to sign the order but must be **excluded** from the `/swap` body. See [Signing vs. Submission Flow](#uniswapx-signing-vs-submission-flow).
 
 **Response** (ready-to-sign transaction):
 
@@ -308,19 +355,32 @@ const goodRequest = {
 
 ### 2. Null Field Handling
 
-The API rejects `permitData: null`. Always strip null fields before sending:
+The API rejects `permitData: null`. Additionally, `permitData` handling differs by routing type — see [Signing vs. Submission Flow](#uniswapx-signing-vs-submission-flow) for the full explanation.
 
 ```typescript
 function prepareSwapRequest(quoteResponse: QuoteResponse, signature?: string): object {
-  // Strip null values that the API rejects
+  // Always strip permitData and permitTransaction from the spread — handle them explicitly
   const { permitData, permitTransaction, ...cleanQuote } = quoteResponse;
-
   const request: Record<string, unknown> = { ...cleanQuote };
 
-  // Only include permitData if it's a valid object AND we have a signature
-  if (signature && permitData && typeof permitData === 'object') {
-    request.signature = signature;
-    request.permitData = permitData;
+  // UniswapX (DUTCH_V2, DUTCH_V3, PRIORITY): permitData is for LOCAL signing only.
+  // The /swap body must NOT include permitData — the order is encoded in
+  // quote.encodedOrder. Only the signature is needed.
+  const isUniswapX =
+    quoteResponse.routing === 'DUTCH_V2' ||
+    quoteResponse.routing === 'DUTCH_V3' ||
+    quoteResponse.routing === 'PRIORITY';
+
+  if (isUniswapX) {
+    if (signature) request.signature = signature;
+  } else {
+    // CLASSIC: both signature and permitData required together, or both omitted.
+    // The Universal Router contract needs permitData to verify the Permit2
+    // authorization on-chain.
+    if (signature && permitData && typeof permitData === 'object') {
+      request.signature = signature;
+      request.permitData = permitData;
+    }
   }
 
   return request;
@@ -329,7 +389,9 @@ function prepareSwapRequest(quoteResponse: QuoteResponse, signature?: string): o
 
 ### 3. Permit2 Field Rules
 
-When using Permit2 for gasless approvals:
+The rules for `signature` and `permitData` in the `/swap` request body depend on the routing type:
+
+**CLASSIC routes**:
 
 | Scenario                   | `signature` | `permitData` |
 | -------------------------- | ----------- | ------------ |
@@ -338,6 +400,13 @@ When using Permit2 for gasless approvals:
 | **Invalid**                | Present     | Missing      |
 | **Invalid**                | Missing     | Present      |
 | **Invalid (API error)**    | Any         | `null`       |
+
+**UniswapX routes (DUTCH_V2/V3/PRIORITY)**:
+
+| Scenario       | `signature` | `permitData`             |
+| -------------- | ----------- | ------------------------ |
+| UniswapX order | Required    | **Omit** (do not send)   |
+| **Invalid**    | Any         | Present (schema rejects) |
 
 ### 4. Pre-Broadcast Validation
 
@@ -479,6 +548,67 @@ Without a proxy, you'll see: `415 Unsupported Media Type` on preflight or CORS e
 - Always re-fetch if the user takes time to review
 - Use the `deadline` parameter to prevent stale execution
 - If `/swap` returns empty `data`, the quote likely expired
+
+### 7. QuoteResponse TypeScript Types
+
+The quote response shape differs by routing type. Use a discriminated union on the `routing` field to get compile-time safety instead of casting to `any`:
+
+```typescript
+type ClassicQuoteResponse = {
+  routing: 'CLASSIC' | 'WRAP' | 'UNWRAP';
+  quote: {
+    input: { token: string; amount: string };
+    output: { token: string; amount: string };
+    slippage: number;
+    route: unknown[];
+    gasFee: string;
+    gasFeeUSD: string;
+    gasUseEstimate: string;
+  };
+  permitData: Record<string, unknown> | null;
+};
+
+type DutchOrderOutput = {
+  token: string;
+  startAmount: string;
+  endAmount: string;
+  recipient: string;
+};
+
+type UniswapXQuoteResponse = {
+  routing: 'DUTCH_V2' | 'DUTCH_V3' | 'PRIORITY';
+  quote: {
+    orderInfo: {
+      outputs: DutchOrderOutput[];
+      input: { token: string; startAmount: string; endAmount: string };
+      deadline: number;
+      nonce: string;
+    };
+    encodedOrder: string;
+    orderHash: string;
+  };
+  // EIP-712 typed data — sign locally, do NOT send to /swap
+  permitData: Record<string, unknown> | null;
+};
+
+type QuoteResponse = ClassicQuoteResponse | UniswapXQuoteResponse;
+
+// Type guard for routing-aware logic
+function isUniswapXQuote(q: QuoteResponse): q is UniswapXQuoteResponse {
+  return q.routing === 'DUTCH_V2' || q.routing === 'DUTCH_V3' || q.routing === 'PRIORITY';
+}
+
+// Reading the output amount by routing type
+function getOutputAmount(q: QuoteResponse): string {
+  if (isUniswapXQuote(q)) {
+    const firstOutput = q.quote.orderInfo.outputs[0];
+    if (!firstOutput) throw new Error('UniswapX quote has no outputs');
+    // startAmount = best-case fill; endAmount = floor after auction decay
+    return firstOutput.startAmount;
+  }
+  return q.quote.output.amount;
+}
+```
 
 ---
 
@@ -673,6 +803,29 @@ UniswapX routes swaps through off-chain fillers who compete to execute orders at
 - UniswapX V2 is currently supported on Ethereum (1), Arbitrum (42161), Base (8453), and Unichain (130)
 
 For more detail, see the [UniswapX Auction Types documentation](https://docs.uniswap.org/contracts/uniswapx/auctiontypes).
+
+### UniswapX: Signing vs. Submission Flow
+
+The `permitData` field in the quote response serves different purposes depending on the routing type. Conflating the two causes `RequestValidationError` on `/swap`.
+
+**CLASSIC flow** — `permitData` goes to the server:
+
+1. `/quote` returns `permitData` (EIP-712 typed data for the Permit2 allowance)
+2. User signs `permitData` locally → produces `signature`
+3. `/swap` body includes **both** `signature` and `permitData` — the Universal Router contract needs `permitData` to reconstruct and verify the Permit2 authorization on-chain
+
+**UniswapX flow (DUTCH_V2/V3/PRIORITY)** — `permitData` stays local:
+
+1. `/quote` returns `permitData` (EIP-712 typed data for the Dutch order)
+2. User signs `permitData` locally → produces `signature`
+3. `/swap` body includes **only** `signature` — the order is already fully encoded in `quote.encodedOrder`, which the off-chain filler system reads directly. Sending `permitData` to `/swap` causes a schema validation error.
+
+| Route Type           | Sign with `permitData`? | Send `permitData` to `/swap`? | Send `signature` to `/swap`? |
+| -------------------- | ----------------------- | ----------------------------- | ---------------------------- |
+| CLASSIC              | Yes                     | **Yes** (router needs it)     | Yes (if using Permit2)       |
+| DUTCH_V2/V3/PRIORITY | Yes                     | **No** (schema rejects it)    | Yes                          |
+
+> **Common mistake**: The API error `"quote" does not match any of the allowed types` often points at the `quote` field, but the actual cause is `permitData` being present for a UniswapX route. Strip `permitData` before submitting — see the routing-aware `prepareSwapRequest` in [Null Field Handling](#2-null-field-handling).
 
 ---
 
@@ -970,18 +1123,26 @@ function useSwap() {
   const executeSwap = async (permit2Signature?: string) => {
     if (!quoteResponse) throw new Error('No quote available');
 
-    // CRITICAL: Strip null fields and spread quote response into body
+    // Strip null fields and spread quote response into body
     const { permitData, permitTransaction, ...cleanQuote } = quoteResponse;
+    const swapRequest: Record<string, unknown> = { ...cleanQuote };
 
-    const swapRequest: Record<string, unknown> = {
-      ...cleanQuote,
-    };
+    // CRITICAL: permitData handling differs by routing type
+    const isUniswapX =
+      quoteResponse.routing === 'DUTCH_V2' ||
+      quoteResponse.routing === 'DUTCH_V3' ||
+      quoteResponse.routing === 'PRIORITY';
 
-    // CRITICAL: Only include permitData if we have BOTH signature and permitData
-    // The API requires both fields to be present or both to be absent
-    if (permit2Signature && permitData && typeof permitData === 'object') {
-      swapRequest.signature = permit2Signature;
-      swapRequest.permitData = permitData;
+    if (isUniswapX) {
+      // UniswapX: signature only — permitData must NOT be sent to /swap
+      // (permitData is used locally to sign the order, not submitted to the API)
+      if (permit2Signature) swapRequest.signature = permit2Signature;
+    } else {
+      // CLASSIC: both signature and permitData required together, or both omitted
+      if (permit2Signature && permitData && typeof permitData === 'object') {
+        swapRequest.signature = permit2Signature;
+        swapRequest.permitData = permitData;
+      }
     }
 
     const swapResponse = await fetch(`${API_URL}/swap`, {
@@ -1066,17 +1227,27 @@ const account = privateKeyToAccount(process.env.PRIVATE_KEY as `0x${string}`);
 const publicClient = createPublicClient({ chain: mainnet, transport: http() });
 const walletClient = createWalletClient({ account, chain: mainnet, transport: http() });
 
-// Helper to strip null fields from quote response
+// Helper to prepare /swap request body — routing-aware permitData handling
 function prepareSwapRequest(quoteResponse: Record<string, unknown>, signature?: string): object {
   const { permitData, permitTransaction, ...cleanQuote } = quoteResponse;
-
   const request: Record<string, unknown> = { ...cleanQuote };
 
-  // CRITICAL: Only include permitData if we have BOTH signature and permitData
-  // The API requires both fields to be present or both to be absent
-  if (signature && permitData && typeof permitData === 'object') {
-    request.signature = signature;
-    request.permitData = permitData;
+  // UniswapX (DUTCH_V2, DUTCH_V3, PRIORITY): permitData is for LOCAL signing only.
+  // The /swap body must NOT include permitData — the order is already encoded
+  // in quote.encodedOrder. Only the signature is needed.
+  const isUniswapX =
+    quoteResponse.routing === 'DUTCH_V2' ||
+    quoteResponse.routing === 'DUTCH_V3' ||
+    quoteResponse.routing === 'PRIORITY';
+
+  if (isUniswapX) {
+    if (signature) request.signature = signature;
+  } else {
+    // CLASSIC: both signature and permitData required together, or both omitted
+    if (signature && permitData && typeof permitData === 'object') {
+      request.signature = signature;
+      request.permitData = permitData;
+    }
   }
 
   return request;
@@ -1378,30 +1549,31 @@ For testnet addresses, see [Uniswap v4 Deployments](https://docs.uniswap.org/con
 
 ### Common Issues
 
-| Issue                                                  | Solution                                                                                                                                                 |
-| ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| "Insufficient allowance"                               | Call /check_approval first and submit approval tx                                                                                                        |
-| "Quote expired"                                        | Increase deadline or re-fetch quote                                                                                                                      |
-| "Slippage exceeded"                                    | Increase slippageTolerance or retry                                                                                                                      |
-| "Insufficient liquidity"                               | Try smaller amount or different route                                                                                                                    |
-| **"Buffer is not defined"**                            | Add Buffer polyfill (see Critical Implementation Notes)                                                                                                  |
-| **On-chain revert with empty data**                    | Validate `swap.data` is non-empty hex before broadcasting                                                                                                |
-| **"permitData must be of type object"**                | Strip `permitData: null` from request - omit field entirely                                                                                              |
-| **"quote does not match any of the allowed types"**    | Don't wrap quote in `{quote: ...}` - spread it into request body                                                                                         |
-| **Received WETH instead of ETH on L2**                 | Check and unwrap WETH after swap (see [WETH Handling on L2s](#weth-handling-on-l2s))                                                                     |
-| **429 Too Many Requests**                              | Implement exponential backoff and add delays between batch requests (see [Rate Limiting](#rate-limiting))                                                |
-| **415 on OPTIONS preflight / CORS error**              | Set up a CORS proxy (see [CORS Proxy Configuration](#cors-proxy-configuration) in Browser Environment Setup)                                             |
-| **walletClient is undefined when wallet is connected** | Use `getWalletClient()` from `@wagmi/core` instead of the `useWalletClient()` hook (see [wagmi v2 Integration Pitfalls](#wagmi-v2-integration-pitfalls)) |
-| **"Please provide a chain with the chain argument"**   | Pass `chainId` to `getWalletClient(config, { chainId })`                                                                                                 |
-| **Chain mismatch error on swap**                       | Call `switchChain()` before `getWalletClient()` (see [wagmi v2 Integration Pitfalls](#wagmi-v2-integration-pitfalls))                                    |
+| Issue                                                  | Solution                                                                                                                                                                                                     |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| "Insufficient allowance"                               | Call /check_approval first and submit approval tx                                                                                                                                                            |
+| "Quote expired"                                        | Increase deadline or re-fetch quote                                                                                                                                                                          |
+| "Slippage exceeded"                                    | Increase slippageTolerance or retry                                                                                                                                                                          |
+| "Insufficient liquidity"                               | Try smaller amount or different route                                                                                                                                                                        |
+| **"Buffer is not defined"**                            | Add Buffer polyfill (see Critical Implementation Notes)                                                                                                                                                      |
+| **On-chain revert with empty data**                    | Validate `swap.data` is non-empty hex before broadcasting                                                                                                                                                    |
+| **"permitData must be of type object"**                | Strip `permitData: null` from request - omit field entirely                                                                                                                                                  |
+| **"quote does not match any of the allowed types"**    | Don't wrap quote in `{quote: ...}` — spread into request body. Also check: for UniswapX routes, `permitData` must be omitted from the `/swap` body (see [API Validation Errors](#api-validation-errors-400)) |
+| **Received WETH instead of ETH on L2**                 | Check and unwrap WETH after swap (see [WETH Handling on L2s](#weth-handling-on-l2s))                                                                                                                         |
+| **429 Too Many Requests**                              | Implement exponential backoff and add delays between batch requests (see [Rate Limiting](#rate-limiting))                                                                                                    |
+| **415 on OPTIONS preflight / CORS error**              | Set up a CORS proxy (see [CORS Proxy Configuration](#cors-proxy-configuration) in Browser Environment Setup)                                                                                                 |
+| **walletClient is undefined when wallet is connected** | Use `getWalletClient()` from `@wagmi/core` instead of the `useWalletClient()` hook (see [wagmi v2 Integration Pitfalls](#wagmi-v2-integration-pitfalls))                                                     |
+| **"Please provide a chain with the chain argument"**   | Pass `chainId` to `getWalletClient(config, { chainId })`                                                                                                                                                     |
+| **Chain mismatch error on swap**                       | Call `switchChain()` before `getWalletClient()` (see [wagmi v2 Integration Pitfalls](#wagmi-v2-integration-pitfalls))                                                                                        |
 
 ### API Validation Errors (400)
 
-| Error Message                                     | Cause                                      | Fix                                         |
-| ------------------------------------------------- | ------------------------------------------ | ------------------------------------------- |
-| `"permitData" must be of type object`             | Sending `permitData: null`                 | Omit the field entirely when null           |
-| `"quote" does not match any of the allowed types` | Wrapping quote in `{quote: quoteResponse}` | Spread quote response: `{...quoteResponse}` |
-| `signature and permitData must both be present`   | Including only one Permit2 field           | Include both or neither                     |
+| Error Message                                     | Cause                                                                    | Fix                                                                                                        |
+| ------------------------------------------------- | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| `"permitData" must be of type object`             | Sending `permitData: null`                                               | Omit the field entirely when null                                                                          |
+| `"quote" does not match any of the allowed types` | Wrapping quote in `{quote: quoteResponse}`                               | Spread quote response: `{...quoteResponse}`                                                                |
+| `"quote" does not match any of the allowed types` | Including `permitData` in a UniswapX (DUTCH_V2/V3/PRIORITY) `/swap` body | Omit `permitData` for UniswapX routes — see [Signing vs. Submission](#uniswapx-signing-vs-submission-flow) |
+| `signature and permitData must both be present`   | Including only one Permit2 field (CLASSIC routes only)                   | Include both or neither for CLASSIC; omit `permitData` for UniswapX                                        |
 
 ### API Error Codes
 
