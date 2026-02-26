@@ -188,7 +188,7 @@ POST /quote
 }
 ```
 
-**UniswapX (DUTCH_V2/V3) response** — different `quote` shape, no `quote.output`:
+**UniswapX (DUTCH_V2/V3/PRIORITY) response** — different `quote` shape, no `quote.output`:
 
 ```json
 {
@@ -244,7 +244,10 @@ const quoteResponse = await fetchQuote(params);
 const { permitData, permitTransaction, ...cleanQuote } = quoteResponse;
 const swapRequest: Record<string, unknown> = { ...cleanQuote };
 
-const isUniswapX = quoteResponse.routing === 'DUTCH_V2' || quoteResponse.routing === 'DUTCH_V3';
+const isUniswapX =
+  quoteResponse.routing === 'DUTCH_V2' ||
+  quoteResponse.routing === 'DUTCH_V3' ||
+  quoteResponse.routing === 'PRIORITY';
 
 if (isUniswapX) {
   // UniswapX: signature only — permitData must NOT go to /swap
@@ -266,7 +269,7 @@ if (isUniswapX) {
 - Never set `permitData: null` — omit the field entirely
 - The quote response often includes `permitData: null` — strip this before sending
 
-**UniswapX Routes** (DUTCH_V2/V3): `permitData` is used locally to sign the order but must be **excluded** from the `/swap` body. See [Signing vs. Submission Flow](#uniswapx-signing-vs-submission-flow).
+**UniswapX Routes** (DUTCH_V2/V3/PRIORITY): `permitData` is used locally to sign the order but must be **excluded** from the `/swap` body. See [Signing vs. Submission Flow](#uniswapx-signing-vs-submission-flow).
 
 **Response** (ready-to-sign transaction):
 
@@ -360,10 +363,13 @@ function prepareSwapRequest(quoteResponse: QuoteResponse, signature?: string): o
   const { permitData, permitTransaction, ...cleanQuote } = quoteResponse;
   const request: Record<string, unknown> = { ...cleanQuote };
 
-  // UniswapX (DUTCH_V2, DUTCH_V3): permitData is for LOCAL signing only.
+  // UniswapX (DUTCH_V2, DUTCH_V3, PRIORITY): permitData is for LOCAL signing only.
   // The /swap body must NOT include permitData — the order is encoded in
   // quote.encodedOrder. Only the signature is needed.
-  const isUniswapX = quoteResponse.routing === 'DUTCH_V2' || quoteResponse.routing === 'DUTCH_V3';
+  const isUniswapX =
+    quoteResponse.routing === 'DUTCH_V2' ||
+    quoteResponse.routing === 'DUTCH_V3' ||
+    quoteResponse.routing === 'PRIORITY';
 
   if (isUniswapX) {
     if (signature) request.signature = signature;
@@ -395,7 +401,7 @@ The rules for `signature` and `permitData` in the `/swap` request body depend on
 | **Invalid**                | Missing     | Present      |
 | **Invalid (API error)**    | Any         | `null`       |
 
-**UniswapX routes (DUTCH_V2/V3)**:
+**UniswapX routes (DUTCH_V2/V3/PRIORITY)**:
 
 | Scenario       | `signature` | `permitData`             |
 | -------------- | ----------- | ------------------------ |
@@ -595,8 +601,10 @@ function isUniswapXQuote(q: QuoteResponse): q is UniswapXQuoteResponse {
 // Reading the output amount by routing type
 function getOutputAmount(q: QuoteResponse): string {
   if (isUniswapXQuote(q)) {
+    const firstOutput = q.quote.orderInfo.outputs[0];
+    if (!firstOutput) throw new Error('UniswapX quote has no outputs');
     // startAmount = best-case fill; endAmount = floor after auction decay
-    return q.quote.orderInfo.outputs[0].startAmount;
+    return firstOutput.startAmount;
   }
   return q.quote.output.amount;
 }
@@ -806,16 +814,16 @@ The `permitData` field in the quote response serves different purposes depending
 2. User signs `permitData` locally → produces `signature`
 3. `/swap` body includes **both** `signature` and `permitData` — the Universal Router contract needs `permitData` to reconstruct and verify the Permit2 authorization on-chain
 
-**UniswapX flow (DUTCH_V2/V3)** — `permitData` stays local:
+**UniswapX flow (DUTCH_V2/V3/PRIORITY)** — `permitData` stays local:
 
 1. `/quote` returns `permitData` (EIP-712 typed data for the Dutch order)
 2. User signs `permitData` locally → produces `signature`
 3. `/swap` body includes **only** `signature` — the order is already fully encoded in `quote.encodedOrder`, which the off-chain filler system reads directly. Sending `permitData` to `/swap` causes a schema validation error.
 
-| Route Type  | Sign with `permitData`? | Send `permitData` to `/swap`? | Send `signature` to `/swap`? |
-| ----------- | ----------------------- | ----------------------------- | ---------------------------- |
-| CLASSIC     | Yes                     | **Yes** (router needs it)     | Yes (if using Permit2)       |
-| DUTCH_V2/V3 | Yes                     | **No** (schema rejects it)    | Yes                          |
+| Route Type           | Sign with `permitData`? | Send `permitData` to `/swap`? | Send `signature` to `/swap`? |
+| -------------------- | ----------------------- | ----------------------------- | ---------------------------- |
+| CLASSIC              | Yes                     | **Yes** (router needs it)     | Yes (if using Permit2)       |
+| DUTCH_V2/V3/PRIORITY | Yes                     | **No** (schema rejects it)    | Yes                          |
 
 > **Common mistake**: The API error `"quote" does not match any of the allowed types` often points at the `quote` field, but the actual cause is `permitData` being present for a UniswapX route. Strip `permitData` before submitting — see the routing-aware `prepareSwapRequest` in [Null Field Handling](#2-null-field-handling).
 
@@ -1120,7 +1128,10 @@ function useSwap() {
     const swapRequest: Record<string, unknown> = { ...cleanQuote };
 
     // CRITICAL: permitData handling differs by routing type
-    const isUniswapX = quoteResponse.routing === 'DUTCH_V2' || quoteResponse.routing === 'DUTCH_V3';
+    const isUniswapX =
+      quoteResponse.routing === 'DUTCH_V2' ||
+      quoteResponse.routing === 'DUTCH_V3' ||
+      quoteResponse.routing === 'PRIORITY';
 
     if (isUniswapX) {
       // UniswapX: signature only — permitData must NOT be sent to /swap
@@ -1221,10 +1232,13 @@ function prepareSwapRequest(quoteResponse: Record<string, unknown>, signature?: 
   const { permitData, permitTransaction, ...cleanQuote } = quoteResponse;
   const request: Record<string, unknown> = { ...cleanQuote };
 
-  // UniswapX (DUTCH_V2, DUTCH_V3): permitData is for LOCAL signing only.
+  // UniswapX (DUTCH_V2, DUTCH_V3, PRIORITY): permitData is for LOCAL signing only.
   // The /swap body must NOT include permitData — the order is already encoded
   // in quote.encodedOrder. Only the signature is needed.
-  const isUniswapX = quoteResponse.routing === 'DUTCH_V2' || quoteResponse.routing === 'DUTCH_V3';
+  const isUniswapX =
+    quoteResponse.routing === 'DUTCH_V2' ||
+    quoteResponse.routing === 'DUTCH_V3' ||
+    quoteResponse.routing === 'PRIORITY';
 
   if (isUniswapX) {
     if (signature) request.signature = signature;
@@ -1554,12 +1568,12 @@ For testnet addresses, see [Uniswap v4 Deployments](https://docs.uniswap.org/con
 
 ### API Validation Errors (400)
 
-| Error Message                                     | Cause                                                           | Fix                                                                                                        |
-| ------------------------------------------------- | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `"permitData" must be of type object`             | Sending `permitData: null`                                      | Omit the field entirely when null                                                                          |
-| `"quote" does not match any of the allowed types` | Wrapping quote in `{quote: quoteResponse}`                      | Spread quote response: `{...quoteResponse}`                                                                |
-| `"quote" does not match any of the allowed types` | Including `permitData` in a UniswapX (DUTCH_V2/V3) `/swap` body | Omit `permitData` for UniswapX routes — see [Signing vs. Submission](#uniswapx-signing-vs-submission-flow) |
-| `signature and permitData must both be present`   | Including only one Permit2 field (CLASSIC routes only)          | Include both or neither for CLASSIC; omit `permitData` for UniswapX                                        |
+| Error Message                                     | Cause                                                                    | Fix                                                                                                        |
+| ------------------------------------------------- | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| `"permitData" must be of type object`             | Sending `permitData: null`                                               | Omit the field entirely when null                                                                          |
+| `"quote" does not match any of the allowed types` | Wrapping quote in `{quote: quoteResponse}`                               | Spread quote response: `{...quoteResponse}`                                                                |
+| `"quote" does not match any of the allowed types` | Including `permitData` in a UniswapX (DUTCH_V2/V3/PRIORITY) `/swap` body | Omit `permitData` for UniswapX routes — see [Signing vs. Submission](#uniswapx-signing-vs-submission-flow) |
+| `signature and permitData must both be present`   | Including only one Permit2 field (CLASSIC routes only)                   | Include both or neither for CLASSIC; omit `permitData` for UniswapX                                        |
 
 ### API Error Codes
 
