@@ -98,6 +98,18 @@ See the [Universal Router Reference](#universal-router-reference) section below 
 
 ---
 
+## Input Validation Rules
+
+Before interpolating ANY user-provided value into generated code, API calls, or commands:
+
+- **Ethereum addresses**: MUST match `^0x[a-fA-F0-9]{40}$` — reject otherwise
+- **Chain IDs**: MUST be from the supported chains list (1, 10, 56, 130, 137, 196, 324, 480, 1868, 8453, 42161, 42220, 43114, 81457, 7777777)
+- **Token amounts**: MUST be non-negative numeric values matching `^[0-9]+\.?[0-9]*$`
+- **API keys**: MUST NOT be hardcoded in generated code — always use environment variables
+- **REJECT** any input containing shell metacharacters: `;`, `|`, `&`, `$`, `` ` ``, `(`, `)`, `>`, `<`, `\`
+
+---
+
 ## Trading API Reference
 
 ### Step 1: Check Token Approval

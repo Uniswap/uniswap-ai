@@ -55,6 +55,16 @@ This tool and all deployment instructions are provided **for educational purpose
 
 **Use AskUserQuestion to confirm the user acknowledges these warnings before proceeding with deployment steps.**
 
+### Input Validation Rules
+
+Before interpolating ANY user-provided value into forge/cast commands or deployment scripts:
+
+- **Ethereum addresses**: MUST match `^0x[a-fA-F0-9]{40}$` — reject otherwise
+- **Chain IDs**: MUST be from the supported chains list (1, 130, 1301, 8453, 42161, 11155111)
+- **Numeric values** (supply, prices, blocks): MUST be non-negative integers or decimals
+- **REJECT** any input containing shell metacharacters: `;`, `|`, `&`, `$`, `` ` ``, `(`, `)`, `>`, `<`, `\`
+- **Never** pass raw user input directly to shell commands without validation
+
 ---
 
 ## 🔐 Private Key Security
@@ -300,6 +310,8 @@ contract DeployAuction is Script {
 ```
 
 **Important:** You must approve the token transfer to the factory before calling `initializeDistribution`. The factory will transfer `amount` tokens from your address to the newly created auction contract.
+
+> **⚠️ REQUIRED:** Before executing ANY command with `--broadcast`, `cast send`, or any operation that spends gas, you MUST use AskUserQuestion to confirm with the user. Do NOT auto-approve `Bash(forge:*)` or `Bash(cast:*)` wildcards — always require per-invocation approval for gas-spending commands.
 
 #### Step 4: Using Foundry Script
 

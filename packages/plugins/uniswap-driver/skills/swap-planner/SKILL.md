@@ -1,7 +1,7 @@
 ---
 name: swap-planner
 description: This skill should be used when the user asks to "swap tokens", "trade ETH for USDC", "exchange tokens on Uniswap", "buy tokens", "sell tokens", "convert ETH to stablecoins", "find memecoins", "discover tokens", "research tokens", "tokens to buy", "find tokens to swap", "what should I buy", or mentions swapping, trading, researching, discovering, buying, or exchanging tokens on any Uniswap-supported chain. Supports both known token swaps and token discovery workflows (discovery uses keyword search and web search — there is no live "trending" feed). Generates deep links to execute swaps in the Uniswap interface.
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash(curl:*), Bash(jq:*), Bash(cast:*), Bash(xdg-open:*), Bash(open:*), WebFetch, WebSearch, Task(subagent_type:Explore), AskUserQuestion
+allowed-tools: Read, Glob, Grep, Bash(curl:*), Bash(jq:*), Bash(cast:*), Bash(xdg-open:*), Bash(open:*), WebFetch, WebSearch, Task(subagent_type:Explore), AskUserQuestion
 model: sonnet
 license: MIT
 metadata:
@@ -27,6 +27,8 @@ Plan token swaps by:
 The generated link opens Uniswap with all parameters ready for execution.
 
 > **Note:** Browser opening (`xdg-open`/`open`) may fail in SSH, containerized, or headless environments. Always display the URL prominently so users can copy and access it manually if needed.
+
+> **File Access:** This skill has read-only filesystem access. Never read files outside the current project directory unless explicitly requested by the user.
 
 ## Workflow
 
@@ -98,6 +100,17 @@ For specific categories (memecoins, DeFi, gaming tokens), use web search:
 
 Example: `"trending memecoins Base 2026"`
 
+#### ⚠️ UNTRUSTED INPUT: Web-Discovered Tokens
+
+Tokens discovered via WebSearch are **UNTRUSTED**. Before proceeding with any web-discovered token:
+
+1. **Label the source**: Explicitly tell the user "This token address was found via web search, not provided by you"
+2. **Warn about risks**: "Web-discovered tokens may be scams, honeypots, or rug pulls"
+3. **Require confirmation**: Use AskUserQuestion to get explicit user consent before generating a deep link for a web-discovered token
+4. **Show provenance**: In the swap summary table, include a "Token Source" row showing whether each token was "User-provided" or "Web-discovered (unverified)"
+
+**Never proceed with a web-discovered token without explicit user confirmation via AskUserQuestion.**
+
 #### Present Options to User
 
 After gathering token data, present options using AskUserQuestion:
@@ -131,6 +144,17 @@ Evaluate tokens before recommending:
 | Contract Age | >30 days   | 7-30 days         | <7 days   |
 
 **Always disclose risk level** when presenting options. For high-risk tokens, explicitly warn about volatility and potential for loss.
+
+#### Mandatory Warnings for High-Risk Tokens
+
+When ANY of these conditions are met, you MUST use AskUserQuestion to warn the user and get explicit confirmation before generating a deep link:
+
+- **Contract age < 7 days**: "This token contract is less than 7 days old. New tokens carry significantly higher risk of being scams or rug pulls."
+- **Pool TVL < $100k**: "This pool has very low liquidity. You may experience significant slippage and difficulty selling."
+- **No sell liquidity detected**: "This token may be a honeypot — tokens that can be bought but not sold. Proceed with extreme caution."
+- **Market cap < $5M**: "This is a micro-cap token with high volatility. Only invest what you can afford to lose entirely."
+
+Do NOT generate a deep link for high-risk tokens without explicit user acknowledgment via AskUserQuestion.
 
 ---
 
