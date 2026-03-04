@@ -5,6 +5,10 @@
 # Security finding addressed:
 #   M-1: Restricts Bash(open:*) and Bash(xdg-open:*) to app.uniswap.org
 #        domain only, preventing arbitrary URL opening.
+#
+# Bypass mitigations:
+#   - Strips leading env var assignments (VAR=val prefixes)
+#   - Resolves base binary name (strips absolute/relative paths)
 set -euo pipefail
 
 INPUT=$(cat)
@@ -16,8 +20,15 @@ if [ "$TOOL_NAME" != "Bash" ]; then
   exit 0
 fi
 
+# Strip leading env var assignments: FOO=bar command args -> command args
+STRIPPED_COMMAND=$(echo "$COMMAND" | sed -E 's/^([A-Za-z_][A-Za-z_0-9]*=(["'"'"'][^"'"'"']*["'"'"']|[^ ]*) +)+//')
+
+# Extract the first word (the binary) and resolve its base name
+BINARY=$(echo "$STRIPPED_COMMAND" | awk '{print $1}')
+BASE_BINARY=$(basename "$BINARY" 2>/dev/null || echo "$BINARY")
+
 # Only check open/xdg-open commands
-if ! echo "$COMMAND" | grep -qE '^(open|xdg-open)\b'; then
+if [ "$BASE_BINARY" != "open" ] && [ "$BASE_BINARY" != "xdg-open" ]; then
   exit 0
 fi
 

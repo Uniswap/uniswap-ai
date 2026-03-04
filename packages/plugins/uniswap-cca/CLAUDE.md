@@ -168,7 +168,7 @@ Before deployment, ensures:
 **CRITICAL**: After deployment, must call `onTokensReceived()` to notify the auction that tokens have been transferred. This is required before the auction can accept bids.
 
 ```bash
-cast send $AUCTION_ADDRESS "onTokensReceived()" --rpc-url $RPC_URL --private-key $PRIVATE_KEY
+cast send $AUCTION_ADDRESS "onTokensReceived()" --rpc-url $RPC_URL --account deployer --sender $DEPLOYER_ADDRESS
 ```
 
 ## MCP Server: cca-supply-schedule

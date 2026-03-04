@@ -2,10 +2,15 @@
 # PreToolUse hook: validates forge/cast commands for security
 # Receives tool input as JSON on stdin
 #
-# Security findings addressed:
-#   H-2: Enforces programmatic validation for Bash(forge:*) and Bash(cast:*)
-#        instead of relying solely on glob-based prefix matching.
-#   M-2: Restricts cast to read-only subcommands only.
+# Security threats blocked:
+#   - --private-key flag anywhere in the command
+#   - Raw hex private keys (0x + 64 hex chars) anywhere in the command
+#   - forge create (use forge script for deployments instead)
+#
+# Bypass mitigations:
+#   - Strips leading env var assignments (VAR=val prefixes)
+#   - Resolves base binary name (strips absolute/relative paths)
+#   - Scans the ENTIRE command for dangerous patterns (not just prefix)
 set -euo pipefail
 
 INPUT=$(cat)
@@ -17,40 +22,47 @@ if [ "$TOOL_NAME" != "Bash" ]; then
   exit 0
 fi
 
-# Skip if not a forge or cast command
-if ! echo "$COMMAND" | grep -qE '^(forge|cast)\b'; then
-  exit 0
-fi
+# --- Global checks: scan the ENTIRE command for dangerous patterns ---
+# These apply regardless of what binary is being invoked, to catch
+# semicolon chains, subshells, pipes, etc. like: echo ok; cast send --private-key ...
 
-# Block --private-key in any forge/cast command
-if echo "$COMMAND" | grep -qE -- '--private-key'; then
+# Block --private-key flag anywhere in the command
+if echo "$COMMAND" | grep -qF -- '--private-key'; then
   echo '{"decision":"block","reason":"BLOCKED: --private-key flag detected. Use --account (encrypted keystore) or --ledger (hardware wallet) instead."}'
   exit 0
 fi
 
-# For cast commands: only allow read-only subcommands
-if echo "$COMMAND" | grep -qE '^cast\b'; then
-  SUBCOMMAND=$(echo "$COMMAND" | sed -E 's/^cast[[:space:]]+//' | awk '{for(i=1;i<=NF;i++) if($i !~ /^-/) {print $i; exit}}')
-
-  # Read-only cast subcommands (no state changes, no transactions)
-  ALLOWED_CAST="code abi-encode abi-decode call interface sig chain-id client block-number gas-price estimate lookup-address resolve-name namehash keccak etherscan-source 4byte 4byte-decode 4byte-event storage proof age balance tx receipt rpc logs to-ascii to-utf8 to-hex to-dec to-base to-wei from-wei wallet"
-
-  if ! echo " $ALLOWED_CAST " | grep -q " $SUBCOMMAND "; then
-    echo "{\"decision\":\"block\",\"reason\":\"BLOCKED: 'cast $SUBCOMMAND' is not in the allowed read-only subcommand list. Allowed: $ALLOWED_CAST\"}"
-    exit 0
-  fi
+# Block raw hex private keys (0x followed by 64 hex characters) anywhere in the command
+if echo "$COMMAND" | grep -qE '0x[0-9a-fA-F]{64}'; then
+  echo '{"decision":"block","reason":"BLOCKED: Raw hex private key detected (0x + 64 hex chars). Use --account (encrypted keystore) or --ledger (hardware wallet) instead."}'
+  exit 0
 fi
 
-# For forge commands: block direct contract creation (use forge script instead)
-if echo "$COMMAND" | grep -qE '^forge\b'; then
-  SUBCOMMAND=$(echo "$COMMAND" | sed -E 's/^forge[[:space:]]+//' | awk '{for(i=1;i<=NF;i++) if($i !~ /^-/) {print $i; exit}}')
+# --- Command-specific checks ---
+# Strip leading env var assignments: FOO=bar BAZ="qux" command args -> command args
+STRIPPED_COMMAND=$(echo "$COMMAND" | sed -E 's/^([A-Za-z_][A-Za-z_0-9]*=(["'"'"'][^"'"'"']*["'"'"']|[^ ]*) +)+//')
 
-  BLOCKED_FORGE="create"
+# Extract the first word (the binary) and resolve its base name
+BINARY=$(echo "$STRIPPED_COMMAND" | awk '{print $1}')
+BASE_BINARY=$(basename "$BINARY" 2>/dev/null || echo "$BINARY")
 
-  if echo " $BLOCKED_FORGE " | grep -q " $SUBCOMMAND "; then
-    echo "{\"decision\":\"block\",\"reason\":\"BLOCKED: 'forge $SUBCOMMAND' is not allowed. Use 'forge script' for deployments instead.\"}"
-    exit 0
-  fi
-fi
+# Check if this is a forge or cast command (after normalization)
+case "$BASE_BINARY" in
+  forge)
+    # Block forge create - must use forge script for deployments
+    SUBCOMMAND=$(echo "$STRIPPED_COMMAND" | awk '{for(i=2;i<=NF;i++) if($i !~ /^-/) {print $i; exit}}')
+    if [ "$SUBCOMMAND" = "create" ]; then
+      echo '{"decision":"block","reason":"BLOCKED: '\''forge create'\'' is not allowed. Use '\''forge script'\'' for deployments instead."}'
+      exit 0
+    fi
+    ;;
+  cast)
+    # cast send is allowed (deployer needs it for post-deployment onTokensReceived)
+    # The global --private-key and raw hex key checks above protect against key exposure
+    ;;
+  *)
+    # Not a forge/cast command at the top level - nothing more to check
+    ;;
+esac
 
 exit 0
