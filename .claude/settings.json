@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "command": "bash .claude/hooks/validate-forge-cast.sh"
+      },
+      {
+        "matcher": "Bash",
+        "command": "bash .claude/hooks/validate-open-url.sh"
+      }
+    ]
+  }
+}
