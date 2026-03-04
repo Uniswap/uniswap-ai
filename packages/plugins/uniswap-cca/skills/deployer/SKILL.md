@@ -1,7 +1,7 @@
 ---
 name: deployer
 description: Deploy CCA (Continuous Clearing Auction) smart contracts using the Factory pattern. Use when user says "deploy auction", "deploy cca", "factory deployment", or wants to deploy a configured auction.
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash(forge:*), Bash(cast:*), Bash(curl:*), AskUserQuestion
+allowed-tools: Read, Glob, Grep, Bash(forge:*), Bash(cast:*), Bash(curl:*), AskUserQuestion
 model: opus
 license: MIT
 metadata:
@@ -60,10 +60,12 @@ This tool and all deployment instructions are provided **for educational purpose
 Before interpolating ANY user-provided value into forge/cast commands or deployment scripts:
 
 - **Ethereum addresses**: MUST match `^0x[a-fA-F0-9]{40}$` — reject otherwise
-- **Chain IDs**: MUST be from the supported chains list (1, 130, 1301, 8453, 42161, 11155111)
-- **Numeric values** (supply, prices, blocks): MUST be non-negative integers or decimals
-- **REJECT** any input containing shell metacharacters: `;`, `|`, `&`, `$`, `` ` ``, `(`, `)`, `>`, `<`, `\`
+- **Chain IDs**: MUST be from the supported chains list (1, 130, 143, 1301, 8453, 42161, 11155111)
+- **Numeric values** (supply, prices, blocks, chain IDs): MUST be non-negative and match `^[0-9]+\.?[0-9]*$`
+- **REJECT** any input containing shell metacharacters: `;`, `|`, `&`, `$`, `` ` ``, `(`, `)`, `>`, `<`, `\`, `'`, `"`, newlines
 - **Never** pass raw user input directly to shell commands without validation
+
+> **REQUIRED:** Before executing ANY command with `--broadcast`, `cast send`, or any operation that spends gas, you MUST use AskUserQuestion to confirm with the user. Do NOT auto-approve `Bash(forge:*)` or `Bash(cast:*)` wildcards -- always require per-invocation approval for gas-spending commands.
 
 ---
 
@@ -310,8 +312,6 @@ contract DeployAuction is Script {
 ```
 
 **Important:** You must approve the token transfer to the factory before calling `initializeDistribution`. The factory will transfer `amount` tokens from your address to the newly created auction contract.
-
-> **⚠️ REQUIRED:** Before executing ANY command with `--broadcast`, `cast send`, or any operation that spends gas, you MUST use AskUserQuestion to confirm with the user. Do NOT auto-approve `Bash(forge:*)` or `Bash(cast:*)` wildcards — always require per-invocation approval for gas-spending commands.
 
 #### Step 4: Using Foundry Script
 

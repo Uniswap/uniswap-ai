@@ -54,6 +54,7 @@ console.log('Address:', account.address);
 ```typescript
 import { mnemonicToAccount } from 'viem/accounts';
 
+// ⚠️ NEVER use test mnemonics with real funds! This is a well-known example phrase.
 const account = mnemonicToAccount(
   'legal winner thank year wave sausage worth useful legal winner thank yellow'
 );
@@ -401,7 +402,7 @@ const testAccounts = [
   // ... more accounts
 ];
 
-// Test mnemonic (DO NOT USE IN PRODUCTION)
+// ⚠️ Test mnemonic — NEVER use with real funds! Any funds sent to these addresses WILL be stolen.
 const testMnemonic = 'test test test test test test test test test test test junk';
 ```
 

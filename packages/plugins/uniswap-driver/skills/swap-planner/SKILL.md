@@ -258,7 +258,7 @@ Before interpolating user-provided values into any shell command, validate all i
 - **Token addresses** MUST match: `^0x[a-fA-F0-9]{40}$`
 - **Chain/network names** MUST be from the allowed list in `../../references/chains.md`
 - **Amounts** MUST be valid decimal numbers (match: `^[0-9]+\.?[0-9]*$`)
-- **Reject** any input containing shell metacharacters (`;`, `|`, `$`, `` ` ``, `&`, `(`, `)`, `>`, `<`, `\`)
+- **Reject** any input containing shell metacharacters (`;`, `|`, `$`, `` ` ``, `&`, `(`, `)`, `>`, `<`, `\`, `'`, `"`, newlines)
 
 Verify token contracts exist on-chain using curl (RPC call):
 

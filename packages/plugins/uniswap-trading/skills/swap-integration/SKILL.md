@@ -103,10 +103,12 @@ See the [Universal Router Reference](#universal-router-reference) section below 
 Before interpolating ANY user-provided value into generated code, API calls, or commands:
 
 - **Ethereum addresses**: MUST match `^0x[a-fA-F0-9]{40}$` — reject otherwise
-- **Chain IDs**: MUST be from the supported chains list (1, 10, 56, 130, 137, 196, 324, 480, 1868, 8453, 42161, 42220, 43114, 81457, 7777777)
+- **Chain IDs**: MUST be from the supported chains list (1, 10, 56, 130, 137, 143, 196, 324, 480, 1868, 8453, 42161, 42220, 43114, 81457, 7777777)
 - **Token amounts**: MUST be non-negative numeric values matching `^[0-9]+\.?[0-9]*$`
 - **API keys**: MUST NOT be hardcoded in generated code — always use environment variables
-- **REJECT** any input containing shell metacharacters: `;`, `|`, `&`, `$`, `` ` ``, `(`, `)`, `>`, `<`, `\`
+- **REJECT** any input containing shell metacharacters: `;`, `|`, `&`, `$`, `` ` ``, `(`, `)`, `>`, `<`, `\`, `'`, `"`, newlines
+
+> **REQUIRED:** Before executing ANY transaction that spends gas or transfers tokens (including `sendTransaction`, `writeContract`, or submitting a signed swap), you MUST use AskUserQuestion to confirm with the user. Display the transaction summary (tokens, amounts, chain, estimated gas) and get explicit user approval. Never auto-execute transactions without user confirmation.
 
 ---
 
