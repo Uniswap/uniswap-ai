@@ -32,6 +32,8 @@ contract SecureHook is BaseHook {
     error ZeroAddress();
     error NotAdmin();
     error Unauthorized();
+    error AdminTransferToSelf();
+    error NoPendingAdmin();
 
     // ═══════════════════════════════════════════════════════════════════════
     // EVENTS
@@ -53,6 +55,10 @@ contract SecureHook is BaseHook {
     address public admin;
 
     /// @notice Pending administrator for two-step transfer
+    /// @dev Set by proposeAdmin(), cleared by acceptAdmin(). Only the pendingAdmin
+    ///      address can call acceptAdmin() to complete the transfer. This ensures
+    ///      admin privileges are never transferred to an address that cannot
+    ///      interact with the contract (e.g., a typo or non-existent wallet).
     address public pendingAdmin;
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -178,17 +184,25 @@ contract SecureHook is BaseHook {
 
     /// @notice Propose a new admin (two-step transfer for safety)
     /// @dev Two-step transfer prevents accidental loss of admin privileges.
-    ///      Step 1: Current admin proposes new admin
-    ///      Step 2: Proposed admin accepts the role
-    /// @param newAdmin The proposed new admin address
+    ///      Step 1: Current admin proposes new admin via proposeAdmin()
+    ///      Step 2: Proposed admin accepts the role via acceptAdmin()
+    ///      Calling proposeAdmin() again overwrites any existing pending transfer.
+    ///      Only the most recent proposed admin can call acceptAdmin().
+    /// @param newAdmin The proposed new admin address (must not be zero or current admin)
     function proposeAdmin(address newAdmin) external onlyAdmin {
         if (newAdmin == address(0)) revert ZeroAddress();
+        if (newAdmin == admin) revert AdminTransferToSelf();
         pendingAdmin = newAdmin;
         emit AdminTransferProposed(admin, newAdmin);
     }
 
     /// @notice Accept the admin role (must be called by the pending admin)
+    /// @dev Completes the two-step admin transfer. The caller must be the address
+    ///      previously set via proposeAdmin(). After acceptance, pendingAdmin is
+    ///      cleared to address(0) to prevent replay. Reverts if no transfer is
+    ///      pending (pendingAdmin == address(0)) to avoid silent no-ops.
     function acceptAdmin() external {
+        if (pendingAdmin == address(0)) revert NoPendingAdmin();
         if (msg.sender != pendingAdmin) revert Unauthorized();
         address previousAdmin = admin;
         admin = pendingAdmin;
