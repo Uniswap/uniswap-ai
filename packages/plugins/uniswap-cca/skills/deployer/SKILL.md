@@ -55,6 +55,10 @@ This tool and all deployment instructions are provided **for educational purpose
 
 **Use AskUserQuestion to confirm the user acknowledges these warnings before proceeding with deployment steps.**
 
+### ⚠️ Permission Safety
+
+**Do NOT auto-approve `Bash(forge:*)` or `Bash(cast:*)` in your Claude Code settings.** Always require per-invocation approval for commands that spend gas or broadcast transactions. The PreToolUse hooks in `.claude/hooks/` provide programmatic validation as a safety net, but user approval per command is the primary control.
+
 ---
 
 ## 🔐 Private Key Security
@@ -67,6 +71,7 @@ This tool and all deployment instructions are provided **for educational purpose
 - ❌ **Never** paste private keys directly in command line (visible in shell history)
 - ❌ **Never** share private keys or store them in shared environments
 - ❌ **Never** use mainnet private keys on untrusted computers
+- ❌ **Never** use `--private-key` flag (blocked by PreToolUse hook)
 
 ### ✅ Recommended Practices
 
@@ -116,8 +121,9 @@ RPC_URL=https://...
 # Load environment
 source .env
 
-# Deploy
-forge script ... --private-key $PRIVATE_KEY
+# Deploy (use encrypted keystore instead of --private-key)
+cast wallet import deployer --interactive
+forge script ... --account deployer --sender $DEPLOYER_ADDRESS
 ```
 
 ### Testnet First
@@ -308,13 +314,13 @@ contract DeployAuction is Script {
 forge script script/deploy/DeployContinuousAuctionFactory.s.sol:DeployContinuousAuctionFactoryScript \
   --rpc-url $RPC_URL \
   --broadcast \
-  --private-key $PRIVATE_KEY
+  --account deployer --sender $DEPLOYER_ADDRESS
 
 # Deploy auction instance
 forge script script/Example.s.sol:ExampleScript \
   --rpc-url $RPC_URL \
   --broadcast \
-  --private-key $PRIVATE_KEY
+  --account deployer --sender $DEPLOYER_ADDRESS
 ```
 
 #### Step 5: Post-Deployment
@@ -322,7 +328,7 @@ forge script script/Example.s.sol:ExampleScript \
 After deployment, you **must** call `onTokensReceived()` to notify the auction that tokens have been transferred:
 
 ```bash
-cast send $AUCTION_ADDRESS "onTokensReceived()" --rpc-url $RPC_URL --private-key $PRIVATE_KEY
+cast send $AUCTION_ADDRESS "onTokensReceived()" --rpc-url $RPC_URL --account deployer --sender $DEPLOYER_ADDRESS
 ```
 
 This is a required prerequisite before the auction can accept bids.
