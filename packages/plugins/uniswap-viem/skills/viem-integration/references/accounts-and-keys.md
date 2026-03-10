@@ -9,6 +9,7 @@ Reference for private key management, HD wallets, and message signing with viem.
 ```typescript
 import { privateKeyToAccount } from 'viem/accounts';
 
+// ⚠️ Anvil default test key #0 — NEVER use in production!
 const account = privateKeyToAccount(
   '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80'
 );
@@ -53,6 +54,7 @@ console.log('Address:', account.address);
 ```typescript
 import { mnemonicToAccount } from 'viem/accounts';
 
+// ⚠️ NEVER use test mnemonics with real funds! This is a well-known example phrase.
 const account = mnemonicToAccount(
   'legal winner thank year wave sausage worth useful legal winner thank yellow'
 );
@@ -319,8 +321,8 @@ const account = privateKeyToAccount(process.env.PRIVATE_KEY as `0x${string}`);
 
 ```env
 # .env (add to .gitignore!)
-PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
-MNEMONIC=legal winner thank year wave sausage worth useful legal winner thank yellow
+PRIVATE_KEY=0x_YOUR_PRIVATE_KEY_HERE
+MNEMONIC=your twelve word mnemonic phrase goes here replace with actual words
 ```
 
 ### .gitignore
@@ -400,7 +402,7 @@ const testAccounts = [
   // ... more accounts
 ];
 
-// Test mnemonic (DO NOT USE IN PRODUCTION)
+// ⚠️ Test mnemonic — NEVER use with real funds! Any funds sent to these addresses WILL be stolen.
 const testMnemonic = 'test test test test test test test test test test test junk';
 ```
 

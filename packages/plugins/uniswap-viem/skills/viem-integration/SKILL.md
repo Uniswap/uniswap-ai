@@ -61,6 +61,16 @@ import { mainnet, arbitrum, optimism, base, polygon } from 'viem/chains';
 
 ---
 
+## Input Validation Rules
+
+Before interpolating ANY user-provided value into generated TypeScript code:
+
+- **Ethereum addresses**: MUST match `^0x[a-fA-F0-9]{40}$` — use viem's `isAddress()` for validation
+- **Chain IDs**: MUST be from viem's supported chain definitions
+- **Private keys**: MUST NEVER be hardcoded — always use `process.env.PRIVATE_KEY` with runtime validation
+- **RPC URLs**: MUST use `https://` or `wss://` protocols only
+- **ABI inputs**: Validate types match expected Solidity types before encoding
+
 ## Quick Start Examples
 
 ### Read Balance

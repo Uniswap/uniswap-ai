@@ -1,7 +1,7 @@
 ---
 name: liquidity-planner
 description: This skill should be used when the user asks to "provide liquidity", "create LP position", "add liquidity to pool", "become a liquidity provider", "create v3 position", "create v4 position", "concentrated liquidity", "set price range", or mentions providing liquidity, LP positions, or liquidity pools on Uniswap. Generates deep links to create positions in the Uniswap interface.
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash(curl:*), Bash(jq:*), Bash(cast:*), Bash(xdg-open:*), Bash(open:*), WebFetch, WebSearch, Task(subagent_type:Explore), AskUserQuestion
+allowed-tools: Read, Glob, Grep, Bash(curl:*), Bash(jq:*), Bash(cast:*), Bash(xdg-open:*), Bash(open:*), WebFetch, WebSearch, Task(subagent_type:Explore), AskUserQuestion
 model: sonnet
 license: MIT
 metadata:
@@ -27,6 +27,8 @@ Plan liquidity positions by:
 The generated link opens Uniswap with all parameters ready for position creation.
 
 > **Note:** Browser opening (`xdg-open`/`open`) may fail in SSH, containerized, or headless environments. Always display the URL prominently so users can copy and access it manually if needed.
+
+> **File Access:** This skill has read-only filesystem access. Never read files outside the current project directory unless explicitly requested by the user.
 
 ## Workflow
 
@@ -94,6 +96,17 @@ Resolve token symbols to addresses. See `../../references/chains.md` for common 
 
 For unknown tokens, use web search and verify on-chain.
 
+#### UNTRUSTED INPUT: Web-Discovered Tokens
+
+Tokens discovered via WebSearch are **UNTRUSTED**. Before proceeding with any web-discovered token:
+
+1. **Label the source**: Explicitly tell the user "This token address was found via web search, not provided by you"
+2. **Warn about risks**: "Web-discovered tokens may be scams, honeypots, or rug pulls"
+3. **Require confirmation**: Use AskUserQuestion to get explicit user consent before generating a deep link for a web-discovered token
+4. **Show provenance**: In the position summary table, include a "Token Source" row showing whether each token was "User-provided" or "Web-discovered (unverified)"
+
+**Never proceed with a web-discovered token without explicit user confirmation via AskUserQuestion.**
+
 ### Input Validation (Required Before Any Shell Command)
 
 Before interpolating user-provided values into any shell command, validate all inputs:
@@ -101,7 +114,7 @@ Before interpolating user-provided values into any shell command, validate all i
 - **Token addresses** MUST match: `^0x[a-fA-F0-9]{40}$`
 - **Chain/network names** MUST be from the allowed list in `../../references/chains.md`
 - **Amounts** MUST be valid decimal numbers (match: `^[0-9]+\.?[0-9]*$`)
-- **Reject** any input containing shell metacharacters (`;`, `|`, `$`, `` ` ``, `&`, `(`, `)`, `>`, `<`, `\`)
+- **Reject** any input containing shell metacharacters (`;`, `|`, `$`, `` ` ``, `&`, `(`, `)`, `>`, `<`, `\`, `'`, `"`, newlines)
 
 ### Step 3: Discover Available Pools
 

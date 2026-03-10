@@ -1,7 +1,7 @@
 ---
 name: deployer
 description: Deploy CCA (Continuous Clearing Auction) smart contracts using the Factory pattern. Use when user says "deploy auction", "deploy cca", "factory deployment", or wants to deploy a configured auction.
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash(forge:*), Bash(cast:*), Bash(curl:*), AskUserQuestion
+allowed-tools: Read, Glob, Grep, Bash(forge:*), Bash(cast:*), Bash(curl:*), AskUserQuestion
 model: opus
 license: MIT
 metadata:
@@ -54,6 +54,16 @@ This tool and all deployment instructions are provided **for educational purpose
 4. ✅ **Audit your contracts** before deploying with real funds
 
 **Use AskUserQuestion to confirm the user acknowledges these warnings before proceeding with deployment steps.**
+
+### Input Validation Rules
+
+Before interpolating ANY user-provided value into forge/cast commands or deployment scripts:
+
+- **Ethereum addresses**: MUST match `^0x[a-fA-F0-9]{40}$` — reject otherwise
+- **Chain IDs**: MUST be from the supported chains list (1, 130, 143, 1301, 8453, 42161, 11155111)
+- **Numeric values** (supply, prices, blocks, chain IDs): MUST be non-negative and match `^[0-9]+\.?[0-9]*$`
+- **REJECT** any input containing shell metacharacters: `;`, `|`, `&`, `$`, `` ` ``, `(`, `)`, `>`, `<`, `\`, `'`, `"`, newlines
+- **Never** pass raw user input directly to shell commands without validation
 
 ### ⚠️ Permission Safety
 
