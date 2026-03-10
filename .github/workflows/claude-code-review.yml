@@ -189,7 +189,7 @@ jobs:
     needs: check-automated
     permissions:
       actions: read
-      contents: read
+      contents: write
       id-token: write
       issues: write
       pull-requests: write
@@ -250,7 +250,7 @@ jobs:
     needs: get-pr-info
     permissions:
       actions: read
-      contents: read
+      contents: write
       id-token: write
       issues: write
       pull-requests: write
@@ -282,7 +282,7 @@ jobs:
     needs: get-pr-info
     permissions:
       actions: read
-      contents: read
+      contents: write
       id-token: write
       issues: write
       pull-requests: write

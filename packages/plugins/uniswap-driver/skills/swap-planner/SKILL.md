@@ -280,7 +280,7 @@ If the result is `0x` or empty, the address is not a valid contract.
 cast code "$token_address" --rpc-url "$rpc_url"
 ```
 
-**Note:** The curl/RPC method above is preferred for broader compatibility. Only use `cast` if already available in the environment.
+**Note:** The curl/RPC method above is preferred for broader compatibility. Only use `cast` if already available in the environment. This skill ONLY uses `cast code` for contract verification. Do not use any other cast subcommands. The PreToolUse hook in `.claude/hooks/validate-forge-cast.sh` enforces this programmatically.
 
 **RPC URLs by chain** - see `../../references/chains.md` for full list.
 
