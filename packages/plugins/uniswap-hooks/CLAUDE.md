@@ -72,6 +72,7 @@ v4 hooks must have specific address patterns where the last 14 bits encode which
 - Be aware of reentrancy risks
 - Consider MEV implications of hook logic
 - Test edge cases with extreme tick ranges
+- Use two-step admin transfer (`proposeAdmin` + `acceptAdmin`) to prevent accidental privilege loss
 
 ## File Structure
 

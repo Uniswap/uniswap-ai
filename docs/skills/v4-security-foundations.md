@@ -63,7 +63,7 @@ This skill helps you:
 
 - **NoOp rug pull attacks**: How `BEFORE_SWAP_RETURNS_DELTA` can be exploited, detection methods, and legitimate use cases (JIT liquidity, custom AMM curves, intent-based trading)
 - **Delta accounting**: The credit/debit system, settlement patterns, and common mistakes
-- **Access control patterns**: PoolManager verification, router allowlisting, and the `msg.sender` trap
+- **Access control patterns**: PoolManager verification, router allowlisting, two-step admin transfer, and the `msg.sender` trap
 - **Token handling hazards**: Fee-on-transfer, rebasing, ERC-777, pausable, and low-decimal tokens
 - **Security checklist**: 13-point pre-deployment checklist covering all critical areas
 - **Risk scoring**: Calculate your hook's risk score (0-33) with audit tier recommendations

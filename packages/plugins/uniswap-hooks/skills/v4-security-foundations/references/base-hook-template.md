@@ -31,6 +31,9 @@ contract SecureHook is BaseHook {
     error RouterNotAllowed();
     error ZeroAddress();
     error NotAdmin();
+    error Unauthorized();
+    error AdminTransferToSelf();
+    error NoPendingAdmin();
 
     // ═══════════════════════════════════════════════════════════════════════
     // EVENTS
@@ -38,6 +41,7 @@ contract SecureHook is BaseHook {
 
     event RouterAdded(address indexed router);
     event RouterRemoved(address indexed router);
+    event AdminTransferProposed(address indexed currentAdmin, address indexed proposedAdmin);
     event AdminTransferred(address indexed previousAdmin, address indexed newAdmin);
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -49,6 +53,13 @@ contract SecureHook is BaseHook {
 
     /// @notice Hook administrator
     address public admin;
+
+    /// @notice Pending administrator for two-step transfer
+    /// @dev Set by proposeAdmin(), cleared by acceptAdmin(). Only the pendingAdmin
+    ///      address can call acceptAdmin() to complete the transfer. This ensures
+    ///      admin privileges are never transferred to an address that cannot
+    ///      interact with the contract (e.g., a typo or non-existent wallet).
+    address public pendingAdmin;
 
     // ═══════════════════════════════════════════════════════════════════════
     // MODIFIERS
@@ -171,17 +182,32 @@ contract SecureHook is BaseHook {
         emit RouterRemoved(router);
     }
 
-    /// @notice Transfer admin role
-    /// @dev NOTE: For production, consider implementing two-step transfer:
-    ///      1. proposeAdmin(newAdmin) - sets pendingAdmin
-    ///      2. acceptAdmin() - pendingAdmin becomes admin
-    ///      This prevents accidental loss of admin privileges.
-    /// @param newAdmin The new admin address
-    function transferAdmin(address newAdmin) external onlyAdmin {
+    /// @notice Propose a new admin (two-step transfer for safety)
+    /// @dev Two-step transfer prevents accidental loss of admin privileges.
+    ///      Step 1: Current admin proposes new admin via proposeAdmin()
+    ///      Step 2: Proposed admin accepts the role via acceptAdmin()
+    ///      Calling proposeAdmin() again overwrites any existing pending transfer.
+    ///      Only the most recent proposed admin can call acceptAdmin().
+    /// @param newAdmin The proposed new admin address (must not be zero or current admin)
+    function proposeAdmin(address newAdmin) external onlyAdmin {
         if (newAdmin == address(0)) revert ZeroAddress();
+        if (newAdmin == admin) revert AdminTransferToSelf();
+        pendingAdmin = newAdmin;
+        emit AdminTransferProposed(admin, newAdmin);
+    }
+
+    /// @notice Accept the admin role (must be called by the pending admin)
+    /// @dev Completes the two-step admin transfer. The caller must be the address
+    ///      previously set via proposeAdmin(). After acceptance, pendingAdmin is
+    ///      cleared to address(0) to prevent replay. Reverts if no transfer is
+    ///      pending (pendingAdmin == address(0)) to avoid silent no-ops.
+    function acceptAdmin() external {
+        if (pendingAdmin == address(0)) revert NoPendingAdmin();
+        if (msg.sender != pendingAdmin) revert Unauthorized();
         address previousAdmin = admin;
-        admin = newAdmin;
-        emit AdminTransferred(previousAdmin, newAdmin);
+        admin = pendingAdmin;
+        pendingAdmin = address(0);
+        emit AdminTransferred(previousAdmin, admin);
     }
 }
 ```
@@ -238,5 +264,6 @@ forge script script/DeployHook.s.sol --rpc-url $RPC_URL
 - [x] All dangerous permissions disabled by default
 - [x] Admin functions protected
 - [x] Zero address checks
+- [x] Two-step admin transfer prevents accidental privilege loss
 - [ ] Add reentrancy guard if making external calls
 - [ ] Add your specific business logic tests
