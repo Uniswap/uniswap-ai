@@ -1,4 +1,4 @@
-name: GitHub Actions Security Analysis with zizmor
+name: GitHub Actions Analysis
 
 on:
   push:
@@ -10,7 +10,7 @@ permissions: {}
 
 jobs:
   zizmor:
-    name: Run zizmor
+    name: Security Analysis (zizmor)
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -28,3 +28,26 @@ jobs:
         with:
           advanced-security: false
           annotations: true
+
+  actionlint:
+    name: Syntax Validation (actionlint)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: bullfrogsec/bullfrog@1831f79cce8ad602eef14d2163873f27081ebfb3 # v0.8.4
+
+      - name: Checkout repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          persist-credentials: false
+
+      # shellcheck disabled: existing scripts use env vars from GitHub Actions
+      # context (set via env:) that are safe from word splitting. Shellcheck
+      # produces 44 info/style findings (SC2086 quoting, SC2129 redirects)
+      # that are false positives in this context. Re-enable when scripts are
+      # updated to quote all variables.
+      - name: Run actionlint
+        uses: rhysd/actionlint@393031adb9afb225ee52ae2ccd7a5af5525e03e8 # v1.7.11
+        with:
+          args: -shellcheck=""

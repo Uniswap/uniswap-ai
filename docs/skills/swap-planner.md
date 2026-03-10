@@ -61,5 +61,4 @@ Ethereum, Base, Arbitrum, Optimism, Polygon, BNB Chain, Avalanche, Celo, Blast, 
 ## Related Resources
 
 - [Uniswap Driver Plugin](/plugins/uniswap-driver) - Parent plugin
-- [Liquidity Planner](/skills/liquidity-planner) - Plan LP positions instead of swaps
 - [Uniswap Interface](https://app.uniswap.org) - Where deep links open

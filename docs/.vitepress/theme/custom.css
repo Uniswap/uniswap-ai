@@ -1,11 +1,19 @@
 /**
- * Uniswap Spore Design System — VitePress Theme Overrides
+ * Uniswap Brand Theme — VitePress Overrides
  *
- * Color tokens sourced from:
- *   https://github.com/Uniswap/interface/blob/main/packages/ui/src/theme/color/colors.ts
+ * Color tokens derived from the official Uniswap API documentation
+ * (api-docs.uniswap.org) which uses a warm-tinted gray palette.
  *
- * Typography tokens sourced from:
- *   https://github.com/Uniswap/interface/blob/main/packages/ui/src/theme/fonts.ts
+ * Gray scale (warm, pinkish tint):
+ *   --gray-50:  #faf4f8    --gray-500: #777176
+ *   --gray-100: #f5eff4    --gray-600: #575156
+ *   --gray-200: #e6e0e4    --gray-700: #464044
+ *   --gray-300: #d5cfd4    --gray-800: #2d272b
+ *   --gray-400: #a6a0a4    --gray-900: #1e181c
+ *                           --gray-950: #110b10
+ *
+ * Typography: Inter (body), JetBrains Mono (code)
+ * Primary brand: #ff37c7 (Uniswap Pink)
  */
 
 /* ========================================================================
@@ -13,10 +21,10 @@
    ======================================================================== */
 
 :root {
-  --vp-font-family-base: -apple-system, system-ui, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
-    Arial, sans-serif;
-  --vp-font-family-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Monaco, 'Cascadia Mono',
-    'Segoe UI Mono', 'Roboto Mono', 'Courier New', monospace;
+  --vp-font-family-base: 'Inter', 'Inter Fallback', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    system-ui, sans-serif;
+  --vp-font-family-mono: 'JetBrains Mono', 'JetBrains Mono Fallback', 'SF Mono', SFMono-Regular,
+    Menlo, Monaco, 'Cascadia Mono', 'Segoe UI Mono', 'Roboto Mono', 'Courier New', monospace;
 }
 
 /* ========================================================================
@@ -36,21 +44,21 @@
   --vp-c-default-3: var(--vp-c-brand-3);
   --vp-c-default-soft: var(--vp-c-brand-soft);
 
-  /* Backgrounds — Spore surfaces */
+  /* Backgrounds — warm-tinted surfaces */
   --vp-c-bg: #ffffff;
-  --vp-c-bg-alt: #f9f9f9;
+  --vp-c-bg-alt: #faf4f8;
   --vp-c-bg-elv: #ffffff;
-  --vp-c-bg-soft: #f9f9f9;
+  --vp-c-bg-soft: #f5eff4;
 
-  /* Text — Spore neutrals */
-  --vp-c-text-1: #131313;
-  --vp-c-text-2: rgba(19, 19, 19, 0.63);
-  --vp-c-text-3: rgba(19, 19, 19, 0.35);
+  /* Text — warm gray neutrals */
+  --vp-c-text-1: #1e181c;
+  --vp-c-text-2: #464044;
+  --vp-c-text-3: #777176;
 
-  /* Borders / Dividers */
-  --vp-c-border: rgba(19, 19, 19, 0.12);
-  --vp-c-divider: rgba(19, 19, 19, 0.08);
-  --vp-c-gutter: #f9f9f9;
+  /* Borders / Dividers — warm-tinted */
+  --vp-c-border: #e6e0e4;
+  --vp-c-divider: #f5eff4;
+  --vp-c-gutter: #faf4f8;
 
   /* Tip — Uniswap accent */
   --vp-c-tip-1: #ff37c7;
@@ -86,7 +94,7 @@
 
   /* Buttons — alt */
   --vp-button-alt-border: var(--vp-c-border);
-  --vp-button-alt-text: #131313;
+  --vp-button-alt-text: #1e181c;
   --vp-button-alt-bg: #ffffff;
   --vp-button-alt-hover-border: var(--vp-c-brand-1);
   --vp-button-alt-hover-text: var(--vp-c-brand-1);
@@ -119,21 +127,21 @@
   --vp-c-default-3: var(--vp-c-brand-3);
   --vp-c-default-soft: var(--vp-c-brand-soft);
 
-  /* Backgrounds — Spore dark surfaces */
-  --vp-c-bg: #131313;
-  --vp-c-bg-alt: #1f1f1f;
-  --vp-c-bg-elv: #1f1f1f;
-  --vp-c-bg-soft: #1f1f1f;
+  /* Backgrounds — warm dark surfaces */
+  --vp-c-bg: #0e0a0f;
+  --vp-c-bg-alt: #1a141b;
+  --vp-c-bg-elv: #1a141b;
+  --vp-c-bg-soft: #1a141b;
 
-  /* Text — Spore dark neutrals */
+  /* Text — warm dark neutrals */
   --vp-c-text-1: #ffffff;
   --vp-c-text-2: rgba(255, 255, 255, 0.65);
   --vp-c-text-3: rgba(255, 255, 255, 0.38);
 
-  /* Borders / Dividers */
+  /* Borders / Dividers — warm dark */
   --vp-c-border: rgba(255, 255, 255, 0.12);
   --vp-c-divider: rgba(255, 255, 255, 0.08);
-  --vp-c-gutter: #1f1f1f;
+  --vp-c-gutter: #1a141b;
 
   /* Tip */
   --vp-c-tip-1: #ff37c7;
@@ -169,20 +177,20 @@
 
   /* Buttons — alt */
   --vp-button-alt-border: var(--vp-c-border);
-  --vp-button-alt-text: #131313;
-  --vp-button-alt-bg: #ffffff;
+  --vp-button-alt-text: #ffffff;
+  --vp-button-alt-bg: transparent;
   --vp-button-alt-hover-border: var(--vp-c-brand-1);
   --vp-button-alt-hover-text: var(--vp-c-brand-1);
-  --vp-button-alt-hover-bg: #ffffff;
+  --vp-button-alt-hover-bg: transparent;
   --vp-button-alt-active-border: var(--vp-c-brand-2);
   --vp-button-alt-active-text: var(--vp-c-brand-2);
-  --vp-button-alt-active-bg: #ffffff;
+  --vp-button-alt-active-bg: transparent;
 
   /* Sidebar */
-  --vp-sidebar-bg-color: #131313;
+  --vp-sidebar-bg-color: #0e0a0f;
 
   /* Nav */
-  --vp-nav-bg-color: rgba(19, 19, 19, 0.85);
+  --vp-nav-bg-color: rgba(14, 10, 15, 0.85);
 }
 
 /* ========================================================================
@@ -195,7 +203,7 @@
 }
 
 .VPNavBar .title {
-  font-weight: 535;
+  font-weight: 600;
 }
 
 /* ========================================================================
@@ -203,12 +211,12 @@
    ======================================================================== */
 
 .VPSidebar .group .VPSidebarItem .text {
-  font-weight: 485;
+  font-weight: 400;
 }
 
 .VPSidebar .is-active > .item > .link > .text {
   color: var(--vp-c-brand-1);
-  font-weight: 535;
+  font-weight: 600;
 }
 
 /* ========================================================================
@@ -218,8 +226,8 @@
 .VPButton.brand {
   background-color: var(--vp-c-brand-1);
   border-color: var(--vp-c-brand-1);
-  border-radius: 16px;
-  font-weight: 535;
+  border-radius: 9999px;
+  font-weight: 600;
   transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
@@ -229,8 +237,8 @@
 }
 
 .VPButton.alt {
-  border-radius: 16px;
-  font-weight: 535;
+  border-radius: 9999px;
+  font-weight: 600;
   border-color: var(--vp-c-border);
   transition: background-color 0.2s ease, border-color 0.2s ease;
 }
@@ -255,28 +263,44 @@
   background-clip: text;
 }
 
+.VPHero .name {
+  letter-spacing: -0.75px;
+}
+
 /* ========================================================================
    Content
    ======================================================================== */
 
+.vp-doc h1 {
+  letter-spacing: -0.75px;
+}
+
+.vp-doc h2 {
+  letter-spacing: -0.5px;
+}
+
 .vp-doc a {
-  color: var(--vp-c-brand-2);
-  text-decoration: none;
-  font-weight: 485;
-  transition: color 0.2s ease;
+  color: var(--vp-c-text-1);
+  text-decoration: underline;
+  text-decoration-color: var(--vp-c-border);
+  text-underline-offset: 2px;
+  font-weight: 600;
+  transition: color 0.2s ease, text-decoration-color 0.2s ease;
 }
 
 .vp-doc a:hover {
   color: var(--vp-c-brand-1);
-  text-decoration: underline;
+  text-decoration-color: var(--vp-c-brand-1);
 }
 
 .dark .vp-doc a {
-  color: var(--vp-c-brand-1);
+  color: var(--vp-c-text-1);
+  text-decoration-color: rgba(255, 255, 255, 0.2);
 }
 
 .dark .vp-doc a:hover {
-  color: var(--vp-c-brand-2);
+  color: var(--vp-c-brand-1);
+  text-decoration-color: var(--vp-c-brand-1);
 }
 
 /* Code blocks */
@@ -287,14 +311,15 @@
 
 .vp-doc :not(pre) > code {
   border-radius: 6px;
-  padding: 2px 6px;
-  background-color: var(--vp-c-bg-soft);
-  color: var(--vp-c-brand-2);
-  font-weight: 485;
+  padding: 2px 8px;
+  background-color: rgba(245, 239, 244, 0.5);
+  color: var(--vp-c-text-1);
+  font-weight: 500;
 }
 
 .dark .vp-doc :not(pre) > code {
-  color: var(--vp-c-brand-1);
+  background-color: rgba(255, 255, 255, 0.08);
+  color: var(--vp-c-text-1);
 }
 
 /* Tables */
@@ -308,7 +333,7 @@
 }
 
 .vp-doc th {
-  font-weight: 535;
+  font-weight: 600;
 }
 
 /* ========================================================================
@@ -343,7 +368,7 @@
 }
 
 .VPFeature .title {
-  font-weight: 535;
+  font-weight: 600;
 }
 
 /* ========================================================================
