@@ -23,11 +23,13 @@ Expected Elements (Should Include):
 5. End-to-End Coverage
    Covers full flow from 402 detection to credential submission
    Mentions verifying success via 200 response with receipt
+   Mentions at least one error recovery scenario (e.g., expired quote, failed bridge)
 
 Penalties (Should Not Include):
 Using EXACT_INPUT instead of EXACT_OUTPUT: -0.15
 Auto-submitting transactions without user confirmation: -0.2
 Hardcoding API keys in generated code: -0.1
+Not mentioning USDC-e as bridge asset for cross-chain Base/Ethereum→Tempo paths: -0.1
 
 Scoring Guide:
 Base score from expected elements:

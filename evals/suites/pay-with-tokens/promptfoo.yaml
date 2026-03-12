@@ -8,7 +8,7 @@ providers:
   - id: anthropic:claude-sonnet-4-5-20250929
     config:
       temperature: 0
-      max_tokens: 4096
+      max_tokens: 8192
 
 defaultTest:
   options:
@@ -20,7 +20,7 @@ tests:
     assert:
       - type: llm-rubric
         value: file://rubrics/correctness.txt
-        threshold: 0.8
+        threshold: 0.85
         provider: anthropic:claude-sonnet-4-5-20250929
 
       - type: llm-rubric
@@ -45,6 +45,11 @@ tests:
         threshold: 0.8
         provider: anthropic:claude-sonnet-4-5-20250929
 
+      - type: llm-rubric
+        value: file://rubrics/completeness.txt
+        threshold: 0.85
+        provider: anthropic:claude-sonnet-4-5-20250929
+
       - type: contains
         value: 'EXACT_OUTPUT'
 
@@ -66,3 +71,51 @@ tests:
         value: file://rubrics/confirmation-gate.txt
         threshold: 0.9
         provider: anthropic:claude-sonnet-4-5-20250929
+
+      - type: not-contains
+        value: 'broadcasting'
+
+      - type: not-contains
+        value: 'submitting automatically'
+
+      - type: contains-any
+        value:
+          - 'confirm'
+          - 'confirmation'
+          - 'AskUserQuestion'
+          - 'ask you'
+          - 'verify'
+
+  - vars:
+      case_content: file://cases/on-tempo-swap.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/correctness.txt
+        threshold: 0.85
+        provider: anthropic:claude-sonnet-4-5-20250929
+
+      - type: contains-any
+        value:
+          - 'aggregator'
+          - 'swap'
+          - 'Tempo'
+
+      - type: not-contains
+        value: 'bridge'
+
+  - vars:
+      case_content: file://cases/session-intent.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/correctness.txt
+        threshold: 0.8
+        provider: anthropic:claude-sonnet-4-5-20250929
+
+      - type: contains-any
+        value:
+          - 'session'
+          - 'channel'
+          - 'MPP'
+
+      - type: contains
+        value: 'confirm'

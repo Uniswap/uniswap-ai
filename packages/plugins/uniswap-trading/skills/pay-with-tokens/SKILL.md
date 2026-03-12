@@ -36,12 +36,12 @@ payment method.
 
 ## Quick Decision Guide
 
-| Wallet holds...            | Payment token on... | Path                     |
-| -------------------------- | ------------------- | ------------------------ |
-| USDC/USDT on Tempo         | Tempo               | Swap via aggregator hook |
-| Any ERC-20 on Base         | Tempo               | Swap to USDC-e → bridge  |
-| Any ERC-20 on Ethereum     | Tempo               | Swap to USDC-e → bridge  |
-| TIP-20 stablecoin on Tempo | Tempo               | Direct payment (no swap) |
+| Wallet holds...                      | Payment token on... | Path                                                 |
+| ------------------------------------ | ------------------- | ---------------------------------------------------- |
+| Required payment token on Tempo      | Tempo               | Direct payment (no swap needed)                      |
+| Different TIP-20 stablecoin on Tempo | Tempo               | Swap via Uniswap aggregator hook                     |
+| USDC-e on Base                       | Tempo               | Bridge USDC-e to Tempo, then swap if needed          |
+| Any ERC-20 on Base or Ethereum       | Tempo               | Swap to USDC-e, bridge to Tempo, then swap if needed |
 
 ---
 
@@ -95,6 +95,9 @@ body. For MPP/Tempo the body is JSON:
 }
 ```
 
+> `TEMPO_CHAIN_ID` is a placeholder. See the Key Addresses and References
+> section for how to obtain the current Tempo chain ID from the Tempo docs.
+
 Validate and extract fields. The `amount` is the exact output required (in
 token base units). This skill is **exact-output oriented** — the payee specifies
 the amount; the payer finds tokens to cover it.
@@ -111,9 +114,14 @@ From the challenge body, extract:
 
 ### Phase 2 — Check Wallet Balances
 
+> Before checking balances, identify the user's wallet address. Ask the user
+> for their wallet address if not already provided — store as
+> `WALLET_ADDRESS`. Never assume or hallucinate a wallet address.
+
 Check the user's token balances on the chains where they hold funds. Use
 `WebFetch` to query block explorer APIs or RPC endpoints for ERC-20 balances.
-Identify the most cost-effective source token:
+Set `USDC_E_ADDRESS` based on the source chain (see Key Addresses section for
+per-chain USDC-e addresses). Identify the most cost-effective source token:
 
 1. Prefer tokens already on Tempo (no bridge needed)
 2. Then prefer USDC-e on Base (minimal bridge path)
@@ -160,44 +168,82 @@ x-universal-router-version: 2.0
 **Step 4A-1 — Check approval**:
 
 ```bash
+# Build the request body safely using jq to avoid shell injection.
+# The `amount` is used to determine whether the existing allowance is
+# sufficient. Include it to receive an accurate approval status.
+APPROVAL_BODY=$(jq -n \
+  --arg wallet "$WALLET_ADDRESS" \
+  --arg token "$TOKEN_IN_ADDRESS" \
+  --arg amount "$REQUIRED_AMOUNT_IN" \
+  --argjson chainId "$SOURCE_CHAIN_ID" \
+  '{walletAddress: $wallet, token: $token, amount: $amount, chainId: $chainId}')
+
 curl -s -X POST https://trade-api.gateway.uniswap.org/v1/check_approval \
   -H "Content-Type: application/json" \
   -H "x-api-key: $UNISWAP_API_KEY" \
   -H "x-universal-router-version: 2.0" \
-  -d '{
-    "walletAddress": "'"$WALLET_ADDRESS"'",
-    "token": "'"$TOKEN_IN_ADDRESS"'",
-    "amount": "'"$REQUIRED_AMOUNT_IN"'",
-    "chainId": '"$SOURCE_CHAIN_ID"'
-  }'
+  -d "$APPROVAL_BODY"
 ```
 
-If the `approval` field is non-null, submit and confirm the approval transaction
-before proceeding.
+> **REQUIRED:** If the `approval` field is non-null, use `AskUserQuestion` to
+> show the user the approval details (token address, spender, amount, estimated
+> gas) and obtain explicit confirmation before submitting the approval
+> transaction.
 
 **Step 4A-2 — Get exact-output quote for USDC-e**:
 
 ```bash
+# Build the request body safely using jq. Chain IDs are integers; addresses
+# and amounts are strings.
+QUOTE_BODY=$(jq -n \
+  --arg swapper "$WALLET_ADDRESS" \
+  --arg tokenIn "$TOKEN_IN_ADDRESS" \
+  --arg tokenOut "$USDC_E_ADDRESS" \
+  --argjson tokenInChainId "$SOURCE_CHAIN_ID" \
+  --argjson tokenOutChainId "$SOURCE_CHAIN_ID" \
+  --arg amount "$USDC_E_AMOUNT_NEEDED" \
+  --argjson slippage 0.5 \
+  '{
+    swapper: $swapper,
+    tokenIn: $tokenIn,
+    tokenOut: $tokenOut,
+    tokenInChainId: $tokenInChainId,
+    tokenOutChainId: $tokenOutChainId,
+    amount: $amount,
+    type: "EXACT_OUTPUT",
+    slippageTolerance: $slippage,
+    routingPreference: "BEST_PRICE"
+  }')
+
 curl -s -X POST https://trade-api.gateway.uniswap.org/v1/quote \
   -H "Content-Type: application/json" \
   -H "x-api-key: $UNISWAP_API_KEY" \
   -H "x-universal-router-version: 2.0" \
-  -d '{
-    "swapper": "'"$WALLET_ADDRESS"'",
-    "tokenIn": "'"$TOKEN_IN_ADDRESS"'",
-    "tokenOut": "'"$USDC_E_ADDRESS"'",
-    "tokenInChainId": "'"$SOURCE_CHAIN_ID"'",
-    "tokenOutChainId": "'"$SOURCE_CHAIN_ID"'",
-    "amount": "'"$USDC_E_AMOUNT_NEEDED"'",
-    "type": "EXACT_OUTPUT",
-    "slippageTolerance": 0.5,
-    "routingPreference": "BEST_PRICE"
-  }'
+  -d "$QUOTE_BODY"
 ```
 
-Note: `tokenInChainId` and `tokenOutChainId` must be **strings**, not numbers.
+Note: `tokenInChainId` and `tokenOutChainId` must be **integers**, not strings.
 
 Store the full quote response as `QUOTE_RESPONSE`.
+
+**Step 4A-2.5 — Sign the permitData**:
+
+If the quote response contains a non-null `permitData` field, you must sign it
+off-chain before executing the swap.
+
+- **For CLASSIC routing**: if `permitData` is non-null, sign it using the
+  Permit2 contract's EIP-712 typed data signing scheme. The wallet's private
+  key or connected signing method is required. See the Permit2 documentation
+  or the [swap-integration](../swap-integration/SKILL.md) skill for signing
+  details.
+- **For UniswapX (DUTCH_V2, DUTCH_V3, PRIORITY)**: sign the `permitData`
+  from the quote response using the same EIP-712 typed data approach.
+
+Store the resulting signature as `PERMIT2_SIGNATURE`.
+
+> **REQUIRED:** Use `AskUserQuestion` to confirm the signing step with the
+> user before proceeding. Show the permit details (token, spender, amount,
+> deadline) so the user understands what they are authorizing.
 
 **Step 4A-3 — Execute the swap**:
 
@@ -209,7 +255,12 @@ CLEAN_QUOTE=$(echo "$QUOTE_RESPONSE" | jq 'del(.permitData, .permitTransaction)'
 if [ "$ROUTING" = "CLASSIC" ]; then
   PERMIT_DATA=$(echo "$QUOTE_RESPONSE" | jq '.permitData')
   if [ "$PERMIT_DATA" != "null" ]; then
-    # Sign permitData off-chain, then include signature + permitData in swap body
+    # Guard: ensure PERMIT2_SIGNATURE was obtained in Step 4A-2.5
+    if [ -z "$PERMIT2_SIGNATURE" ]; then
+      echo "ERROR: permitData is present but PERMIT2_SIGNATURE is empty. Complete Step 4A-2.5 first."
+      exit 1
+    fi
+    # Include signature + permitData in swap body
     SWAP_BODY=$(echo "$CLEAN_QUOTE" | jq \
       --arg sig "$PERMIT2_SIGNATURE" \
       --argjson pd "$PERMIT_DATA" \
@@ -234,26 +285,63 @@ transaction summary to the user via AskUserQuestion before submitting.
 
 ### Phase 4B — Bridge to Tempo (cross-chain path)
 
-After acquiring USDC-e on the source chain, bridge it to Tempo via the Tempo
-bridge. Bridge parameters come from the Tempo documentation or the 402 challenge
-metadata. Wait for bridge confirmation before proceeding.
+After acquiring USDC-e on the source chain, bridge it to Tempo. The Tempo bridge
+accepts USDC-e (Bridged USDC) as the canonical bridge-in asset. Consult
+`https://docs.tempo.finance` for current bridge contract addresses and the
+bridge API.
+
+The bridge process is:
+
+1. **Approve USDC-e** to the bridge contract on the source chain
+2. **Call the bridge deposit function** with the destination Tempo address and
+   the USDC-e amount
+3. **Wait for bridge confirmation** (typically a few minutes)
+
+> **REQUIRED:** Use `AskUserQuestion` before submitting the bridge transaction.
+> Show the user: amount, bridge contract address, destination address on Tempo,
+> and estimated bridge time.
+
+Poll the bridge explorer or use the Tempo RPC to confirm receipt of funds on
+Tempo before proceeding to Phase 5.
 
 ### Phase 5 — Swap to Required Payment Token on Tempo (if needed)
 
 If the wallet now holds a TIP-20 stablecoin on Tempo that is not the exact
 payment token, use the Uniswap aggregator hook on Tempo to swap to the required
-token. This follows the same Trading API flow as Phase 4A but with Tempo's
-chain ID and token addresses.
+token. The Uniswap Trading API supports Tempo's chain ID — use the same base
+URL `https://trade-api.gateway.uniswap.org/v1` with the Tempo chain ID for
+both `tokenInChainId` and `tokenOutChainId`. Verify Tempo chain ID support is
+live in the Trading API before attempting. This follows the same flow as
+Phase 4A but with Tempo's chain ID and token addresses.
 
 ### Phase 6 — Construct and Submit the MPP Credential
 
-With the required token in the wallet, fulfill the MPP challenge:
+With the required token in the wallet, fulfill the MPP challenge.
 
-1. For a `charge` intent: sign the payment authorization as specified by the
-   Tempo/MPP SDK and construct the credential payload
-2. For a `session` intent: open a payment channel as specified by the MPP protocol
-3. Retry the original request with the credential in the `Authorization` header
-   or as the `X-Payment-Credential` header per the protocol spec
+**For a `charge` intent:**
+
+1. Construct the payment authorization object:
+   - `payment_method_type`: `"tempo"`
+   - `recipient`: the payee address from the 402 challenge
+   - `amount`: the exact amount in base units
+   - `token`: the payment token address
+   - `chain_id`: Tempo chain ID (see Key Addresses section)
+   - `nonce`: a unique per-payment nonce (UUID or timestamp)
+2. Sign the authorization object according to the MPP specification.
+   See `https://mpp.dev` for the canonical signing scheme.
+3. Construct the credential:
+   `{type: "tempo", authorization: <signed_object>, signature: <sig>}`
+4. Encode as JSON and base64-encode for the header value.
+
+**For a `session` intent:**
+
+A payment channel enables pay-as-you-go usage. Session intents are more complex
+than charge intents and may require additional setup. Consult the MPP SDK at
+`https://mpp.dev/sdk` for channel opening procedures.
+
+**Submit the credential** by retrying the original request with the credential
+in the `Authorization` header or as the `X-Payment-Credential` header per the
+protocol spec:
 
 ```bash
 curl -si "https://api.example.com/resource" \
@@ -284,8 +372,19 @@ credential was rejected — check the error body and re-inspect the challenge.
 
 - **Trading API**: `https://trade-api.gateway.uniswap.org/v1`
 - **MPP docs**: `https://mpp.dev`
+- **Tempo documentation**: `https://docs.tempo.finance`
+- **Tempo chain ID**: See Tempo documentation at `https://docs.tempo.finance`
+  for the current chain ID (Tempo is in active development; consult docs for
+  the latest value)
 - **Tempo bridge**: See Tempo documentation for bridge contract addresses
-- **Supported chains for Trading API**: 1 (Ethereum), 8453 (Base), 42161 (Arbitrum), 10 (Optimism), 137 (Polygon), 130 (Unichain)
+- **USDC-e on Base (8453)**: `0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6CA`
+  (Bridged USDC from Base Bridge)
+- **USDC-e on Arbitrum (42161)**:
+  `0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8`
+- **USDC on Ethereum (1)**: `0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48`
+  (use as bridge asset for Ethereum to Tempo path)
+- **Supported chains for Trading API**: 1 (Ethereum), 8453 (Base),
+  42161 (Arbitrum), 10 (Optimism), 137 (Polygon), 130 (Unichain)
 
 ## Related Skills
 
