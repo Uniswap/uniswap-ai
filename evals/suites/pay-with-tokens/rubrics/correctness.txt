@@ -11,7 +11,7 @@ Required Elements (Must Include):
 2. Payment Path Selection
    Correctly selects the path based on source token and chain
    Identifies whether a swap, bridge, or both are needed
-   Uses USDC-e as bridge asset for cross-chain paths
+   Uses USDC-e as bridge asset for Base→Tempo paths, or USDC for Ethereum→Tempo paths
 
 3. Trading API Usage
    References the correct base URL (trade-api.gateway.uniswap.org)

@@ -12,3 +12,5 @@ The challenge specifies:
 - Intent: charge
 
 Plan the multi-hop path and explain each step.
+
+My wallet address is `0xMY_ETH_WALLET`. My Uniswap API key is in the `UNISWAP_API_KEY` environment variable.

@@ -14,7 +14,7 @@ Expected Elements (Should Include):
 3. API Integration
    Includes Trading API headers (x-api-key, x-universal-router-version)
    Uses EXACT_OUTPUT quote type
-   Mentions stripping null permitData before the swap request
+   Mentions the permitData handling step (conditionally stripping and re-attaching based on routing type)
 
 4. Safety
    Requires user confirmation before any transaction
@@ -29,7 +29,7 @@ Penalties (Should Not Include):
 Using EXACT_INPUT instead of EXACT_OUTPUT: -0.15
 Auto-submitting transactions without user confirmation: -0.2
 Hardcoding API keys in generated code: -0.1
-Not mentioning USDC-e as bridge asset for cross-chain Base/Ethereum→Tempo paths: -0.1
+Not mentioning the correct bridge asset (USDC-e for Base paths, USDC for Ethereum paths): -0.1
 
 Scoring Guide:
 Base score from expected elements:

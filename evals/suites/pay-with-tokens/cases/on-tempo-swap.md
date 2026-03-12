@@ -21,3 +21,5 @@ My wallet already holds USEUSD on Tempo (a different TIP-20 stablecoin).
 My wallet address is `0xMY_WALLET_ON_TEMPO`.
 
 Walk me through paying this using the on-Tempo swap path.
+
+My Uniswap API key is in the `UNISWAP_API_KEY` environment variable.

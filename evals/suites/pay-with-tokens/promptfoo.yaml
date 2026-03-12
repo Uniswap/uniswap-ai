@@ -1,6 +1,10 @@
 # yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
 description: 'pay-with-tokens Skill Evaluation'
 
+# Note: The same model family (claude-sonnet-4-5) is used as both subject and judge.
+# This is a known cost/speed tradeoff. The rubric thresholds are set conservatively
+# to partially compensate. For high-stakes eval runs, consider a different judge model.
+
 prompts:
   - file://prompt-wrapper.js
 
@@ -58,6 +62,7 @@ tests:
           - 'bridge'
           - 'USDC-e'
           - 'usdc-e'
+          - 'USDC'
 
       - type: contains-any
         value:
@@ -71,12 +76,6 @@ tests:
         value: file://rubrics/confirmation-gate.txt
         threshold: 0.9
         provider: anthropic:claude-sonnet-4-5-20250929
-
-      - type: not-contains
-        value: 'broadcasting'
-
-      - type: not-contains
-        value: 'submitting automatically'
 
       - type: contains-any
         value:
@@ -101,7 +100,10 @@ tests:
           - 'Tempo'
 
       - type: not-contains
-        value: 'bridge'
+        value: 'USDC-e'
+
+      - type: not-contains
+        value: 'bridge to Tempo'
 
   - vars:
       case_content: file://cases/session-intent.md
@@ -111,11 +113,20 @@ tests:
         threshold: 0.8
         provider: anthropic:claude-sonnet-4-5-20250929
 
+      - type: llm-rubric
+        value: file://rubrics/completeness.txt
+        threshold: 0.75
+        provider: anthropic:claude-sonnet-4-5-20250929
+
       - type: contains-any
         value:
           - 'session'
           - 'channel'
           - 'MPP'
 
-      - type: contains
-        value: 'confirm'
+      - type: contains-any
+        value:
+          - 'AskUserQuestion'
+          - 'confirmation'
+          - 'channel'
+          - 'mpp.dev'

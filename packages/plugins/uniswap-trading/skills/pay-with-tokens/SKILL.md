@@ -36,12 +36,12 @@ payment method.
 
 ## Quick Decision Guide
 
-| Wallet holds...                      | Payment token on... | Path                                                 |
-| ------------------------------------ | ------------------- | ---------------------------------------------------- |
-| Required payment token on Tempo      | Tempo               | Direct payment (no swap needed)                      |
-| Different TIP-20 stablecoin on Tempo | Tempo               | Swap via Uniswap aggregator hook                     |
-| USDC-e on Base                       | Tempo               | Bridge USDC-e to Tempo, then swap if needed          |
-| Any ERC-20 on Base or Ethereum       | Tempo               | Swap to USDC-e, bridge to Tempo, then swap if needed |
+| Wallet holds...                      | Payment token on... | Path                                                                                                |
+| ------------------------------------ | ------------------- | --------------------------------------------------------------------------------------------------- |
+| Required payment token on Tempo      | Tempo               | Direct payment (no swap needed)                                                                     |
+| Different TIP-20 stablecoin on Tempo | Tempo               | Swap via Uniswap aggregator hook                                                                    |
+| USDC-e on Base                       | Tempo               | Bridge USDC-e to Tempo, then swap if needed (native USDC or USDbC — see Tempo bridge docs)          |
+| Any ERC-20 on Base or Ethereum       | Tempo               | Swap to USDC-e, bridge to Tempo, then swap if needed (native USDC or USDbC — see Tempo bridge docs) |
 
 ---
 
@@ -136,7 +136,7 @@ Choose a path based on what the wallet holds:
 If wallet holds a TIP-20 stablecoin on Tempo:
 
 1. If token matches the required payment token → proceed to Phase 5 directly
-2. If different stablecoin → swap via Uniswap aggregator hook on Tempo (see Phase 4A)
+2. If different stablecoin → swap via Uniswap aggregator hook on Tempo (see Phase 5)
 
 #### Path B — Cross-Chain (Base or Ethereum)
 
@@ -144,7 +144,7 @@ For tokens on Base or Ethereum, the full cross-chain path is:
 
 ```text
 Source token (Base/Ethereum)
-  → [Uniswap Trading API swap] → USDC-e (bridging asset)
+  → [Uniswap Trading API swap] → USDC-e (bridging asset — native USDC or USDbC — see Tempo bridge docs)
   → [Tempo bridge] → pathUSD or target TIP-20 on Tempo
   → [Uniswap aggregator hook on Tempo, if needed] → required payment token
 ```
@@ -270,6 +270,10 @@ if [ "$ROUTING" = "CLASSIC" ]; then
   fi
 else
   # UniswapX (DUTCH_V2, DUTCH_V3, PRIORITY): signature only (no permitData in swap body)
+  if [ -z "$PERMIT2_SIGNATURE" ]; then
+    echo "ERROR: UniswapX order requires PERMIT2_SIGNATURE. Complete Step 4A-2.5 first."
+    exit 1
+  fi
   SWAP_BODY=$(echo "$CLEAN_QUOTE" | jq --arg sig "$PERMIT2_SIGNATURE" '. + {signature: $sig}')
 fi
 
@@ -287,7 +291,7 @@ transaction summary to the user via AskUserQuestion before submitting.
 
 After acquiring USDC-e on the source chain, bridge it to Tempo. The Tempo bridge
 accepts USDC-e (Bridged USDC) as the canonical bridge-in asset. Consult
-`https://docs.tempo.finance` for current bridge contract addresses and the
+`https://docs.tempo.xyz` for current bridge contract addresses and the
 bridge API.
 
 The bridge process is:
@@ -372,13 +376,13 @@ credential was rejected — check the error body and re-inspect the challenge.
 
 - **Trading API**: `https://trade-api.gateway.uniswap.org/v1`
 - **MPP docs**: `https://mpp.dev`
-- **Tempo documentation**: `https://docs.tempo.finance`
-- **Tempo chain ID**: See Tempo documentation at `https://docs.tempo.finance`
+- **Tempo documentation**: `https://docs.tempo.xyz`
+- **Tempo chain ID**: See Tempo documentation at `https://docs.tempo.xyz`
   for the current chain ID (Tempo is in active development; consult docs for
   the latest value)
 - **Tempo bridge**: See Tempo documentation for bridge contract addresses
-- **USDC-e on Base (8453)**: `0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6CA`
-  (Bridged USDC from Base Bridge)
+- **USDC on Base (8453)**: `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` (native USDC issued by Circle — preferred bridge asset)
+- **USDbC on Base (8453)**: `0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6CA` (legacy bridged USDC — use native USDC if the bridge supports it)
 - **USDC-e on Arbitrum (42161)**:
   `0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8`
 - **USDC on Ethereum (1)**: `0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48`
