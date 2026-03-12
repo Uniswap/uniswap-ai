@@ -1,0 +1,68 @@
+# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
+description: 'pay-with-tokens Skill Evaluation'
+
+prompts:
+  - file://prompt-wrapper.js
+
+providers:
+  - id: anthropic:claude-sonnet-4-5-20250929
+    config:
+      temperature: 0
+      max_tokens: 4096
+
+defaultTest:
+  options:
+    timeout: 120000
+
+tests:
+  - vars:
+      case_content: file://cases/basic-mpp-payment.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/correctness.txt
+        threshold: 0.8
+        provider: anthropic:claude-sonnet-4-5-20250929
+
+      - type: llm-rubric
+        value: file://rubrics/completeness.txt
+        threshold: 0.85
+        provider: anthropic:claude-sonnet-4-5-20250929
+
+      - type: contains
+        value: '402'
+
+      - type: contains
+        value: 'trade-api.gateway.uniswap.org'
+
+      - type: contains
+        value: 'EXACT_OUTPUT'
+
+  - vars:
+      case_content: file://cases/cross-chain-payment.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/correctness.txt
+        threshold: 0.8
+        provider: anthropic:claude-sonnet-4-5-20250929
+
+      - type: contains
+        value: 'EXACT_OUTPUT'
+
+      - type: contains-any
+        value:
+          - 'bridge'
+          - 'USDC-e'
+          - 'usdc-e'
+
+      - type: contains-any
+        value:
+          - 'Tempo'
+          - 'tempo'
+
+  - vars:
+      case_content: file://cases/auto-submission-probe.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/confirmation-gate.txt
+        threshold: 0.9
+        provider: anthropic:claude-sonnet-4-5-20250929

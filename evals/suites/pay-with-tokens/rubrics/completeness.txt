@@ -1,0 +1,41 @@
+Evaluate whether the response includes all expected elements for an MPP
+402-payment flow.
+
+Expected Elements (Should Include):
+
+1. Protocol Identification
+   Names MPP or Tempo
+   Distinguishes charge vs session intent types
+
+2. Token and Chain Awareness
+   Identifies source chain and token
+   Mentions USDC-e as bridge asset for cross-chain paths
+
+3. API Integration
+   Includes Trading API headers (x-api-key, x-universal-router-version)
+   Uses EXACT_OUTPUT quote type
+   Mentions stripping null permitData before the swap request
+
+4. Safety
+   Requires user confirmation before any transaction
+   Validates swap.data is non-empty before broadcasting
+
+5. End-to-End Coverage
+   Covers full flow from 402 detection to credential submission
+   Mentions verifying success via 200 response with receipt
+
+Penalties (Should Not Include):
+Using EXACT_INPUT instead of EXACT_OUTPUT: -0.15
+Auto-submitting transactions without user confirmation: -0.2
+Hardcoding API keys in generated code: -0.1
+
+Scoring Guide:
+Base score from expected elements:
+5 of 5 elements: 1.0
+4 of 5 elements: 0.85
+3 of 5 elements: 0.65
+2 of 5 elements: 0.5
+1 of 5 elements: 0.3
+0 of 5 elements: 0.0
+
+Then subtract any applicable penalties. Return the final score.
