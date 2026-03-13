@@ -135,7 +135,7 @@ body. For MPP/Tempo the body is JSON:
 >   ```bash
 >   echo "x402 challenge detected — skill cannot fulfill this automatically yet."
 >   echo "Payment details from x402 challenge:"
->   echo "$CHALLENGE_BODY" | jq '.accepts[0] | {scheme, network, maxAmountRequired, payTo, asset, description, mimeType}'
+>   echo "$CHALLENGE_BODY" | jq '.accepts[0] | {scheme, network, maxAmountRequired, payTo, asset, description, mimeType, extra}'
 >   ```
 >
 >   Suggest the user check `https://github.com/coinbase/x402` for an x402
@@ -206,6 +206,11 @@ token base units). This skill is **exact-output oriented** — the payee specifi
 the amount; the payer finds tokens to cover it.
 
 ### Phase 1 — Identify Payment Token and Required Amount
+
+> **x402 path:** If `PROTOCOL` is `"x402"`, all required variables were set in
+> Phase 0's mapping block (`REQUIRED_AMOUNT`, `RECIPIENT`, `PAYMENT_TOKEN`,
+> `INTENT_TYPE`, `USDC_E_AMOUNT_NEEDED`, `BRIDGE_ASSET_ADDRESS`). Skip Phases
+> 1–3 and proceed directly to Phase 4B.
 
 From the challenge body, extract and assign shell variables:
 
@@ -575,8 +580,10 @@ BRIDGE_TX=$(cast send "$BRIDGE_CONTRACT" \
   --private-key "$PRIVATE_KEY" \
   --rpc-url "$SOURCE_RPC_URL" \
   --json | jq -r '.transactionHash')
-# Capture the block number for efficient log polling later
-BRIDGE_TX_BLOCK=$(cast receipt "$BRIDGE_TX" --rpc-url "$SOURCE_RPC_URL" | grep blockNumber | awk '{print $2}')
+# Capture the block number for efficient log polling later (use --json for stable output)
+BRIDGE_TX_BLOCK=$(cast receipt "$BRIDGE_TX" --rpc-url "$SOURCE_RPC_URL" --json | jq -r '.blockNumber')
+# Convert hex to decimal if cast returns 0x-prefixed value
+[[ "$BRIDGE_TX_BLOCK" == 0x* ]] && BRIDGE_TX_BLOCK=$((BRIDGE_TX_BLOCK))
 ```
 
 > **ABI warning:** The exact function name and parameters must be verified from
@@ -654,7 +661,10 @@ Set `SOURCE_CHAIN_ID` to Tempo's chain ID; use it for both `tokenInChainId` and
 > listed, you cannot complete the on-Tempo swap via this skill at this time.
 > As a workaround, confirm with the API provider whether the bridged token
 > (e.g. pathUSD) is already accepted as the payment token — if so, the bridge
-> output may satisfy the 402 requirement and Phase 5 can be skipped.
+> output may satisfy the 402 requirement and Phase 5 can be skipped. If pathUSD
+> is not the payment token and Tempo is not yet supported by the Trading API,
+> contact the Tempo team — they may provide an alternative swap route or accept
+> pathUSD directly from integrators during the pre-launch period.
 
 ### Phase 6 — Construct and Submit the MPP Credential
 
@@ -760,8 +770,10 @@ With the required token in the wallet, fulfill the MPP challenge.
    ```bash
    # Requires the full typed data JSON including domain and types fields.
    # See https://mpp.dev for the correct domain and type schema.
-   cast wallet sign --private-key "$PRIVATE_KEY" \
-     --typed-data '{"domain":{...},"types":{"Authorization":[...]},"message":{...}}'
+   # Build TYPED_DATA_JSON from the domain, types, and message fields per the schema,
+   # then sign. The {…} placeholders below are not valid JSON — replace with real values:
+   #   TYPED_DATA_JSON='{"domain":{…},"types":{"Authorization":[…]},"message":{…}}'
+   cast wallet sign --private-key "$PRIVATE_KEY" --typed-data "$TYPED_DATA_JSON"
    ```
 
    > **Note:** Do NOT use `cast sign` (without `wallet`) for EIP-712 — it
