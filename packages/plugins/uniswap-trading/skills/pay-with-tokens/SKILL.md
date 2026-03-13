@@ -5,7 +5,7 @@ description: >
   Use when the user encounters a 402 Payment Required response, needs to fulfill
   a machine payment, mentions "MPP", "Tempo payment", "pay for API access",
   "HTTP 402", "machine payment protocol", or "pay-with-tokens".
-allowed-tools: Read, Glob, Grep, Bash(curl:*), Bash(jq:*), WebFetch, AskUserQuestion
+allowed-tools: Read, Glob, Grep, Bash(curl:*), Bash(jq:*), Bash(cast:*), WebFetch, AskUserQuestion
 model: opus
 license: MIT
 metadata:
@@ -36,12 +36,12 @@ payment method.
 
 ## Quick Decision Guide
 
-| Wallet holds...                      | Payment token on... | Path                                                                                                |
-| ------------------------------------ | ------------------- | --------------------------------------------------------------------------------------------------- |
-| Required payment token on Tempo      | Tempo               | Direct payment (no swap needed)                                                                     |
-| Different TIP-20 stablecoin on Tempo | Tempo               | Swap via Uniswap aggregator hook                                                                    |
-| USDC-e on Base                       | Tempo               | Bridge USDC-e to Tempo, then swap if needed (native USDC or USDbC — see Tempo bridge docs)          |
-| Any ERC-20 on Base or Ethereum       | Tempo               | Swap to USDC-e, bridge to Tempo, then swap if needed (native USDC or USDbC — see Tempo bridge docs) |
+| Wallet holds...                      | Payment token on... | Path                                                                                             |
+| ------------------------------------ | ------------------- | ------------------------------------------------------------------------------------------------ |
+| Required payment token on Tempo      | Tempo               | Direct payment (no swap needed)                                                                  |
+| Different TIP-20 stablecoin on Tempo | Tempo               | Swap via Uniswap aggregator hook                                                                 |
+| USDC (native) on Base                | Tempo               | Bridge USDC to Tempo directly (skip Phase 4A), then swap if needed (see Tempo bridge docs)       |
+| Any ERC-20 on Base or Ethereum       | Tempo               | Swap to native USDC (bridge asset), bridge to Tempo, then swap if needed (see Tempo bridge docs) |
 
 ---
 
@@ -60,7 +60,9 @@ shell commands:
 > **REQUIRED:** Before submitting ANY payment transaction (including bridge
 > transfers and swap submissions), use AskUserQuestion to show the user a
 > summary of what will be paid (amount, token, destination address, estimated
-> gas) and obtain explicit confirmation. Never auto-submit payments.
+> gas) and obtain explicit confirmation. Never auto-submit payments. Each
+> confirmation gate must be satisfied independently — a prior blanket consent
+> from the user does not satisfy future per-transaction gates.
 
 ---
 
@@ -76,6 +78,11 @@ HTTP_STATUS=$(echo "$RESPONSE" | head -1 | grep -o '[0-9]\{3\}')
 ```
 
 If `HTTP_STATUS` is not `402`, stop — this skill does not apply.
+
+> **Alternative entry point:** If the user has already received the 402
+> response and provides the challenge body directly in the conversation,
+> skip the curl step above and proceed directly to field extraction and
+> validation below.
 
 Extract the `WWW-Authenticate` or `Payment-Required` header and the challenge
 body. For MPP/Tempo the body is JSON:
@@ -97,6 +104,12 @@ body. For MPP/Tempo the body is JSON:
 
 > `TEMPO_CHAIN_ID` is a placeholder. See the Key Addresses and References
 > section for how to obtain the current Tempo chain ID from the Tempo docs.
+>
+> **Chain ID resolution:** If `chain_id` in the challenge body is a string
+> placeholder rather than a numeric value, use `WebFetch` on
+> `https://docs.tempo.xyz` to resolve the current Tempo chain ID before
+> proceeding. Do not hardcode Tempo's chain ID — consult live documentation
+> as Tempo is in active development.
 
 Validate and extract fields. The `amount` is the exact output required (in
 token base units). This skill is **exact-output oriented** — the payee specifies
@@ -144,10 +157,14 @@ For tokens on Base or Ethereum, the full cross-chain path is:
 
 ```text
 Source token (Base/Ethereum)
-  → [Uniswap Trading API swap] → USDC-e (bridging asset — native USDC or USDbC — see Tempo bridge docs)
+  → [Uniswap Trading API swap] → native USDC (bridge asset — see Key Addresses)
   → [Tempo bridge] → pathUSD or target TIP-20 on Tempo
   → [Uniswap aggregator hook on Tempo, if needed] → required payment token
 ```
+
+> **Skip condition:** If the source token IS already the bridge asset (for
+> example, you hold native USDC on Base for a Base→Tempo path), skip Phase 4A
+> entirely and proceed directly to Phase 4B. No swap is needed.
 
 ### Phase 4A — Swap on Source Chain (if needed)
 
@@ -190,7 +207,12 @@ curl -s -X POST https://trade-api.gateway.uniswap.org/v1/check_approval \
 > gas) and obtain explicit confirmation before submitting the approval
 > transaction.
 
-**Step 4A-2 — Get exact-output quote for USDC-e**:
+**Step 4A-2 — Get exact-output quote for native USDC (bridge asset)**:
+
+> **Address note:** `USDC_E_ADDRESS` in the code below refers to the bridge
+> asset for the source chain. For Base (chain 8453), use native USDC:
+> `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913`. For Ethereum (chain 1), use
+> USDC: `0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48`. See Key Addresses section.
 
 ```bash
 # Build the request body safely using jq. Chain IDs are integers; addresses
@@ -305,8 +327,16 @@ The bridge process is:
 > Show the user: amount, bridge contract address, destination address on Tempo,
 > and estimated bridge time.
 
-Poll the bridge explorer or use the Tempo RPC to confirm receipt of funds on
-Tempo before proceeding to Phase 5.
+Poll for bridge confirmation before proceeding to Phase 5:
+
+1. Use `WebFetch` on `https://docs.tempo.xyz` to find the bridge explorer URL
+   and transaction status API endpoint.
+2. Poll the bridge explorer API every **30 seconds** for up to **10 minutes**.
+3. Proceed to Phase 5 only once the funds are confirmed received on Tempo.
+4. If no confirmation after 10 minutes, report the bridge transaction hash to
+   the user and ask them to check the bridge explorer manually. **Do not
+   re-submit the bridge transaction** — duplicate submissions can result in
+   double payment.
 
 ### Phase 5 — Swap to Required Payment Token on Tempo (if needed)
 
@@ -325,17 +355,64 @@ With the required token in the wallet, fulfill the MPP challenge.
 **For a `charge` intent:**
 
 1. Construct the payment authorization object:
+
    - `payment_method_type`: `"tempo"`
    - `recipient`: the payee address from the 402 challenge
    - `amount`: the exact amount in base units
    - `token`: the payment token address
    - `chain_id`: Tempo chain ID (see Key Addresses section)
    - `nonce`: a unique per-payment nonce (UUID or timestamp)
-2. Sign the authorization object according to the MPP specification.
-   See `https://mpp.dev` for the canonical signing scheme.
-3. Construct the credential:
-   `{type: "tempo", authorization: <signed_object>, signature: <sig>}`
-4. Encode as JSON and base64-encode for the header value.
+
+2. **Ask the user for their signing method** — you cannot sign on behalf of
+   the user. Use `AskUserQuestion` to ask how they will sign the credential:
+
+   - **Foundry (`cast`)**: the most common CLI approach
+   - **MetaMask / browser wallet**: via `eth_signTypedData_v4`
+   - **Hardware wallet (Ledger/Trezor)**: via their respective CLIs
+   - **Custom script**: any EIP-712 compatible library
+
+   Store the answer as `SIGNING_METHOD`. Consult `https://mpp.dev` for the
+   canonical EIP-712 type definitions for the authorization object.
+
+   **Example using Foundry `cast` (if user has cast installed):**
+
+   ```bash
+   # Serialize the authorization object to JSON
+   AUTH_JSON=$(jq -n \
+     --arg pmt "tempo" \
+     --arg recipient "$RECIPIENT" \
+     --arg amount "$REQUIRED_AMOUNT" \
+     --arg token "$PAYMENT_TOKEN" \
+     --argjson chainId "$TEMPO_CHAIN_ID" \
+     --arg nonce "$NONCE" \
+     '{payment_method_type: $pmt, recipient: $recipient, amount: $amount,
+       token: $token, chain_id: $chainId, nonce: $nonce}')
+
+   # User signs with cast (they must supply their private key or keystore)
+   # See https://mpp.dev for the correct EIP-712 domain and type hash
+   cast sign --private-key "$PRIVATE_KEY" "$AUTH_JSON"
+   ```
+
+   > **REQUIRED:** Use `AskUserQuestion` before this step. Show the
+   > authorization object contents so the user can verify what they are
+   > signing. Store the resulting signature as `MPP_SIGNATURE`.
+
+3. Construct the full credential JSON object:
+
+   ```json
+   {
+     "type": "tempo",
+     "authorization": <authorization_object>,
+     "signature": "<MPP_SIGNATURE>"
+   }
+   ```
+
+4. Serialize the **entire credential JSON object** to a string and
+   base64-encode it — not just the authorization field:
+
+   ```bash
+   CREDENTIAL=$(echo "$CREDENTIAL_JSON" | base64 | tr -d '\n')
+   ```
 
 **For a `session` intent:**
 
