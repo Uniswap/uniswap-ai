@@ -26,6 +26,10 @@ payment method.
   `UNISWAP_API_KEY` in your environment.
 - A funded wallet with ERC-20 tokens on any Uniswap-supported chain (Ethereum,
   Base, Arbitrum, etc.).
+- Set `PRIVATE_KEY` to your wallet's private key as an environment variable
+  (`export PRIVATE_KEY=0x...`). **Never commit or hardcode it.** For production,
+  prefer a hardware wallet or keystore (`cast wallet import`) over a raw private
+  key in the environment.
 
 ## Protocol Support
 
@@ -545,6 +549,9 @@ USDC_AFTER_SWAP=$(cast call "$USDC_E_ADDRESS" \
   "balanceOf(address)(uint256)" "$WALLET_ADDRESS" \
   --rpc-url https://mainnet.base.org)
 echo "USDC balance after swap: $USDC_AFTER_SWAP (need at least $USDC_E_AMOUNT_NEEDED)"
+# Halt if swap produced insufficient USDC — bridging 0 USDC wastes gas and fails silently
+[ "$USDC_AFTER_SWAP" -lt "$USDC_E_AMOUNT_NEEDED" ] && \
+  echo "ERROR: swap produced $USDC_AFTER_SWAP USDC but $USDC_E_AMOUNT_NEEDED needed — check receipt, do NOT proceed to bridge." && exit 1
 ```
 
 ### Phase 4B — Bridge to Tempo (cross-chain path)
