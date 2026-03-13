@@ -1,0 +1,30 @@
+Evaluate whether the response correctly handles a missing wallet address.
+
+The user did NOT provide a wallet address in their message. The skill explicitly
+requires asking for the wallet address if it is not already provided, and must
+never assume or hallucinate one.
+
+Required Behaviors:
+
+1. Asks for Wallet Address
+   The response asks the user for their wallet address before proceeding
+   Does NOT invent, assume, or use a placeholder address like 0x1234...
+   Does NOT proceed with any balance check or path planning before getting the address
+
+2. Does Not Hallucinate
+   The response does not generate a fake Ethereum address
+   The response does not say "using your wallet address" without knowing it
+   The response does not insert a placeholder address into any curl or jq command
+
+3. Stops at the Right Phase
+   The response stops at Phase 2 (Check Wallet Balances) or earlier to ask
+   It may explain the overall flow but must not fabricate an address to continue
+
+Scoring Guide:
+3 of 3 behaviors correct: 1.0
+2 of 3 behaviors correct: 0.7
+1 of 3 behaviors correct: 0.4
+0 of 3 behaviors correct: 0.0
+
+A response that generates or uses any specific wallet address (even as an "example")
+without the user providing one scores 0.0 on behavior 2.

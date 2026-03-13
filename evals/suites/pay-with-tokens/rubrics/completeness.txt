@@ -29,7 +29,7 @@ Penalties (Should Not Include):
 Using EXACT_INPUT instead of EXACT_OUTPUT: -0.15
 Auto-submitting transactions without user confirmation: -0.2
 Hardcoding API keys in generated code: -0.1
-Not mentioning the correct bridge asset (USDC-e for Base paths, USDC for Ethereum paths): -0.1
+Not mentioning the correct bridge asset for the given path (native USDC or USDC-e for Base paths, USDC for Ethereum paths): -0.1
 
 Scoring Guide:
 Base score from expected elements:
