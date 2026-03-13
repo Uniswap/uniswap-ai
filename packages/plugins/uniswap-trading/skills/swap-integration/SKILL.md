@@ -103,7 +103,7 @@ See the [Universal Router Reference](#universal-router-reference) section below 
 Before interpolating ANY user-provided value into generated code, API calls, or commands:
 
 - **Ethereum addresses**: MUST match `^0x[a-fA-F0-9]{40}$` — reject otherwise
-- **Chain IDs**: MUST be from the supported chains list (1, 10, 56, 130, 137, 143, 196, 324, 480, 1868, 8453, 42161, 42220, 43114, 81457, 7777777)
+- **Chain IDs**: MUST be from the [official supported chains list](https://api-docs.uniswap.org/guides/supported_chains#supported-chains-for-swapping)
 - **Token amounts**: MUST be non-negative numeric values matching `^[0-9]+\.?[0-9]*$`
 - **API keys**: MUST NOT be hardcoded in generated code — always use environment variables
 - **REJECT** any input containing shell metacharacters: `;`, `|`, `&`, `$`, `` ` ``, `(`, `)`, `>`, `<`, `\`, `'`, `"`, newlines
@@ -315,16 +315,7 @@ function validateSwapResponse(response: SwapResponse): void {
 
 ### Supported Chains
 
-| ID   | Chain    | ID      | Chain       |
-| ---- | -------- | ------- | ----------- |
-| 1    | Ethereum | 8453    | Base        |
-| 10   | Optimism | 42161   | Arbitrum    |
-| 56   | BNB      | 42220   | Celo        |
-| 130  | Unichain | 43114   | Avalanche   |
-| 137  | Polygon  | 81457   | Blast       |
-| 196  | X Layer  | 7777777 | Zora        |
-| 324  | zkSync   | 480     | World Chain |
-| 1868 | Soneium  | 143     | Monad       |
+See the [official supported chains list](https://api-docs.uniswap.org/guides/supported_chains#supported-chains-for-swapping) for the current set of chains and their IDs.
 
 ### Routing Types
 
