@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
-description: 'pay-with-tokens Skill Evaluation'
+description: 'pay-with-any-token Skill Evaluation'
 
 # Note: The same model family (claude-sonnet-4-5) is used as both subject and judge.
 # This is a known cost/speed tradeoff. The rubric thresholds are set conservatively

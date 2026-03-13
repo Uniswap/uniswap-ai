@@ -17,6 +17,6 @@
     "uniswap-viem"
   ],
   "license": "MIT",
-  "skills": ["./skills/swap-integration", "./skills/pay-with-tokens"],
+  "skills": ["./skills/swap-integration", "./skills/pay-with-any-token"],
   "agents": ["./agents/swap-integration-expert.md"]
 }

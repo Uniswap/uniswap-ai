@@ -3,7 +3,7 @@
 I got a 402 from a service requiring 5 USDT equivalent in pathUSD
 on the Tempo network. My wallet holds ETH on Ethereum mainnet (chain 1).
 
-Walk me through paying this using the pay-with-tokens skill.
+Walk me through paying this using the pay-with-any-token skill.
 
 The challenge specifies:
 

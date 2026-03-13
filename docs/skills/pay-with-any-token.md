@@ -12,7 +12,7 @@ with the Tempo payment method.
 ## Invocation
 
 ```text
-/pay-with-tokens
+/pay-with-any-token
 ```
 
 Or describe your situation naturally:
@@ -38,7 +38,7 @@ This skill helps you:
 
 ## When to Use This Skill
 
-Use `pay-with-tokens` when:
+Use `pay-with-any-token` when:
 
 - You receive an **HTTP 402 Payment Required** response from an API
 - The API uses **MPP (Machine Payments Protocol)** with a Tempo payment method

@@ -15,10 +15,10 @@ Integrate Uniswap swaps via Trading API, Universal Router SDK, or direct smart c
 
 ## Skills
 
-| Skill                                          | Description                                                                  | Invocation          |
-| ---------------------------------------------- | ---------------------------------------------------------------------------- | ------------------- |
-| [Swap Integration](../skills/swap-integration) | Comprehensive guide for integrating Uniswap swaps                            | `/swap-integration` |
-| [Pay With Tokens](../skills/pay-with-tokens)   | Fulfill HTTP 402 payment challenges using tokens via the Uniswap Trading API | `/pay-with-tokens`  |
+| Skill                                           | Description                                                                  | Invocation            |
+| ----------------------------------------------- | ---------------------------------------------------------------------------- | --------------------- |
+| [Swap Integration](../skills/swap-integration)  | Comprehensive guide for integrating Uniswap swaps                            | `/swap-integration`   |
+| [Pay With Tokens](../skills/pay-with-any-token) | Fulfill HTTP 402 payment challenges using tokens via the Uniswap Trading API | `/pay-with-any-token` |
 
 ## Agents
 

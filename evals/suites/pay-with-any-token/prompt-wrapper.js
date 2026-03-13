@@ -1,5 +1,5 @@
 /**
- * JavaScript prompt function for pay-with-tokens eval suite.
+ * JavaScript prompt function for pay-with-any-token eval suite.
  *
  * Reads SKILL.md directly via fs and wraps it in {% raw %} blocks
  * to prevent Nunjucks from interpreting URL-encoded JSON patterns
@@ -10,7 +10,7 @@ const path = require('path');
 
 const skillPath = path.resolve(
   __dirname,
-  '../../../packages/plugins/uniswap-trading/skills/pay-with-tokens/SKILL.md'
+  '../../../packages/plugins/uniswap-trading/skills/pay-with-any-token/SKILL.md'
 );
 const skillContent = fs.readFileSync(skillPath, 'utf-8');
 

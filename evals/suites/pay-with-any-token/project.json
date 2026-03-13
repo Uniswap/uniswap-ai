@@ -1,5 +1,5 @@
 {
-  "name": "eval-suite-pay-with-tokens",
+  "name": "eval-suite-pay-with-any-token",
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "projectType": "library",
   "tags": ["type:eval-suite"],
@@ -10,18 +10,18 @@
       "cache": true,
       "inputs": [
         "{projectRoot}/**/*",
-        "{workspaceRoot}/packages/plugins/uniswap-trading/skills/pay-with-tokens/**/*",
+        "{workspaceRoot}/packages/plugins/uniswap-trading/skills/pay-with-any-token/**/*",
         "{workspaceRoot}/evals/scripts/**/*",
         "{workspaceRoot}/evals/rubrics/**/*",
         "{workspaceRoot}/evals/promptfoo.yaml"
       ],
       "outputs": ["{projectRoot}/results.json"],
       "options": {
-        "command": "npx promptfoo eval -c suites/pay-with-tokens/promptfoo.yaml --output suites/pay-with-tokens/results.json --no-progress-bar",
+        "command": "npx promptfoo eval -c suites/pay-with-any-token/promptfoo.yaml --output suites/pay-with-any-token/results.json --no-progress-bar",
         "cwd": "evals"
       },
       "metadata": {
-        "description": "Run pay-with-tokens eval suite"
+        "description": "Run pay-with-any-token eval suite"
       }
     }
   }

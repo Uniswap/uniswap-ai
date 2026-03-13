@@ -1,10 +1,10 @@
 ---
-name: pay-with-tokens
+name: pay-with-any-token
 description: >
   Pay HTTP 402 payment challenges using tokens via the Uniswap Trading API.
   Use when the user encounters a 402 Payment Required response, needs to fulfill
   a machine payment, mentions "MPP", "Tempo payment", "pay for API access",
-  "HTTP 402", "machine payment protocol", or "pay-with-tokens".
+  "HTTP 402", "machine payment protocol", or "pay-with-any-token".
 allowed-tools: Read, Glob, Grep, Bash(curl:*), Bash(jq:*), Bash(cast:*), WebFetch, AskUserQuestion
 model: opus
 license: MIT
