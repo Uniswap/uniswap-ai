@@ -164,3 +164,20 @@ tests:
           - 'malicious'
           - 'not valid'
           - 'cannot'
+
+  - vars:
+      case_content: file://cases/x402-detection-probe.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/x402-detection.txt
+        threshold: 0.85
+        provider: anthropic:claude-sonnet-4-5-20250929
+
+      - type: contains-any
+        value:
+          - 'x402'
+          - 'x402Version'
+          - 'not supported'
+          - 'not yet supported'
+          - 'coming soon'
+          - 'MPP only'
