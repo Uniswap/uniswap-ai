@@ -139,11 +139,27 @@ body. For MPP/Tempo the body is JSON:
 >   ```
 >
 >   Suggest the user check `https://github.com/coinbase/x402` for an x402
->   client library that can handle this natively. Note that even with an x402
->   client, if the `network` field is `"tempo"` and you hold tokens on Base or
->   Ethereum, you will still need to bridge them to Tempo first — see Phase 4B
->   of this skill for bridging guidance, which applies regardless of payment
->   protocol. Do not continue with the MPP phases below.
+>   client library that can handle this natively.
+>
+>   If the `network` field is `"tempo"` and you hold tokens on Base or
+>   Ethereum, you will still need to bridge them to Tempo even with an x402
+>   client. Phase 4B of this skill covers bridging. Before using it, map the
+>   x402 field names to the MPP variable names that Phase 4B expects:
+>
+>   ```bash
+>   # x402 → Phase 4B variable mapping
+>   REQUIRED_AMOUNT=$(echo "$CHALLENGE_BODY" | jq -r '.accepts[0].maxAmountRequired')
+>   RECIPIENT=$(echo "$CHALLENGE_BODY" | jq -r '.accepts[0].payTo')
+>   PAYMENT_TOKEN=$(echo "$CHALLENGE_BODY" | jq -r '.accepts[0].asset')
+>   USDC_E_AMOUNT_NEEDED="$REQUIRED_AMOUNT"
+>   BRIDGE_ASSET_ADDRESS="0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"  # USDC on Base
+>   # WALLET_ADDRESS: use AskUserQuestion if not already provided
+>   ```
+>
+>   After bridging (and any Phase 5 Tempo-side swap), hand off to your x402
+>   client library to construct and submit the x402 payment payload. **Do NOT
+>   proceed to Phase 6** — Phase 6 builds an MPP credential, not an x402
+>   payment. Do not continue with the MPP phases below.
 >
 > - **If `PROTOCOL` is `"mpp"`**: Continue with the flow below.
 > - **If `PROTOCOL` is `"unknown"`**: Report the raw body to the user and do
@@ -471,7 +487,8 @@ cast send "$SWAP_TO" \
 > USDC on Base), initialize these variables before proceeding:
 >
 > ```bash
-> USDC_E_AMOUNT_NEEDED="$REQUIRED_AMOUNT"  # or add a 0.5% buffer if desired
+> USDC_E_AMOUNT_NEEDED="$REQUIRED_AMOUNT"  # exact amount
+> # With 0.5% buffer for bridge fees: $(echo "$REQUIRED_AMOUNT * 1005 / 1000" | bc)
 > BRIDGE_ASSET_ADDRESS="0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"  # USDC on Base (update for other chains)
 > ```
 
@@ -525,11 +542,16 @@ BRIDGE_AMOUNT="$USDC_E_AMOUNT_NEEDED"
 BRIDGE_ASSET_ADDRESS="0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"  # USDC on Base (example)
 
 # 1. Approve the bridge asset to the bridge contract
-cast send "$BRIDGE_ASSET_ADDRESS" \
+#    Wait for the approval to be mined before calling deposit (avoids "insufficient allowance")
+SOURCE_RPC_URL="https://mainnet.base.org"  # replace with your source chain RPC
+APPROVE_TX=$(cast send "$BRIDGE_ASSET_ADDRESS" \
   "approve(address,uint256)" \
   "$BRIDGE_CONTRACT" "$BRIDGE_AMOUNT" \
   --private-key "$PRIVATE_KEY" \
-  --rpc-url https://mainnet.base.org   # replace with your source chain RPC
+  --rpc-url "$SOURCE_RPC_URL" \
+  --json | jq -r '.transactionHash')
+cast receipt "$APPROVE_TX" --rpc-url "$SOURCE_RPC_URL" > /dev/null
+echo "Approval mined: $APPROVE_TX"
 
 # 2. Call the bridge deposit function and capture the tx hash for polling
 # NOTE: Replace the function signature with the actual ABI from Tempo docs.
@@ -538,10 +560,10 @@ BRIDGE_TX=$(cast send "$BRIDGE_CONTRACT" \
   "deposit(address,uint256,address)" \
   "$BRIDGE_ASSET_ADDRESS" "$BRIDGE_AMOUNT" "$WALLET_ADDRESS" \
   --private-key "$PRIVATE_KEY" \
-  --rpc-url https://mainnet.base.org \
+  --rpc-url "$SOURCE_RPC_URL" \
   --json | jq -r '.transactionHash')
 # Capture the block number for efficient log polling later
-BRIDGE_TX_BLOCK=$(cast receipt "$BRIDGE_TX" --rpc-url https://mainnet.base.org | grep blockNumber | awk '{print $2}')
+BRIDGE_TX_BLOCK=$(cast receipt "$BRIDGE_TX" --rpc-url "$SOURCE_RPC_URL" | grep blockNumber | awk '{print $2}')
 ```
 
 > **ABI warning:** The exact function name and parameters must be verified from
