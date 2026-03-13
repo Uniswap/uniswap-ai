@@ -150,6 +150,12 @@ body. For MPP/Tempo the body is JSON:
 >   # x402 → Phase 4B variable mapping
 >   REQUIRED_AMOUNT=$(echo "$CHALLENGE_BODY" | jq -r '.accepts[0].maxAmountRequired')
 >   RECIPIENT=$(echo "$CHALLENGE_BODY" | jq -r '.accepts[0].payTo')
+>   # The resource URL is the endpoint to retry after payment — needed by the x402 client.
+>   # If you came through the curl step, RESOURCE_URL is already set. If you used the
+>   # alternative entry point, extract it now:
+>   RESOURCE_URL=$(echo "$CHALLENGE_BODY" | jq -r '.accepts[0].resource // empty')
+>   # Validate: must start with https://
+>   [[ "$RESOURCE_URL" =~ ^https:// ]] || { echo "ERROR: resource URL missing or not https://"; exit 1; }
 >   # The asset field is the source-chain token (e.g. USDC on Base: 0x833589...).
 >   # It is NOT a Tempo TIP-20 address — do NOT use it directly as PAYMENT_TOKEN.
 >   # Assign it as SOURCE_PAYMENT_TOKEN for reference; look up the corresponding
@@ -174,6 +180,16 @@ body. For MPP/Tempo the body is JSON:
 >   > address. If the user provided it in the conversation, assign it now:
 >   > `WALLET_ADDRESS="<address from conversation>"`. If not, use
 >   > `AskUserQuestion` to request it. Do not proceed without a confirmed address.
+>   >
+>   > Also verify the wallet's USDC balance on Base is at least
+>   > `USDC_E_AMOUNT_NEEDED` before bridging. A shortfall will cause the approval
+>   > or deposit to revert and waste gas:
+>   >
+>   > ```bash
+>   > cast call 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913 \
+>   >   "balanceOf(address)(uint256)" "$WALLET_ADDRESS" \
+>   >   --rpc-url https://mainnet.base.org
+>   > ```
 >
 >   After bridging (and any Phase 5 Tempo-side swap), hand off to your x402
 >   client library to construct and submit the x402 payment payload. **Do NOT
