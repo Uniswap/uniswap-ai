@@ -157,17 +157,23 @@ body. For MPP/Tempo the body is JSON:
 >   # before Phase 5. Leaving PAYMENT_TOKEN empty will produce an obvious error
 >   # rather than a silent wrong-token failure.
 >   SOURCE_PAYMENT_TOKEN=$(echo "$CHALLENGE_BODY" | jq -r '.accepts[0].asset')
->   PAYMENT_TOKEN=""  # REQUIRED: set to the Tempo TIP-20 equivalent of SOURCE_PAYMENT_TOKEN
+>   # The x402 body's asset field is the SOURCE-CHAIN token the payer sends (e.g. USDC on Base).
+>   # It does NOT contain the Tempo-side token address — that must be looked up separately.
+>   # After bridging, you receive pathUSD (Tempo's bridged USDC) on Tempo. Confirm whether
+>   # pathUSD satisfies the payee requirement before setting PAYMENT_TOKEN for Phase 5.
+>   PAYMENT_TOKEN=""  # REQUIRED: set to the Tempo TIP-20 address (NOT SOURCE_PAYMENT_TOKEN)
 >   INTENT_TYPE="charge"              # x402 'exact' scheme = one-time charge
 >   # Start with the exact amount; Phase 4B's skip-4A block shows how to add
 >   # a 0.5% buffer for bridge fees — do NOT finalize this value until you
 >   # reach Phase 4B.
 >   USDC_E_AMOUNT_NEEDED="$REQUIRED_AMOUNT"
 >   BRIDGE_ASSET_ADDRESS="0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"  # USDC on Base
->   # If the user provided their wallet address in the conversation, assign it now:
->   # WALLET_ADDRESS="<address from conversation>"
->   # Otherwise use AskUserQuestion to request it before proceeding to Phase 4B.
 >   ```
+>
+>   > **REQUIRED:** Before proceeding to Phase 4B, you must have the user's wallet
+>   > address. If the user provided it in the conversation, assign it now:
+>   > `WALLET_ADDRESS="<address from conversation>"`. If not, use
+>   > `AskUserQuestion` to request it. Do not proceed without a confirmed address.
 >
 >   After bridging (and any Phase 5 Tempo-side swap), hand off to your x402
 >   client library to construct and submit the x402 payment payload. **Do NOT
@@ -608,10 +614,14 @@ Poll for bridge confirmation before proceeding to Phase 5:
    [ -z "$BRIDGE_CONTRACT_ON_TEMPO" ] && echo "ERROR: BRIDGE_CONTRACT_ON_TEMPO not set" && exit 1
    # Verify the Tempo RPC URL from mainnet.docs.tempo.xyz/developer-integration/connection-details
    TEMPO_RPC_URL="https://rpc.tempo.xyz"
+   # Capture Tempo's current block BEFORE polling starts.
+   # Note: BRIDGE_TX_BLOCK is the source-chain (e.g. Base) block number — do NOT use it here.
+   # Tempo and Base have independent block heights; using the Base block on Tempo would fail.
+   TEMPO_START_BLOCK=$(cast block-number --rpc-url "$TEMPO_RPC_URL" 2>/dev/null || echo "latest")
    for i in $(seq 1 20); do
      RESULT=$(cast logs \
        --rpc-url "$TEMPO_RPC_URL" \
-       --from-block "${BRIDGE_TX_BLOCK:-latest}" \
+       --from-block "$TEMPO_START_BLOCK" \
        --address "$BRIDGE_CONTRACT_ON_TEMPO" \
        "DepositReceived(address,uint256)" 2>/dev/null \
        | grep -i "${WALLET_ADDRESS#0x}")
@@ -667,6 +677,12 @@ Set `SOURCE_CHAIN_ID` to Tempo's chain ID; use it for both `tokenInChainId` and
 > pathUSD directly from integrators during the pre-launch period.
 
 ### Phase 6 — Construct and Submit the MPP Credential
+
+> **x402 path — STOP HERE.** If you arrived via the x402 detection gate in Phase 0,
+> do not proceed. Phase 6 constructs an MPP credential, not an x402 payment payload.
+> After completing Phase 4B (and Phase 5 if needed), hand off to an x402 client
+> library (e.g. `https://github.com/coinbase/x402`) to construct and submit the
+> payment.
 
 With the required token in the wallet, fulfill the MPP challenge.
 
