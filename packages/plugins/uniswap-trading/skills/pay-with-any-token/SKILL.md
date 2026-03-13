@@ -150,12 +150,19 @@ body. For MPP/Tempo the body is JSON:
 >   # x402 → Phase 4B variable mapping
 >   REQUIRED_AMOUNT=$(echo "$CHALLENGE_BODY" | jq -r '.accepts[0].maxAmountRequired')
 >   RECIPIENT=$(echo "$CHALLENGE_BODY" | jq -r '.accepts[0].payTo')
->   # NOTE: The asset field is the source-chain token address (e.g. USDC on Base).
->   # Do NOT use this as TOKEN_OUT on Tempo — look up the Tempo TIP-20 equivalent
->   # at https://mainnet.docs.tempo.xyz/tokens and update PAYMENT_TOKEN before Phase 5.
->   PAYMENT_TOKEN=$(echo "$CHALLENGE_BODY" | jq -r '.accepts[0].asset')
+>   # The asset field is the source-chain token (e.g. USDC on Base: 0x833589...).
+>   # It is NOT a Tempo TIP-20 address — do NOT use it directly as PAYMENT_TOKEN.
+>   # Assign it as SOURCE_PAYMENT_TOKEN for reference; look up the corresponding
+>   # Tempo TIP-20 at https://mainnet.docs.tempo.xyz/tokens and set PAYMENT_TOKEN
+>   # before Phase 5. Leaving PAYMENT_TOKEN empty will produce an obvious error
+>   # rather than a silent wrong-token failure.
+>   SOURCE_PAYMENT_TOKEN=$(echo "$CHALLENGE_BODY" | jq -r '.accepts[0].asset')
+>   PAYMENT_TOKEN=""  # REQUIRED: set to the Tempo TIP-20 equivalent of SOURCE_PAYMENT_TOKEN
 >   INTENT_TYPE="charge"              # x402 'exact' scheme = one-time charge
->   USDC_E_AMOUNT_NEEDED="$REQUIRED_AMOUNT"  # Phase 4B will optionally add a buffer
+>   # Start with the exact amount; Phase 4B's skip-4A block shows how to add
+>   # a 0.5% buffer for bridge fees — do NOT finalize this value until you
+>   # reach Phase 4B.
+>   USDC_E_AMOUNT_NEEDED="$REQUIRED_AMOUNT"
 >   BRIDGE_ASSET_ADDRESS="0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"  # USDC on Base
 >   # If the user provided their wallet address in the conversation, assign it now:
 >   # WALLET_ADDRESS="<address from conversation>"
