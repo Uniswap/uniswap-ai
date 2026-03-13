@@ -160,8 +160,9 @@ body. For MPP/Tempo the body is JSON:
 > `TEMPO_CHAIN_ID`.
 >
 > ```bash
-> # Fail fast if chain ID is still unresolved:
+> # Fail fast if chain ID is still unresolved or not a positive integer:
 > [ -z "$TEMPO_CHAIN_ID" ] && echo "ERROR: TEMPO_CHAIN_ID not set — cannot proceed" && exit 1
+> [[ "$TEMPO_CHAIN_ID" =~ ^[0-9]+$ ]] || { echo "ERROR: TEMPO_CHAIN_ID must be a positive integer, got: $TEMPO_CHAIN_ID"; exit 1; }
 > ```
 >
 > Do not hardcode Tempo's chain ID — Tempo is in active development and the
@@ -207,9 +208,10 @@ echo "Intent        : $INTENT_TYPE"
 
 ### Phase 2 — Check Wallet Balances
 
-> Before checking balances, identify the user's wallet address. Ask the user
-> for their wallet address if not already provided — store as
-> `WALLET_ADDRESS`. Never assume or hallucinate a wallet address.
+> **REQUIRED:** Before checking balances, you must have the user's wallet
+> address. If the user has not provided one, use `AskUserQuestion` to ask
+> now — **do not proceed further until you have it.** Never assume, guess,
+> or use a placeholder address. Store as `WALLET_ADDRESS`.
 
 Check the user's token balances on the chains where they hold funds. Use
 `WebFetch` to query block explorer APIs or RPC endpoints for ERC-20 balances.
@@ -284,7 +286,9 @@ USDC_E_ADDRESS="0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"  # USDC on Base — 
 REQUIRED_AMOUNT_IN="0"            # Use "0" for the initial approval check (Step 4A-1);
                                   # replace with the actual amountIn after Step 4A-2 (quote)
 USDC_E_AMOUNT_NEEDED="$REQUIRED_AMOUNT"  # For EXACT_OUTPUT: target = payment amount
-                                          # Add ~0.5% buffer: $(echo "$REQUIRED_AMOUNT * 1.005" | bc)
+                                          # Add ~0.5% buffer if bridge fees may reduce the bridged
+                                          # amount: $(echo "$REQUIRED_AMOUNT * 1.005" | bc)
+                                          # Without buffer, bridge fees could leave you short.
 ```
 
 > `slippageTolerance: 0.5` in the quote body means **0.5%** (not 0.005). The
@@ -431,8 +435,27 @@ curl -s -X POST https://trade-api.gateway.uniswap.org/v1/swap \
   -d "$SWAP_BODY"
 ```
 
-Validate that `swap.data` is non-empty before broadcasting. Present the
-transaction summary to the user via AskUserQuestion before submitting.
+Store the swap response as `SWAP_RESPONSE`. The `/swap` endpoint returns
+**unsigned calldata** — you must broadcast it yourself. After validating
+`swap.data` is non-empty, present the transaction summary to the user via
+`AskUserQuestion` then broadcast:
+
+```bash
+# Extract the transaction fields from the swap response
+SWAP_TO=$(echo "$SWAP_RESPONSE" | jq -r '.swap.to')
+SWAP_DATA=$(echo "$SWAP_RESPONSE" | jq -r '.swap.data')
+SWAP_VALUE=$(echo "$SWAP_RESPONSE" | jq -r '.swap.value // "0x0"')
+
+# Validate before broadcasting
+[ -z "$SWAP_DATA" ] || [ "$SWAP_DATA" = "null" ] && echo "ERROR: swap.data is empty — quote may have expired. Re-fetch from Step 4A-2." && exit 1
+
+# Broadcast via cast (replace RPC URL with your source chain endpoint)
+cast send "$SWAP_TO" \
+  --data "$SWAP_DATA" \
+  --value "$SWAP_VALUE" \
+  --private-key "$PRIVATE_KEY" \
+  --rpc-url https://mainnet.base.org
+```
 
 ### Phase 4B — Bridge to Tempo (cross-chain path)
 
@@ -456,7 +479,12 @@ bridge-in asset differs by source chain:
 
 **Resolve bridge contract addresses** (REQUIRED before proceeding):
 
-Use `WebFetch` to attempt to find the current bridge contract addresses:
+You need **two** addresses:
+
+- `BRIDGE_CONTRACT` — the deposit contract on the **source chain** (e.g. Base) where you call `approve` + `deposit`
+- `BRIDGE_CONTRACT_ON_TEMPO` — the receiver contract on **Tempo** used to confirm the deposit event when polling
+
+Use `WebFetch` to attempt to find both contract addresses:
 
 1. `https://mainnet.docs.tempo.xyz/developer-integration/bridge`
 2. `https://mainnet.docs.tempo.xyz/contracts`
