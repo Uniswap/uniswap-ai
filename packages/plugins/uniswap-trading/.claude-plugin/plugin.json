@@ -1,6 +1,6 @@
 {
   "name": "uniswap-trading",
-  "version": "1.3.3",
+  "version": "1.3.4",
   "description": "Integrate Uniswap swaps via Trading API, Universal Router SDK, or direct smart contract calls",
   "author": {
     "name": "Uniswap Labs",
