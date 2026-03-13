@@ -280,6 +280,7 @@ TOKEN_IN_ADDRESS="0x..."          # Address of your source token on SOURCE_CHAIN
 #   Base (8453):     0x4200000000000000000000000000000000000006
 #   Ethereum (1):    0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2
 # The Trading API may also accept the ETH sentinel 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEEE
+USDC_E_ADDRESS="0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"  # USDC on Base — update for other chains (see Key Addresses)
 REQUIRED_AMOUNT_IN="0"            # Use "0" for the initial approval check (Step 4A-1);
                                   # replace with the actual amountIn after Step 4A-2 (quote)
 USDC_E_AMOUNT_NEEDED="$REQUIRED_AMOUNT"  # For EXACT_OUTPUT: target = payment amount
@@ -434,6 +435,14 @@ Validate that `swap.data` is non-empty before broadcasting. Present the
 transaction summary to the user via AskUserQuestion before submitting.
 
 ### Phase 4B — Bridge to Tempo (cross-chain path)
+
+> **If you skipped Phase 4A** (you already hold the bridge asset, e.g. native
+> USDC on Base), initialize these variables before proceeding:
+>
+> ```bash
+> USDC_E_AMOUNT_NEEDED="$REQUIRED_AMOUNT"  # or add a 0.5% buffer if desired
+> BRIDGE_ASSET_ADDRESS="0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"  # USDC on Base (update for other chains)
+> ```
 
 After acquiring the bridge asset on the source chain, bridge it to Tempo. The
 bridge-in asset differs by source chain:
@@ -590,11 +599,13 @@ With the required token in the wallet, fulfill the MPP challenge.
    Store the answer as `SIGNING_METHOD`. Consult `https://mpp.dev` for the
    canonical EIP-712 type definitions for the authorization object.
 
-   **Before signing, generate a nonce and deadline:**
+   **Before signing, generate a nonce and deadline, and set the verifier address:**
 
    ```bash
    NONCE=0x$(openssl rand -hex 32)    # 32 bytes = bytes32, with 0x prefix
    DEADLINE=$(($(date +%s) + 300))    # 5-minute window matching maxTimeoutSeconds
+   MPP_VERIFIER_ADDRESS="0x..."       # Deployed MPP contract — from https://mpp.dev
+                                      # (may be gated pre-launch; contact Tempo team)
    ```
 
    **Build the authorization JSON:**
@@ -611,8 +622,9 @@ With the required token in the wallet, fulfill the MPP challenge.
      '{payment_method_type: $pmt, recipient: $recipient, amount: $amount,
        token: $token, chain_id: $chainId, nonce: $nonce, deadline: $deadline}')
    # Note: amount uses --argjson (not --arg) so it encodes as a JSON number,
-   # matching the uint256 EIP-712 type. Other libraries may require explicit
-   # BigInt conversion: BigInt(authMsg.amount) before signing.
+   # matching the uint256 EIP-712 type. viem's signTypedData accepts number|bigint
+   # for uint256 — amounts ≤ 2^53 (well above any USDC payment) are safe as-is.
+   # For amounts > 2^53 or other EIP-712 libraries, use: BigInt(authMsg.amount).
    ```
 
    **Sign using viem (recommended — correctly handles EIP-712 typed data):**
