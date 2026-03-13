@@ -182,8 +182,9 @@ RECIPIENT=$(echo "$CHALLENGE_BODY" | jq -r '.payment_methods[0].recipient')
 # Only overwrite TEMPO_CHAIN_ID if it was not already resolved to a numeric
 # value in Phase 0. If Phase 0's WebFetch or AskUserQuestion already produced
 # a real chain ID, retain that value — do not clobber it with the placeholder.
-[ -z "$TEMPO_CHAIN_ID" ] || [ "$TEMPO_CHAIN_ID" = "TEMPO_CHAIN_ID" ] && \
+if [ -z "$TEMPO_CHAIN_ID" ] || [ "$TEMPO_CHAIN_ID" = "TEMPO_CHAIN_ID" ]; then
   TEMPO_CHAIN_ID=$(echo "$CHALLENGE_BODY" | jq -r '.payment_methods[0].chain_id')
+fi
 INTENT_TYPE=$(echo "$CHALLENGE_BODY" | jq -r '.payment_methods[0].intent_type')
 
 # Sanity-check the amount so the user can verify
@@ -504,9 +505,34 @@ Poll for bridge confirmation before proceeding to Phase 5:
 
 1. WebFetch `https://mainnet.docs.tempo.xyz/bridge-explorer` to check if a bridge
    explorer API exists. If found, use it as the polling endpoint. If not,
-   use the Tempo RPC (`https://rpc.tempo.xyz` — verify from docs) to poll
-   for the deposit event.
+   fall back to polling the Tempo RPC (`https://rpc.tempo.xyz` — verify from
+   docs) for the deposit event.
 2. Poll every **30 seconds** for up to **10 minutes**.
+
+   **Fallback polling loop** (when no bridge explorer API is available):
+
+   ```bash
+   # Replace EVENT_SIG with the actual deposit event signature from Tempo docs.
+   # The ABI event name and parameters below are illustrative.
+   BRIDGE_CONTRACT_ON_TEMPO="0x..."   # bridge's Tempo-side address (from docs)
+   for i in $(seq 1 20); do
+     RESULT=$(cast logs \
+       --rpc-url https://rpc.tempo.xyz \
+       --address "$BRIDGE_CONTRACT_ON_TEMPO" \
+       "DepositReceived(address,uint256)" 2>/dev/null \
+       | grep -i "${WALLET_ADDRESS#0x}")
+     if [ -n "$RESULT" ]; then
+       echo "Bridge confirmed — funds received on Tempo."
+       break
+     fi
+     echo "Waiting for bridge confirmation... attempt $i/20"
+     sleep 30
+   done
+   ```
+
+   > Verify the event name and parameter types from the Tempo bridge ABI at
+   > `https://mainnet.docs.tempo.xyz` before using this snippet.
+
 3. Proceed to Phase 5 only once the funds are confirmed received on Tempo.
 4. If no confirmation after 10 minutes, report the bridge transaction hash to
    the user and ask them to check the bridge explorer manually. **Do not
@@ -522,6 +548,13 @@ URL `https://trade-api.gateway.uniswap.org/v1` with the Tempo chain ID for
 both `tokenInChainId` and `tokenOutChainId`. Verify Tempo chain ID support is
 live in the Trading API before attempting. This follows the same flow as
 Phase 4A but with Tempo's chain ID and token addresses.
+
+**Token addresses on Tempo**: Look up TIP-20 token addresses (pathUSD, the
+required payment token, etc.) at `https://mainnet.docs.tempo.xyz/tokens` (may
+be gated pre-launch — contact the Tempo team for the current registry). The
+token you received from the bridge (your `TOKEN_IN` for this swap) is the
+bridge-out asset on Tempo; the `TOKEN_OUT` is `PAYMENT_TOKEN` from Phase 1.
+Set `SOURCE_CHAIN_ID` and `TOKEN_IN_CHAIN_ID` to Tempo's chain ID for both.
 
 > **If the Trading API does not yet support Tempo's chain ID** (you receive a
 > 400 or "unsupported chain" error from the quote endpoint): check the current
@@ -570,13 +603,16 @@ With the required token in the wallet, fulfill the MPP challenge.
    AUTH_JSON=$(jq -n \
      --arg pmt "tempo" \
      --arg recipient "$RECIPIENT" \
-     --arg amount "$REQUIRED_AMOUNT" \
+     --argjson amount "$REQUIRED_AMOUNT" \
      --arg token "$PAYMENT_TOKEN" \
      --argjson chainId "$TEMPO_CHAIN_ID" \
      --arg nonce "$NONCE" \
      --argjson deadline "$DEADLINE" \
      '{payment_method_type: $pmt, recipient: $recipient, amount: $amount,
        token: $token, chain_id: $chainId, nonce: $nonce, deadline: $deadline}')
+   # Note: amount uses --argjson (not --arg) so it encodes as a JSON number,
+   # matching the uint256 EIP-712 type. Other libraries may require explicit
+   # BigInt conversion: BigInt(authMsg.amount) before signing.
    ```
 
    **Sign using viem (recommended — correctly handles EIP-712 typed data):**
@@ -655,9 +691,27 @@ With the required token in the wallet, fulfill the MPP challenge.
 
 **For a `session` intent:**
 
-A payment channel enables pay-as-you-go usage. Session intents are more complex
-than charge intents and may require additional setup. Consult the MPP SDK at
-`https://mpp.dev/sdk` for channel opening procedures.
+A payment channel enables pay-as-you-go usage. Session intents require opening
+a channel before the first request and streaming micropayments as you consume
+the API. The high-level steps are:
+
+1. **Open a channel** — deposit a session budget into the MPP channel contract
+   on Tempo. The required fields include: `payment_method_type`, `recipient`,
+   `token`, `chain_id`, a session `nonce`, a `max_amount` (total budget), and
+   a `session_duration` (seconds). EIP-712 signing follows the same pattern as
+   the charge flow above but with a `SessionAuthorization` typed struct instead
+   of `Authorization`.
+2. **Attach the channel credential** — include the base64-encoded session
+   credential in the `X-Payment-Credential` header on every subsequent API
+   request.
+3. **Closing / expiry** — the channel auto-expires after `session_duration`.
+   The API provider can sweep uncollected funds after expiry.
+
+> **Session intents are not fully covered by this skill.** For the complete
+> channel API, typed struct definitions, and SDK helpers, consult
+> `https://mpp.dev/sdk` (may be gated pre-launch — contact the Tempo team).
+> If your 402 specifies `"intent_type": "session"` and you need to proceed
+> immediately, ask the Tempo team for a pre-launch integration guide.
 
 **Submit the credential** by retrying the original request with the credential
 in the `Authorization` header or as the `X-Payment-Credential` header per the
