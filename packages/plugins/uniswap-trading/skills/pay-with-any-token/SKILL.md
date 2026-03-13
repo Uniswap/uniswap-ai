@@ -261,7 +261,9 @@ echo "Intent        : $INTENT_TYPE"
 > proceeding.
 
 - `REQUIRED_AMOUNT`: token amount in base units (e.g., `"1000000"` = 1 USDC)
-- `PAYMENT_TOKEN`: TIP-20 token address on Tempo
+- `PAYMENT_TOKEN`: TIP-20 token address on Tempo. Verify this address at
+  `https://mainnet.docs.tempo.xyz/tokens` before proceeding — an unrecognized
+  token will cause the Phase 5 swap quote to fail.
 - `RECIPIENT`: payee wallet address on Tempo
 - `TEMPO_CHAIN_ID`: Tempo chain ID (may be a placeholder — see Phase 0 resolution)
 - `INTENT_TYPE`: `"charge"` (one-time) or `"session"` (pay-as-you-go)
@@ -349,10 +351,12 @@ USDC_E_ADDRESS="0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"  # USDC on Base — 
 REQUIRED_AMOUNT_IN="0"            # Use "0" for the initial approval check (Step 4A-1);
                                   # replace with the actual amountIn after Step 4A-2 (quote)
 USDC_E_AMOUNT_NEEDED="$REQUIRED_AMOUNT"  # For EXACT_OUTPUT: target = payment amount
-                                          # Add ~0.5% buffer if bridge fees may reduce the bridged
-                                          # amount: $(echo "$REQUIRED_AMOUNT * 1005 / 1000" | bc)
-                                          # (integer arithmetic — avoids decimal output from bc)
-                                          # Without buffer, bridge fees could leave you short.
+# Buffer decision: check Tempo bridge docs to confirm whether fees are deducted
+# from the deposited amount (input-side fees) or charged separately on top.
+# - Input-side fees: apply the 0.5% buffer — $(echo "$REQUIRED_AMOUNT * 1005 / 1000" | bc)
+#   (integer arithmetic — avoids decimal output from bc)
+# - Output-side or no fees: exact amount is fine, no buffer needed.
+# When in doubt or docs are unavailable, apply the buffer to avoid arriving short.
 ```
 
 > `slippageTolerance: 0.5` in the quote body means **0.5%** (not 0.005). The
@@ -514,11 +518,22 @@ SWAP_VALUE=$(echo "$SWAP_RESPONSE" | jq -r '.swap.value // "0x0"')
 [ -z "$SWAP_DATA" ] || [ "$SWAP_DATA" = "null" ] && echo "ERROR: swap.data is empty — quote may have expired. Re-fetch from Step 4A-2." && exit 1
 
 # Broadcast via cast (replace RPC URL with your source chain endpoint)
-cast send "$SWAP_TO" \
+SWAP_TX=$(cast send "$SWAP_TO" \
   --data "$SWAP_DATA" \
   --value "$SWAP_VALUE" \
   --private-key "$PRIVATE_KEY" \
-  --rpc-url https://mainnet.base.org
+  --rpc-url https://mainnet.base.org \
+  --json | jq -r '.transactionHash')
+
+# Wait for the swap to mine before bridging — a reverted swap leaves USDC at zero
+cast receipt "$SWAP_TX" --rpc-url https://mainnet.base.org > /dev/null
+echo "Swap confirmed: $SWAP_TX"
+
+# Verify USDC balance landed before proceeding to Phase 4B
+USDC_AFTER_SWAP=$(cast call "$USDC_E_ADDRESS" \
+  "balanceOf(address)(uint256)" "$WALLET_ADDRESS" \
+  --rpc-url https://mainnet.base.org)
+echo "USDC balance after swap: $USDC_AFTER_SWAP (need at least $USDC_E_AMOUNT_NEEDED)"
 ```
 
 ### Phase 4B — Bridge to Tempo (cross-chain path)
@@ -764,11 +779,13 @@ With the required token in the wallet, fulfill the MPP challenge.
    // Parse the AUTH_JSON built in the bash step above
    const authMsg = JSON.parse(process.env.AUTH_JSON!);
 
-   // chainId and verifyingContract must come from https://mpp.dev — do NOT guess
-   // (docs may be gated pre-launch; contact the Tempo team for values pre-launch)
+   // All four domain fields must be confirmed at https://mpp.dev — do NOT guess.
+   // name, version, chainId, and verifyingContract are unverified pre-launch.
+   // An incorrect domain separator produces a signature that is universally rejected.
+   // (Docs may be gated pre-launch; contact the Tempo team for values pre-launch.)
    const domain = {
-     name: 'MPP',
-     version: '1',
+     name: 'MPP', // confirm at mpp.dev — value may differ at launch
+     version: '1', // confirm at mpp.dev — value may differ at launch
      chainId: Number(process.env.TEMPO_CHAIN_ID),
      verifyingContract: process.env.MPP_VERIFIER_ADDRESS as `0x${string}`,
    };
