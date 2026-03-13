@@ -9,7 +9,7 @@ Expected Elements (Should Include):
 
 2. Token and Chain Awareness
    Identifies source chain and token
-   Mentions USDC-e as bridge asset for cross-chain paths
+   Mentions the correct bridge asset for the source chain (native USDC for Base, USDC-e for Arbitrum, USDC for Ethereum)
 
 3. API Integration
    Includes Trading API headers (x-api-key, x-universal-router-version)

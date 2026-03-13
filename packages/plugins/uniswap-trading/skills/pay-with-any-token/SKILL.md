@@ -183,7 +183,7 @@ RECIPIENT=$(echo "$CHALLENGE_BODY" | jq -r '.payment_methods[0].recipient')
 # Only overwrite TEMPO_CHAIN_ID if it was not already resolved to a numeric
 # value in Phase 0. If Phase 0's WebFetch or AskUserQuestion already produced
 # a real chain ID, retain that value — do not clobber it with the placeholder.
-if [ -z "$TEMPO_CHAIN_ID" ] || [ "$TEMPO_CHAIN_ID" = "TEMPO_CHAIN_ID" ]; then
+if [ -z "$TEMPO_CHAIN_ID" ] || [[ ! "$TEMPO_CHAIN_ID" =~ ^[0-9]+$ ]]; then
   TEMPO_CHAIN_ID=$(echo "$CHALLENGE_BODY" | jq -r '.payment_methods[0].chain_id')
 fi
 INTENT_TYPE=$(echo "$CHALLENGE_BODY" | jq -r '.payment_methods[0].intent_type')
@@ -233,8 +233,11 @@ cast call 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913 \
 Or via Basescan API (no local tooling required):
 
 ```bash
-# Replace TOKEN_ADDRESS with the ERC-20 contract you want to check
-WebFetch "https://api.basescan.org/api?module=account&action=tokenbalance&contractaddress=TOKEN_ADDRESS&address=$WALLET_ADDRESS&tag=latest&apikey=<BASESCAN_API_KEY>"
+# Replace TOKEN_ADDRESS with the ERC-20 contract you want to check.
+# The API key is optional for basic balance queries — omit the &apikey= parameter
+# for unauthenticated (rate-limited) access. Register at https://basescan.org/apis
+# for a free API key with higher rate limits.
+WebFetch "https://api.basescan.org/api?module=account&action=tokenbalance&contractaddress=TOKEN_ADDRESS&address=$WALLET_ADDRESS&tag=latest"
 ```
 
 1. Prefer tokens already on Tempo (no bridge needed)
@@ -287,7 +290,8 @@ REQUIRED_AMOUNT_IN="0"            # Use "0" for the initial approval check (Step
                                   # replace with the actual amountIn after Step 4A-2 (quote)
 USDC_E_AMOUNT_NEEDED="$REQUIRED_AMOUNT"  # For EXACT_OUTPUT: target = payment amount
                                           # Add ~0.5% buffer if bridge fees may reduce the bridged
-                                          # amount: $(echo "$REQUIRED_AMOUNT * 1.005" | bc)
+                                          # amount: $(echo "$REQUIRED_AMOUNT * 1005 / 1000" | bc)
+                                          # (integer arithmetic — avoids decimal output from bc)
                                           # Without buffer, bridge fees could leave you short.
 ```
 
@@ -552,9 +556,12 @@ Poll for bridge confirmation before proceeding to Phase 5:
    # Replace EVENT_SIG with the actual deposit event signature from Tempo docs.
    # The ABI event name and parameters below are illustrative.
    BRIDGE_CONTRACT_ON_TEMPO="0x..."   # bridge's Tempo-side address (from docs)
+   [ -z "$BRIDGE_CONTRACT_ON_TEMPO" ] && echo "ERROR: BRIDGE_CONTRACT_ON_TEMPO not set" && exit 1
+   # Verify the Tempo RPC URL from mainnet.docs.tempo.xyz/developer-integration/connection-details
+   TEMPO_RPC_URL="https://rpc.tempo.xyz"
    for i in $(seq 1 20); do
      RESULT=$(cast logs \
-       --rpc-url https://rpc.tempo.xyz \
+       --rpc-url "$TEMPO_RPC_URL" \
        --address "$BRIDGE_CONTRACT_ON_TEMPO" \
        "DepositReceived(address,uint256)" 2>/dev/null \
        | grep -i "${WALLET_ADDRESS#0x}")
@@ -591,7 +598,8 @@ required payment token, etc.) at `https://mainnet.docs.tempo.xyz/tokens` (may
 be gated pre-launch — contact the Tempo team for the current registry). The
 token you received from the bridge (your `TOKEN_IN` for this swap) is the
 bridge-out asset on Tempo; the `TOKEN_OUT` is `PAYMENT_TOKEN` from Phase 1.
-Set `SOURCE_CHAIN_ID` and `TOKEN_IN_CHAIN_ID` to Tempo's chain ID for both.
+Set `SOURCE_CHAIN_ID` to Tempo's chain ID; use it for both `tokenInChainId` and
+`tokenOutChainId` in the quote body.
 
 > **If the Trading API does not yet support Tempo's chain ID** (you receive a
 > 400 or "unsupported chain" error from the quote endpoint): check the current
@@ -639,6 +647,8 @@ With the required token in the wallet, fulfill the MPP challenge.
    **Build the authorization JSON:**
 
    ```bash
+   # $REQUIRED_AMOUNT must be a validated integer string (see Input Validation Rules);
+   # --argjson encodes it as a JSON number to match the uint256 EIP-712 field type.
    AUTH_JSON=$(jq -n \
      --arg pmt "tempo" \
      --arg recipient "$RECIPIENT" \
@@ -754,13 +764,15 @@ the API. The high-level steps are:
 > immediately, ask the Tempo team for a pre-launch integration guide.
 
 **Submit the credential** by retrying the original request with the credential
-in the `Authorization` header or as the `X-Payment-Credential` header per the
-protocol spec:
+attached. `X-Payment-Credential` is the MPP-native header; `Authorization:
+MPP credential=` is provided for compatibility with servers that expect it.
+Consult `https://mpp.dev` for the canonical header the target server requires.
+Including both is safe for broad compatibility:
 
 ```bash
 curl -si "https://api.example.com/resource" \
-  -H "Authorization: MPP credential=<CREDENTIAL>" \
-  -H "X-Payment-Credential: <CREDENTIAL>"
+  -H "Authorization: MPP credential=$CREDENTIAL" \
+  -H "X-Payment-Credential: $CREDENTIAL"
 ```
 
 A `200` response with a receipt confirms success. Any other status indicates the
