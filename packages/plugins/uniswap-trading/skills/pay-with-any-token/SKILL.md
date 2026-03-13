@@ -179,7 +179,11 @@ From the challenge body, extract and assign shell variables:
 REQUIRED_AMOUNT=$(echo "$CHALLENGE_BODY" | jq -r '.payment_methods[0].amount')
 PAYMENT_TOKEN=$(echo "$CHALLENGE_BODY" | jq -r '.payment_methods[0].token')
 RECIPIENT=$(echo "$CHALLENGE_BODY" | jq -r '.payment_methods[0].recipient')
-TEMPO_CHAIN_ID=$(echo "$CHALLENGE_BODY" | jq -r '.payment_methods[0].chain_id')
+# Only overwrite TEMPO_CHAIN_ID if it was not already resolved to a numeric
+# value in Phase 0. If Phase 0's WebFetch or AskUserQuestion already produced
+# a real chain ID, retain that value — do not clobber it with the placeholder.
+[ -z "$TEMPO_CHAIN_ID" ] || [ "$TEMPO_CHAIN_ID" = "TEMPO_CHAIN_ID" ] && \
+  TEMPO_CHAIN_ID=$(echo "$CHALLENGE_BODY" | jq -r '.payment_methods[0].chain_id')
 INTENT_TYPE=$(echo "$CHALLENGE_BODY" | jq -r '.payment_methods[0].intent_type')
 
 # Sanity-check the amount so the user can verify
@@ -210,6 +214,25 @@ Check the user's token balances on the chains where they hold funds. Use
 `WebFetch` to query block explorer APIs or RPC endpoints for ERC-20 balances.
 Set `USDC_E_ADDRESS` based on the source chain (see Key Addresses section for
 per-chain USDC-e addresses). Identify the most cost-effective source token:
+
+**Balance check examples (Base chain 8453)**:
+
+```bash
+# Native ETH balance
+cast balance "$WALLET_ADDRESS" --rpc-url https://mainnet.base.org
+
+# ERC-20 balance (e.g. USDC on Base)
+cast call 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913 \
+  "balanceOf(address)(uint256)" "$WALLET_ADDRESS" \
+  --rpc-url https://mainnet.base.org
+```
+
+Or via Basescan API (no local tooling required):
+
+```bash
+# Replace TOKEN_ADDRESS with the ERC-20 contract you want to check
+WebFetch "https://api.basescan.org/api?module=account&action=tokenbalance&contractaddress=TOKEN_ADDRESS&address=$WALLET_ADDRESS&tag=latest&apikey=<BASESCAN_API_KEY>"
+```
 
 1. Prefer tokens already on Tempo (no bridge needed)
 2. Then prefer USDC-e on Base (minimal bridge path)
@@ -256,7 +279,8 @@ TOKEN_IN_ADDRESS="0x..."          # Address of your source token on SOURCE_CHAIN
 #   Base (8453):     0x4200000000000000000000000000000000000006
 #   Ethereum (1):    0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2
 # The Trading API may also accept the ETH sentinel 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEEE
-REQUIRED_AMOUNT_IN="..."          # Estimated input amount — quote first, then use EXACT_OUTPUT
+REQUIRED_AMOUNT_IN="0"            # Use "0" for the initial approval check (Step 4A-1);
+                                  # replace with the actual amountIn after Step 4A-2 (quote)
 USDC_E_AMOUNT_NEEDED="$REQUIRED_AMOUNT"  # For EXACT_OUTPUT: target = payment amount
                                           # Add ~0.5% buffer: $(echo "$REQUIRED_AMOUNT * 1.005" | bc)
 ```
@@ -338,7 +362,14 @@ curl -s -X POST https://trade-api.gateway.uniswap.org/v1/quote \
 
 Note: `tokenInChainId` and `tokenOutChainId` must be **integers**, not strings.
 
-Store the full quote response as `QUOTE_RESPONSE`.
+Store the full quote response as `QUOTE_RESPONSE`. Then extract the actual input
+amount and re-run the approval check with the real value:
+
+```bash
+REQUIRED_AMOUNT_IN=$(echo "$QUOTE_RESPONSE" | jq -r '.quote.amountIn')
+# Re-run Step 4A-1 with REQUIRED_AMOUNT_IN set to the quoted amount
+# to confirm the existing allowance covers the swap.
+```
 
 **Step 4A-2.5 — Sign the permitData**:
 
@@ -491,6 +522,14 @@ URL `https://trade-api.gateway.uniswap.org/v1` with the Tempo chain ID for
 both `tokenInChainId` and `tokenOutChainId`. Verify Tempo chain ID support is
 live in the Trading API before attempting. This follows the same flow as
 Phase 4A but with Tempo's chain ID and token addresses.
+
+> **If the Trading API does not yet support Tempo's chain ID** (you receive a
+> 400 or "unsupported chain" error from the quote endpoint): check the current
+> supported chains list at `https://developers.uniswap.org`. If Tempo is not
+> listed, you cannot complete the on-Tempo swap via this skill at this time.
+> As a workaround, confirm with the API provider whether the bridged token
+> (e.g. pathUSD) is already accepted as the payment token — if so, the bridge
+> output may satisfy the 402 requirement and Phase 5 can be skipped.
 
 ### Phase 6 — Construct and Submit the MPP Credential
 
