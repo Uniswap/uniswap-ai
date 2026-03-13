@@ -343,10 +343,12 @@ USDC-e to acquire.
 ```bash
 SOURCE_CHAIN_ID=8453              # Chain where you hold the source token (e.g. Base = 8453)
 TOKEN_IN_ADDRESS="0x..."          # Address of your source token on SOURCE_CHAIN_ID
-# For native ETH, use the WETH address for your chain:
+# For native ETH, use the WETH address for your chain (recommended — well-supported):
 #   Base (8453):     0x4200000000000000000000000000000000000006
 #   Ethereum (1):    0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2
-# The Trading API may also accept the ETH sentinel 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEEE
+# The Universal Router wraps ETH before the swap, so msg.value (SWAP_VALUE) will be
+# non-zero in the swap response. The ETH sentinel 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEEE
+# is also supported but try WETH first; use the sentinel only if WETH returns a 400.
 USDC_E_ADDRESS="0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"  # USDC on Base — update for other chains (see Key Addresses)
 REQUIRED_AMOUNT_IN="0"            # Use "0" for the initial approval check (Step 4A-1);
                                   # replace with the actual amountIn after Step 4A-2 (quote)
@@ -516,6 +518,15 @@ SWAP_VALUE=$(echo "$SWAP_RESPONSE" | jq -r '.swap.value // "0x0"')
 
 # Validate before broadcasting
 [ -z "$SWAP_DATA" ] || [ "$SWAP_DATA" = "null" ] && echo "ERROR: swap.data is empty — quote may have expired. Re-fetch from Step 4A-2." && exit 1
+# For native ETH swaps (TOKEN_IN is WETH address or ETH sentinel), SWAP_VALUE must
+# be non-zero — it carries the ETH amount as msg.value. A zero value means the quote
+# did not recognise the input as native ETH; do NOT broadcast or the swap will revert.
+if [[ "$TOKEN_IN_ADDRESS" == "0x4200000000000000000000000000000000000006" || \
+      "$TOKEN_IN_ADDRESS" == "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2" || \
+      "$TOKEN_IN_ADDRESS" == "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEEE" ]]; then
+  [ "$SWAP_VALUE" = "0x0" ] || [ "$SWAP_VALUE" = "0" ] && \
+    echo "ERROR: SWAP_VALUE is zero for a native ETH swap — verify TOKEN_IN_ADDRESS and re-fetch the quote." && exit 1
+fi
 
 # Broadcast via cast (replace RPC URL with your source chain endpoint)
 SWAP_TX=$(cast send "$SWAP_TO" \
