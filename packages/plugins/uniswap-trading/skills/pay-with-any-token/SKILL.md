@@ -45,6 +45,7 @@ payment method.
 | Required payment token on Tempo      | Tempo               | Direct payment (no swap needed)                                                                  |
 | Different TIP-20 stablecoin on Tempo | Tempo               | Swap via Uniswap aggregator hook                                                                 |
 | USDC (native) on Base                | Tempo               | Bridge USDC to Tempo directly (skip Phase 4A), then swap if needed (see Tempo bridge docs)       |
+| Native ETH on Base or Ethereum       | Tempo               | Swap ETH→native USDC (use WETH address as TOKEN_IN), bridge to Tempo, then swap if needed        |
 | Any ERC-20 on Base or Ethereum       | Tempo               | Swap to native USDC (bridge asset), bridge to Tempo, then swap if needed (see Tempo bridge docs) |
 
 ---
@@ -79,14 +80,19 @@ Make the original request and capture the 402 response:
 ```bash
 RESPONSE=$(curl -si "https://api.example.com/resource")
 HTTP_STATUS=$(echo "$RESPONSE" | head -1 | grep -o '[0-9]\{3\}')
+# Extract the response body (everything after the blank header/body separator)
+CHALLENGE_BODY=$(echo "$RESPONSE" | awk 'found{print} /^\r?$/{found=1}')
 ```
 
 If `HTTP_STATUS` is not `402`, stop — this skill does not apply.
 
 > **Alternative entry point:** If the user has already received the 402
 > response and provides the challenge body directly in the conversation,
-> skip the curl step above and proceed directly to field extraction and
-> validation below.
+> skip the curl step above and assign directly:
+>
+> ```bash
+> CHALLENGE_BODY='<paste the JSON here>'
+> ```
 
 Extract the `WWW-Authenticate` or `Payment-Required` header and the challenge
 body. For MPP/Tempo the body is JSON:
@@ -144,9 +150,9 @@ body. For MPP/Tempo the body is JSON:
 > `WebFetch` on these URLs **in order** (stop at the first that contains a
 > numeric chain ID):
 >
-> 1. `https://docs.tempo.xyz/getting-started/network-info`
-> 2. `https://docs.tempo.xyz/developer-integration/connection-details`
-> 3. `https://docs.tempo.xyz/network`
+> 1. `https://mainnet.docs.tempo.xyz/getting-started/network-info`
+> 2. `https://mainnet.docs.tempo.xyz/developer-integration/connection-details`
+> 3. `https://mainnet.docs.tempo.xyz/network`
 >
 > If all WebFetch attempts fail to return a numeric chain ID, use
 > `AskUserQuestion` to ask the user to provide it directly. They can find it
@@ -167,13 +173,32 @@ the amount; the payer finds tokens to cover it.
 
 ### Phase 1 — Identify Payment Token and Required Amount
 
-From the challenge body, extract:
+From the challenge body, extract and assign shell variables:
 
-- `required_amount`: token amount in base units (e.g., `"1000000"` = 1 USDC)
-- `payment_token`: TIP-20 token address on Tempo
-- `recipient`: payee wallet address on Tempo
-- `chain_id`: Tempo chain ID
-- `intent_type`: `"charge"` (one-time) or `"session"` (pay-as-you-go)
+```bash
+REQUIRED_AMOUNT=$(echo "$CHALLENGE_BODY" | jq -r '.payment_methods[0].amount')
+PAYMENT_TOKEN=$(echo "$CHALLENGE_BODY" | jq -r '.payment_methods[0].token')
+RECIPIENT=$(echo "$CHALLENGE_BODY" | jq -r '.payment_methods[0].recipient')
+TEMPO_CHAIN_ID=$(echo "$CHALLENGE_BODY" | jq -r '.payment_methods[0].chain_id')
+INTENT_TYPE=$(echo "$CHALLENGE_BODY" | jq -r '.payment_methods[0].intent_type')
+
+# Sanity-check the amount so the user can verify
+echo "Amount : $REQUIRED_AMOUNT base units"
+echo "Payment token : $PAYMENT_TOKEN"
+echo "Recipient     : $RECIPIENT"
+echo "Chain ID      : $TEMPO_CHAIN_ID"
+echo "Intent        : $INTENT_TYPE"
+```
+
+> **Decimal note:** `amount` is in token base units. For USDC (6 decimals):
+> `1000000` = 1.00 USDC, `500000` = 0.50 USDC. Confirm with the user before
+> proceeding.
+
+- `REQUIRED_AMOUNT`: token amount in base units (e.g., `"1000000"` = 1 USDC)
+- `PAYMENT_TOKEN`: TIP-20 token address on Tempo
+- `RECIPIENT`: payee wallet address on Tempo
+- `TEMPO_CHAIN_ID`: Tempo chain ID (may be a placeholder — see Phase 0 resolution)
+- `INTENT_TYPE`: `"charge"` (one-time) or `"session"` (pay-as-you-go)
 
 ### Phase 2 — Check Wallet Balances
 
@@ -227,6 +252,10 @@ USDC-e to acquire.
 ```bash
 SOURCE_CHAIN_ID=8453              # Chain where you hold the source token (e.g. Base = 8453)
 TOKEN_IN_ADDRESS="0x..."          # Address of your source token on SOURCE_CHAIN_ID
+# For native ETH, use the WETH address for your chain:
+#   Base (8453):     0x4200000000000000000000000000000000000006
+#   Ethereum (1):    0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2
+# The Trading API may also accept the ETH sentinel 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEEE
 REQUIRED_AMOUNT_IN="..."          # Estimated input amount — quote first, then use EXACT_OUTPUT
 USDC_E_AMOUNT_NEEDED="$REQUIRED_AMOUNT"  # For EXACT_OUTPUT: target = payment amount
                                           # Add ~0.5% buffer: $(echo "$REQUIRED_AMOUNT * 1.005" | bc)
@@ -388,8 +417,8 @@ bridge-in asset differs by source chain:
 
 Use `WebFetch` to attempt to find the current bridge contract addresses:
 
-1. `https://docs.tempo.xyz/developer-integration/bridge`
-2. `https://docs.tempo.xyz/contracts`
+1. `https://mainnet.docs.tempo.xyz/developer-integration/bridge`
+2. `https://mainnet.docs.tempo.xyz/contracts`
 
 > **If WebFetch returns no contract addresses:** Do NOT guess or use an
 > unverified address — bridging to the wrong contract results in **permanent
@@ -408,13 +437,41 @@ The bridge process:
    the token amount
 3. **Wait for bridge confirmation** (typically a few minutes)
 
+```bash
+# Once you have the bridge contract address (from Tempo docs or team):
+BRIDGE_CONTRACT="0x..."            # Tempo bridge contract on source chain
+BRIDGE_AMOUNT="$USDC_E_AMOUNT_NEEDED"
+BRIDGE_ASSET_ADDRESS="0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"  # USDC on Base (example)
+
+# 1. Approve the bridge asset to the bridge contract
+cast send "$BRIDGE_ASSET_ADDRESS" \
+  "approve(address,uint256)" \
+  "$BRIDGE_CONTRACT" "$BRIDGE_AMOUNT" \
+  --private-key "$PRIVATE_KEY" \
+  --rpc-url https://mainnet.base.org   # replace with your source chain RPC
+
+# 2. Call the bridge deposit function
+# NOTE: Replace the function signature with the actual ABI from Tempo docs.
+# The parameters below are illustrative — confirm name, order, and types.
+cast send "$BRIDGE_CONTRACT" \
+  "deposit(address,uint256,address)" \
+  "$BRIDGE_ASSET_ADDRESS" "$BRIDGE_AMOUNT" "$WALLET_ADDRESS" \
+  --private-key "$PRIVATE_KEY" \
+  --rpc-url https://mainnet.base.org
+```
+
+> **ABI warning:** The exact function name and parameters must be verified from
+> the Tempo bridge contract ABI at `https://mainnet.docs.tempo.xyz`. The example
+> above uses a common ERC-20 bridge signature pattern. Do not submit without
+> confirming the ABI.
+>
 > **REQUIRED:** Use `AskUserQuestion` before submitting the bridge transaction.
 > Show the user: amount, token, bridge contract address, destination address on
 > Tempo, and estimated bridge time.
 
 Poll for bridge confirmation before proceeding to Phase 5:
 
-1. WebFetch `https://docs.tempo.xyz/bridge-explorer` to check if a bridge
+1. WebFetch `https://mainnet.docs.tempo.xyz/bridge-explorer` to check if a bridge
    explorer API exists. If found, use it as the polling endpoint. If not,
    use the Tempo RPC (`https://rpc.tempo.xyz` — verify from docs) to poll
    for the deposit event.
@@ -464,8 +521,8 @@ With the required token in the wallet, fulfill the MPP challenge.
    **Before signing, generate a nonce and deadline:**
 
    ```bash
-   NONCE=$(openssl rand -hex 16)
-   DEADLINE=$(($(date +%s) + 300))   # 5-minute window matching maxTimeoutSeconds
+   NONCE=0x$(openssl rand -hex 32)    # 32 bytes = bytes32, with 0x prefix
+   DEADLINE=$(($(date +%s) + 300))    # 5-minute window matching maxTimeoutSeconds
    ```
 
    **Build the authorization JSON:**
@@ -488,13 +545,22 @@ With the required token in the wallet, fulfill the MPP challenge.
    ```typescript
    import { privateKeyToAccount } from 'viem/accounts';
 
-   const account = privateKeyToAccount(PRIVATE_KEY as `0x${string}`);
+   const account = privateKeyToAccount(process.env.PRIVATE_KEY as `0x${string}`);
+
+   // Parse the AUTH_JSON built in the bash step above
+   const authMsg = JSON.parse(process.env.AUTH_JSON!);
+
+   // chainId and verifyingContract must come from https://mpp.dev — do NOT guess
+   // (docs may be gated pre-launch; contact the Tempo team for values pre-launch)
+   const domain = {
+     name: 'MPP',
+     version: '1',
+     chainId: Number(process.env.TEMPO_CHAIN_ID),
+     verifyingContract: process.env.MPP_VERIFIER_ADDRESS as `0x${string}`,
+   };
+
    const signature = await account.signTypedData({
-     domain: {
-       name: 'MPP',
-       version: '1',
-       // chainId and verifyingContract must come from https://mpp.dev — do NOT guess
-     },
+     domain,
      types: {
        Authorization: [
          { name: 'payment_method_type', type: 'string' },
@@ -507,16 +573,15 @@ With the required token in the wallet, fulfill the MPP challenge.
        ],
      },
      primaryType: 'Authorization',
-     message: authorizationObject,
+     message: authMsg,
    });
    ```
 
-   > **EIP-712 domain warning:** The exact domain separator values (`name`,
-   > `version`, `chainId`, `verifyingContract`) and type schema must come from
-   > the MPP specification at `https://mpp.dev`. The example above shows the
-   > structure — fill in domain values from the spec. Do NOT guess the domain
-   > separator; an incorrect domain produces a signature that will be rejected
-   > by the MPP validator.
+   > **EIP-712 domain warning:** `MPP_VERIFIER_ADDRESS` is the deployed MPP
+   > contract address. Obtain both `chainId` and `verifyingContract` from
+   > `https://mpp.dev` at launch. Do NOT guess the domain separator — an
+   > incorrect domain produces a signature that will be rejected by the MPP
+   > validator.
 
    **Alternative — Foundry `cast wallet sign` (CLI users, Foundry ≥ 0.2):**
 
@@ -587,8 +652,11 @@ credential was rejected — check the error body and re-inspect the challenge.
 ## Key Addresses and References
 
 - **Trading API**: `https://trade-api.gateway.uniswap.org/v1`
-- **MPP docs**: `https://mpp.dev`
-- **Tempo documentation**: `https://docs.tempo.xyz`
+- **MPP docs**: `https://mpp.dev` _(may be gated pre-launch; publicly available
+  at launch — contact the Tempo team for EIP-712 domain values pre-launch)_
+- **Tempo documentation**: `https://mainnet.docs.tempo.xyz` _(may be gated
+  pre-launch; publicly available at launch — contact the Tempo team if you
+  receive a 401 or password prompt)_
 - **Tempo chain ID**: Unknown at time of writing — must be resolved via
   documentation or `https://chainlist.org` (search "Tempo"). See Phase 0 for
   the chain ID resolution procedure. Do NOT hardcode a value without verifying.
