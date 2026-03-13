@@ -78,7 +78,8 @@ shell commands:
 Make the original request and capture the 402 response:
 
 ```bash
-RESPONSE=$(curl -si "https://api.example.com/resource")
+RESOURCE_URL="https://api.example.com/resource"  # replace with the actual URL you are calling
+RESPONSE=$(curl -si "$RESOURCE_URL")
 HTTP_STATUS=$(echo "$RESPONSE" | head -1 | grep -o '[0-9]\{3\}')
 # Extract the response body (everything after the blank header/body separator)
 CHALLENGE_BODY=$(echo "$RESPONSE" | awk 'found{print} /^\r?$/{found=1}')
@@ -134,12 +135,15 @@ body. For MPP/Tempo the body is JSON:
 >   ```bash
 >   echo "x402 challenge detected — skill cannot fulfill this automatically yet."
 >   echo "Payment details from x402 challenge:"
->   echo "$CHALLENGE_BODY" | jq '.accepts[0] | {scheme, network, maxAmountRequired, payTo, asset}'
+>   echo "$CHALLENGE_BODY" | jq '.accepts[0] | {scheme, network, maxAmountRequired, payTo, asset, description, mimeType}'
 >   ```
 >
 >   Suggest the user check `https://github.com/coinbase/x402` for an x402
->   client library that can handle this natively. Do not continue with the
->   MPP phases below.
+>   client library that can handle this natively. Note that even with an x402
+>   client, if the `network` field is `"tempo"` and you hold tokens on Base or
+>   Ethereum, you will still need to bridge them to Tempo first — see Phase 4B
+>   of this skill for bridging guidance, which applies regardless of payment
+>   protocol. Do not continue with the MPP phases below.
 >
 > - **If `PROTOCOL` is `"mpp"`**: Continue with the flow below.
 > - **If `PROTOCOL` is `"unknown"`**: Report the raw body to the user and do
@@ -510,6 +514,10 @@ The bridge process:
    the token amount
 3. **Wait for bridge confirmation** (typically a few minutes)
 
+> **REQUIRED:** Use `AskUserQuestion` before submitting the bridge transaction.
+> Show the user: amount, token, bridge contract address, destination address on
+> Tempo, and estimated bridge time. Do not proceed until confirmed.
+
 ```bash
 # Once you have the bridge contract address (from Tempo docs or team):
 BRIDGE_CONTRACT="0x..."            # Tempo bridge contract on source chain
@@ -523,24 +531,23 @@ cast send "$BRIDGE_ASSET_ADDRESS" \
   --private-key "$PRIVATE_KEY" \
   --rpc-url https://mainnet.base.org   # replace with your source chain RPC
 
-# 2. Call the bridge deposit function
+# 2. Call the bridge deposit function and capture the tx hash for polling
 # NOTE: Replace the function signature with the actual ABI from Tempo docs.
 # The parameters below are illustrative — confirm name, order, and types.
-cast send "$BRIDGE_CONTRACT" \
+BRIDGE_TX=$(cast send "$BRIDGE_CONTRACT" \
   "deposit(address,uint256,address)" \
   "$BRIDGE_ASSET_ADDRESS" "$BRIDGE_AMOUNT" "$WALLET_ADDRESS" \
   --private-key "$PRIVATE_KEY" \
-  --rpc-url https://mainnet.base.org
+  --rpc-url https://mainnet.base.org \
+  --json | jq -r '.transactionHash')
+# Capture the block number for efficient log polling later
+BRIDGE_TX_BLOCK=$(cast receipt "$BRIDGE_TX" --rpc-url https://mainnet.base.org | grep blockNumber | awk '{print $2}')
 ```
 
 > **ABI warning:** The exact function name and parameters must be verified from
 > the Tempo bridge contract ABI at `https://mainnet.docs.tempo.xyz`. The example
 > above uses a common ERC-20 bridge signature pattern. Do not submit without
 > confirming the ABI.
->
-> **REQUIRED:** Use `AskUserQuestion` before submitting the bridge transaction.
-> Show the user: amount, token, bridge contract address, destination address on
-> Tempo, and estimated bridge time.
 
 Poll for bridge confirmation before proceeding to Phase 5:
 
@@ -562,6 +569,7 @@ Poll for bridge confirmation before proceeding to Phase 5:
    for i in $(seq 1 20); do
      RESULT=$(cast logs \
        --rpc-url "$TEMPO_RPC_URL" \
+       --from-block "${BRIDGE_TX_BLOCK:-latest}" \
        --address "$BRIDGE_CONTRACT_ON_TEMPO" \
        "DepositReceived(address,uint256)" 2>/dev/null \
        | grep -i "${WALLET_ADDRESS#0x}")
@@ -578,6 +586,10 @@ Poll for bridge confirmation before proceeding to Phase 5:
    > `https://mainnet.docs.tempo.xyz` before using this snippet.
 
 3. Proceed to Phase 5 only once the funds are confirmed received on Tempo.
+   After a successful bridge, your USDC on Base is converted to **pathUSD**
+   (Tempo's bridged USDC equivalent) on Tempo. Use pathUSD's token address as
+   `TOKEN_IN` in Phase 5 — look it up at
+   `https://mainnet.docs.tempo.xyz/tokens` (may be gated pre-launch).
 4. If no confirmation after 10 minutes, report the bridge transaction hash to
    the user and ask them to check the bridge explorer manually. **Do not
    re-submit the bridge transaction** — duplicate submissions result in double
@@ -736,7 +748,8 @@ With the required token in the wallet, fulfill the MPP challenge.
      '{type: $type, authorization: $auth, signature: $sig}')
 
    # Base64-encode the entire credential object (not just the authorization field)
-   CREDENTIAL=$(echo "$CREDENTIAL_JSON" | base64 | tr -d '\n')
+   # tr -d '[:space:]' strips newlines and carriage returns (portable across macOS/Linux)
+   CREDENTIAL=$(echo "$CREDENTIAL_JSON" | base64 | tr -d '[:space:]')
    ```
 
 **For a `session` intent:**
@@ -770,7 +783,9 @@ Consult `https://mpp.dev` for the canonical header the target server requires.
 Including both is safe for broad compatibility:
 
 ```bash
-curl -si "https://api.example.com/resource" \
+# $RESOURCE_URL was set in Phase 0; if using the alternative entry point,
+# set it manually: RESOURCE_URL="https://..." (the URL that returned the 402)
+curl -si "$RESOURCE_URL" \
   -H "Authorization: MPP credential=$CREDENTIAL" \
   -H "X-Payment-Credential: $CREDENTIAL"
 ```
