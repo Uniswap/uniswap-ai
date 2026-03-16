@@ -564,150 +564,158 @@ echo "USDC balance after swap: $USDC_AFTER_SWAP (need at least $USDC_E_AMOUNT_NE
 
 ### Phase 4B — Bridge to Tempo (cross-chain path)
 
-> **If you skipped Phase 4A** (you already hold the bridge asset, e.g. native
-> USDC on Base), initialize these variables before proceeding:
+> **If you skipped Phase 4A** (you already hold native USDC on Base), initialize
+> these variables before proceeding:
 >
 > ```bash
-> USDC_E_AMOUNT_NEEDED="$REQUIRED_AMOUNT"  # exact amount
-> # With 0.5% buffer for bridge fees: $(echo "$REQUIRED_AMOUNT * 1005 / 1000" | bc)
-> BRIDGE_ASSET_ADDRESS="0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"  # USDC on Base (update for other chains)
+> USDC_E_AMOUNT_NEEDED="$REQUIRED_AMOUNT"
+> USDC_E_ADDRESS="0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"  # USDC on Base
 > ```
 
-After acquiring the bridge asset on the source chain, bridge it to Tempo. The
-bridge-in asset differs by source chain:
+Use the Uniswap Trading API to bridge USDC from Base to USDC.e on Tempo. The
+bridge is powered by Across Protocol and is fully abstracted by the API —
+no manual contract calls required.
 
-| Source chain     | Bridge asset                                      | Address                                      |
-| ---------------- | ------------------------------------------------- | -------------------------------------------- |
-| Base (8453)      | Native USDC                                       | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` |
-| Ethereum (1)     | USDC                                              | `0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48` |
-| Arbitrum (42161) | USDC-e (bridged)                                  | `0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8` |
-| Other chains     | Check Tempo docs for the accepted bridge-in asset | —                                            |
+**Bridge asset addresses:**
 
-> **SDK alternative:** The `mppx` package (`npm install mppx viem`) may
-> provide bridge helper methods that handle this phase automatically. Check
-> `https://mainnet.docs.tempo.xyz/guide/machine-payments/client` for SDK-based
-> bridging before constructing raw transactions. If the SDK covers bridging,
-> use it and skip the manual steps below.
+| Chain              | Asset       | Address                                      |
+| ------------------ | ----------- | -------------------------------------------- |
+| Base (8453) — in   | Native USDC | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` |
+| Tempo (4217) — out | USDC.e      | `0x20C000000000000000000000b9537d11c60E8b50` |
 
-**Resolve bridge contract addresses** (REQUIRED before proceeding):
-
-You need **two** addresses:
-
-- `BRIDGE_CONTRACT` — the deposit contract on the **source chain** (e.g. Base) where you call `approve` + `deposit`
-- `BRIDGE_CONTRACT_ON_TEMPO` — the receiver contract on **Tempo** used to confirm the deposit event when polling
-
-Use `WebFetch` to attempt to find both contract addresses:
-
-1. `https://mainnet.docs.tempo.xyz/quickstart/predeployed-contracts`
-2. `https://mainnet.docs.tempo.xyz/guide/machine-payments`
-
-> **If WebFetch returns no contract addresses:** Do NOT guess or use an
-> unverified address — bridging to the wrong contract results in **permanent
-> fund loss**. Ask the user to provide the bridge contract address from an
-> official source. They can:
->
-> - Join the Tempo Discord at `https://discord.gg/tempo` and ask in
->   `#developers`
-> - Check `https://github.com/tempo-io` for publicly deployed contract
->   addresses
-
-The bridge process:
-
-1. **Approve the bridge asset** to the bridge contract on the source chain
-2. **Call the bridge deposit function** with the destination Tempo address and
-   the token amount
-3. **Wait for bridge confirmation** (typically a few minutes)
-
-> **REQUIRED:** Use `AskUserQuestion` before submitting the bridge transaction.
-> Show the user: amount, token, bridge contract address, destination address on
-> Tempo, and estimated bridge time. Do not proceed until confirmed.
+**Step 4B-1 — Check approval:**
 
 ```bash
-# Once you have the bridge contract address (from Tempo docs or team):
-BRIDGE_CONTRACT="0x..."            # Tempo bridge contract on source chain
+BRIDGE_TOKEN_IN="0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"   # USDC on Base
+BRIDGE_TOKEN_OUT="0x20C000000000000000000000b9537d11c60E8b50"   # USDC.e on Tempo
 BRIDGE_AMOUNT="$USDC_E_AMOUNT_NEEDED"
-BRIDGE_ASSET_ADDRESS="0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"  # USDC on Base (example)
 
-# 1. Approve the bridge asset to the bridge contract
-#    Wait for the approval to be mined before calling deposit (avoids "insufficient allowance")
-SOURCE_RPC_URL="https://mainnet.base.org"  # replace with your source chain RPC
-APPROVE_TX=$(cast send "$BRIDGE_ASSET_ADDRESS" \
-  "approve(address,uint256)" \
-  "$BRIDGE_CONTRACT" "$BRIDGE_AMOUNT" \
-  --private-key "$PRIVATE_KEY" \
-  --rpc-url "$SOURCE_RPC_URL" \
-  --json | jq -r '.transactionHash')
-cast receipt "$APPROVE_TX" --rpc-url "$SOURCE_RPC_URL" > /dev/null
-echo "Approval mined: $APPROVE_TX"
+APPROVAL=$(curl -s "https://trade-api.gateway.uniswap.org/v1/check_approval" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $UNISWAP_API_KEY" \
+  --data "$(jq -n \
+    --arg token         "$BRIDGE_TOKEN_IN" \
+    --arg amount        "$BRIDGE_AMOUNT" \
+    --arg walletAddress "$WALLET_ADDRESS" \
+    --argjson chainId 8453 \
+    '{token: $token, amount: $amount, walletAddress: $walletAddress, chainId: $chainId}')")
 
-# 2. Call the bridge deposit function and capture the tx hash for polling
-# NOTE: Replace the function signature with the actual ABI from Tempo docs.
-# The parameters below are illustrative — confirm name, order, and types.
-BRIDGE_TX=$(cast send "$BRIDGE_CONTRACT" \
-  "deposit(address,uint256,address)" \
-  "$BRIDGE_ASSET_ADDRESS" "$BRIDGE_AMOUNT" "$WALLET_ADDRESS" \
-  --private-key "$PRIVATE_KEY" \
-  --rpc-url "$SOURCE_RPC_URL" \
-  --json | jq -r '.transactionHash')
-# Capture the block number for efficient log polling later (use --json for stable output)
-BRIDGE_TX_BLOCK=$(cast receipt "$BRIDGE_TX" --rpc-url "$SOURCE_RPC_URL" --json | jq -r '.blockNumber')
-# Convert hex to decimal if cast returns 0x-prefixed value
-[[ "$BRIDGE_TX_BLOCK" == 0x* ]] && BRIDGE_TX_BLOCK=$((BRIDGE_TX_BLOCK))
+APPROVAL_TX=$(echo "$APPROVAL" | jq -r '.approval // empty')
+echo "Approval needed: $([ -n "$APPROVAL_TX" ] && echo yes || echo no)"
 ```
 
-> **ABI warning:** The exact function name and parameters must be verified from
-> the Tempo bridge contract ABI at `https://mainnet.docs.tempo.xyz`. The example
-> above uses a common ERC-20 bridge signature pattern. Do not submit without
-> confirming the ABI.
+> **REQUIRED:** If `APPROVAL_TX` is non-empty, use `AskUserQuestion` to show the
+> user the approval details (token: `$BRIDGE_TOKEN_IN`, spender, amount:
+> `$BRIDGE_AMOUNT`, estimated gas) and obtain explicit confirmation before
+> submitting the approval transaction.
 
-Poll for bridge confirmation before proceeding to Phase 5:
+If confirmed and `APPROVAL_TX` is non-empty:
 
-1. WebFetch `https://explore.mainnet.tempo.xyz` to check if a bridge
-   explorer API exists. If found, use it as the polling endpoint. If not,
-   fall back to polling the Tempo RPC (`https://rpc.presto.tempo.xyz`) for
-   the deposit event.
-2. Poll every **30 seconds** for up to **10 minutes**.
+```bash
+APPROVAL_TO=$(echo "$APPROVAL_TX"   | jq -r '.to')
+APPROVAL_DATA=$(echo "$APPROVAL_TX" | jq -r '.data')
+APPROVE_HASH=$(cast send "$APPROVAL_TO" \
+  --data "$APPROVAL_DATA" \
+  --private-key "$PRIVATE_KEY" \
+  --rpc-url https://mainnet.base.org \
+  --json | jq -r '.transactionHash')
+cast receipt "$APPROVE_HASH" --rpc-url https://mainnet.base.org > /dev/null
+echo "Approval confirmed: $APPROVE_HASH"
+```
 
-   **Fallback polling loop** (when no bridge explorer API is available):
+**Step 4B-2 — Get bridge quote (EXACT_OUTPUT):**
 
-   ```bash
-   # Replace EVENT_SIG with the actual deposit event signature from Tempo docs.
-   # The ABI event name and parameters below are illustrative.
-   BRIDGE_CONTRACT_ON_TEMPO="0x..."   # bridge's Tempo-side address (from docs)
-   [ -z "$BRIDGE_CONTRACT_ON_TEMPO" ] && echo "ERROR: BRIDGE_CONTRACT_ON_TEMPO not set" && exit 1
-   TEMPO_RPC_URL="https://rpc.presto.tempo.xyz"
-   # Capture Tempo's current block BEFORE polling starts.
-   # Note: BRIDGE_TX_BLOCK is the source-chain (e.g. Base) block number — do NOT use it here.
-   # Tempo and Base have independent block heights; using the Base block on Tempo would fail.
-   TEMPO_START_BLOCK=$(cast block-number --rpc-url "$TEMPO_RPC_URL" 2>/dev/null || echo "latest")
-   for i in $(seq 1 20); do
-     RESULT=$(cast logs \
-       --rpc-url "$TEMPO_RPC_URL" \
-       --from-block "$TEMPO_START_BLOCK" \
-       --address "$BRIDGE_CONTRACT_ON_TEMPO" \
-       "DepositReceived(address,uint256)" 2>/dev/null \
-       | grep -i "${WALLET_ADDRESS#0x}")
-     if [ -n "$RESULT" ]; then
-       echo "Bridge confirmed — funds received on Tempo."
-       break
-     fi
-     echo "Waiting for bridge confirmation... attempt $i/20"
-     sleep 30
-   done
-   ```
+```bash
+BRIDGE_QUOTE=$(curl -s "https://trade-api.gateway.uniswap.org/v1/quote" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $UNISWAP_API_KEY" \
+  --data "$(jq -n \
+    --arg tokenIn        "$BRIDGE_TOKEN_IN" \
+    --arg tokenInChainId "8453" \
+    --arg tokenOut       "$BRIDGE_TOKEN_OUT" \
+    --arg tokenOutChainId "4217" \
+    --arg amount         "$BRIDGE_AMOUNT" \
+    --arg swapper        "$WALLET_ADDRESS" \
+    '{
+       tokenIn:         $tokenIn,
+       tokenInChainId:  $tokenInChainId,
+       tokenOut:        $tokenOut,
+       tokenOutChainId: $tokenOutChainId,
+       amount:          $amount,
+       swapper:         $swapper,
+       type:            "EXACT_OUTPUT"
+     }')")
 
-   > Verify the event name and parameter types from the Tempo bridge ABI at
-   > `https://mainnet.docs.tempo.xyz` before using this snippet.
+BRIDGE_QUOTE_ID=$(echo "$BRIDGE_QUOTE" | jq -r '.quote.quoteId')
+BRIDGE_FEE=$(echo "$BRIDGE_QUOTE"      | jq -r '.quote.bridgeFee // .quote.gasFee // "unknown"')
+BRIDGE_ETA=$(echo "$BRIDGE_QUOTE"      | jq -r '.quote.estimatedFillTime // "2-5 minutes"')
+echo "Bridge quote: quoteId=$BRIDGE_QUOTE_ID fee=$BRIDGE_FEE eta=$BRIDGE_ETA"
+```
 
-3. Proceed to Phase 5 only once the funds are confirmed received on Tempo.
-   After a successful bridge, your USDC on Base is converted to **pathUSD**
-   (Tempo's bridged USDC equivalent) on Tempo. Use pathUSD's token address as
-   `TOKEN_IN` in Phase 5 — look it up at
-   `https://mainnet.docs.tempo.xyz/tokens`.
-4. If no confirmation after 10 minutes, report the bridge transaction hash to
-   the user and ask them to check the bridge explorer manually. **Do not
-   re-submit the bridge transaction** — duplicate submissions result in double
-   payment.
+> **REQUIRED:** Use `AskUserQuestion` before submitting the bridge transaction.
+> Show the user:
+>
+> - Amount: `$BRIDGE_AMOUNT` USDC on Base (chain 8453)
+> - Destination: `$BRIDGE_TOKEN_OUT` (USDC.e) on Tempo (chain 4217)
+> - Bridge fee: `$BRIDGE_FEE`
+> - Estimated time: `$BRIDGE_ETA`
+> - Recipient: `$WALLET_ADDRESS`
+>
+> Do not proceed until the user confirms.
+
+**Step 4B-3 — Execute the bridge:**
+
+```bash
+BRIDGE_RESPONSE=$(curl -s "https://trade-api.gateway.uniswap.org/v1/swap" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $UNISWAP_API_KEY" \
+  --data "$(jq -n \
+    --argjson quote  "$BRIDGE_QUOTE" \
+    --arg walletAddress "$WALLET_ADDRESS" \
+    '{quote: $quote.quote, walletAddress: $walletAddress}')")
+
+BRIDGE_TO=$(echo "$BRIDGE_RESPONSE"   | jq -r '.swap.to')
+BRIDGE_DATA=$(echo "$BRIDGE_RESPONSE" | jq -r '.swap.data')
+BRIDGE_VALUE=$(echo "$BRIDGE_RESPONSE"| jq -r '.swap.value // "0"')
+
+BRIDGE_TX=$(cast send "$BRIDGE_TO" \
+  --data "$BRIDGE_DATA" \
+  --value "$BRIDGE_VALUE" \
+  --private-key "$PRIVATE_KEY" \
+  --rpc-url https://mainnet.base.org \
+  --json | jq -r '.transactionHash')
+
+BRIDGE_STATUS=$(cast receipt "$BRIDGE_TX" --rpc-url https://mainnet.base.org --json | jq -r '.status')
+[ "$BRIDGE_STATUS" = "0x1" ] || { echo "ERROR: Bridge tx reverted. Do not proceed."; exit 1; }
+echo "Bridge submitted: $BRIDGE_TX — waiting for funds on Tempo..."
+```
+
+**Step 4B-4 — Poll for arrival on Tempo:**
+
+Poll for USDC.e balance on Tempo every 30 seconds for up to 10 minutes:
+
+```bash
+TEMPO_RPC_URL="https://rpc.presto.tempo.xyz"
+for i in $(seq 1 20); do
+  USDC_E_ON_TEMPO=$(cast call "$BRIDGE_TOKEN_OUT" \
+    "balanceOf(address)(uint256)" "$WALLET_ADDRESS" \
+    --rpc-url "$TEMPO_RPC_URL" 2>/dev/null || echo "0")
+  if [ "$USDC_E_ON_TEMPO" -ge "$BRIDGE_AMOUNT" ]; then
+    echo "Bridge confirmed — $USDC_E_ON_TEMPO USDC.e received on Tempo."
+    break
+  fi
+  echo "Waiting for bridge arrival... attempt $i/20 (balance: $USDC_E_ON_TEMPO)"
+  sleep 30
+done
+[ "$USDC_E_ON_TEMPO" -ge "$BRIDGE_AMOUNT" ] || \
+  { echo "Bridge not confirmed after 10 minutes. Check $BRIDGE_TX on https://explore.mainnet.tempo.xyz"; exit 1; }
+```
+
+After a successful bridge, you hold **USDC.e** (`$BRIDGE_TOKEN_OUT`) on Tempo.
+Use this as `TOKEN_IN` in Phase 5 to swap to the required payment token.
+
+> **Do not re-submit** if the poll times out — duplicate bridge deposits result
+> in double payment. Have the user check the transaction on the Tempo explorer.
 
 ### Phase 5 — Swap to Required Payment Token on Tempo (if needed)
 
