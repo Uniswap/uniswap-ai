@@ -973,7 +973,7 @@ X402_PAYMENT_JSON=$(jq -n \
   --argjson chainId  "$X402_CHAIN_ID" \
   --arg  from        "$WALLET_ADDRESS" \
   --arg  to          "$X402_PAY_TO" \
-  --argjson value    "$X402_AMOUNT" \
+  --arg    value     "$X402_AMOUNT" \
   --argjson validAfter  "$X402_VALID_AFTER" \
   --argjson validBefore "$X402_VALID_BEFORE" \
   --arg  nonce       "$X402_NONCE" \
