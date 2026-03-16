@@ -162,7 +162,7 @@ body. For MPP/Tempo the body is JSON:
 >   - `X402_PAY_TO` and `X402_ASSET` must match `^0x[a-fA-F0-9]{40}$`
 >   - `X402_AMOUNT` must match `^[0-9]+$`
 >   - `X402_SCHEME` must be `"exact"` — other schemes are not yet supported
->   - `X402_NETWORK` must be a recognised EVM network (e.g. `"base"`, `"eip155:8453"`, `"ethereum"`, `"eip155:1"`, `"tempo"`, `"eip155:42431"`)
+>   - `X402_NETWORK` must be a recognised EVM network (e.g. `"base"`, `"eip155:8453"`, `"ethereum"`, `"eip155:1"`, `"tempo"`, `"eip155:4217"`)
 >
 >   **If `X402_SCHEME` is not `"exact"`**: stop and report to the user that
 >   only the `"exact"` scheme is currently supported.
@@ -635,10 +635,10 @@ BRIDGE_TX_BLOCK=$(cast receipt "$BRIDGE_TX" --rpc-url "$SOURCE_RPC_URL" --json |
 
 Poll for bridge confirmation before proceeding to Phase 5:
 
-1. WebFetch `https://explore.tempo.xyz` to check if a bridge
+1. WebFetch `https://explore.mainnet.tempo.xyz` to check if a bridge
    explorer API exists. If found, use it as the polling endpoint. If not,
-   fall back to polling the Tempo RPC (`https://rpc.moderato.tempo.xyz` — verify from
-   docs) for the deposit event.
+   fall back to polling the Tempo RPC (`https://rpc.presto.tempo.xyz`) for
+   the deposit event.
 2. Poll every **30 seconds** for up to **10 minutes**.
 
    **Fallback polling loop** (when no bridge explorer API is available):
@@ -648,8 +648,7 @@ Poll for bridge confirmation before proceeding to Phase 5:
    # The ABI event name and parameters below are illustrative.
    BRIDGE_CONTRACT_ON_TEMPO="0x..."   # bridge's Tempo-side address (from docs)
    [ -z "$BRIDGE_CONTRACT_ON_TEMPO" ] && echo "ERROR: BRIDGE_CONTRACT_ON_TEMPO not set" && exit 1
-   # Verify the Tempo RPC URL from mainnet.docs.tempo.xyz/quickstart/connection-details
-   TEMPO_RPC_URL="https://rpc.moderato.tempo.xyz"
+   TEMPO_RPC_URL="https://rpc.presto.tempo.xyz"
    # Capture Tempo's current block BEFORE polling starts.
    # Note: BRIDGE_TX_BLOCK is the source-chain (e.g. Base) block number — do NOT use it here.
    # Tempo and Base have independent block heights; using the Base block on Tempo would fail.
@@ -677,7 +676,7 @@ Poll for bridge confirmation before proceeding to Phase 5:
    After a successful bridge, your USDC on Base is converted to **pathUSD**
    (Tempo's bridged USDC equivalent) on Tempo. Use pathUSD's token address as
    `TOKEN_IN` in Phase 5 — look it up at
-   `https://mainnet.docs.tempo.xyz/tokens` (may be gated pre-launch).
+   `https://mainnet.docs.tempo.xyz/tokens`.
 4. If no confirmation after 10 minutes, report the bridge transaction hash to
    the user and ask them to check the bridge explorer manually. **Do not
    re-submit the bridge transaction** — duplicate submissions result in double
@@ -693,8 +692,7 @@ base URL `https://trade-api.gateway.uniswap.org/v1` with `4217` for both
 but with Tempo's chain ID and token addresses.
 
 **Token addresses on Tempo**: Look up TIP-20 token addresses (pathUSD, the
-required payment token, etc.) at `https://mainnet.docs.tempo.xyz/tokens` (may
-be gated pre-launch — contact the Tempo team for the current registry). The
+required payment token, etc.) at `https://mainnet.docs.tempo.xyz/tokens`. The
 token you received from the bridge (your `TOKEN_IN` for this swap) is the
 bridge-out asset on Tempo; the `TOKEN_OUT` is `PAYMENT_TOKEN` from Phase 1.
 Set `SOURCE_CHAIN_ID` to Tempo's chain ID; use it for both `tokenInChainId` and
@@ -706,202 +704,104 @@ Set `SOURCE_CHAIN_ID` to Tempo's chain ID; use it for both `tokenInChainId` and
 > do not proceed with Phase 6. Phase 6 constructs an MPP credential; x402 payments
 > use a different payload format handled in **Phase 6x** (below Phase 6).
 
-With the required token in the wallet, fulfill the MPP challenge.
+With the required token in the wallet, fulfill the MPP challenge using the
+**mppx** SDK, which handles the full 402 challenge → credential → retry cycle.
 
-**For a `charge` intent:**
-
-1. Construct the payment authorization object:
-
-   - `payment_method_type`: `"tempo"`
-   - `recipient`: the payee address from the 402 challenge
-   - `amount`: the exact amount in base units
-   - `token`: the payment token address
-   - `chain_id`: Tempo chain ID (see Key Addresses section)
-   - `nonce`: a unique per-payment nonce (UUID or timestamp)
-
-2. **Ask the user for their signing method** — you cannot sign on behalf of
-   the user. Use `AskUserQuestion` to ask how they will sign the credential:
-
-   - **Foundry (`cast`)**: the most common CLI approach
-   - **MetaMask / browser wallet**: via `eth_signTypedData_v4`
-   - **Hardware wallet (Ledger/Trezor)**: via their respective CLIs
-   - **Custom script**: any EIP-712 compatible library
-
-   Store the answer as `SIGNING_METHOD`. Consult `https://mpp.dev` for the
-   canonical EIP-712 type definitions for the authorization object.
-
-   **Before signing, generate a nonce and deadline, and set the verifier address:**
-
-   ```bash
-   NONCE=0x$(openssl rand -hex 32)    # 32 bytes = bytes32, with 0x prefix
-   DEADLINE=$(($(date +%s) + 300))    # 5-minute window matching maxTimeoutSeconds
-   MPP_VERIFIER_ADDRESS="0x..."       # Deployed MPP contract — from https://mpp.dev
-                                      # (may be gated pre-launch; contact Tempo team)
-   ```
-
-   **Build the authorization JSON:**
-
-   ```bash
-   # $REQUIRED_AMOUNT must be a validated integer string (see Input Validation Rules);
-   # --argjson encodes it as a JSON number to match the uint256 EIP-712 field type.
-   AUTH_JSON=$(jq -n \
-     --arg pmt "tempo" \
-     --arg recipient "$RECIPIENT" \
-     --argjson amount "$REQUIRED_AMOUNT" \
-     --arg token "$PAYMENT_TOKEN" \
-     --argjson chainId "$TEMPO_CHAIN_ID" \
-     --arg nonce "$NONCE" \
-     --argjson deadline "$DEADLINE" \
-     '{payment_method_type: $pmt, recipient: $recipient, amount: $amount,
-       token: $token, chain_id: $chainId, nonce: $nonce, deadline: $deadline}')
-   # Note: amount uses --argjson (not --arg) so it encodes as a JSON number,
-   # matching the uint256 EIP-712 type. viem's signTypedData accepts number|bigint
-   # for uint256 — amounts ≤ 2^53 (well above any USDC payment) are safe as-is.
-   # For amounts > 2^53 or other EIP-712 libraries, use: BigInt(authMsg.amount).
-   ```
-
-   **Sign using viem (recommended — correctly handles EIP-712 typed data):**
-
-   ```typescript
-   import { privateKeyToAccount } from 'viem/accounts';
-
-   const account = privateKeyToAccount(process.env.PRIVATE_KEY as `0x${string}`);
-
-   // Parse the AUTH_JSON built in the bash step above
-   const authMsg = JSON.parse(process.env.AUTH_JSON!);
-
-   // All four domain fields must be confirmed at https://mpp.dev — do NOT guess.
-   // name, version, chainId, and verifyingContract are unverified pre-launch.
-   // An incorrect domain separator produces a signature that is universally rejected.
-   // (Docs may be gated pre-launch; contact the Tempo team for values pre-launch.)
-   const domain = {
-     name: 'MPP', // confirm at mpp.dev — value may differ at launch
-     version: '1', // confirm at mpp.dev — value may differ at launch
-     chainId: Number(process.env.TEMPO_CHAIN_ID),
-     verifyingContract: process.env.MPP_VERIFIER_ADDRESS as `0x${string}`,
-   };
-
-   const signature = await account.signTypedData({
-     domain,
-     types: {
-       Authorization: [
-         { name: 'payment_method_type', type: 'string' },
-         { name: 'recipient', type: 'address' },
-         { name: 'amount', type: 'uint256' },
-         { name: 'token', type: 'address' },
-         { name: 'chain_id', type: 'uint256' },
-         { name: 'nonce', type: 'bytes32' },
-         { name: 'deadline', type: 'uint256' },
-       ],
-     },
-     primaryType: 'Authorization',
-     message: {
-       ...authMsg,
-       amount: BigInt(authMsg.amount), // ensure uint256 precision for large amounts
-     },
-   });
-   ```
-
-   > **EIP-712 domain warning:** `MPP_VERIFIER_ADDRESS` is the deployed MPP
-   > contract address. Obtain both `chainId` and `verifyingContract` from
-   > `https://mpp.dev` at launch. Do NOT guess the domain separator — an
-   > incorrect domain produces a signature that will be rejected by the MPP
-   > validator.
-
-   **Alternative — Foundry `cast wallet sign` (CLI users, Foundry ≥ 0.2):**
-
-   ```bash
-   # Build TYPED_DATA_JSON using the same domain + Authorization type as the viem snippet above.
-   # Replace $TEMPO_CHAIN_ID, $MPP_VERIFIER_ADDRESS, and $AUTH_JSON with your env vars.
-   TYPED_DATA_JSON=$(jq -n \
-     --arg name "MPP" \
-     --arg version "1" \
-     --argjson chainId "$TEMPO_CHAIN_ID" \
-     --arg verifyingContract "$MPP_VERIFIER_ADDRESS" \
-     --argjson message "$AUTH_JSON" \
-     '{
-       "domain": {"name": $name, "version": $version, "chainId": $chainId, "verifyingContract": $verifyingContract},
-       "types": {
-         "EIP712Domain": [
-           {"name": "name", "type": "string"}, {"name": "version", "type": "string"},
-           {"name": "chainId", "type": "uint256"}, {"name": "verifyingContract", "type": "address"}
-         ],
-         "Authorization": [
-           {"name": "payment_method_type", "type": "string"}, {"name": "recipient", "type": "address"},
-           {"name": "amount", "type": "uint256"}, {"name": "token", "type": "address"},
-           {"name": "chain_id", "type": "uint256"}, {"name": "nonce", "type": "bytes32"},
-           {"name": "deadline", "type": "uint256"}
-         ]
-       },
-       "primaryType": "Authorization",
-       "message": $message
-     }')
-   cast wallet sign --private-key "$PRIVATE_KEY" --typed-data "$TYPED_DATA_JSON"
-   ```
-
-   > **Note:** Do NOT use `cast sign` (without `wallet`) for EIP-712 — it
-   > performs `eth_sign` (raw bytes prefix), not typed data signing, and
-   > produces an invalid MPP credential.
-   >
-   > **REQUIRED:** Use `AskUserQuestion` before this step. Show the
-   > authorization object contents so the user can verify what they are
-   > signing. Store the resulting signature as `MPP_SIGNATURE`.
-
-3. Assemble and base64-encode the full credential:
-
-   ```bash
-   # Assemble the credential object
-   CREDENTIAL_JSON=$(jq -n \
-     --arg type "tempo" \
-     --argjson auth "$AUTH_JSON" \
-     --arg sig "$MPP_SIGNATURE" \
-     '{type: $type, authorization: $auth, signature: $sig}')
-
-   # Base64-encode the entire credential object (not just the authorization field)
-   # tr -d '[:space:]' strips newlines and carriage returns (portable across macOS/Linux)
-   CREDENTIAL=$(echo "$CREDENTIAL_JSON" | base64 | tr -d '[:space:]')
-   ```
-
-**For a `session` intent:**
-
-A payment channel enables pay-as-you-go usage. Session intents require opening
-a channel before the first request and streaming micropayments as you consume
-the API. The high-level steps are:
-
-1. **Open a channel** — deposit a session budget into the MPP channel contract
-   on Tempo. The required fields include: `payment_method_type`, `recipient`,
-   `token`, `chain_id`, a session `nonce`, a `max_amount` (total budget), and
-   a `session_duration` (seconds). EIP-712 signing follows the same pattern as
-   the charge flow above but with a `SessionAuthorization` typed struct instead
-   of `Authorization`.
-2. **Attach the channel credential** — include the base64-encoded session
-   credential in the `X-Payment-Credential` header on every subsequent API
-   request.
-3. **Closing / expiry** — the channel auto-expires after `session_duration`.
-   The API provider can sweep uncollected funds after expiry.
-
-> **Session intents are not fully covered by this skill.** For the complete
-> channel API, typed struct definitions, and SDK helpers, consult
-> `https://mpp.dev/sdk` (may be gated pre-launch — contact the Tempo team).
-> If your 402 specifies `"intent_type": "session"` and you need to proceed
-> immediately, ask the Tempo team for a pre-launch integration guide.
-
-**Submit the credential** by retrying the original request with the credential
-attached. `X-Payment-Credential` is the MPP-native header; `Authorization:
-MPP credential=` is provided for compatibility with servers that expect it.
-Consult `https://mpp.dev` for the canonical header the target server requires.
-Including both is safe for broad compatibility:
+**Install:**
 
 ```bash
-# $RESOURCE_URL was set in Phase 0; if using the alternative entry point,
-# set it manually: RESOURCE_URL="https://..." (the URL that returned the 402)
-curl -si "$RESOURCE_URL" \
-  -H "Authorization: MPP credential=$CREDENTIAL" \
-  -H "X-Payment-Credential: $CREDENTIAL"
+npm install mppx viem
 ```
 
-A `200` response with a receipt confirms success. Any other status indicates the
-credential was rejected — check the error body and re-inspect the challenge.
+**For a `charge` intent — automatic mode** (polyfills `fetch`):
+
+```typescript
+import { Mppx, tempo } from 'mppx/client';
+import { privateKeyToAccount } from 'viem/accounts';
+
+const account = privateKeyToAccount(process.env.PRIVATE_KEY as `0x${string}`);
+
+Mppx.create({ methods: [tempo({ account })] });
+const response = await fetch(process.env.RESOURCE_URL!);
+// response is the 200 — credential was built and submitted automatically
+```
+
+Pass `autoSwap: true` to let mppx swap from available stablecoins (USDC.e or
+pathUSD) to the required token automatically — useful if your wallet holds USDC.e
+or pathUSD and the challenge requires a different token, letting you skip Phase 5:
+
+```typescript
+Mppx.create({ methods: [tempo({ account, autoSwap: true })] });
+const response = await fetch(process.env.RESOURCE_URL!);
+```
+
+**For a `charge` intent — manual mode** (show payment summary before paying):
+
+> **REQUIRED:** Use `AskUserQuestion` before calling `createCredential`. Parse
+> the `WWW-Authenticate: Payment` header from the 402 response and display the
+> payment details to the user (amount, token, recipient, resource URL). Only
+> proceed after explicit confirmation.
+
+```typescript
+import { Mppx, tempo } from 'mppx/client';
+import { Receipt } from 'mppx';
+import { privateKeyToAccount } from 'viem/accounts';
+
+const account = privateKeyToAccount(process.env.PRIVATE_KEY as `0x${string}`);
+const mppx = Mppx.create({ polyfill: false, methods: [tempo({ account })] });
+
+// Step 1: probe the endpoint to get the 402 challenge
+const initial = await fetch(process.env.RESOURCE_URL!);
+if (initial.status !== 402) throw new Error(`Expected 402, got ${initial.status}`);
+
+// Step 2: REQUIRED — show payment summary to user and wait for confirmation
+// Parse WWW-Authenticate header; display amount, token, recipient, resource.
+
+// Step 3: build and submit the credential
+const credential = await mppx.createCredential(initial, { account });
+const paidResponse = await fetch(process.env.RESOURCE_URL!, {
+  headers: { Authorization: credential },
+});
+
+if (paidResponse.status !== 200) {
+  const body = await paidResponse.text();
+  throw new Error(`Payment rejected (${paidResponse.status}): ${body}`);
+}
+
+// Step 4: parse the receipt
+const receipt = Receipt.fromResponse(paidResponse);
+console.log('Payment confirmed. Reference:', receipt.reference);
+```
+
+The `Authorization` header value returned by `createCredential()` has the form
+`Payment <base64url-encoded credential>` — do not modify this value.
+
+**For a `session` intent** (pay-as-you-go channel):
+
+Pass a `deposit` budget to `tempo()` to open a payment channel:
+
+```typescript
+// "10" = 10 pathUSD deposited as channel budget
+Mppx.create({ methods: [tempo({ account, deposit: '10' })] });
+const response = await mppx.fetch(process.env.RESOURCE_URL!);
+// The SDK manages channel lifecycle and micropayment streaming
+```
+
+For fine-grained session control (manual open/close, sweep), see
+`https://mpp.dev/sdk`.
+
+**Direct submission (if credential was built externally):**
+
+```bash
+# $CREDENTIAL is the base64url-encoded credential string from mppx.createCredential()
+# $RESOURCE_URL was set in Phase 0
+curl -si "$RESOURCE_URL" \
+  -H "Authorization: Payment $CREDENTIAL"
+```
+
+A `200` response with a `Payment-Receipt` header confirms success. Any other
+status means the credential was rejected — check the response body and
+re-inspect the challenge.
 
 ---
 
@@ -926,7 +826,7 @@ the token transfer on-chain — no separate on-chain approval step is required.
 case "$X402_NETWORK" in
   base|"eip155:8453")    X402_CHAIN_ID=8453;  SOURCE_RPC_URL="https://mainnet.base.org" ;;
   ethereum|"eip155:1")   X402_CHAIN_ID=1;     SOURCE_RPC_URL="https://eth.llamarpc.com" ;;
-  tempo|"eip155:4217")   X402_CHAIN_ID=4217;  SOURCE_RPC_URL="${TEMPO_RPC_URL:-https://rpc.tempo.xyz}" ;;  # obtain from mainnet.docs.tempo.xyz
+  tempo|"eip155:4217")   X402_CHAIN_ID=4217;  SOURCE_RPC_URL="${TEMPO_RPC_URL:-https://rpc.presto.tempo.xyz}" ;;
   *)
     echo "ERROR: Unrecognised or unsupported x402 network: $X402_NETWORK"
     echo "Supported: base / eip155:8453, ethereum / eip155:1, tempo / eip155:4217"
@@ -1118,16 +1018,11 @@ Tempo-side token contract as `X402_ASSET` and the Tempo chain ID as `X402_CHAIN_
 ## Key Addresses and References
 
 - **Trading API**: `https://trade-api.gateway.uniswap.org/v1`
-- **MPP docs**: `https://mpp.dev` _(may be gated pre-launch; publicly available
-  at launch — contact the Tempo team for EIP-712 domain values pre-launch)_
-- **Tempo documentation**: `https://mainnet.docs.tempo.xyz` _(may be gated
-  pre-launch; publicly available at launch — contact the Tempo team if you
-  receive a 401 or password prompt)_
-- **Tempo chain ID**: `4217` (Tempo mainnet — confirmed in Uniswap SDK. Verify
-  current value at `https://mainnet.docs.tempo.xyz/quickstart/connection-details`)
-- **Tempo RPC**: obtain from `https://mainnet.docs.tempo.xyz/quickstart/connection-details`
-  (mainnet RPC URL; default fallback: `https://rpc.tempo.xyz`)
-- **Tempo Block Explorer**: `https://explore.tempo.xyz`
+- **MPP docs**: `https://mpp.dev`
+- **Tempo documentation**: `https://mainnet.docs.tempo.xyz`
+- **Tempo chain ID**: `4217` (Tempo mainnet)
+- **Tempo RPC**: `https://rpc.presto.tempo.xyz`
+- **Tempo Block Explorer**: `https://explore.mainnet.tempo.xyz`
 - **pathUSD on Tempo**: `0x20c0000000000000000000000000000000000000` (primary stablecoin)
 - **Stablecoin DEX on Tempo**: `0xdec0000000000000000000000000000000000000`
 - **Permit2 on Tempo**: `0x000000000022d473030f116ddee9f6b43ac78ba3`
