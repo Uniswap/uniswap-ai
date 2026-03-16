@@ -721,7 +721,7 @@ import { privateKeyToAccount } from 'viem/accounts';
 
 const account = privateKeyToAccount(process.env.PRIVATE_KEY as `0x${string}`);
 
-Mppx.create({ methods: [tempo({ account })] });
+Mppx.create({ methods: [tempo.charge({ account })] });
 const response = await fetch(process.env.RESOURCE_URL!);
 // response is the 200 — credential was built and submitted automatically
 ```
@@ -731,7 +731,7 @@ pathUSD) to the required token automatically — useful if your wallet holds USD
 or pathUSD and the challenge requires a different token, letting you skip Phase 5:
 
 ```typescript
-Mppx.create({ methods: [tempo({ account, autoSwap: true })] });
+Mppx.create({ methods: [tempo.charge({ account, autoSwap: true })] });
 const response = await fetch(process.env.RESOURCE_URL!);
 ```
 
@@ -748,7 +748,7 @@ import { Receipt } from 'mppx';
 import { privateKeyToAccount } from 'viem/accounts';
 
 const account = privateKeyToAccount(process.env.PRIVATE_KEY as `0x${string}`);
-const mppx = Mppx.create({ polyfill: false, methods: [tempo({ account })] });
+const mppx = Mppx.create({ polyfill: false, methods: [tempo.charge({ account })] });
 
 // Step 1: probe the endpoint to get the 402 challenge
 const initial = await fetch(process.env.RESOURCE_URL!);
@@ -778,13 +778,13 @@ The `Authorization` header value returned by `createCredential()` has the form
 
 **For a `session` intent** (pay-as-you-go channel):
 
-Pass a `deposit` budget to `tempo()` to open a payment channel:
+Pass a `maxDeposit` budget to `tempo()` to open a payment channel:
 
 ```typescript
-// "10" = 10 pathUSD deposited as channel budget
-Mppx.create({ methods: [tempo({ account, deposit: '10' })] });
+// maxDeposit: '10' locks up to 10 pathUSD into the channel escrow
+const mppx = Mppx.create({ methods: [tempo({ account, maxDeposit: '10' })] });
 const response = await mppx.fetch(process.env.RESOURCE_URL!);
-// The SDK manages channel lifecycle and micropayment streaming
+// The SDK manages channel lifecycle and voucher signing automatically
 ```
 
 For fine-grained session control (manual open/close, sweep), see
