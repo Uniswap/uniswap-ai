@@ -176,8 +176,13 @@ tests:
       - type: contains-any
         value:
           - 'x402'
-          - 'x402Version'
-          - 'not supported'
-          - 'not yet supported'
-          - 'coming soon'
-          - 'MPP only'
+          - 'X-PAYMENT'
+          - 'EIP-3009'
+          - 'TransferWithAuthorization'
+          - 'validBefore'
+
+      - type: not-contains
+        value: 'not yet supported'
+
+      - type: not-contains
+        value: 'coming soon'

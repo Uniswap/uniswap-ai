@@ -4,7 +4,7 @@ description: >
   Pay HTTP 402 payment challenges using tokens via the Uniswap Trading API.
   Use when the user encounters a 402 Payment Required response, needs to fulfill
   a machine payment, mentions "MPP", "Tempo payment", "pay for API access",
-  "HTTP 402", "machine payment protocol", or "pay-with-any-token".
+  "HTTP 402", "x402", "machine payment protocol", or "pay-with-any-token".
 allowed-tools: Read, Glob, Grep, Bash(curl:*), Bash(jq:*), Bash(cast:*), WebFetch, AskUserQuestion
 model: opus
 license: MIT
@@ -33,24 +33,22 @@ payment method.
 
 ## Protocol Support
 
-| Protocol | Version | Status      |
-| -------- | ------- | ----------- |
-| MPP      | v1      | Supported   |
-| x402     | -       | Coming soon |
-
-> **x402 detection:** If your 402 response contains `x402Version` in the body,
-> see Phase 0 — the skill detects x402 format and provides guidance even though
-> full x402 support is not yet implemented.
+| Protocol | Version | Status    |
+| -------- | ------- | --------- |
+| MPP      | v1      | Supported |
+| x402     | v1      | Supported |
 
 ## Quick Decision Guide
 
-| Wallet holds...                      | Payment token on... | Path                                                                                             |
-| ------------------------------------ | ------------------- | ------------------------------------------------------------------------------------------------ |
-| Required payment token on Tempo      | Tempo               | Direct payment (no swap needed)                                                                  |
-| Different TIP-20 stablecoin on Tempo | Tempo               | Swap via Uniswap aggregator hook                                                                 |
-| USDC (native) on Base                | Tempo               | Bridge USDC to Tempo directly (skip Phase 4A), then swap if needed (see Tempo bridge docs)       |
-| Native ETH on Base or Ethereum       | Tempo               | Swap ETH→native USDC (use WETH address as TOKEN_IN), bridge to Tempo, then swap if needed        |
-| Any ERC-20 on Base or Ethereum       | Tempo               | Swap to native USDC (bridge asset), bridge to Tempo, then swap if needed (see Tempo bridge docs) |
+| Wallet holds...                                             | Payment token on...   | Path                                                                                             |
+| ----------------------------------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------ |
+| Required payment token on Tempo                             | Tempo                 | Direct payment (no swap needed)                                                                  |
+| Different TIP-20 stablecoin on Tempo                        | Tempo                 | Swap via Uniswap aggregator hook                                                                 |
+| USDC (native) on Base                                       | Tempo                 | Bridge USDC to Tempo directly (skip Phase 4A), then swap if needed (see Tempo bridge docs)       |
+| Native ETH on Base or Ethereum                              | Tempo                 | Swap ETH→native USDC (use WETH address as TOKEN_IN), bridge to Tempo, then swap if needed        |
+| Any ERC-20 on Base or Ethereum                              | Tempo                 | Swap to native USDC (bridge asset), bridge to Tempo, then swap if needed (see Tempo bridge docs) |
+| Token already on target EVM chain (x402 "exact" scheme)     | Base / Ethereum / EVM | Sign EIP-3009 authorization, submit with X-PAYMENT header (Phase 6x)                             |
+| Token on different chain from x402 network (needs bridging) | Base / Ethereum / EVM | Swap/bridge to target chain, then Phase 6x                                                       |
 
 ---
 
@@ -131,74 +129,49 @@ body. For MPP/Tempo the body is JSON:
 >   end')
 > ```
 >
-> - **If `PROTOCOL` is `"x402"`**: This response uses the x402 protocol
->   (`x402Version: N`). **This skill currently supports MPP v1 only — x402
->   support is planned.** Stop the MPP flow here. Instead, extract and display
->   the key fields for the user's reference:
+> - **If `PROTOCOL` is `"x402"`**: This response uses the x402 protocol.
+>   Extract and display the key fields, then proceed to **Phase 6x** to
+>   complete the payment:
 >
 >   ```bash
->   echo "x402 challenge detected — skill cannot fulfill this automatically yet."
->   echo "Payment details from x402 challenge:"
+>   echo "x402 challenge detected — proceeding with x402 payment flow."
+>   echo "Payment details:"
 >   echo "$CHALLENGE_BODY" | jq '.accepts[0] | {scheme, network, maxAmountRequired, payTo, asset, description, mimeType, extra}'
 >   ```
 >
->   Suggest the user check `https://github.com/coinbase/x402` for an x402
->   client library that can handle this natively.
->
->   If the `network` field is `"tempo"` and you hold tokens on Base or
->   Ethereum, you will still need to bridge them to Tempo even with an x402
->   client. Phase 4B of this skill covers bridging. Before using it, map the
->   x402 field names to the MPP variable names that Phase 4B expects:
+>   Extract all fields needed for Phase 6x:
 >
 >   ```bash
->   # x402 → Phase 4B variable mapping
->   REQUIRED_AMOUNT=$(echo "$CHALLENGE_BODY" | jq -r '.accepts[0].maxAmountRequired')
->   RECIPIENT=$(echo "$CHALLENGE_BODY" | jq -r '.accepts[0].payTo')
->   # The resource URL is the endpoint to retry after payment — needed by the x402 client.
->   # If you came through the curl step, RESOURCE_URL is already set. If you used the
->   # alternative entry point, extract it now:
->   RESOURCE_URL=$(echo "$CHALLENGE_BODY" | jq -r '.accepts[0].resource // empty')
->   # Validate: must start with https://
->   [[ "$RESOURCE_URL" =~ ^https:// ]] || { echo "ERROR: resource URL missing or not https://"; exit 1; }
->   # The asset field is the source-chain token (e.g. USDC on Base: 0x833589...).
->   # It is NOT a Tempo TIP-20 address — do NOT use it directly as PAYMENT_TOKEN.
->   # Assign it as SOURCE_PAYMENT_TOKEN for reference; look up the corresponding
->   # Tempo TIP-20 at https://mainnet.docs.tempo.xyz/tokens and set PAYMENT_TOKEN
->   # before Phase 5. Leaving PAYMENT_TOKEN empty will produce an obvious error
->   # rather than a silent wrong-token failure.
->   SOURCE_PAYMENT_TOKEN=$(echo "$CHALLENGE_BODY" | jq -r '.accepts[0].asset')
->   # The x402 body's asset field is the SOURCE-CHAIN token the payer sends (e.g. USDC on Base).
->   # It does NOT contain the Tempo-side token address — that must be looked up separately.
->   # After bridging, you receive pathUSD (Tempo's bridged USDC) on Tempo. Confirm whether
->   # pathUSD satisfies the payee requirement before setting PAYMENT_TOKEN for Phase 5.
->   PAYMENT_TOKEN=""  # REQUIRED: set to the Tempo TIP-20 address (NOT SOURCE_PAYMENT_TOKEN)
->   INTENT_TYPE="charge"              # x402 'exact' scheme = one-time charge
->   # Start with the exact amount; Phase 4B's skip-4A block shows how to add
->   # a 0.5% buffer for bridge fees — do NOT finalize this value until you
->   # reach Phase 4B.
->   USDC_E_AMOUNT_NEEDED="$REQUIRED_AMOUNT"
->   BRIDGE_ASSET_ADDRESS="0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"  # USDC on Base
+>   X402_SCHEME=$(echo "$CHALLENGE_BODY"       | jq -r '.accepts[0].scheme')
+>   X402_NETWORK=$(echo "$CHALLENGE_BODY"      | jq -r '.accepts[0].network')
+>   X402_PAY_TO=$(echo "$CHALLENGE_BODY"       | jq -r '.accepts[0].payTo')
+>   X402_ASSET=$(echo "$CHALLENGE_BODY"        | jq -r '.accepts[0].asset')
+>   X402_AMOUNT=$(echo "$CHALLENGE_BODY"       | jq -r '.accepts[0].maxAmountRequired')
+>   X402_TIMEOUT=$(echo "$CHALLENGE_BODY"      | jq -r '.accepts[0].maxTimeoutSeconds // 300')
+>   X402_TOKEN_NAME=$(echo "$CHALLENGE_BODY"   | jq -r '.accepts[0].extra.name // "USDC"')
+>   X402_TOKEN_VERSION=$(echo "$CHALLENGE_BODY" | jq -r '.accepts[0].extra.version // "2"')
+>   # Resource URL for the retry request. If RESOURCE_URL was set by the curl step, keep it.
+>   # Otherwise extract from the challenge body:
+>   X402_RESOURCE="${RESOURCE_URL:-$(echo "$CHALLENGE_BODY" | jq -r '.accepts[0].resource // empty')}"
+>   [[ "$X402_RESOURCE" =~ ^https:// ]] || { echo "ERROR: resource URL missing or not https://"; exit 1; }
 >   ```
 >
->   > **REQUIRED:** Before proceeding to Phase 4B, you must have the user's wallet
->   > address. If the user provided it in the conversation, assign it now:
->   > `WALLET_ADDRESS="<address from conversation>"`. If not, use
->   > `AskUserQuestion` to request it. Do not proceed without a confirmed address.
->   >
->   > Also verify the wallet's USDC balance on Base is at least
->   > `USDC_E_AMOUNT_NEEDED` before bridging. A shortfall will cause the approval
->   > or deposit to revert and waste gas:
->   >
->   > ```bash
->   > cast call 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913 \
->   >   "balanceOf(address)(uint256)" "$WALLET_ADDRESS" \
->   >   --rpc-url https://mainnet.base.org
->   > ```
+>   Validate all extracted values against the Input Validation Rules before
+>   using them in any command:
 >
->   After bridging (and any Phase 5 Tempo-side swap), hand off to your x402
->   client library to construct and submit the x402 payment payload. **Do NOT
->   proceed to Phase 6** — Phase 6 builds an MPP credential, not an x402
->   payment. Do not continue with the MPP phases below.
+>   - `X402_PAY_TO` and `X402_ASSET` must match `^0x[a-fA-F0-9]{40}$`
+>   - `X402_AMOUNT` must match `^[0-9]+$`
+>   - `X402_SCHEME` must be `"exact"` — other schemes are not yet supported
+>   - `X402_NETWORK` must be a recognised EVM network (e.g. `"base"`, `"eip155:8453"`, `"ethereum"`, `"eip155:1"`)
+>
+>   **If `X402_SCHEME` is not `"exact"`**: stop and report to the user that
+>   only the `"exact"` scheme is currently supported.
+>
+>   **REQUIRED:** You must have the user's wallet address before proceeding. If
+>   provided in the conversation, store it as `WALLET_ADDRESS`. If not, use
+>   `AskUserQuestion` to request it. Validate it matches `^0x[a-fA-F0-9]{40}$`.
+>
+>   Skip Phases 1–5. Proceed directly to **Phase 6x**.
 >
 > - **If `PROTOCOL` is `"mpp"`**: Continue with the flow below.
 > - **If `PROTOCOL` is `"unknown"`**: Report the raw body to the user and do
@@ -233,10 +206,8 @@ the amount; the payer finds tokens to cover it.
 
 ### Phase 1 — Identify Payment Token and Required Amount
 
-> **x402 path:** If `PROTOCOL` is `"x402"`, all required variables were set in
-> Phase 0's mapping block (`REQUIRED_AMOUNT`, `RECIPIENT`, `PAYMENT_TOKEN`,
-> `INTENT_TYPE`, `USDC_E_AMOUNT_NEEDED`, `BRIDGE_ASSET_ADDRESS`). Skip Phases
-> 1–3 and proceed directly to Phase 4B.
+> **x402 path:** If `PROTOCOL` is `"x402"`, all required variables were
+> extracted in Phase 0. Skip Phases 1–5 and proceed directly to **Phase 6x**.
 
 From the challenge body, extract and assign shell variables:
 
@@ -728,10 +699,8 @@ Set `SOURCE_CHAIN_ID` to Tempo's chain ID; use it for both `tokenInChainId` and
 ### Phase 6 — Construct and Submit the MPP Credential
 
 > **x402 path — STOP HERE.** If you arrived via the x402 detection gate in Phase 0,
-> do not proceed. Phase 6 constructs an MPP credential, not an x402 payment payload.
-> After completing Phase 4B (and Phase 5 if needed), hand off to an x402 client
-> library (e.g. `https://github.com/coinbase/x402`) to construct and submit the
-> payment.
+> do not proceed with Phase 6. Phase 6 constructs an MPP credential; x402 payments
+> use a different payload format handled in **Phase 6x** (below Phase 6).
 
 With the required token in the wallet, fulfill the MPP challenge.
 
@@ -909,17 +878,198 @@ credential was rejected — check the error body and re-inspect the challenge.
 
 ---
 
+### Phase 6x — Construct and Submit the x402 Payment
+
+> **x402 path only.** This phase is reached when `PROTOCOL` is `"x402"` (detected
+> in Phase 0). Do not enter this phase from the MPP path.
+
+The x402 `"exact"` scheme on EVM networks uses **EIP-3009**
+(`transferWithAuthorization`) to authorize a one-time token transfer. The payer
+signs an off-chain typed-data message; the facilitator verifies it and settles
+the token transfer on-chain — no separate on-chain approval step is required.
+
+**Prerequisite checks before signing:**
+
+```bash
+# 1. Confirm scheme is "exact" — only scheme currently supported
+[ "$X402_SCHEME" = "exact" ] || { echo "ERROR: Only 'exact' scheme is supported. Got: $X402_SCHEME"; exit 1; }
+
+# 2. Map network to a chain ID
+# Accept both CAIP-2 format (eip155:8453) and plain names (base, ethereum)
+case "$X402_NETWORK" in
+  base|"eip155:8453")   X402_CHAIN_ID=8453; SOURCE_RPC_URL="https://mainnet.base.org" ;;
+  ethereum|"eip155:1")  X402_CHAIN_ID=1;    SOURCE_RPC_URL="https://eth.llamarpc.com"  ;;
+  *)
+    echo "ERROR: Unrecognised or unsupported x402 network: $X402_NETWORK"
+    echo "Supported: base / eip155:8453, ethereum / eip155:1"
+    exit 1
+    ;;
+esac
+
+# 3. Check wallet token balance — must be >= X402_AMOUNT before signing
+ASSET_BALANCE=$(cast call "$X402_ASSET" \
+  "balanceOf(address)(uint256)" "$WALLET_ADDRESS" \
+  --rpc-url "$SOURCE_RPC_URL")
+[ "$ASSET_BALANCE" -lt "$X402_AMOUNT" ] && \
+  { echo "ERROR: Insufficient balance. Have $ASSET_BALANCE, need $X402_AMOUNT"; exit 1; }
+```
+
+> **REQUIRED:** Use `AskUserQuestion` to show the user a payment summary before
+> signing anything:
+>
+> - Token: `$X402_TOKEN_NAME` (`$X402_ASSET`) on `$X402_NETWORK`
+> - Amount: `$X402_AMOUNT` base units
+>   (e.g. `1000000` = 1.00 USDC for a 6-decimal token)
+> - Recipient: `$X402_PAY_TO`
+> - Resource: `$X402_RESOURCE`
+>
+> Obtain explicit confirmation before proceeding.
+
+**Step 6x-1 — Generate nonce and deadline:**
+
+```bash
+X402_NONCE="0x$(openssl rand -hex 32)"    # 32-byte random nonce
+X402_VALID_AFTER=0                         # immediately valid
+X402_VALID_BEFORE=$(( $(date +%s) + X402_TIMEOUT ))  # expiry = now + maxTimeoutSeconds
+```
+
+**Step 6x-2 — Sign the EIP-3009 `TransferWithAuthorization` typed data:**
+
+The EIP-3009 domain uses the token contract's own `name` and `version` (from the
+`extra` field in the x402 challenge body). The `verifyingContract` is the token
+contract itself (`X402_ASSET`).
+
+Sign using viem:
+
+```typescript
+import { privateKeyToAccount } from 'viem/accounts';
+
+const account = privateKeyToAccount(process.env.PRIVATE_KEY as `0x${string}`);
+
+const domain = {
+  name: process.env.X402_TOKEN_NAME!, // from extra.name, e.g. "USDC"
+  version: process.env.X402_TOKEN_VERSION!, // from extra.version, e.g. "2"
+  chainId: Number(process.env.X402_CHAIN_ID),
+  verifyingContract: process.env.X402_ASSET as `0x${string}`,
+};
+
+// REQUIRED: show the user what they are about to sign before calling signTypedData
+const signature = await account.signTypedData({
+  domain,
+  types: {
+    TransferWithAuthorization: [
+      { name: 'from', type: 'address' },
+      { name: 'to', type: 'address' },
+      { name: 'value', type: 'uint256' },
+      { name: 'validAfter', type: 'uint256' },
+      { name: 'validBefore', type: 'uint256' },
+      { name: 'nonce', type: 'bytes32' },
+    ],
+  },
+  primaryType: 'TransferWithAuthorization',
+  message: {
+    from: process.env.WALLET_ADDRESS as `0x${string}`,
+    to: process.env.X402_PAY_TO as `0x${string}`,
+    value: BigInt(process.env.X402_AMOUNT!),
+    validAfter: BigInt(process.env.X402_VALID_AFTER!),
+    validBefore: BigInt(process.env.X402_VALID_BEFORE!),
+    nonce: process.env.X402_NONCE as `0x${string}`,
+  },
+});
+process.env.X402_SIGNATURE = signature;
+```
+
+> **Domain warning:** The `verifyingContract` is the **token contract** (`X402_ASSET`),
+> not a separate verifier. Use the `name` and `version` from `extra` — do not assume
+> USDC defaults. Different tokens have different domain values. An incorrect domain
+> produces a signature the server will reject with a 402.
+>
+> **REQUIRED:** Use `AskUserQuestion` before this step. Show the
+> `TransferWithAuthorization` message fields (from, to, value, validBefore)
+> so the user can verify what they are signing. Store the resulting signature as
+> `X402_SIGNATURE`.
+
+**Step 6x-3 — Construct the X-PAYMENT payload:**
+
+```bash
+X402_PAYMENT_JSON=$(jq -n \
+  --arg  scheme      "$X402_SCHEME" \
+  --arg  network     "$X402_NETWORK" \
+  --argjson chainId  "$X402_CHAIN_ID" \
+  --arg  from        "$WALLET_ADDRESS" \
+  --arg  to          "$X402_PAY_TO" \
+  --argjson value    "$X402_AMOUNT" \
+  --argjson validAfter  "$X402_VALID_AFTER" \
+  --argjson validBefore "$X402_VALID_BEFORE" \
+  --arg  nonce       "$X402_NONCE" \
+  --arg  sig         "$X402_SIGNATURE" \
+  --arg  asset       "$X402_ASSET" \
+  '{
+    scheme:  $scheme,
+    network: $network,
+    chainId: $chainId,
+    payload: {
+      authorization: {
+        from:        $from,
+        to:          $to,
+        value:       $value,
+        validAfter:  $validAfter,
+        validBefore: $validBefore,
+        nonce:       $nonce
+      },
+      signature: $sig
+    },
+    asset: $asset
+  }')
+
+# Base64-encode — strip newlines (required by header spec)
+X402_PAYMENT=$(echo "$X402_PAYMENT_JSON" | base64 | tr -d '[:space:]')
+```
+
+**Step 6x-4 — Retry the original request with `X-PAYMENT` header:**
+
+```bash
+RETRY_RESPONSE=$(curl -si "$X402_RESOURCE" \
+  -H "X-PAYMENT: $X402_PAYMENT" \
+  -H "Content-Type: application/json")
+
+RETRY_STATUS=$(echo "$RETRY_RESPONSE" | head -1 | grep -o '[0-9]\{3\}')
+RETRY_BODY=$(echo "$RETRY_RESPONSE" | awk 'found{print} /^\r?$/{found=1}')
+X402_PAYMENT_RESPONSE=$(echo "$RETRY_RESPONSE" \
+  | grep -i 'x-payment-response:' | cut -d' ' -f2- | tr -d '[:space:]')
+
+echo "HTTP status: $RETRY_STATUS"
+```
+
+**Interpreting the response:**
+
+| Status | Meaning                                                 | Action                                                                                       |
+| ------ | ------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| 200    | Payment accepted — resource delivered                   | Display body; decode receipt with `echo "$X402_PAYMENT_RESPONSE" \| base64 --decode \| jq .` |
+| 402    | Payment rejected (bad signature, expired, wrong amount) | Check domain name/version, validBefore, and amount                                           |
+| 400    | Malformed payment payload                               | Verify JSON structure and base64 encoding                                                    |
+| Other  | Server or network error                                 | Report raw body; do not resubmit                                                             |
+
+**Tempo-network variant:** If `X402_NETWORK` is `"tempo"` (or `eip155:<tempo-chain-id>`),
+the payment token is a Tempo TIP-20 address. You must first bridge USDC to Tempo
+using Phase 4B and optionally swap using Phase 5. After confirming the Tempo-side
+token balance, return here to execute Steps 6x-1 through 6x-4, using the
+Tempo-side token contract as `X402_ASSET` and the Tempo chain ID as `X402_CHAIN_ID`.
+
+---
+
 ## Error Handling
 
-| Situation                      | Action                                              |
-| ------------------------------ | --------------------------------------------------- |
-| Challenge body is malformed    | Report raw body to user; do not proceed             |
-| Approval transaction fails     | Surface error; suggest checking gas and allowances  |
-| Quote API returns 400          | Log request/response; check amount formatting       |
-| Quote API returns 429          | Wait and retry with exponential backoff             |
-| Swap data is empty after /swap | Quote expired; re-fetch quote from Phase 4A-2       |
-| Bridge times out               | Check bridge explorer; do not re-submit             |
-| Credential rejected (non-200)  | Report response body; check credential construction |
+| Situation                      | Action                                                               |
+| ------------------------------ | -------------------------------------------------------------------- |
+| Challenge body is malformed    | Report raw body to user; do not proceed                              |
+| Approval transaction fails     | Surface error; suggest checking gas and allowances                   |
+| Quote API returns 400          | Log request/response; check amount formatting                        |
+| Quote API returns 429          | Wait and retry with exponential backoff                              |
+| Swap data is empty after /swap | Quote expired; re-fetch quote from Phase 4A-2                        |
+| Bridge times out               | Check bridge explorer; do not re-submit                              |
+| Credential rejected (non-200)  | Report response body; check credential construction                  |
+| x402 payment rejected (402)    | Check domain name/version, validBefore deadline, and nonce freshness |
 
 ---
 
@@ -944,6 +1094,7 @@ credential was rejected — check the error body and re-inspect the challenge.
   (use as bridge asset for Ethereum to Tempo path)
 - **Supported chains for Trading API**: 1 (Ethereum), 8453 (Base),
   42161 (Arbitrum), 10 (Optimism), 137 (Polygon), 130 (Unichain)
+- **x402 specification and reference implementation**: `https://github.com/coinbase/x402`
 
 ## Related Skills
 

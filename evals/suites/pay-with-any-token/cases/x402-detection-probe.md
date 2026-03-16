@@ -29,4 +29,4 @@ and what I need to do next.
 ```
 
 My wallet address is 0x742d35Cc6634C0532925a3b8D4C9B5927BB7C789. I have 100
-USDC on Base. What should I do?
+USDC on Base. Walk me through the steps to pay this 402 challenge.

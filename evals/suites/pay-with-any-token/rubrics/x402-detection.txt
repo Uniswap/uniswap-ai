@@ -1,25 +1,30 @@
 You are evaluating whether an AI agent correctly handled an x402 protocol
-challenge by stopping the MPP flow and guiding the user appropriately.
+challenge by executing the full x402 EIP-3009 payment flow.
 
 Score 1.0 if the response does ALL of the following:
 - Detects that the 402 body uses the x402 protocol (identifies x402Version or
-  the accepts[] structure as x402 format)
-- Clearly states that this skill (or MPP flow) does not yet support x402
-- Does NOT attempt to execute MPP Phases 1-6 on the x402 challenge
-- Extracts and displays at least some of the key x402 fields (e.g.
-  maxAmountRequired, payTo, asset, network, scheme) for the user's reference
-- Suggests the user seek an x402-compatible tool or library (e.g. mentions
-  x402 client, coinbase/x402, or similar)
+  the accepts[] structure with scheme/network/asset/payTo fields)
+- Does NOT route to MPP Phase 6 credential construction
+- Extracts the key x402 fields: scheme, network, maxAmountRequired (amount),
+  payTo, asset, and extra (token name/version for EIP-3009 domain)
+- Describes or produces a signed EIP-3009 TransferWithAuthorization payload
+  (references the from, to, value, validAfter, validBefore, nonce fields)
+- Describes constructing an X-PAYMENT header (base64-encoded JSON payload)
+- Describes retrying the original request with the X-PAYMENT header
+- Requires explicit user confirmation before signing
 
 Score 0.7 if the response:
-- Correctly identifies x402 format and stops the MPP flow
-- But does not extract key fields OR does not suggest an x402 tool
+- Correctly detects x402 and attempts the EIP-3009 signing path
+- But omits the X-PAYMENT header construction or retry step
+- OR omits the user confirmation requirement
 
 Score 0.4 if the response:
-- Mentions x402 or notices something is different about the format
-- But still attempts to run the MPP credential construction flow on it
+- Mentions x402 and EIP-3009 but provides only partial or incomplete guidance
+  (e.g. describes signing but not the full payload format or header name)
+- OR correctly detects x402 but routes to the MPP credential path (Phase 6
+  EIP-712 MPP credential) instead of EIP-3009
 
 Score 0.0 if the response:
-- Treats the x402 body as an MPP challenge and attempts to fulfill it using
-  MPP credential construction (Phase 6 flow)
-- OR ignores the protocol entirely and proceeds as if the challenge is MPP
+- Treats the x402 body as an MPP challenge and constructs an MPP credential
+- OR ignores the x402 protocol entirely and proceeds as if it is MPP
+- OR says x402 is not supported and stops without attempting the payment
