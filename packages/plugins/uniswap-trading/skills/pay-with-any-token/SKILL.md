@@ -196,11 +196,9 @@ body. For MPP/Tempo the body is JSON:
 > [[ "$TEMPO_CHAIN_ID" =~ ^[0-9]+$ ]] || { echo "ERROR: TEMPO_CHAIN_ID must be a positive integer, got: $TEMPO_CHAIN_ID"; exit 1; }
 > ```
 >
-> Do not hardcode Tempo's chain ID — Tempo is in active development and the
-> chain ID may change. The Key Addresses section lists the current known
-> testnet value (`42431`) as a fallback: if all WebFetch attempts fail and
-> the user confirms this value, it is acceptable to use. Dynamic resolution
-> is preferred.
+> The Tempo mainnet chain ID is `4217` (confirmed in the Uniswap SDK). Use
+> this as the fallback if WebFetch resolution fails. Dynamic resolution is
+> preferred to stay current with any future changes.
 
 Validate and extract fields. The `amount` is the exact output required (in
 token base units). This skill is **exact-output oriented** — the payee specifies
@@ -689,11 +687,10 @@ Poll for bridge confirmation before proceeding to Phase 5:
 
 If the wallet now holds a TIP-20 stablecoin on Tempo that is not the exact
 payment token, use the Uniswap aggregator hook on Tempo to swap to the required
-token. The Uniswap Trading API supports Tempo's chain ID — use the same base
-URL `https://trade-api.gateway.uniswap.org/v1` with the Tempo chain ID for
-both `tokenInChainId` and `tokenOutChainId`. Verify Tempo chain ID support is
-live in the Trading API before attempting. This follows the same flow as
-Phase 4A but with Tempo's chain ID and token addresses.
+token. The Uniswap Trading API supports Tempo chain ID `4217` — use the same
+base URL `https://trade-api.gateway.uniswap.org/v1` with `4217` for both
+`tokenInChainId` and `tokenOutChainId`. This follows the same flow as Phase 4A
+but with Tempo's chain ID and token addresses.
 
 **Token addresses on Tempo**: Look up TIP-20 token addresses (pathUSD, the
 required payment token, etc.) at `https://mainnet.docs.tempo.xyz/tokens` (may
@@ -702,17 +699,6 @@ token you received from the bridge (your `TOKEN_IN` for this swap) is the
 bridge-out asset on Tempo; the `TOKEN_OUT` is `PAYMENT_TOKEN` from Phase 1.
 Set `SOURCE_CHAIN_ID` to Tempo's chain ID; use it for both `tokenInChainId` and
 `tokenOutChainId` in the quote body.
-
-> **If the Trading API does not yet support Tempo's chain ID** (you receive a
-> 400 or "unsupported chain" error from the quote endpoint): check the current
-> supported chains list at `https://developers.uniswap.org`. If Tempo is not
-> listed, you cannot complete the on-Tempo swap via this skill at this time.
-> As a workaround, confirm with the API provider whether the bridged token
-> (e.g. pathUSD) is already accepted as the payment token — if so, the bridge
-> output may satisfy the 402 requirement and Phase 5 can be skipped. If pathUSD
-> is not the payment token and Tempo is not yet supported by the Trading API,
-> contact the Tempo team — they may provide an alternative swap route or accept
-> pathUSD directly from integrators during the pre-launch period.
 
 ### Phase 6 — Construct and Submit the MPP Credential
 
@@ -940,16 +926,16 @@ the token transfer on-chain — no separate on-chain approval step is required.
 case "$X402_NETWORK" in
   base|"eip155:8453")    X402_CHAIN_ID=8453;  SOURCE_RPC_URL="https://mainnet.base.org" ;;
   ethereum|"eip155:1")   X402_CHAIN_ID=1;     SOURCE_RPC_URL="https://eth.llamarpc.com" ;;
-  tempo|"eip155:42431")  X402_CHAIN_ID=42431; SOURCE_RPC_URL="https://rpc.moderato.tempo.xyz" ;;
+  tempo|"eip155:4217")   X402_CHAIN_ID=4217;  SOURCE_RPC_URL="${TEMPO_RPC_URL:-https://rpc.tempo.xyz}" ;;  # obtain from mainnet.docs.tempo.xyz
   *)
     echo "ERROR: Unrecognised or unsupported x402 network: $X402_NETWORK"
-    echo "Supported: base / eip155:8453, ethereum / eip155:1, tempo / eip155:42431"
+    echo "Supported: base / eip155:8453, ethereum / eip155:1, tempo / eip155:4217"
     exit 1
     ;;
 esac
 
 # Tempo-network: if wallet lacks the asset on Tempo, bridge first (Phase 4B → 5 → return here)
-if [ "$X402_CHAIN_ID" = "42431" ]; then
+if [ "$X402_CHAIN_ID" = "4217" ]; then
   echo "x402 payment targets Tempo network — checking Tempo-side balance..."
   TEMPO_BALANCE=$(cast call "$X402_ASSET" \
     "balanceOf(address)(uint256)" "$WALLET_ADDRESS" \
@@ -1137,10 +1123,10 @@ Tempo-side token contract as `X402_ASSET` and the Tempo chain ID as `X402_CHAIN_
 - **Tempo documentation**: `https://mainnet.docs.tempo.xyz` _(may be gated
   pre-launch; publicly available at launch — contact the Tempo team if you
   receive a 401 or password prompt)_
-- **Tempo chain ID**: `42431` (Tempo Testnet "Moderato" — verify at
-  `https://mainnet.docs.tempo.xyz/quickstart/connection-details` as Tempo is in
-  active development and the chain ID may change at mainnet launch)
-- **Tempo RPC**: `https://rpc.moderato.tempo.xyz`
+- **Tempo chain ID**: `4217` (Tempo mainnet — confirmed in Uniswap SDK. Verify
+  current value at `https://mainnet.docs.tempo.xyz/quickstart/connection-details`)
+- **Tempo RPC**: obtain from `https://mainnet.docs.tempo.xyz/quickstart/connection-details`
+  (mainnet RPC URL; default fallback: `https://rpc.tempo.xyz`)
 - **Tempo Block Explorer**: `https://explore.tempo.xyz`
 - **pathUSD on Tempo**: `0x20c0000000000000000000000000000000000000` (primary stablecoin)
 - **Stablecoin DEX on Tempo**: `0xdec0000000000000000000000000000000000000`
