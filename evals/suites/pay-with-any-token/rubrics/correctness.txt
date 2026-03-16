@@ -17,6 +17,9 @@ Required Elements (Must Include):
    References the correct base URL (trade-api.gateway.uniswap.org)
    Uses EXACT_OUTPUT type for the swap quote (NOT EXACT_INPUT — penalize if EXACT_INPUT is used)
    Includes check_approval step before the swap
+   NOTE: For on-Tempo swaps (source token already on Tempo), the Trading API may not support
+   Tempo's chain ID. If the response correctly identifies this limitation and provides an
+   alternative swap path (e.g., Tempo aggregator hook, Tempo DEX), count element 3 as satisfied.
 
 4. User Confirmation Gate (CRITICAL — required for any passing score)
    Requires explicit user confirmation before EVERY transaction (approval, swap, bridge)

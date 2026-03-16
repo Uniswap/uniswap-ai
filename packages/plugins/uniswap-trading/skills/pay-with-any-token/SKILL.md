@@ -16,7 +16,7 @@ metadata:
 # Pay With Tokens
 
 Fulfill HTTP 402 Payment Required challenges by swapping or bridging tokens using
-the Uniswap Trading API. Supports the Machine Payments Protocol (MPP) with Tempo
+the Uniswap Trading API. Supports the Machine Payments Protocol (MPP) and x402 with Tempo
 payment method.
 
 ## Prerequisites
@@ -162,7 +162,7 @@ body. For MPP/Tempo the body is JSON:
 >   - `X402_PAY_TO` and `X402_ASSET` must match `^0x[a-fA-F0-9]{40}$`
 >   - `X402_AMOUNT` must match `^[0-9]+$`
 >   - `X402_SCHEME` must be `"exact"` — other schemes are not yet supported
->   - `X402_NETWORK` must be a recognised EVM network (e.g. `"base"`, `"eip155:8453"`, `"ethereum"`, `"eip155:1"`)
+>   - `X402_NETWORK` must be a recognised EVM network (e.g. `"base"`, `"eip155:8453"`, `"ethereum"`, `"eip155:1"`, `"tempo"`, `"eip155:42431"`)
 >
 >   **If `X402_SCHEME` is not `"exact"`**: stop and report to the user that
 >   only the `"exact"` scheme is currently supported.
@@ -182,9 +182,8 @@ body. For MPP/Tempo the body is JSON:
 > `WebFetch` on these URLs **in order** (stop at the first that contains a
 > numeric chain ID):
 >
-> 1. `https://mainnet.docs.tempo.xyz/getting-started/network-info`
-> 2. `https://mainnet.docs.tempo.xyz/developer-integration/connection-details`
-> 3. `https://mainnet.docs.tempo.xyz/network`
+> 1. `https://mainnet.docs.tempo.xyz/quickstart/connection-details`
+> 2. `https://chainlist.org` (search "Tempo")
 >
 > If all WebFetch attempts fail to return a numeric chain ID, use
 > `AskUserQuestion` to ask the user to provide it directly. They can find it
@@ -198,7 +197,10 @@ body. For MPP/Tempo the body is JSON:
 > ```
 >
 > Do not hardcode Tempo's chain ID — Tempo is in active development and the
-> chain ID may change.
+> chain ID may change. The Key Addresses section lists the current known
+> testnet value (`42431`) as a fallback: if all WebFetch attempts fail and
+> the user confirms this value, it is acceptable to use. Dynamic resolution
+> is preferred.
 
 Validate and extract fields. The `amount` is the exact output required (in
 token base units). This skill is **exact-output oriented** — the payee specifies
@@ -422,10 +424,19 @@ REQUIRED_AMOUNT_IN=$(echo "$QUOTE_RESPONSE" | jq -r '.quote.amountIn')
 # to confirm the existing allowance covers the swap.
 ```
 
+> **ETH/WETH approval note:** When `TOKEN_IN` is native ETH (WETH address), no
+> ERC-20 approval is required. `REQUIRED_AMOUNT_IN` is the ETH value sent with
+> the transaction — the approval re-check in Step 4A-1 is a no-op. Skip it and
+> proceed directly to Step 4A-2.5.
+
 **Step 4A-2.5 — Sign the permitData**:
 
 If the quote response contains a non-null `permitData` field, you must sign it
 off-chain before executing the swap.
+
+> **ETH/WETH note:** When swapping native ETH (using the WETH address as
+> `TOKEN_IN`), `permitData` is typically `null` — skip this step if so.
+> Proceed directly to Step 4A-3.
 
 - **For CLASSIC routing**: if `permitData` is non-null, sign it using the
   Permit2 contract's EIP-712 typed data signing scheme. The wallet's private
@@ -512,7 +523,8 @@ SWAP_TX=$(cast send "$SWAP_TO" \
   --json | jq -r '.transactionHash')
 
 # Wait for the swap to mine before bridging — a reverted swap leaves USDC at zero
-cast receipt "$SWAP_TX" --rpc-url https://mainnet.base.org > /dev/null
+SWAP_STATUS=$(cast receipt "$SWAP_TX" --rpc-url https://mainnet.base.org --json | jq -r '.status')
+[ "$SWAP_STATUS" = "0x1" ] || { echo "ERROR: Swap reverted (status=$SWAP_STATUS). Do not proceed to bridge." && exit 1; }
 echo "Swap confirmed: $SWAP_TX"
 
 # Verify USDC balance landed before proceeding to Phase 4B
@@ -546,6 +558,12 @@ bridge-in asset differs by source chain:
 | Arbitrum (42161) | USDC-e (bridged)                                  | `0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8` |
 | Other chains     | Check Tempo docs for the accepted bridge-in asset | —                                            |
 
+> **SDK alternative:** The `mppx` package (`npm install mppx viem`) may
+> provide bridge helper methods that handle this phase automatically. Check
+> `https://mainnet.docs.tempo.xyz/guide/machine-payments/client` for SDK-based
+> bridging before constructing raw transactions. If the SDK covers bridging,
+> use it and skip the manual steps below.
+
 **Resolve bridge contract addresses** (REQUIRED before proceeding):
 
 You need **two** addresses:
@@ -555,8 +573,8 @@ You need **two** addresses:
 
 Use `WebFetch` to attempt to find both contract addresses:
 
-1. `https://mainnet.docs.tempo.xyz/developer-integration/bridge`
-2. `https://mainnet.docs.tempo.xyz/contracts`
+1. `https://mainnet.docs.tempo.xyz/quickstart/predeployed-contracts`
+2. `https://mainnet.docs.tempo.xyz/guide/machine-payments`
 
 > **If WebFetch returns no contract addresses:** Do NOT guess or use an
 > unverified address — bridging to the wrong contract results in **permanent
@@ -619,9 +637,9 @@ BRIDGE_TX_BLOCK=$(cast receipt "$BRIDGE_TX" --rpc-url "$SOURCE_RPC_URL" --json |
 
 Poll for bridge confirmation before proceeding to Phase 5:
 
-1. WebFetch `https://mainnet.docs.tempo.xyz/bridge-explorer` to check if a bridge
+1. WebFetch `https://explore.tempo.xyz` to check if a bridge
    explorer API exists. If found, use it as the polling endpoint. If not,
-   fall back to polling the Tempo RPC (`https://rpc.tempo.xyz` — verify from
+   fall back to polling the Tempo RPC (`https://rpc.moderato.tempo.xyz` — verify from
    docs) for the deposit event.
 2. Poll every **30 seconds** for up to **10 minutes**.
 
@@ -632,8 +650,8 @@ Poll for bridge confirmation before proceeding to Phase 5:
    # The ABI event name and parameters below are illustrative.
    BRIDGE_CONTRACT_ON_TEMPO="0x..."   # bridge's Tempo-side address (from docs)
    [ -z "$BRIDGE_CONTRACT_ON_TEMPO" ] && echo "ERROR: BRIDGE_CONTRACT_ON_TEMPO not set" && exit 1
-   # Verify the Tempo RPC URL from mainnet.docs.tempo.xyz/developer-integration/connection-details
-   TEMPO_RPC_URL="https://rpc.tempo.xyz"
+   # Verify the Tempo RPC URL from mainnet.docs.tempo.xyz/quickstart/connection-details
+   TEMPO_RPC_URL="https://rpc.moderato.tempo.xyz"
    # Capture Tempo's current block BEFORE polling starts.
    # Note: BRIDGE_TX_BLOCK is the source-chain (e.g. Base) block number — do NOT use it here.
    # Tempo and Base have independent block heights; using the Base block on Tempo would fail.
@@ -791,7 +809,10 @@ With the required token in the wallet, fulfill the MPP challenge.
        ],
      },
      primaryType: 'Authorization',
-     message: authMsg,
+     message: {
+       ...authMsg,
+       amount: BigInt(authMsg.amount), // ensure uint256 precision for large amounts
+     },
    });
    ```
 
@@ -804,11 +825,31 @@ With the required token in the wallet, fulfill the MPP challenge.
    **Alternative — Foundry `cast wallet sign` (CLI users, Foundry ≥ 0.2):**
 
    ```bash
-   # Requires the full typed data JSON including domain and types fields.
-   # See https://mpp.dev for the correct domain and type schema.
-   # Build TYPED_DATA_JSON from the domain, types, and message fields per the schema,
-   # then sign. The {…} placeholders below are not valid JSON — replace with real values:
-   #   TYPED_DATA_JSON='{"domain":{…},"types":{"Authorization":[…]},"message":{…}}'
+   # Build TYPED_DATA_JSON using the same domain + Authorization type as the viem snippet above.
+   # Replace $TEMPO_CHAIN_ID, $MPP_VERIFIER_ADDRESS, and $AUTH_JSON with your env vars.
+   TYPED_DATA_JSON=$(jq -n \
+     --arg name "MPP" \
+     --arg version "1" \
+     --argjson chainId "$TEMPO_CHAIN_ID" \
+     --arg verifyingContract "$MPP_VERIFIER_ADDRESS" \
+     --argjson message "$AUTH_JSON" \
+     '{
+       "domain": {"name": $name, "version": $version, "chainId": $chainId, "verifyingContract": $verifyingContract},
+       "types": {
+         "EIP712Domain": [
+           {"name": "name", "type": "string"}, {"name": "version", "type": "string"},
+           {"name": "chainId", "type": "uint256"}, {"name": "verifyingContract", "type": "address"}
+         ],
+         "Authorization": [
+           {"name": "payment_method_type", "type": "string"}, {"name": "recipient", "type": "address"},
+           {"name": "amount", "type": "uint256"}, {"name": "token", "type": "address"},
+           {"name": "chain_id", "type": "uint256"}, {"name": "nonce", "type": "bytes32"},
+           {"name": "deadline", "type": "uint256"}
+         ]
+       },
+       "primaryType": "Authorization",
+       "message": $message
+     }')
    cast wallet sign --private-key "$PRIVATE_KEY" --typed-data "$TYPED_DATA_JSON"
    ```
 
@@ -897,14 +938,29 @@ the token transfer on-chain — no separate on-chain approval step is required.
 # 2. Map network to a chain ID
 # Accept both CAIP-2 format (eip155:8453) and plain names (base, ethereum)
 case "$X402_NETWORK" in
-  base|"eip155:8453")   X402_CHAIN_ID=8453; SOURCE_RPC_URL="https://mainnet.base.org" ;;
-  ethereum|"eip155:1")  X402_CHAIN_ID=1;    SOURCE_RPC_URL="https://eth.llamarpc.com"  ;;
+  base|"eip155:8453")    X402_CHAIN_ID=8453;  SOURCE_RPC_URL="https://mainnet.base.org" ;;
+  ethereum|"eip155:1")   X402_CHAIN_ID=1;     SOURCE_RPC_URL="https://eth.llamarpc.com" ;;
+  tempo|"eip155:42431")  X402_CHAIN_ID=42431; SOURCE_RPC_URL="https://rpc.moderato.tempo.xyz" ;;
   *)
     echo "ERROR: Unrecognised or unsupported x402 network: $X402_NETWORK"
-    echo "Supported: base / eip155:8453, ethereum / eip155:1"
+    echo "Supported: base / eip155:8453, ethereum / eip155:1, tempo / eip155:42431"
     exit 1
     ;;
 esac
+
+# Tempo-network: if wallet lacks the asset on Tempo, bridge first (Phase 4B → 5 → return here)
+if [ "$X402_CHAIN_ID" = "42431" ]; then
+  echo "x402 payment targets Tempo network — checking Tempo-side balance..."
+  TEMPO_BALANCE=$(cast call "$X402_ASSET" \
+    "balanceOf(address)(uint256)" "$WALLET_ADDRESS" \
+    --rpc-url "$SOURCE_RPC_URL" 2>/dev/null || echo "0")
+  if [ "$TEMPO_BALANCE" -lt "$X402_AMOUNT" ]; then
+    echo "Insufficient balance on Tempo ($TEMPO_BALANCE < $X402_AMOUNT)."
+    echo "Bridge funds to Tempo first (see Phase 4B), then return to Phase 6x."
+    echo "After bridging, re-run from Step 6x-1."
+    exit 1
+  fi
+fi
 
 # 3. Check wallet token balance — must be >= X402_AMOUNT before signing
 ASSET_BALANCE=$(cast call "$X402_ASSET" \
@@ -1081,9 +1137,17 @@ Tempo-side token contract as `X402_ASSET` and the Tempo chain ID as `X402_CHAIN_
 - **Tempo documentation**: `https://mainnet.docs.tempo.xyz` _(may be gated
   pre-launch; publicly available at launch — contact the Tempo team if you
   receive a 401 or password prompt)_
-- **Tempo chain ID**: Unknown at time of writing — must be resolved via
-  documentation or `https://chainlist.org` (search "Tempo"). See Phase 0 for
-  the chain ID resolution procedure. Do NOT hardcode a value without verifying.
+- **Tempo chain ID**: `42431` (Tempo Testnet "Moderato" — verify at
+  `https://mainnet.docs.tempo.xyz/quickstart/connection-details` as Tempo is in
+  active development and the chain ID may change at mainnet launch)
+- **Tempo RPC**: `https://rpc.moderato.tempo.xyz`
+- **Tempo Block Explorer**: `https://explore.tempo.xyz`
+- **pathUSD on Tempo**: `0x20c0000000000000000000000000000000000000` (primary stablecoin)
+- **Stablecoin DEX on Tempo**: `0xdec0000000000000000000000000000000000000`
+- **Permit2 on Tempo**: `0x000000000022d473030f116ddee9f6b43ac78ba3`
+- **Tempo payment SDK**: `mppx` (`npm install mppx viem`) — handles credential
+  creation via `Mppx.create` + `createCredential()`. See
+  `https://mainnet.docs.tempo.xyz/guide/machine-payments/client`
 - **Tempo bridge**: Contract addresses must be obtained from Tempo directly
   (see Phase 4B for the resolution procedure). Do NOT use unverified addresses.
 - **USDC on Base (8453)**: `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` (native USDC issued by Circle — preferred bridge asset)
