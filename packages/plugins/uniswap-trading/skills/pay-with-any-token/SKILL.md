@@ -171,7 +171,32 @@ body. For MPP/Tempo the body is JSON:
 >   provided in the conversation, store it as `WALLET_ADDRESS`. If not, use
 >   `AskUserQuestion` to request it. Validate it matches `^0x[a-fA-F0-9]{40}$`.
 >
->   Skip Phases 1–5. Proceed directly to **Phase 6x**.
+>   **Wallet funding check** — before skipping Phases 1–5, confirm your wallet
+>   holds sufficient `X402_ASSET` on `X402_NETWORK`:
+>
+>   ```bash
+>   X402_RPC=$(case "$X402_NETWORK" in
+>     base|"eip155:8453")  echo "https://mainnet.base.org" ;;
+>     ethereum|"eip155:1") echo "https://eth.llamarpc.com" ;;
+>     tempo|"eip155:4217") echo "https://rpc.presto.tempo.xyz" ;;
+>     *) echo "" ;;
+>   esac)
+>   X402_CURRENT_BALANCE=$(cast call "$X402_ASSET" \
+>     "balanceOf(address)(uint256)" "$WALLET_ADDRESS" \
+>     --rpc-url "$X402_RPC" 2>/dev/null || echo "0")
+>   ```
+>
+>   - **If `X402_CURRENT_BALANCE >= X402_AMOUNT`**: Proceed directly to
+>     **Phase 6x**. Skip Phases 1–5.
+>   - **If `X402_CURRENT_BALANCE < X402_AMOUNT`** and funds are on the
+>     **same chain** (you hold a different token on `X402_NETWORK`): run
+>     **Phase 4A** with `USDC_E_ADDRESS="$X402_ASSET"` and
+>     `USDC_E_AMOUNT_NEEDED="$X402_AMOUNT"` to swap into the required asset,
+>     then proceed to **Phase 6x**.
+>   - **If `X402_CURRENT_BALANCE < X402_AMOUNT`** and funds are on a
+>     **different chain**: run **Phase 4A** (swap to bridge asset on source
+>     chain) → **Phase 4B** (bridge to `X402_NETWORK`) → **Phase 5** (swap
+>     on target chain if needed), then proceed to **Phase 6x**.
 >
 > - **If `PROTOCOL` is `"mpp"`**: Continue with the flow below.
 > - **If `PROTOCOL` is `"unknown"`**: Report the raw body to the user and do
@@ -207,7 +232,9 @@ the amount; the payer finds tokens to cover it.
 ### Phase 1 — Identify Payment Token and Required Amount
 
 > **x402 path:** If `PROTOCOL` is `"x402"`, all required variables were
-> extracted in Phase 0. Skip Phases 1–5 and proceed directly to **Phase 6x**.
+> extracted in Phase 0. Follow the routing decision made there: if wallet
+> balance was sufficient, skip Phases 1–5 and proceed to **Phase 6x**;
+> otherwise continue through Phase 4A / 4B / 5 as directed, then **Phase 6x**.
 
 From the challenge body, extract and assign shell variables:
 
@@ -842,8 +869,8 @@ if [ "$X402_CHAIN_ID" = "4217" ]; then
     --rpc-url "$SOURCE_RPC_URL" 2>/dev/null || echo "0")
   if [ "$TEMPO_BALANCE" -lt "$X402_AMOUNT" ]; then
     echo "Insufficient balance on Tempo ($TEMPO_BALANCE < $X402_AMOUNT)."
-    echo "Bridge funds to Tempo first (see Phase 4B), then return to Phase 6x."
-    echo "After bridging, re-run from Step 6x-1."
+    echo "Acquire the asset first: run Phase 4A (swap to bridge asset) ->"
+    echo "Phase 4B (bridge to Tempo) -> Phase 5, then return to Phase 6x."
     exit 1
   fi
 fi
@@ -852,8 +879,14 @@ fi
 ASSET_BALANCE=$(cast call "$X402_ASSET" \
   "balanceOf(address)(uint256)" "$WALLET_ADDRESS" \
   --rpc-url "$SOURCE_RPC_URL")
-[ "$ASSET_BALANCE" -lt "$X402_AMOUNT" ] && \
-  { echo "ERROR: Insufficient balance. Have $ASSET_BALANCE, need $X402_AMOUNT"; exit 1; }
+if [ "$ASSET_BALANCE" -lt "$X402_AMOUNT" ]; then
+  echo "ERROR: Insufficient $X402_TOKEN_NAME balance on $X402_NETWORK."
+  echo "Have: $ASSET_BALANCE, need: $X402_AMOUNT"
+  echo "Acquire the asset first: if funds are on the same chain, run Phase 4A"
+  echo "(swap to $X402_ASSET). If funds are on a different chain, run"
+  echo "Phase 4A + Phase 4B (bridge to $X402_NETWORK) + Phase 5, then return here."
+  exit 1
+fi
 ```
 
 > **REQUIRED:** Use `AskUserQuestion` to show the user a payment summary before
