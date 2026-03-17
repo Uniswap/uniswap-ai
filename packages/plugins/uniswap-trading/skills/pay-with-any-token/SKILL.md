@@ -236,41 +236,41 @@ the amount; the payer finds tokens to cover it.
 > balance was sufficient, skip Phases 1-5 and proceed to **Phase 6x**;
 > otherwise continue through Phase 4A / 4B / 5 as directed, then **Phase 6x**.
 
-From the challenge body, extract and assign shell variables:
+The `payment_methods` array may contain **multiple accepted tokens**. List them
+all, then select the cheapest option for the wallet in Phase 2.
 
 ```bash
-REQUIRED_AMOUNT=$(echo "$CHALLENGE_BODY" | jq -r '.payment_methods[0].amount')
-PAYMENT_TOKEN=$(echo "$CHALLENGE_BODY" | jq -r '.payment_methods[0].token')
+NUM_METHODS=$(echo "$CHALLENGE_BODY" | jq '.payment_methods | length')
+echo "Payee accepts $NUM_METHODS payment method(s):"
+echo "$CHALLENGE_BODY" | jq -r '.payment_methods[] | "  - \(.token) (\(.amount) base units, chain \(.chain_id))"'
+```
+
+If `NUM_METHODS` is 1, use it directly. If multiple, defer selection to Phase 2
+(after checking wallet balances). For now, extract all methods:
+
+```bash
+# Store the full array for Phase 2 comparison
+PAYMENT_METHODS=$(echo "$CHALLENGE_BODY" | jq -c '.payment_methods')
+
+# Extract common fields from the first method as defaults
+# (recipient, chain_id, and intent_type are typically the same across methods)
 RECIPIENT=$(echo "$CHALLENGE_BODY" | jq -r '.payment_methods[0].recipient')
-# Only overwrite TEMPO_CHAIN_ID if it was not already resolved to a numeric
-# value in Phase 0. If Phase 0's WebFetch or AskUserQuestion already produced
-# a real chain ID, retain that value — do not clobber it with the placeholder.
 if [ -z "$TEMPO_CHAIN_ID" ] || [[ ! "$TEMPO_CHAIN_ID" =~ ^[0-9]+$ ]]; then
   TEMPO_CHAIN_ID=$(echo "$CHALLENGE_BODY" | jq -r '.payment_methods[0].chain_id')
 fi
 INTENT_TYPE=$(echo "$CHALLENGE_BODY" | jq -r '.payment_methods[0].intent_type')
-
-# Sanity-check the amount so the user can verify
-echo "Amount : $REQUIRED_AMOUNT base units"
-echo "Payment token : $PAYMENT_TOKEN"
-echo "Recipient     : $RECIPIENT"
-echo "Chain ID      : $TEMPO_CHAIN_ID"
-echo "Intent        : $INTENT_TYPE"
 ```
 
 > **Decimal note:** `amount` is in token base units. For USDC (6 decimals):
 > `1000000` = 1.00 USDC, `500000` = 0.50 USDC. Confirm with the user before
 > proceeding.
 
-- `REQUIRED_AMOUNT`: token amount in base units (e.g., `"1000000"` = 1 USDC)
-- `PAYMENT_TOKEN`: TIP-20 token address on Tempo. Verify this address at
-  `https://mainnet.docs.tempo.xyz/tokens` before proceeding — an unrecognized
-  token will cause the Phase 5 swap quote to fail.
+- `PAYMENT_METHODS`: JSON array of all accepted payment options
 - `RECIPIENT`: payee wallet address on Tempo
 - `TEMPO_CHAIN_ID`: Tempo chain ID (may be a placeholder — see Phase 0 resolution)
 - `INTENT_TYPE`: `"charge"` (one-time) or `"session"` (pay-as-you-go)
 
-### Phase 2 — Check Wallet Balances
+### Phase 2 — Check Wallet Balances and Select Payment Method
 
 > **REQUIRED:** Before checking balances, you must have the user's wallet
 > address. If the user has not provided one, use `AskUserQuestion` to ask
@@ -279,8 +279,6 @@ echo "Intent        : $INTENT_TYPE"
 
 Check the user's token balances on the chains where they hold funds. Use
 `WebFetch` to query block explorer APIs or RPC endpoints for ERC-20 balances.
-Set `USDC_E_ADDRESS` based on the source chain (see Key Addresses section for
-per-chain USDC-e addresses). Identify the most cost-effective source token:
 
 **Balance check examples (Base chain 8453)**:
 
@@ -304,9 +302,27 @@ Or via Basescan API (no local tooling required):
 WebFetch "https://api.basescan.org/api?module=account&action=tokenbalance&contractaddress=TOKEN_ADDRESS&address=$WALLET_ADDRESS&tag=latest"
 ```
 
-1. Prefer tokens already on Tempo (no bridge needed)
-2. Then prefer USDC-e on Base (minimal bridge path)
-3. Then use any liquid ERC-20 on Ethereum or Base
+**Select the cheapest payment method** from `PAYMENT_METHODS`. For each accepted
+token, check if the wallet holds it (or can acquire it), then pick the one that
+minimizes cost. Priority order:
+
+1. Wallet already holds the exact payment token on Tempo (no swap or bridge)
+2. Wallet holds a different accepted token on Tempo (swap only, no bridge)
+3. Wallet holds USDC on Base (bridge only, minimal path)
+4. Any other liquid ERC-20 on Ethereum or Base (swap + bridge)
+
+Once selected, assign the chosen method:
+
+```bash
+# SELECTED_INDEX is the index of the cheapest payment method (0-based)
+REQUIRED_AMOUNT=$(echo "$PAYMENT_METHODS" | jq -r ".[$SELECTED_INDEX].amount")
+PAYMENT_TOKEN=$(echo "$PAYMENT_METHODS" | jq -r ".[$SELECTED_INDEX].token")
+echo "Selected payment method: $PAYMENT_TOKEN ($REQUIRED_AMOUNT base units)"
+```
+
+Verify `PAYMENT_TOKEN` at `https://mainnet.docs.tempo.xyz/tokens` — an
+unrecognized token will cause the Phase 5 swap quote to fail. Set
+`USDC_E_ADDRESS` based on the source chain (see Key Addresses section).
 
 ### Phase 3 — Plan the Payment Path
 
