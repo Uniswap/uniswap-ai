@@ -45,7 +45,7 @@ payment method.
 | Required payment token on Tempo                             | Tempo                 | Direct payment (no swap needed)                                                                  |
 | Different TIP-20 stablecoin on Tempo                        | Tempo                 | Swap via Uniswap aggregator hook                                                                 |
 | USDC (native) on Base                                       | Tempo                 | Bridge USDC to Tempo directly (skip Phase 4A), then swap if needed (see Tempo bridge docs)       |
-| Native ETH on Base or Ethereum                              | Tempo                 | Swap ETH→native USDC (use WETH address as TOKEN_IN), bridge to Tempo, then swap if needed        |
+| Native ETH on Base or Ethereum                              | Tempo                 | Swap ETH->native USDC (use WETH address as TOKEN_IN), bridge to Tempo, then swap if needed       |
 | Any ERC-20 on Base or Ethereum                              | Tempo                 | Swap to native USDC (bridge asset), bridge to Tempo, then swap if needed (see Tempo bridge docs) |
 | Token already on target EVM chain (x402 "exact" scheme)     | Base / Ethereum / EVM | Sign EIP-3009 authorization, submit with X-PAYMENT header (Phase 6x)                             |
 | Token on different chain from x402 network (needs bridging) | Base / Ethereum / EVM | Swap/bridge to target chain, then Phase 6x                                                       |
@@ -171,7 +171,7 @@ body. For MPP/Tempo the body is JSON:
 >   provided in the conversation, store it as `WALLET_ADDRESS`. If not, use
 >   `AskUserQuestion` to request it. Validate it matches `^0x[a-fA-F0-9]{40}$`.
 >
->   **Wallet funding check** — before skipping Phases 1–5, confirm your wallet
+>   **Wallet funding check** — before skipping Phases 1-5, confirm your wallet
 >   holds sufficient `X402_ASSET` on `X402_NETWORK`:
 >
 >   ```bash
@@ -187,7 +187,7 @@ body. For MPP/Tempo the body is JSON:
 >   ```
 >
 >   - **If `X402_CURRENT_BALANCE >= X402_AMOUNT`**: Proceed directly to
->     **Phase 6x**. Skip Phases 1–5.
+>     **Phase 6x**. Skip Phases 1-5.
 >   - **If `X402_CURRENT_BALANCE < X402_AMOUNT`** and funds are on the
 >     **same chain** (you hold a different token on `X402_NETWORK`): run
 >     **Phase 4A** with `USDC_E_ADDRESS="$X402_ASSET"` and
@@ -195,7 +195,7 @@ body. For MPP/Tempo the body is JSON:
 >     then proceed to **Phase 6x**.
 >   - **If `X402_CURRENT_BALANCE < X402_AMOUNT`** and funds are on a
 >     **different chain**: run **Phase 4A** (swap to bridge asset on source
->     chain) → **Phase 4B** (bridge to `X402_NETWORK`) → **Phase 5** (swap
+>     chain) -> **Phase 4B** (bridge to `X402_NETWORK`) -> **Phase 5** (swap
 >     on target chain if needed), then proceed to **Phase 6x**.
 >
 > - **If `PROTOCOL` is `"mpp"`**: Continue with the flow below.
@@ -233,7 +233,7 @@ the amount; the payer finds tokens to cover it.
 
 > **x402 path:** If `PROTOCOL` is `"x402"`, all required variables were
 > extracted in Phase 0. Follow the routing decision made there: if wallet
-> balance was sufficient, skip Phases 1–5 and proceed to **Phase 6x**;
+> balance was sufficient, skip Phases 1-5 and proceed to **Phase 6x**;
 > otherwise continue through Phase 4A / 4B / 5 as directed, then **Phase 6x**.
 
 From the challenge body, extract and assign shell variables:
@@ -316,8 +316,8 @@ Choose a path based on what the wallet holds:
 
 If wallet holds a TIP-20 stablecoin on Tempo:
 
-1. If token matches the required payment token → proceed to Phase 5 directly
-2. If different stablecoin → swap via Uniswap aggregator hook on Tempo (see Phase 5)
+1. If token matches the required payment token -> proceed to Phase 5 directly
+2. If different stablecoin -> swap via Uniswap aggregator hook on Tempo (see Phase 5)
 
 #### Path B — Cross-Chain (Base or Ethereum)
 
@@ -325,397 +325,52 @@ For tokens on Base or Ethereum, the full cross-chain path is:
 
 ```text
 Source token (Base/Ethereum)
-  → [Uniswap Trading API swap] → native USDC (bridge asset — see Key Addresses)
-  → [Tempo bridge] → pathUSD or target TIP-20 on Tempo
-  → [Uniswap aggregator hook on Tempo, if needed] → required payment token
+  -> [Uniswap Trading API swap] -> native USDC (bridge asset — see Key Addresses)
+  -> [Tempo bridge] -> pathUSD or target TIP-20 on Tempo
+  -> [Uniswap aggregator hook on Tempo, if needed] -> required payment token
 ```
 
 > **Skip condition:** If the source token IS already the bridge asset (for
-> example, you hold native USDC on Base for a Base→Tempo path), skip Phase 4A
+> example, you hold native USDC on Base for a Base->Tempo path), skip Phase 4A
 > entirely and proceed directly to Phase 4B. No swap is needed.
 
 ### Phase 4A — Swap on Source Chain (if needed)
 
-Use the Uniswap Trading API to swap the source token to USDC-e (the bridge
-asset). This is an EXACT_OUTPUT swap — the payee's amount determines how much
-USDC-e to acquire.
+Swap the source token to USDC (the bridge asset) via the Uniswap Trading API.
+This is an EXACT_OUTPUT swap — the payee's amount determines how much USDC to
+acquire.
 
-**Variable Setup** (fill these before running any steps in Phase 4A):
+> **Detailed steps:** Read
+> [references/trading-api-flows.md](references/trading-api-flows.md#phase-4a--swap-on-source-chain)
+> for the full bash scripts: variable setup, approval check, quote,
+> permit signing, and swap execution.
 
-```bash
-SOURCE_CHAIN_ID=8453              # Chain where you hold the source token (e.g. Base = 8453)
-TOKEN_IN_ADDRESS="0x..."          # Address of your source token on SOURCE_CHAIN_ID
-# For native ETH, use the WETH address for your chain (recommended — well-supported):
-#   Base (8453):     0x4200000000000000000000000000000000000006
-#   Ethereum (1):    0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2
-# The Universal Router wraps ETH before the swap, so msg.value (SWAP_VALUE) will be
-# non-zero in the swap response. The ETH sentinel 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEEE
-# is also supported but try WETH first; use the sentinel only if WETH returns a 400.
-USDC_E_ADDRESS="0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"  # USDC on Base — update for other chains (see Key Addresses)
-REQUIRED_AMOUNT_IN="0"            # Use "0" for the initial approval check (Step 4A-1);
-                                  # replace with the actual amountIn after Step 4A-2 (quote)
-USDC_E_AMOUNT_NEEDED="$REQUIRED_AMOUNT"  # For EXACT_OUTPUT: target = payment amount
-# Buffer decision: check Tempo bridge docs to confirm whether fees are deducted
-# from the deposited amount (input-side fees) or charged separately on top.
-# - Input-side fees: apply the 0.5% buffer — $(echo "$REQUIRED_AMOUNT * 1005 / 1000" | bc)
-#   (integer arithmetic — avoids decimal output from bc)
-# - Output-side or no fees: exact amount is fine, no buffer needed.
-# When in doubt or docs are unavailable, apply the buffer to avoid arriving short.
-```
+Key points:
 
-> `slippageTolerance: 0.5` in the quote body means **0.5%** (not 0.005). The
-> Trading API accepts slippage as a percentage value.
-
-**Base URL**: `https://trade-api.gateway.uniswap.org/v1`
-
-**Required headers**:
-
-```text
-Content-Type: application/json
-x-api-key: <UNISWAP_API_KEY>
-x-universal-router-version: 2.0
-```
-
-**Step 4A-1 — Check approval**:
-
-```bash
-# Build the request body safely using jq to avoid shell injection.
-# The `amount` is used to determine whether the existing allowance is
-# sufficient. Include it to receive an accurate approval status.
-APPROVAL_BODY=$(jq -n \
-  --arg wallet "$WALLET_ADDRESS" \
-  --arg token "$TOKEN_IN_ADDRESS" \
-  --arg amount "$REQUIRED_AMOUNT_IN" \
-  --argjson chainId "$SOURCE_CHAIN_ID" \
-  '{walletAddress: $wallet, token: $token, amount: $amount, chainId: $chainId}')
-
-curl -s -X POST https://trade-api.gateway.uniswap.org/v1/check_approval \
-  -H "Content-Type: application/json" \
-  -H "x-api-key: $UNISWAP_API_KEY" \
-  -H "x-universal-router-version: 2.0" \
-  -d "$APPROVAL_BODY"
-```
-
-> **REQUIRED:** If the `approval` field is non-null, use `AskUserQuestion` to
-> show the user the approval details (token address, spender, amount, estimated
-> gas) and obtain explicit confirmation before submitting the approval
-> transaction.
-
-**Step 4A-2 — Get exact-output quote for native USDC (bridge asset)**:
-
-> **Address note:** `USDC_E_ADDRESS` in the code below refers to the bridge
-> asset for the source chain. For Base (chain 8453), use native USDC:
-> `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913`. For Ethereum (chain 1), use
-> USDC: `0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48`. See Key Addresses section.
-
-```bash
-# Build the request body safely using jq. Chain IDs are integers; addresses
-# and amounts are strings.
-QUOTE_BODY=$(jq -n \
-  --arg swapper "$WALLET_ADDRESS" \
-  --arg tokenIn "$TOKEN_IN_ADDRESS" \
-  --arg tokenOut "$USDC_E_ADDRESS" \
-  --argjson tokenInChainId "$SOURCE_CHAIN_ID" \
-  --argjson tokenOutChainId "$SOURCE_CHAIN_ID" \
-  --arg amount "$USDC_E_AMOUNT_NEEDED" \
-  --argjson slippage 0.5 \
-  '{
-    swapper: $swapper,
-    tokenIn: $tokenIn,
-    tokenOut: $tokenOut,
-    tokenInChainId: $tokenInChainId,
-    tokenOutChainId: $tokenOutChainId,
-    amount: $amount,
-    type: "EXACT_OUTPUT",
-    slippageTolerance: $slippage,
-    routingPreference: "BEST_PRICE"
-  }')
-
-curl -s -X POST https://trade-api.gateway.uniswap.org/v1/quote \
-  -H "Content-Type: application/json" \
-  -H "x-api-key: $UNISWAP_API_KEY" \
-  -H "x-universal-router-version: 2.0" \
-  -d "$QUOTE_BODY"
-```
-
-Note: `tokenInChainId` and `tokenOutChainId` must be **integers**, not strings.
-
-Store the full quote response as `QUOTE_RESPONSE`. Then extract the actual input
-amount and re-run the approval check with the real value:
-
-```bash
-REQUIRED_AMOUNT_IN=$(echo "$QUOTE_RESPONSE" | jq -r '.quote.amountIn')
-# Re-run Step 4A-1 with REQUIRED_AMOUNT_IN set to the quoted amount
-# to confirm the existing allowance covers the swap.
-```
-
-> **ETH/WETH approval note:** When `TOKEN_IN` is native ETH (WETH address), no
-> ERC-20 approval is required. `REQUIRED_AMOUNT_IN` is the ETH value sent with
-> the transaction — the approval re-check in Step 4A-1 is a no-op. Skip it and
-> proceed directly to Step 4A-2.5.
-
-**Step 4A-2.5 — Sign the permitData**:
-
-If the quote response contains a non-null `permitData` field, you must sign it
-off-chain before executing the swap.
-
-> **ETH/WETH note:** When swapping native ETH (using the WETH address as
-> `TOKEN_IN`), `permitData` is typically `null` — skip this step if so.
-> Proceed directly to Step 4A-3.
-
-- **For CLASSIC routing**: if `permitData` is non-null, sign it using the
-  Permit2 contract's EIP-712 typed data signing scheme. The wallet's private
-  key or connected signing method is required. See the Permit2 documentation
-  or the [swap-integration](../swap-integration/SKILL.md) skill for signing
-  details.
-- **For UniswapX (DUTCH_V2, DUTCH_V3, PRIORITY)**: sign the `permitData`
-  from the quote response using the same EIP-712 typed data approach.
-
-Store the resulting signature as `PERMIT2_SIGNATURE`.
-
-> **REQUIRED:** Use `AskUserQuestion` to confirm the signing step with the
-> user before proceeding. Show the permit details (token, spender, amount,
-> deadline) so the user understands what they are authorizing.
-
-**Step 4A-3 — Execute the swap**:
-
-```bash
-# Strip permitData; re-attach only if non-null and routing is CLASSIC
-ROUTING=$(echo "$QUOTE_RESPONSE" | jq -r '.routing')
-CLEAN_QUOTE=$(echo "$QUOTE_RESPONSE" | jq 'del(.permitData, .permitTransaction)')
-
-if [ "$ROUTING" = "CLASSIC" ]; then
-  PERMIT_DATA=$(echo "$QUOTE_RESPONSE" | jq '.permitData')
-  if [ "$PERMIT_DATA" != "null" ]; then
-    # Guard: ensure PERMIT2_SIGNATURE was obtained in Step 4A-2.5
-    if [ -z "$PERMIT2_SIGNATURE" ]; then
-      echo "ERROR: permitData is present but PERMIT2_SIGNATURE is empty. Complete Step 4A-2.5 first."
-      exit 1
-    fi
-    # Include signature + permitData in swap body
-    SWAP_BODY=$(echo "$CLEAN_QUOTE" | jq \
-      --arg sig "$PERMIT2_SIGNATURE" \
-      --argjson pd "$PERMIT_DATA" \
-      '. + {signature: $sig, permitData: $pd}')
-  else
-    SWAP_BODY="$CLEAN_QUOTE"
-  fi
-else
-  # UniswapX (DUTCH_V2, DUTCH_V3, PRIORITY): signature only (no permitData in swap body)
-  if [ -z "$PERMIT2_SIGNATURE" ]; then
-    echo "ERROR: UniswapX order requires PERMIT2_SIGNATURE. Complete Step 4A-2.5 first."
-    exit 1
-  fi
-  SWAP_BODY=$(echo "$CLEAN_QUOTE" | jq --arg sig "$PERMIT2_SIGNATURE" '. + {signature: $sig}')
-fi
-
-curl -s -X POST https://trade-api.gateway.uniswap.org/v1/swap \
-  -H "Content-Type: application/json" \
-  -H "x-api-key: $UNISWAP_API_KEY" \
-  -H "x-universal-router-version: 2.0" \
-  -d "$SWAP_BODY"
-```
-
-Store the swap response as `SWAP_RESPONSE`. The `/swap` endpoint returns
-**unsigned calldata** — you must broadcast it yourself. After validating
-`swap.data` is non-empty, present the transaction summary to the user via
-`AskUserQuestion` then broadcast:
-
-```bash
-# Extract the transaction fields from the swap response
-SWAP_TO=$(echo "$SWAP_RESPONSE" | jq -r '.swap.to')
-SWAP_DATA=$(echo "$SWAP_RESPONSE" | jq -r '.swap.data')
-SWAP_VALUE=$(echo "$SWAP_RESPONSE" | jq -r '.swap.value // "0x0"')
-
-# Validate before broadcasting
-[ -z "$SWAP_DATA" ] || [ "$SWAP_DATA" = "null" ] && echo "ERROR: swap.data is empty — quote may have expired. Re-fetch from Step 4A-2." && exit 1
-# For native ETH swaps (TOKEN_IN is WETH address or ETH sentinel), SWAP_VALUE must
-# be non-zero — it carries the ETH amount as msg.value. A zero value means the quote
-# did not recognise the input as native ETH; do NOT broadcast or the swap will revert.
-if [[ "$TOKEN_IN_ADDRESS" == "0x4200000000000000000000000000000000000006" || \
-      "$TOKEN_IN_ADDRESS" == "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2" || \
-      "$TOKEN_IN_ADDRESS" == "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEEE" ]]; then
-  [ "$SWAP_VALUE" = "0x0" ] || [ "$SWAP_VALUE" = "0" ] && \
-    echo "ERROR: SWAP_VALUE is zero for a native ETH swap — verify TOKEN_IN_ADDRESS and re-fetch the quote." && exit 1
-fi
-
-# Broadcast via cast (replace RPC URL with your source chain endpoint)
-SWAP_TX=$(cast send "$SWAP_TO" \
-  --data "$SWAP_DATA" \
-  --value "$SWAP_VALUE" \
-  --private-key "$PRIVATE_KEY" \
-  --rpc-url https://mainnet.base.org \
-  --json | jq -r '.transactionHash')
-
-# Wait for the swap to mine before bridging — a reverted swap leaves USDC at zero
-SWAP_STATUS=$(cast receipt "$SWAP_TX" --rpc-url https://mainnet.base.org --json | jq -r '.status')
-[ "$SWAP_STATUS" = "0x1" ] || { echo "ERROR: Swap reverted (status=$SWAP_STATUS). Do not proceed to bridge." && exit 1; }
-echo "Swap confirmed: $SWAP_TX"
-
-# Verify USDC balance landed before proceeding to Phase 4B
-USDC_AFTER_SWAP=$(cast call "$USDC_E_ADDRESS" \
-  "balanceOf(address)(uint256)" "$WALLET_ADDRESS" \
-  --rpc-url https://mainnet.base.org)
-echo "USDC balance after swap: $USDC_AFTER_SWAP (need at least $USDC_E_AMOUNT_NEEDED)"
-# Halt if swap produced insufficient USDC — bridging 0 USDC wastes gas and fails silently
-[ "$USDC_AFTER_SWAP" -lt "$USDC_E_AMOUNT_NEEDED" ] && \
-  echo "ERROR: swap produced $USDC_AFTER_SWAP USDC but $USDC_E_AMOUNT_NEEDED needed — check receipt, do NOT proceed to bridge." && exit 1
-```
+- Base URL: `https://trade-api.gateway.uniswap.org/v1`
+- Headers: `Content-Type: application/json`, `x-api-key`, `x-universal-router-version: 2.0`
+- Flow: `check_approval` -> quote (`EXACT_OUTPUT`) -> sign `permitData` -> `/swap` -> broadcast via `cast send`
+- Confirmation gates required before approval tx and before swap broadcast
+- For native ETH: use WETH address as `TOKEN_IN`; `SWAP_VALUE` will be non-zero
+- After swap, verify USDC balance landed before proceeding to Phase 4B
 
 ### Phase 4B — Bridge to Tempo (cross-chain path)
 
-> **If you skipped Phase 4A** (you already hold native USDC on Base), initialize
-> these variables before proceeding:
->
-> ```bash
-> USDC_E_AMOUNT_NEEDED="$REQUIRED_AMOUNT"
-> USDC_E_ADDRESS="0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"  # USDC on Base
-> ```
+Bridge USDC from Base to USDC.e on Tempo using the Uniswap Trading API
+(powered by Across Protocol). No manual contract calls required.
 
-Use the Uniswap Trading API to bridge USDC from Base to USDC.e on Tempo. The
-bridge is powered by Across Protocol and is fully abstracted by the API —
-no manual contract calls required.
+> **Detailed steps:** Read
+> [references/trading-api-flows.md](references/trading-api-flows.md#phase-4b--bridge-to-tempo)
+> for the full bash scripts: approval, bridge quote, execution, and arrival
+> polling.
 
-**Bridge asset addresses:**
+Key points:
 
-| Chain              | Asset       | Address                                      |
-| ------------------ | ----------- | -------------------------------------------- |
-| Base (8453) — in   | Native USDC | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` |
-| Tempo (4217) — out | USDC.e      | `0x20C000000000000000000000b9537d11c60E8b50` |
-
-**Step 4B-1 — Check approval:**
-
-```bash
-BRIDGE_TOKEN_IN="0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"   # USDC on Base
-BRIDGE_TOKEN_OUT="0x20C000000000000000000000b9537d11c60E8b50"   # USDC.e on Tempo
-BRIDGE_AMOUNT="$USDC_E_AMOUNT_NEEDED"
-
-APPROVAL=$(curl -s "https://trade-api.gateway.uniswap.org/v1/check_approval" \
-  -H "Content-Type: application/json" \
-  -H "x-api-key: $UNISWAP_API_KEY" \
-  --data "$(jq -n \
-    --arg token         "$BRIDGE_TOKEN_IN" \
-    --arg amount        "$BRIDGE_AMOUNT" \
-    --arg walletAddress "$WALLET_ADDRESS" \
-    --argjson chainId 8453 \
-    '{token: $token, amount: $amount, walletAddress: $walletAddress, chainId: $chainId}')")
-
-APPROVAL_TX=$(echo "$APPROVAL" | jq -r '.approval // empty')
-echo "Approval needed: $([ -n "$APPROVAL_TX" ] && echo yes || echo no)"
-```
-
-> **REQUIRED:** If `APPROVAL_TX` is non-empty, use `AskUserQuestion` to show the
-> user the approval details (token: `$BRIDGE_TOKEN_IN`, spender, amount:
-> `$BRIDGE_AMOUNT`, estimated gas) and obtain explicit confirmation before
-> submitting the approval transaction.
-
-If confirmed and `APPROVAL_TX` is non-empty:
-
-```bash
-APPROVAL_TO=$(echo "$APPROVAL_TX"   | jq -r '.to')
-APPROVAL_DATA=$(echo "$APPROVAL_TX" | jq -r '.data')
-APPROVE_HASH=$(cast send "$APPROVAL_TO" \
-  --data "$APPROVAL_DATA" \
-  --private-key "$PRIVATE_KEY" \
-  --rpc-url https://mainnet.base.org \
-  --json | jq -r '.transactionHash')
-cast receipt "$APPROVE_HASH" --rpc-url https://mainnet.base.org > /dev/null
-echo "Approval confirmed: $APPROVE_HASH"
-```
-
-**Step 4B-2 — Get bridge quote (EXACT_OUTPUT):**
-
-```bash
-BRIDGE_QUOTE=$(curl -s "https://trade-api.gateway.uniswap.org/v1/quote" \
-  -H "Content-Type: application/json" \
-  -H "x-api-key: $UNISWAP_API_KEY" \
-  --data "$(jq -n \
-    --arg tokenIn        "$BRIDGE_TOKEN_IN" \
-    --arg tokenInChainId "8453" \
-    --arg tokenOut       "$BRIDGE_TOKEN_OUT" \
-    --arg tokenOutChainId "4217" \
-    --arg amount         "$BRIDGE_AMOUNT" \
-    --arg swapper        "$WALLET_ADDRESS" \
-    '{
-       tokenIn:         $tokenIn,
-       tokenInChainId:  $tokenInChainId,
-       tokenOut:        $tokenOut,
-       tokenOutChainId: $tokenOutChainId,
-       amount:          $amount,
-       swapper:         $swapper,
-       type:            "EXACT_OUTPUT"
-     }')")
-
-BRIDGE_QUOTE_ID=$(echo "$BRIDGE_QUOTE" | jq -r '.quote.quoteId')
-BRIDGE_FEE=$(echo "$BRIDGE_QUOTE"      | jq -r '.quote.bridgeFee // .quote.gasFee // "unknown"')
-BRIDGE_ETA=$(echo "$BRIDGE_QUOTE"      | jq -r '.quote.estimatedFillTime // "2-5 minutes"')
-echo "Bridge quote: quoteId=$BRIDGE_QUOTE_ID fee=$BRIDGE_FEE eta=$BRIDGE_ETA"
-```
-
-> **REQUIRED:** Use `AskUserQuestion` before submitting the bridge transaction.
-> Show the user:
->
-> - Amount: `$BRIDGE_AMOUNT` USDC on Base (chain 8453)
-> - Destination: `$BRIDGE_TOKEN_OUT` (USDC.e) on Tempo (chain 4217)
-> - Bridge fee: `$BRIDGE_FEE`
-> - Estimated time: `$BRIDGE_ETA`
-> - Recipient: `$WALLET_ADDRESS`
->
-> Do not proceed until the user confirms.
-
-**Step 4B-3 — Execute the bridge:**
-
-```bash
-BRIDGE_RESPONSE=$(curl -s "https://trade-api.gateway.uniswap.org/v1/swap" \
-  -H "Content-Type: application/json" \
-  -H "x-api-key: $UNISWAP_API_KEY" \
-  --data "$(jq -n \
-    --argjson quote  "$BRIDGE_QUOTE" \
-    --arg walletAddress "$WALLET_ADDRESS" \
-    '{quote: $quote.quote, walletAddress: $walletAddress}')")
-
-BRIDGE_TO=$(echo "$BRIDGE_RESPONSE"   | jq -r '.swap.to')
-BRIDGE_DATA=$(echo "$BRIDGE_RESPONSE" | jq -r '.swap.data')
-BRIDGE_VALUE=$(echo "$BRIDGE_RESPONSE"| jq -r '.swap.value // "0"')
-
-BRIDGE_TX=$(cast send "$BRIDGE_TO" \
-  --data "$BRIDGE_DATA" \
-  --value "$BRIDGE_VALUE" \
-  --private-key "$PRIVATE_KEY" \
-  --rpc-url https://mainnet.base.org \
-  --json | jq -r '.transactionHash')
-
-BRIDGE_STATUS=$(cast receipt "$BRIDGE_TX" --rpc-url https://mainnet.base.org --json | jq -r '.status')
-[ "$BRIDGE_STATUS" = "0x1" ] || { echo "ERROR: Bridge tx reverted. Do not proceed."; exit 1; }
-echo "Bridge submitted: $BRIDGE_TX — waiting for funds on Tempo..."
-```
-
-**Step 4B-4 — Poll for arrival on Tempo:**
-
-Poll for USDC.e balance on Tempo every 30 seconds for up to 10 minutes:
-
-```bash
-TEMPO_RPC_URL="https://rpc.presto.tempo.xyz"
-for i in $(seq 1 20); do
-  USDC_E_ON_TEMPO=$(cast call "$BRIDGE_TOKEN_OUT" \
-    "balanceOf(address)(uint256)" "$WALLET_ADDRESS" \
-    --rpc-url "$TEMPO_RPC_URL" 2>/dev/null || echo "0")
-  if [ "$USDC_E_ON_TEMPO" -ge "$BRIDGE_AMOUNT" ]; then
-    echo "Bridge confirmed — $USDC_E_ON_TEMPO USDC.e received on Tempo."
-    break
-  fi
-  echo "Waiting for bridge arrival... attempt $i/20 (balance: $USDC_E_ON_TEMPO)"
-  sleep 30
-done
-[ "$USDC_E_ON_TEMPO" -ge "$BRIDGE_AMOUNT" ] || \
-  { echo "Bridge not confirmed after 10 minutes. Check $BRIDGE_TX on https://explore.mainnet.tempo.xyz"; exit 1; }
-```
-
-After a successful bridge, you hold **USDC.e** (`$BRIDGE_TOKEN_OUT`) on Tempo.
-Use this as `TOKEN_IN` in Phase 5 to swap to the required payment token.
-
-> **Do not re-submit** if the poll times out — duplicate bridge deposits result
-> in double payment. Have the user check the transaction on the Tempo explorer.
+- Route: USDC on Base (`0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913`) -> USDC.e on Tempo (`0x20C000000000000000000000b9537d11c60E8b50`)
+- Flow: `check_approval` -> quote (`EXACT_OUTPUT`, cross-chain) -> execute via `/swap` -> poll balance every 30s
+- Confirmation gates required before approval and before bridge execution
+- Do not re-submit if poll times out — duplicate bridge deposits cause double payment
+- If Phase 4A was skipped (already hold USDC), set `USDC_E_AMOUNT_NEEDED="$REQUIRED_AMOUNT"`
 
 ### Phase 5 — Swap to Required Payment Token on Tempo (if needed)
 
@@ -735,309 +390,46 @@ Set `SOURCE_CHAIN_ID` to Tempo's chain ID; use it for both `tokenInChainId` and
 
 ### Phase 6 — Construct and Submit the MPP Credential
 
-> **x402 path — STOP HERE.** If you arrived via the x402 detection gate in Phase 0,
-> do not proceed with Phase 6. Phase 6 constructs an MPP credential; x402 payments
-> use a different payload format handled in **Phase 6x** (below Phase 6).
+> **x402 path — STOP HERE.** If you arrived via the x402 detection gate in
+> Phase 0, do not proceed with Phase 6. Phase 6 constructs an MPP credential;
+> x402 payments use a different payload format handled in **Phase 6x** below.
 
-With the required token in the wallet, fulfill the MPP challenge using the
-**mppx** SDK, which handles the full 402 challenge → credential → retry cycle.
+Use the `mppx` SDK to fulfill the MPP challenge. Install: `npm install mppx viem`.
 
-**Install:**
+> **Detailed steps:** Read
+> [references/credential-construction.md](references/credential-construction.md#phase-6--mpp-credential)
+> for full code: automatic mode, manual mode, session intents, and direct
+> submission.
 
-```bash
-npm install mppx viem
-```
+Key patterns:
 
-**For a `charge` intent — automatic mode** (polyfills `fetch`):
-
-```typescript
-import { Mppx, tempo } from 'mppx/client';
-import { privateKeyToAccount } from 'viem/accounts';
-
-const account = privateKeyToAccount(process.env.PRIVATE_KEY as `0x${string}`);
-
-Mppx.create({ methods: [tempo.charge({ account })] });
-const response = await fetch(process.env.RESOURCE_URL!);
-// response is the 200 — credential was built and submitted automatically
-```
-
-Pass `autoSwap: true` to let mppx swap from available stablecoins (USDC.e or
-pathUSD) to the required token automatically — useful if your wallet holds USDC.e
-or pathUSD and the challenge requires a different token, letting you skip Phase 5:
-
-```typescript
-Mppx.create({ methods: [tempo.charge({ account, autoSwap: true })] });
-const response = await fetch(process.env.RESOURCE_URL!);
-```
-
-**For a `charge` intent — manual mode** (show payment summary before paying):
-
-> **REQUIRED:** Use `AskUserQuestion` before calling `createCredential`. Parse
-> the `WWW-Authenticate: Payment` header from the 402 response and display the
-> payment details to the user (amount, token, recipient, resource URL). Only
-> proceed after explicit confirmation.
-
-```typescript
-import { Mppx, tempo } from 'mppx/client';
-import { Receipt } from 'mppx';
-import { privateKeyToAccount } from 'viem/accounts';
-
-const account = privateKeyToAccount(process.env.PRIVATE_KEY as `0x${string}`);
-const mppx = Mppx.create({ polyfill: false, methods: [tempo.charge({ account })] });
-
-// Step 1: probe the endpoint to get the 402 challenge
-const initial = await fetch(process.env.RESOURCE_URL!);
-if (initial.status !== 402) throw new Error(`Expected 402, got ${initial.status}`);
-
-// Step 2: REQUIRED — show payment summary to user and wait for confirmation
-// Parse WWW-Authenticate header; display amount, token, recipient, resource.
-
-// Step 3: build and submit the credential
-const credential = await mppx.createCredential(initial, { account });
-const paidResponse = await fetch(process.env.RESOURCE_URL!, {
-  headers: { Authorization: credential },
-});
-
-if (paidResponse.status !== 200) {
-  const body = await paidResponse.text();
-  throw new Error(`Payment rejected (${paidResponse.status}): ${body}`);
-}
-
-// Step 4: parse the receipt
-const receipt = Receipt.fromResponse(paidResponse);
-console.log('Payment confirmed. Reference:', receipt.reference);
-```
-
-The `Authorization` header value returned by `createCredential()` has the form
-`Payment <base64url-encoded credential>` — do not modify this value.
-
-**For a `session` intent** (pay-as-you-go channel):
-
-Pass a `maxDeposit` budget to `tempo()` to open a payment channel:
-
-```typescript
-// maxDeposit: '10' locks up to 10 pathUSD into the channel escrow
-const mppx = Mppx.create({ methods: [tempo({ account, maxDeposit: '10' })] });
-const response = await mppx.fetch(process.env.RESOURCE_URL!);
-// The SDK manages channel lifecycle and voucher signing automatically
-```
-
-For fine-grained session control (manual open/close, sweep), see
-`https://mpp.dev/sdk`.
-
-**Direct submission (if credential was built externally):**
-
-```bash
-# $CREDENTIAL is the base64url-encoded credential string from mppx.createCredential()
-# $RESOURCE_URL was set in Phase 0
-curl -si "$RESOURCE_URL" \
-  -H "Authorization: Payment $CREDENTIAL"
-```
-
-A `200` response with a `Payment-Receipt` header confirms success. Any other
-status means the credential was rejected — check the response body and
-re-inspect the challenge.
-
----
+- **Charge (automatic):** `Mppx.create({ methods: [tempo.charge({ account })] })` — polyfills fetch, handles 402 automatically
+- **Charge (manual):** `mppx.createCredential(response, { account })` — returns `Authorization: Payment <credential>`
+- **Session:** `tempo({ account, maxDeposit: '10' })` — opens a pay-as-you-go channel
+- **autoSwap:** Pass `autoSwap: true` to let mppx swap stablecoins automatically (skip Phase 5)
+- Confirmation gate required before `createCredential()`
 
 ### Phase 6x — Construct and Submit the x402 Payment
 
-> **x402 path only.** This phase is reached when `PROTOCOL` is `"x402"` (detected
-> in Phase 0). Do not enter this phase from the MPP path.
+> **x402 path only.** This phase is reached when `PROTOCOL` is `"x402"`
+> (detected in Phase 0). Do not enter this phase from the MPP path.
 
-The x402 `"exact"` scheme on EVM networks uses **EIP-3009**
-(`transferWithAuthorization`) to authorize a one-time token transfer. The payer
-signs an off-chain typed-data message; the facilitator verifies it and settles
-the token transfer on-chain — no separate on-chain approval step is required.
+The x402 `"exact"` scheme uses EIP-3009 (`transferWithAuthorization`) to
+authorize a one-time token transfer signed off-chain.
 
-**Prerequisite checks before signing:**
+> **Detailed steps:** Read
+> [references/credential-construction.md](references/credential-construction.md#phase-6x--x402-payment)
+> for full code: prerequisite checks, nonce generation, EIP-3009 signing,
+> X-PAYMENT payload construction, and retry.
 
-```bash
-# 1. Confirm scheme is "exact" — only scheme currently supported
-[ "$X402_SCHEME" = "exact" ] || { echo "ERROR: Only 'exact' scheme is supported. Got: $X402_SCHEME"; exit 1; }
+Key points:
 
-# 2. Map network to a chain ID
-# Accept both CAIP-2 format (eip155:8453) and plain names (base, ethereum)
-case "$X402_NETWORK" in
-  base|"eip155:8453")    X402_CHAIN_ID=8453;  SOURCE_RPC_URL="https://mainnet.base.org" ;;
-  ethereum|"eip155:1")   X402_CHAIN_ID=1;     SOURCE_RPC_URL="https://eth.llamarpc.com" ;;
-  tempo|"eip155:4217")   X402_CHAIN_ID=4217;  SOURCE_RPC_URL="${TEMPO_RPC_URL:-https://rpc.presto.tempo.xyz}" ;;
-  *)
-    echo "ERROR: Unrecognised or unsupported x402 network: $X402_NETWORK"
-    echo "Supported: base / eip155:8453, ethereum / eip155:1, tempo / eip155:4217"
-    exit 1
-    ;;
-esac
-
-# Tempo-network: if wallet lacks the asset on Tempo, bridge first (Phase 4B → 5 → return here)
-if [ "$X402_CHAIN_ID" = "4217" ]; then
-  echo "x402 payment targets Tempo network — checking Tempo-side balance..."
-  TEMPO_BALANCE=$(cast call "$X402_ASSET" \
-    "balanceOf(address)(uint256)" "$WALLET_ADDRESS" \
-    --rpc-url "$SOURCE_RPC_URL" 2>/dev/null || echo "0")
-  if [ "$TEMPO_BALANCE" -lt "$X402_AMOUNT" ]; then
-    echo "Insufficient balance on Tempo ($TEMPO_BALANCE < $X402_AMOUNT)."
-    echo "Acquire the asset first: run Phase 4A (swap to bridge asset) ->"
-    echo "Phase 4B (bridge to Tempo) -> Phase 5, then return to Phase 6x."
-    exit 1
-  fi
-fi
-
-# 3. Check wallet token balance — must be >= X402_AMOUNT before signing
-ASSET_BALANCE=$(cast call "$X402_ASSET" \
-  "balanceOf(address)(uint256)" "$WALLET_ADDRESS" \
-  --rpc-url "$SOURCE_RPC_URL")
-if [ "$ASSET_BALANCE" -lt "$X402_AMOUNT" ]; then
-  echo "ERROR: Insufficient $X402_TOKEN_NAME balance on $X402_NETWORK."
-  echo "Have: $ASSET_BALANCE, need: $X402_AMOUNT"
-  echo "Acquire the asset first: if funds are on the same chain, run Phase 4A"
-  echo "(swap to $X402_ASSET). If funds are on a different chain, run"
-  echo "Phase 4A + Phase 4B (bridge to $X402_NETWORK) + Phase 5, then return here."
-  exit 1
-fi
-```
-
-> **REQUIRED:** Use `AskUserQuestion` to show the user a payment summary before
-> signing anything:
->
-> - Token: `$X402_TOKEN_NAME` (`$X402_ASSET`) on `$X402_NETWORK`
-> - Amount: `$X402_AMOUNT` base units
->   (e.g. `1000000` = 1.00 USDC for a 6-decimal token)
-> - Recipient: `$X402_PAY_TO`
-> - Resource: `$X402_RESOURCE`
->
-> Obtain explicit confirmation before proceeding.
-
-**Step 6x-1 — Generate nonce and deadline:**
-
-```bash
-X402_NONCE="0x$(openssl rand -hex 32)"    # 32-byte random nonce
-X402_VALID_AFTER=0                         # immediately valid
-X402_VALID_BEFORE=$(( $(date +%s) + X402_TIMEOUT ))  # expiry = now + maxTimeoutSeconds
-```
-
-**Step 6x-2 — Sign the EIP-3009 `TransferWithAuthorization` typed data:**
-
-The EIP-3009 domain uses the token contract's own `name` and `version` (from the
-`extra` field in the x402 challenge body). The `verifyingContract` is the token
-contract itself (`X402_ASSET`).
-
-Sign using viem:
-
-```typescript
-import { privateKeyToAccount } from 'viem/accounts';
-
-const account = privateKeyToAccount(process.env.PRIVATE_KEY as `0x${string}`);
-
-const domain = {
-  name: process.env.X402_TOKEN_NAME!, // from extra.name, e.g. "USDC"
-  version: process.env.X402_TOKEN_VERSION!, // from extra.version, e.g. "2"
-  chainId: Number(process.env.X402_CHAIN_ID),
-  verifyingContract: process.env.X402_ASSET as `0x${string}`,
-};
-
-// REQUIRED: show the user what they are about to sign before calling signTypedData
-const signature = await account.signTypedData({
-  domain,
-  types: {
-    TransferWithAuthorization: [
-      { name: 'from', type: 'address' },
-      { name: 'to', type: 'address' },
-      { name: 'value', type: 'uint256' },
-      { name: 'validAfter', type: 'uint256' },
-      { name: 'validBefore', type: 'uint256' },
-      { name: 'nonce', type: 'bytes32' },
-    ],
-  },
-  primaryType: 'TransferWithAuthorization',
-  message: {
-    from: process.env.WALLET_ADDRESS as `0x${string}`,
-    to: process.env.X402_PAY_TO as `0x${string}`,
-    value: BigInt(process.env.X402_AMOUNT!),
-    validAfter: BigInt(process.env.X402_VALID_AFTER!),
-    validBefore: BigInt(process.env.X402_VALID_BEFORE!),
-    nonce: process.env.X402_NONCE as `0x${string}`,
-  },
-});
-process.env.X402_SIGNATURE = signature;
-```
-
-> **Domain warning:** The `verifyingContract` is the **token contract** (`X402_ASSET`),
-> not a separate verifier. Use the `name` and `version` from `extra` — do not assume
-> USDC defaults. Different tokens have different domain values. An incorrect domain
-> produces a signature the server will reject with a 402.
->
-> **REQUIRED:** Use `AskUserQuestion` before this step. Show the
-> `TransferWithAuthorization` message fields (from, to, value, validBefore)
-> so the user can verify what they are signing. Store the resulting signature as
-> `X402_SIGNATURE`.
-
-**Step 6x-3 — Construct the X-PAYMENT payload:**
-
-```bash
-X402_PAYMENT_JSON=$(jq -n \
-  --arg  scheme      "$X402_SCHEME" \
-  --arg  network     "$X402_NETWORK" \
-  --argjson chainId  "$X402_CHAIN_ID" \
-  --arg  from        "$WALLET_ADDRESS" \
-  --arg  to          "$X402_PAY_TO" \
-  --arg    value     "$X402_AMOUNT" \
-  --argjson validAfter  "$X402_VALID_AFTER" \
-  --argjson validBefore "$X402_VALID_BEFORE" \
-  --arg  nonce       "$X402_NONCE" \
-  --arg  sig         "$X402_SIGNATURE" \
-  --arg  asset       "$X402_ASSET" \
-  '{
-    scheme:  $scheme,
-    network: $network,
-    chainId: $chainId,
-    payload: {
-      authorization: {
-        from:        $from,
-        to:          $to,
-        value:       $value,
-        validAfter:  $validAfter,
-        validBefore: $validBefore,
-        nonce:       $nonce
-      },
-      signature: $sig
-    },
-    asset: $asset
-  }')
-
-# Base64-encode — strip newlines (required by header spec)
-X402_PAYMENT=$(echo "$X402_PAYMENT_JSON" | base64 | tr -d '[:space:]')
-```
-
-**Step 6x-4 — Retry the original request with `X-PAYMENT` header:**
-
-```bash
-RETRY_RESPONSE=$(curl -si "$X402_RESOURCE" \
-  -H "X-PAYMENT: $X402_PAYMENT" \
-  -H "Content-Type: application/json")
-
-RETRY_STATUS=$(echo "$RETRY_RESPONSE" | head -1 | grep -o '[0-9]\{3\}')
-RETRY_BODY=$(echo "$RETRY_RESPONSE" | awk 'found{print} /^\r?$/{found=1}')
-X402_PAYMENT_RESPONSE=$(echo "$RETRY_RESPONSE" \
-  | grep -i 'x-payment-response:' | cut -d' ' -f2- | tr -d '[:space:]')
-
-echo "HTTP status: $RETRY_STATUS"
-```
-
-**Interpreting the response:**
-
-| Status | Meaning                                                 | Action                                                                                       |
-| ------ | ------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| 200    | Payment accepted — resource delivered                   | Display body; decode receipt with `echo "$X402_PAYMENT_RESPONSE" \| base64 --decode \| jq .` |
-| 402    | Payment rejected (bad signature, expired, wrong amount) | Check domain name/version, validBefore, and amount                                           |
-| 400    | Malformed payment payload                               | Verify JSON structure and base64 encoding                                                    |
-| Other  | Server or network error                                 | Report raw body; do not resubmit                                                             |
-
-**Tempo-network variant:** If `X402_NETWORK` is `"tempo"` (or `eip155:<tempo-chain-id>`),
-the payment token is a Tempo TIP-20 address. You must first bridge USDC to Tempo
-using Phase 4B and optionally swap using Phase 5. After confirming the Tempo-side
-token balance, return here to execute Steps 6x-1 through 6x-4, using the
-Tempo-side token contract as `X402_ASSET` and the Tempo chain ID as `X402_CHAIN_ID`.
+- Maps `X402_NETWORK` to chain ID and RPC URL (base, ethereum, tempo supported)
+- Checks wallet balance on target chain; directs to Phase 4A/4B/5 if insufficient
+- Signs `TransferWithAuthorization` typed data using token's own domain (name, version from `extra`)
+- Constructs JSON payload, base64-encodes it, sends as `X-PAYMENT` header
+- `value` in the payload must be a **string** (`--arg`, not `--argjson`) to preserve uint256 precision
+- Confirmation gate required before signing
 
 ---
 
