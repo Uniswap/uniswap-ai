@@ -229,6 +229,35 @@ Validate and extract fields. The `amount` is the exact output required (in
 token base units). This skill is **exact-output oriented** — the payee specifies
 the amount; the payer finds tokens to cover it.
 
+#### Human-Readable Amount Formatting
+
+All token amounts from 402 challenges and API responses are in **base units**
+(smallest indivisible unit). Before displaying any amount to the user, convert
+it to human-readable form by dividing by `10^decimals`. Use this helper
+throughout the flow:
+
+```bash
+# Fetch the token's decimal count from the contract
+get_token_decimals() {
+  local token_addr="$1" rpc_url="$2"
+  cast call "$token_addr" "decimals()(uint8)" --rpc-url "$rpc_url" 2>/dev/null || echo "18"
+}
+
+# Convert base units to human-readable decimal string
+# Usage: format_token_amount <base_units> <decimals>
+# Example: format_token_amount 5000 6  ->  0.005
+format_token_amount() {
+  local amount="$1" decimals="$2"
+  echo "scale=$decimals; $amount / (10 ^ $decimals)" | bc -l | sed 's/0*$//' | sed 's/\.$//'
+}
+```
+
+> **REQUIRED:** When presenting any token amount to the user (in
+> `AskUserQuestion` prompts, confirmation gates, balance summaries, or error
+> messages), always show the **human-readable value** followed by the token
+> symbol. For example, display `0.005 USDC` instead of `5000 base units`.
+> Include the base-unit value in parentheses only when needed for debugging.
+
 ### Phase 1 — Identify Payment Token and Required Amount
 
 > **x402 path:** If `PROTOCOL` is `"x402"`, all required variables were
@@ -242,7 +271,22 @@ all, then select the cheapest option for the wallet in Phase 2.
 ```bash
 NUM_METHODS=$(echo "$CHALLENGE_BODY" | jq '.payment_methods | length')
 echo "Payee accepts $NUM_METHODS payment method(s):"
-echo "$CHALLENGE_BODY" | jq -r '.payment_methods[] | "  - \(.token) (\(.amount) base units, chain \(.chain_id))"'
+# Display each payment method with human-readable amounts
+for i in $(seq 0 $((NUM_METHODS - 1))); do
+  PM_TOKEN=$(echo "$CHALLENGE_BODY" | jq -r ".payment_methods[$i].token")
+  PM_AMOUNT=$(echo "$CHALLENGE_BODY" | jq -r ".payment_methods[$i].amount")
+  PM_CHAIN=$(echo "$CHALLENGE_BODY" | jq -r ".payment_methods[$i].chain_id")
+  PM_RPC=$(case "$PM_CHAIN" in
+    8453)  echo "https://mainnet.base.org" ;;
+    1)     echo "https://eth.llamarpc.com" ;;
+    4217)  echo "https://rpc.presto.tempo.xyz" ;;
+    *)     echo "https://mainnet.base.org" ;;
+  esac)
+  PM_DECIMALS=$(get_token_decimals "$PM_TOKEN" "$PM_RPC")
+  PM_HUMAN=$(format_token_amount "$PM_AMOUNT" "$PM_DECIMALS")
+  PM_SYMBOL=$(cast call "$PM_TOKEN" "symbol()(string)" --rpc-url "$PM_RPC" 2>/dev/null || echo "tokens")
+  echo "  - $PM_HUMAN $PM_SYMBOL ($PM_TOKEN on chain $PM_CHAIN)"
+done
 ```
 
 If `NUM_METHODS` is 1, use it directly. If multiple, defer selection to Phase 2
@@ -261,9 +305,10 @@ fi
 INTENT_TYPE=$(echo "$CHALLENGE_BODY" | jq -r '.payment_methods[0].intent_type')
 ```
 
-> **Decimal note:** `amount` is in token base units. For USDC (6 decimals):
-> `1000000` = 1.00 USDC, `500000` = 0.50 USDC. Confirm with the user before
-> proceeding.
+> **Decimal note:** `amount` is in token base units. Always use
+> `format_token_amount` to convert before displaying. For example, USDC has
+> 6 decimals: `1000000` base units = `1.00 USDC`, `5000` = `0.005 USDC`.
+> Confirm the human-readable value with the user before proceeding.
 
 - `PAYMENT_METHODS`: JSON array of all accepted payment options
 - `RECIPIENT`: payee wallet address on Tempo
@@ -317,7 +362,17 @@ Once selected, assign the chosen method:
 # SELECTED_INDEX is the index of the cheapest payment method (0-based)
 REQUIRED_AMOUNT=$(echo "$PAYMENT_METHODS" | jq -r ".[$SELECTED_INDEX].amount")
 PAYMENT_TOKEN=$(echo "$PAYMENT_METHODS" | jq -r ".[$SELECTED_INDEX].token")
-echo "Selected payment method: $PAYMENT_TOKEN ($REQUIRED_AMOUNT base units)"
+# Look up decimals and symbol for the selected payment token
+PAYMENT_TOKEN_RPC=$(case "$(echo "$PAYMENT_METHODS" | jq -r ".[$SELECTED_INDEX].chain_id")" in
+  8453)  echo "https://mainnet.base.org" ;;
+  1)     echo "https://eth.llamarpc.com" ;;
+  4217)  echo "https://rpc.presto.tempo.xyz" ;;
+  *)     echo "https://mainnet.base.org" ;;
+esac)
+PAYMENT_DECIMALS=$(get_token_decimals "$PAYMENT_TOKEN" "$PAYMENT_TOKEN_RPC")
+PAYMENT_SYMBOL=$(cast call "$PAYMENT_TOKEN" "symbol()(string)" --rpc-url "$PAYMENT_TOKEN_RPC" 2>/dev/null || echo "tokens")
+PAYMENT_HUMAN=$(format_token_amount "$REQUIRED_AMOUNT" "$PAYMENT_DECIMALS")
+echo "Selected payment method: $PAYMENT_HUMAN $PAYMENT_SYMBOL ($PAYMENT_TOKEN)"
 ```
 
 Verify `PAYMENT_TOKEN` at `https://mainnet.docs.tempo.xyz/tokens` — an
