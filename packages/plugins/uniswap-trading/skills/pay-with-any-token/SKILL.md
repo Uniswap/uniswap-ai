@@ -77,14 +77,25 @@ shell commands:
 
 ### Phase 0 — Detect the 402 Challenge
 
-Make the original request and capture the 402 response:
+Make the original request and capture the 402 response. The request may be
+GET or POST depending on the API — match the original method and include any
+required headers or body:
 
 ```bash
-RESOURCE_URL="https://api.example.com/resource"  # replace with the actual URL you are calling
+RESOURCE_URL="https://api.example.com/resource"  # replace with the actual URL
+# For GET requests:
 RESPONSE=$(curl -si "$RESOURCE_URL")
+# For POST requests (e.g. search APIs):
+# RESPONSE=$(curl -si -X POST "$RESOURCE_URL" \
+#   -H "Content-Type: application/json" \
+#   -d '{"query": "your query"}')
+
 HTTP_STATUS=$(echo "$RESPONSE" | head -1 | grep -o '[0-9]\{3\}')
-# Extract the response body (everything after the blank header/body separator)
+# Extract headers and body separately
+RESPONSE_HEADERS=$(echo "$RESPONSE" | awk '/^\r?$/{exit} {print}')
 CHALLENGE_BODY=$(echo "$RESPONSE" | awk 'found{print} /^\r?$/{found=1}')
+# Extract WWW-Authenticate header (used by MPP header-based challenges)
+WWW_AUTHENTICATE=$(echo "$RESPONSE_HEADERS" | grep -i '^www-authenticate:' | sed 's/^[^:]*: //')
 ```
 
 If `HTTP_STATUS` is not `402`, stop — this skill does not apply.
@@ -97,8 +108,31 @@ If `HTTP_STATUS` is not `402`, stop — this skill does not apply.
 > CHALLENGE_BODY='<paste the JSON here>'
 > ```
 
-Extract the `WWW-Authenticate` or `Payment-Required` header and the challenge
-body. For MPP/Tempo the body is JSON:
+Extract the challenge details. MPP 402 responses come in **two formats**:
+
+**Format A — `WWW-Authenticate` header (common with MPP proxy services):**
+
+The payment details are in the `WWW-Authenticate` header as a base64url-encoded
+`request` parameter. The JSON body is just an error message with a
+`challengeId`. Example header:
+
+```text
+WWW-Authenticate: Payment id="...", realm="exa.mpp.tempo.xyz", method="tempo",
+  intent="charge", request="<base64url>", description="Search the web"
+```
+
+Decode the `request` parameter to get:
+
+```json
+{
+  "amount": "5000",
+  "currency": "0x20c000000000000000000000b9537d11c60e8b50",
+  "methodDetails": { "chainId": 4217, "feePayer": true },
+  "recipient": "0xca4e835F803cB0b7C428222B3A3B98518d4779Fe"
+}
+```
+
+**Format B — JSON body with `payment_methods` array:**
 
 ```json
 {
@@ -119,15 +153,47 @@ body. For MPP/Tempo the body is JSON:
 > section for how to obtain the current Tempo chain ID.
 >
 > **Protocol detection (REQUIRED):** Before proceeding, detect which protocol
-> the 402 body uses:
+> the 402 response uses. Check the `WWW-Authenticate` header **first**, then
+> fall back to the body:
 >
 > ```bash
-> PROTOCOL=$(echo "$CHALLENGE_BODY" | jq -r '
->   if has("x402Version") then "x402"
->   elif has("payment_methods") then "mpp"
->   else "unknown"
->   end')
+> if echo "$WWW_AUTHENTICATE" | grep -qi 'method="tempo"'; then
+>   PROTOCOL="mpp-header"
+> else
+>   PROTOCOL=$(echo "$CHALLENGE_BODY" | jq -r '
+>     if has("x402Version") then "x402"
+>     elif has("payment_methods") then "mpp"
+>     else "unknown"
+>     end')
+> fi
 > ```
+>
+> - **If `PROTOCOL` is `"mpp-header"`**: Extract payment details from the
+>   `WWW-Authenticate` header:
+>
+>   ```bash
+>   # Extract and decode the base64url request parameter
+>   REQUEST_B64=$(echo "$WWW_AUTHENTICATE" | grep -oE 'request="[^"]+"' | sed 's/request="//;s/"$//')
+>   # Add padding for base64 decode
+>   REQUEST_JSON=$(echo "${REQUEST_B64}==" | base64 --decode 2>/dev/null)
+>
+>   # Extract payment fields
+>   REQUIRED_AMOUNT=$(echo "$REQUEST_JSON" | jq -r '.amount')
+>   PAYMENT_TOKEN=$(echo "$REQUEST_JSON" | jq -r '.currency')
+>   RECIPIENT=$(echo "$REQUEST_JSON" | jq -r '.recipient')
+>   TEMPO_CHAIN_ID=$(echo "$REQUEST_JSON" | jq -r '.methodDetails.chainId')
+>   INTENT_TYPE=$(echo "$WWW_AUTHENTICATE" | grep -oE 'intent="[^"]+"' | sed 's/intent="//;s/"$//')
+>   CHALLENGE_ID=$(echo "$WWW_AUTHENTICATE" | grep -oE 'id="[^"]+"' | sed 's/id="//;s/"$//')
+>
+>   # Build a synthetic PAYMENT_METHODS array for compatibility with later phases
+>   PAYMENT_METHODS=$(jq -n --arg token "$PAYMENT_TOKEN" --arg amount "$REQUIRED_AMOUNT" \
+>     --arg recipient "$RECIPIENT" --argjson chain_id "$TEMPO_CHAIN_ID" \
+>     --arg intent "$INTENT_TYPE" \
+>     '[{type:"tempo", token:$token, amount:$amount, recipient:$recipient,
+>       chain_id:$chain_id, intent_type:$intent}]')
+>   ```
+>
+>   Skip directly to Phase 2 (the payment method is already selected).
 >
 > - **If `PROTOCOL` is `"x402"`**: This response uses the x402 protocol.
 >   Extract and display the key fields, then proceed to **Phase 6x** to
@@ -292,6 +358,10 @@ done
 If `NUM_METHODS` is 1, use it directly. If multiple, defer selection to Phase 2
 (after checking wallet balances). For now, extract all methods:
 
+> **Note:** If `PROTOCOL` is `"mpp-header"`, the `PAYMENT_METHODS` array was
+> already built during Phase 0 header extraction. Skip the extraction below
+> and proceed to Phase 2.
+
 ```bash
 # Store the full array for Phase 2 comparison
 PAYMENT_METHODS=$(echo "$CHALLENGE_BODY" | jq -c '.payment_methods')
@@ -355,6 +425,14 @@ minimizes cost. Priority order:
 2. Wallet holds a different accepted token on Tempo (swap only, no bridge)
 3. Wallet holds USDC on Base (bridge only, minimal path)
 4. Any other liquid ERC-20 on Ethereum or Base (swap + bridge)
+
+> **Balance buffer (IMPORTANT):** On Tempo, `balanceOf` may report a higher
+> value than is actually spendable — the token contract can hold reserves for
+> pending transactions or fee escrows. When comparing `balanceOf` to
+> `REQUIRED_AMOUNT`, apply a **2x buffer**: if `balance < REQUIRED_AMOUNT * 2`,
+> swap additional tokens to top up. This prevents payment failures where the
+> balance appears sufficient but the on-chain transfer reverts with
+> `InsufficientBalance`.
 
 Once selected, assign the chosen method:
 
@@ -477,7 +555,14 @@ Key patterns:
 - **Charge (automatic):** `Mppx.create({ methods: [tempo.charge({ account })] })` — polyfills fetch, handles 402 automatically
 - **Charge (manual):** `mppx.createCredential(response, { account })` — returns `Authorization: Payment <credential>`
 - **Session:** `tempo({ account, maxDeposit: '10' })` — opens a pay-as-you-go channel
-- **autoSwap:** Pass `autoSwap: true` to let mppx swap stablecoins automatically (skip Phase 5)
+- **autoSwap:** Pass `autoSwap: true` to let mppx swap stablecoins
+  automatically (skip Phase 5). **Caveat:** `autoSwap` may silently fail to
+  swap — if the payment is rejected with `InsufficientBalance`, fall back to
+  manually swapping via Phase 5 (Uniswap Trading API on Tempo) and retry.
+- **Retry on InsufficientBalance:** If the mppx payment returns a 402 with
+  `InsufficientBalance` in the error detail, swap additional tokens into the
+  payment token using Phase 5, then retry the payment. Do not give up on the
+  first failure if the wallet holds other stablecoins on Tempo.
 - Confirmation gate required before `createCredential()`
 
 ### Phase 6x — Construct and Submit the x402 Payment
@@ -506,16 +591,18 @@ Key points:
 
 ## Error Handling
 
-| Situation                      | Action                                                               |
-| ------------------------------ | -------------------------------------------------------------------- |
-| Challenge body is malformed    | Report raw body to user; do not proceed                              |
-| Approval transaction fails     | Surface error; suggest checking gas and allowances                   |
-| Quote API returns 400          | Log request/response; check amount formatting                        |
-| Quote API returns 429          | Wait and retry with exponential backoff                              |
-| Swap data is empty after /swap | Quote expired; re-fetch quote from Phase 4A-2                        |
-| Bridge times out               | Check bridge explorer; do not re-submit                              |
-| Credential rejected (non-200)  | Report response body; check credential construction                  |
-| x402 payment rejected (402)    | Check domain name/version, validBefore deadline, and nonce freshness |
+| Situation                                    | Action                                                               |
+| -------------------------------------------- | -------------------------------------------------------------------- |
+| Challenge body is malformed                  | Report raw body to user; do not proceed                              |
+| Approval transaction fails                   | Surface error; suggest checking gas and allowances                   |
+| Quote API returns 400                        | Log request/response; check amount formatting                        |
+| Quote API returns 429                        | Wait and retry with exponential backoff                              |
+| Swap data is empty after /swap               | Quote expired; re-fetch quote from Phase 4A-2                        |
+| Bridge times out                             | Check bridge explorer; do not re-submit                              |
+| Credential rejected (non-200)                | Report response body; check credential construction                  |
+| x402 payment rejected (402)                  | Check domain name/version, validBefore deadline, and nonce freshness |
+| InsufficientBalance on payment               | Swap more tokens via Phase 5 (Tempo on-chain swap), then retry       |
+| `balanceOf` shows enough but payment reverts | Apply 2x buffer; swap to top up before retrying                      |
 
 ---
 
@@ -523,6 +610,9 @@ Key points:
 
 - **Trading API**: `https://trade-api.gateway.uniswap.org/v1`
 - **MPP docs**: `https://mpp.dev`
+- **MPP services catalog**: `https://mpp.dev/api/services` — JSON API listing
+  all MPP-enabled services with their endpoints, payment amounts, token
+  addresses, and categories. Useful for discovering available services.
 - **Tempo documentation**: `https://mainnet.docs.tempo.xyz`
 - **Tempo chain ID**: `4217` (Tempo mainnet)
 - **Tempo RPC**: `https://rpc.presto.tempo.xyz`

@@ -10,9 +10,10 @@ claude plugin add @uniswap/uniswap-trading
 
 ## Skills
 
-| Skill              | Description                                                        |
-| ------------------ | ------------------------------------------------------------------ |
-| `swap-integration` | Integrate Uniswap swaps via Trading API, Universal Router, or SDKs |
+| Skill                | Description                                                        |
+| -------------------- | ------------------------------------------------------------------ |
+| `swap-integration`   | Integrate Uniswap swaps via Trading API, Universal Router, or SDKs |
+| `pay-with-any-token` | Pay HTTP 402 challenges (MPP/x402) using tokens via Uniswap swaps  |
 
 ## Use Cases
 

@@ -9,6 +9,7 @@ This plugin provides comprehensive guidance for integrating Uniswap swaps into f
 ### Skills (./skills/)
 
 - **swap-integration**: Comprehensive guide for integrating Uniswap swaps via Trading API, Universal Router SDK, or direct smart contract calls. Covers frontend hooks, backend scripts, Solidity integrations, Permit2 patterns, ERC-4337 smart account integration, L2 WETH handling, rate limiting, and troubleshooting.
+- **pay-with-any-token**: Pay HTTP 402 Payment Required challenges (MPP and x402) by swapping or bridging tokens via the Uniswap Trading API. Supports WWW-Authenticate header-based and JSON body-based MPP challenges, cross-chain bridging to Tempo, and automatic stablecoin swaps.
 
 ### Agents (./agents/)
 
@@ -23,10 +24,15 @@ uniswap-trading/
 ├── agents/
 │   └── swap-integration-expert.md
 ├── skills/
-│   └── swap-integration/
+│   ├── swap-integration/
+│   │   ├── SKILL.md
+│   │   └── references/
+│   │       └── advanced-patterns.md
+│   └── pay-with-any-token/
 │       ├── SKILL.md
 │       └── references/
-│           └── advanced-patterns.md
+│           ├── trading-api-flows.md
+│           └── credential-construction.md
 ├── project.json
 ├── package.json
 ├── CLAUDE.md
