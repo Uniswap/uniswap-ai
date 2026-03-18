@@ -77,14 +77,25 @@ shell commands:
 
 ### Phase 0 — Detect the 402 Challenge
 
-Make the original request and capture the 402 response:
+Make the original request and capture the 402 response. The request may be
+GET or POST depending on the API — match the original method and include any
+required headers or body:
 
 ```bash
-RESOURCE_URL="https://api.example.com/resource"  # replace with the actual URL you are calling
+RESOURCE_URL="https://api.example.com/resource"  # replace with the actual URL
+# For GET requests:
 RESPONSE=$(curl -si "$RESOURCE_URL")
+# For POST requests (e.g. search APIs):
+# RESPONSE=$(curl -si -X POST "$RESOURCE_URL" \
+#   -H "Content-Type: application/json" \
+#   -d '{"query": "your query"}')
+
 HTTP_STATUS=$(echo "$RESPONSE" | head -1 | grep -o '[0-9]\{3\}')
-# Extract the response body (everything after the blank header/body separator)
+# Extract headers and body separately
+RESPONSE_HEADERS=$(echo "$RESPONSE" | awk '/^\r?$/{exit} {print}')
 CHALLENGE_BODY=$(echo "$RESPONSE" | awk 'found{print} /^\r?$/{found=1}')
+# Extract WWW-Authenticate header (used by MPP header-based challenges)
+WWW_AUTHENTICATE=$(echo "$RESPONSE_HEADERS" | grep -i '^www-authenticate:' | sed 's/^[^:]*: //')
 ```
 
 If `HTTP_STATUS` is not `402`, stop — this skill does not apply.
@@ -97,8 +108,31 @@ If `HTTP_STATUS` is not `402`, stop — this skill does not apply.
 > CHALLENGE_BODY='<paste the JSON here>'
 > ```
 
-Extract the `WWW-Authenticate` or `Payment-Required` header and the challenge
-body. For MPP/Tempo the body is JSON:
+Extract the challenge details. MPP 402 responses come in **two formats**:
+
+**Format A — `WWW-Authenticate` header (common with MPP proxy services):**
+
+The payment details are in the `WWW-Authenticate` header as a base64url-encoded
+`request` parameter. The JSON body is just an error message with a
+`challengeId`. Example header:
+
+```text
+WWW-Authenticate: Payment id="...", realm="exa.mpp.tempo.xyz", method="tempo",
+  intent="charge", request="<base64url>", description="Search the web"
+```
+
+Decode the `request` parameter to get:
+
+```json
+{
+  "amount": "5000",
+  "currency": "0x20c000000000000000000000b9537d11c60e8b50",
+  "methodDetails": { "chainId": 4217, "feePayer": true },
+  "recipient": "0xca4e835F803cB0b7C428222B3A3B98518d4779Fe"
+}
+```
+
+**Format B — JSON body with `payment_methods` array:**
 
 ```json
 {
@@ -119,15 +153,47 @@ body. For MPP/Tempo the body is JSON:
 > section for how to obtain the current Tempo chain ID.
 >
 > **Protocol detection (REQUIRED):** Before proceeding, detect which protocol
-> the 402 body uses:
+> the 402 response uses. Check the `WWW-Authenticate` header **first**, then
+> fall back to the body:
 >
 > ```bash
-> PROTOCOL=$(echo "$CHALLENGE_BODY" | jq -r '
->   if has("x402Version") then "x402"
->   elif has("payment_methods") then "mpp"
->   else "unknown"
->   end')
+> if echo "$WWW_AUTHENTICATE" | grep -qi 'method="tempo"'; then
+>   PROTOCOL="mpp-header"
+> else
+>   PROTOCOL=$(echo "$CHALLENGE_BODY" | jq -r '
+>     if has("x402Version") then "x402"
+>     elif has("payment_methods") then "mpp"
+>     else "unknown"
+>     end')
+> fi
 > ```
+>
+> - **If `PROTOCOL` is `"mpp-header"`**: Extract payment details from the
+>   `WWW-Authenticate` header:
+>
+>   ```bash
+>   # Extract and decode the base64url request parameter
+>   REQUEST_B64=$(echo "$WWW_AUTHENTICATE" | grep -oE 'request="[^"]+"' | sed 's/request="//;s/"$//')
+>   # Add padding for base64 decode
+>   REQUEST_JSON=$(echo "${REQUEST_B64}==" | base64 --decode 2>/dev/null)
+>
+>   # Extract payment fields
+>   REQUIRED_AMOUNT=$(echo "$REQUEST_JSON" | jq -r '.amount')
+>   PAYMENT_TOKEN=$(echo "$REQUEST_JSON" | jq -r '.currency')
+>   RECIPIENT=$(echo "$REQUEST_JSON" | jq -r '.recipient')
+>   TEMPO_CHAIN_ID=$(echo "$REQUEST_JSON" | jq -r '.methodDetails.chainId')
+>   INTENT_TYPE=$(echo "$WWW_AUTHENTICATE" | grep -oE 'intent="[^"]+"' | sed 's/intent="//;s/"$//')
+>   CHALLENGE_ID=$(echo "$WWW_AUTHENTICATE" | grep -oE 'id="[^"]+"' | sed 's/id="//;s/"$//')
+>
+>   # Build a synthetic PAYMENT_METHODS array for compatibility with later phases
+>   PAYMENT_METHODS=$(jq -n --arg token "$PAYMENT_TOKEN" --arg amount "$REQUIRED_AMOUNT" \
+>     --arg recipient "$RECIPIENT" --argjson chain_id "$TEMPO_CHAIN_ID" \
+>     --arg intent "$INTENT_TYPE" \
+>     '[{type:"tempo", token:$token, amount:$amount, recipient:$recipient,
+>       chain_id:$chain_id, intent_type:$intent}]')
+>   ```
+>
+>   Skip directly to Phase 2 (the payment method is already selected).
 >
 > - **If `PROTOCOL` is `"x402"`**: This response uses the x402 protocol.
 >   Extract and display the key fields, then proceed to **Phase 6x** to
@@ -229,6 +295,35 @@ Validate and extract fields. The `amount` is the exact output required (in
 token base units). This skill is **exact-output oriented** — the payee specifies
 the amount; the payer finds tokens to cover it.
 
+#### Human-Readable Amount Formatting
+
+All token amounts from 402 challenges and API responses are in **base units**
+(smallest indivisible unit). Before displaying any amount to the user, convert
+it to human-readable form by dividing by `10^decimals`. Use this helper
+throughout the flow:
+
+```bash
+# Fetch the token's decimal count from the contract
+get_token_decimals() {
+  local token_addr="$1" rpc_url="$2"
+  cast call "$token_addr" "decimals()(uint8)" --rpc-url "$rpc_url" 2>/dev/null || echo "18"
+}
+
+# Convert base units to human-readable decimal string
+# Usage: format_token_amount <base_units> <decimals>
+# Example: format_token_amount 5000 6  ->  0.005
+format_token_amount() {
+  local amount="$1" decimals="$2"
+  echo "scale=$decimals; $amount / (10 ^ $decimals)" | bc -l | sed 's/0*$//' | sed 's/\.$//'
+}
+```
+
+> **REQUIRED:** When presenting any token amount to the user (in
+> `AskUserQuestion` prompts, confirmation gates, balance summaries, or error
+> messages), always show the **human-readable value** followed by the token
+> symbol. For example, display `0.005 USDC` instead of `5000 base units`.
+> Include the base-unit value in parentheses only when needed for debugging.
+
 ### Phase 1 — Identify Payment Token and Required Amount
 
 > **x402 path:** If `PROTOCOL` is `"x402"`, all required variables were
@@ -242,11 +337,30 @@ all, then select the cheapest option for the wallet in Phase 2.
 ```bash
 NUM_METHODS=$(echo "$CHALLENGE_BODY" | jq '.payment_methods | length')
 echo "Payee accepts $NUM_METHODS payment method(s):"
-echo "$CHALLENGE_BODY" | jq -r '.payment_methods[] | "  - \(.token) (\(.amount) base units, chain \(.chain_id))"'
+# Display each payment method with human-readable amounts
+for i in $(seq 0 $((NUM_METHODS - 1))); do
+  PM_TOKEN=$(echo "$CHALLENGE_BODY" | jq -r ".payment_methods[$i].token")
+  PM_AMOUNT=$(echo "$CHALLENGE_BODY" | jq -r ".payment_methods[$i].amount")
+  PM_CHAIN=$(echo "$CHALLENGE_BODY" | jq -r ".payment_methods[$i].chain_id")
+  PM_RPC=$(case "$PM_CHAIN" in
+    8453)  echo "https://mainnet.base.org" ;;
+    1)     echo "https://eth.llamarpc.com" ;;
+    4217)  echo "https://rpc.presto.tempo.xyz" ;;
+    *)     echo "https://mainnet.base.org" ;;
+  esac)
+  PM_DECIMALS=$(get_token_decimals "$PM_TOKEN" "$PM_RPC")
+  PM_HUMAN=$(format_token_amount "$PM_AMOUNT" "$PM_DECIMALS")
+  PM_SYMBOL=$(cast call "$PM_TOKEN" "symbol()(string)" --rpc-url "$PM_RPC" 2>/dev/null || echo "tokens")
+  echo "  - $PM_HUMAN $PM_SYMBOL ($PM_TOKEN on chain $PM_CHAIN)"
+done
 ```
 
 If `NUM_METHODS` is 1, use it directly. If multiple, defer selection to Phase 2
 (after checking wallet balances). For now, extract all methods:
+
+> **Note:** If `PROTOCOL` is `"mpp-header"`, the `PAYMENT_METHODS` array was
+> already built during Phase 0 header extraction. Skip the extraction below
+> and proceed to Phase 2.
 
 ```bash
 # Store the full array for Phase 2 comparison
@@ -261,9 +375,10 @@ fi
 INTENT_TYPE=$(echo "$CHALLENGE_BODY" | jq -r '.payment_methods[0].intent_type')
 ```
 
-> **Decimal note:** `amount` is in token base units. For USDC (6 decimals):
-> `1000000` = 1.00 USDC, `500000` = 0.50 USDC. Confirm with the user before
-> proceeding.
+> **Decimal note:** `amount` is in token base units. Always use
+> `format_token_amount` to convert before displaying. For example, USDC has
+> 6 decimals: `1000000` base units = `1.00 USDC`, `5000` = `0.005 USDC`.
+> Confirm the human-readable value with the user before proceeding.
 
 - `PAYMENT_METHODS`: JSON array of all accepted payment options
 - `RECIPIENT`: payee wallet address on Tempo
@@ -311,13 +426,31 @@ minimizes cost. Priority order:
 3. Wallet holds USDC on Base (bridge only, minimal path)
 4. Any other liquid ERC-20 on Ethereum or Base (swap + bridge)
 
+> **Balance buffer (IMPORTANT):** On Tempo, `balanceOf` may report a higher
+> value than is actually spendable — the token contract can hold reserves for
+> pending transactions or fee escrows. When comparing `balanceOf` to
+> `REQUIRED_AMOUNT`, apply a **2x buffer**: if `balance < REQUIRED_AMOUNT * 2`,
+> swap additional tokens to top up. This prevents payment failures where the
+> balance appears sufficient but the on-chain transfer reverts with
+> `InsufficientBalance`.
+
 Once selected, assign the chosen method:
 
 ```bash
 # SELECTED_INDEX is the index of the cheapest payment method (0-based)
 REQUIRED_AMOUNT=$(echo "$PAYMENT_METHODS" | jq -r ".[$SELECTED_INDEX].amount")
 PAYMENT_TOKEN=$(echo "$PAYMENT_METHODS" | jq -r ".[$SELECTED_INDEX].token")
-echo "Selected payment method: $PAYMENT_TOKEN ($REQUIRED_AMOUNT base units)"
+# Look up decimals and symbol for the selected payment token
+PAYMENT_TOKEN_RPC=$(case "$(echo "$PAYMENT_METHODS" | jq -r ".[$SELECTED_INDEX].chain_id")" in
+  8453)  echo "https://mainnet.base.org" ;;
+  1)     echo "https://eth.llamarpc.com" ;;
+  4217)  echo "https://rpc.presto.tempo.xyz" ;;
+  *)     echo "https://mainnet.base.org" ;;
+esac)
+PAYMENT_DECIMALS=$(get_token_decimals "$PAYMENT_TOKEN" "$PAYMENT_TOKEN_RPC")
+PAYMENT_SYMBOL=$(cast call "$PAYMENT_TOKEN" "symbol()(string)" --rpc-url "$PAYMENT_TOKEN_RPC" 2>/dev/null || echo "tokens")
+PAYMENT_HUMAN=$(format_token_amount "$REQUIRED_AMOUNT" "$PAYMENT_DECIMALS")
+echo "Selected payment method: $PAYMENT_HUMAN $PAYMENT_SYMBOL ($PAYMENT_TOKEN)"
 ```
 
 Verify `PAYMENT_TOKEN` at `https://mainnet.docs.tempo.xyz/tokens` — an
@@ -422,7 +555,14 @@ Key patterns:
 - **Charge (automatic):** `Mppx.create({ methods: [tempo.charge({ account })] })` — polyfills fetch, handles 402 automatically
 - **Charge (manual):** `mppx.createCredential(response, { account })` — returns `Authorization: Payment <credential>`
 - **Session:** `tempo({ account, maxDeposit: '10' })` — opens a pay-as-you-go channel
-- **autoSwap:** Pass `autoSwap: true` to let mppx swap stablecoins automatically (skip Phase 5)
+- **autoSwap:** Pass `autoSwap: true` to let mppx swap stablecoins
+  automatically (skip Phase 5). **Caveat:** `autoSwap` may silently fail to
+  swap — if the payment is rejected with `InsufficientBalance`, fall back to
+  manually swapping via Phase 5 (Uniswap Trading API on Tempo) and retry.
+- **Retry on InsufficientBalance:** If the mppx payment returns a 402 with
+  `InsufficientBalance` in the error detail, swap additional tokens into the
+  payment token using Phase 5, then retry the payment. Do not give up on the
+  first failure if the wallet holds other stablecoins on Tempo.
 - Confirmation gate required before `createCredential()`
 
 ### Phase 6x — Construct and Submit the x402 Payment
@@ -451,16 +591,18 @@ Key points:
 
 ## Error Handling
 
-| Situation                      | Action                                                               |
-| ------------------------------ | -------------------------------------------------------------------- |
-| Challenge body is malformed    | Report raw body to user; do not proceed                              |
-| Approval transaction fails     | Surface error; suggest checking gas and allowances                   |
-| Quote API returns 400          | Log request/response; check amount formatting                        |
-| Quote API returns 429          | Wait and retry with exponential backoff                              |
-| Swap data is empty after /swap | Quote expired; re-fetch quote from Phase 4A-2                        |
-| Bridge times out               | Check bridge explorer; do not re-submit                              |
-| Credential rejected (non-200)  | Report response body; check credential construction                  |
-| x402 payment rejected (402)    | Check domain name/version, validBefore deadline, and nonce freshness |
+| Situation                                    | Action                                                               |
+| -------------------------------------------- | -------------------------------------------------------------------- |
+| Challenge body is malformed                  | Report raw body to user; do not proceed                              |
+| Approval transaction fails                   | Surface error; suggest checking gas and allowances                   |
+| Quote API returns 400                        | Log request/response; check amount formatting                        |
+| Quote API returns 429                        | Wait and retry with exponential backoff                              |
+| Swap data is empty after /swap               | Quote expired; re-fetch quote from Phase 4A-2                        |
+| Bridge times out                             | Check bridge explorer; do not re-submit                              |
+| Credential rejected (non-200)                | Report response body; check credential construction                  |
+| x402 payment rejected (402)                  | Check domain name/version, validBefore deadline, and nonce freshness |
+| InsufficientBalance on payment               | Swap more tokens via Phase 5 (Tempo on-chain swap), then retry       |
+| `balanceOf` shows enough but payment reverts | Apply 2x buffer; swap to top up before retrying                      |
 
 ---
 
@@ -468,6 +610,9 @@ Key points:
 
 - **Trading API**: `https://trade-api.gateway.uniswap.org/v1`
 - **MPP docs**: `https://mpp.dev`
+- **MPP services catalog**: `https://mpp.dev/api/services` — JSON API listing
+  all MPP-enabled services with their endpoints, payment amounts, token
+  addresses, and categories. Useful for discovering available services.
 - **Tempo documentation**: `https://mainnet.docs.tempo.xyz`
 - **Tempo chain ID**: `4217` (Tempo mainnet)
 - **Tempo RPC**: `https://rpc.presto.tempo.xyz`

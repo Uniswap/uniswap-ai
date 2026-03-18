@@ -227,10 +227,14 @@ echo "Swap confirmed: $SWAP_TX"
 USDC_AFTER_SWAP=$(cast call "$USDC_E_ADDRESS" \
   "balanceOf(address)(uint256)" "$WALLET_ADDRESS" \
   --rpc-url https://mainnet.base.org)
-echo "USDC balance after swap: $USDC_AFTER_SWAP (need at least $USDC_E_AMOUNT_NEEDED)"
+# Format balances for human-readable display (USDC = 6 decimals)
+USDC_DECIMALS=$(get_token_decimals "$USDC_E_ADDRESS" "https://mainnet.base.org")
+USDC_AFTER_HUMAN=$(format_token_amount "$USDC_AFTER_SWAP" "$USDC_DECIMALS")
+USDC_NEEDED_HUMAN=$(format_token_amount "$USDC_E_AMOUNT_NEEDED" "$USDC_DECIMALS")
+echo "USDC balance after swap: $USDC_AFTER_HUMAN USDC (need at least $USDC_NEEDED_HUMAN USDC)"
 # Halt if swap produced insufficient USDC — bridging 0 USDC wastes gas and fails silently
 [ "$USDC_AFTER_SWAP" -lt "$USDC_E_AMOUNT_NEEDED" ] && \
-  echo "ERROR: swap produced $USDC_AFTER_SWAP USDC but $USDC_E_AMOUNT_NEEDED needed — check receipt, do NOT proceed to bridge." && exit 1
+  echo "ERROR: swap produced $USDC_AFTER_HUMAN USDC but $USDC_NEEDED_HUMAN USDC needed — check receipt, do NOT proceed to bridge." && exit 1
 ```
 
 ## Phase 4B — Bridge to Tempo
@@ -326,7 +330,7 @@ echo "Bridge quote: quoteId=$BRIDGE_QUOTE_ID fee=$BRIDGE_FEE eta=$BRIDGE_ETA"
 > **REQUIRED:** Use `AskUserQuestion` before submitting the bridge transaction.
 > Show the user:
 >
-> - Amount: `$BRIDGE_AMOUNT` USDC on Base (chain 8453)
+> - Amount: `$(format_token_amount "$BRIDGE_AMOUNT" "$USDC_DECIMALS")` USDC on Base (chain 8453)
 > - Destination: `$BRIDGE_TOKEN_OUT` (USDC.e) on Tempo (chain 4217)
 > - Bridge fee: `$BRIDGE_FEE`
 > - Estimated time: `$BRIDGE_ETA`
@@ -372,10 +376,13 @@ for i in $(seq 1 20); do
     "balanceOf(address)(uint256)" "$WALLET_ADDRESS" \
     --rpc-url "$TEMPO_RPC_URL" 2>/dev/null || echo "0")
   if [ "$USDC_E_ON_TEMPO" -ge "$BRIDGE_AMOUNT" ]; then
-    echo "Bridge confirmed — $USDC_E_ON_TEMPO USDC.e received on Tempo."
+    USDC_E_DECIMALS=$(get_token_decimals "$BRIDGE_TOKEN_OUT" "$TEMPO_RPC_URL")
+    USDC_E_HUMAN=$(format_token_amount "$USDC_E_ON_TEMPO" "$USDC_E_DECIMALS")
+    echo "Bridge confirmed — $USDC_E_HUMAN USDC.e received on Tempo."
     break
   fi
-  echo "Waiting for bridge arrival... attempt $i/20 (balance: $USDC_E_ON_TEMPO)"
+  USDC_E_POLL_HUMAN=$(format_token_amount "$USDC_E_ON_TEMPO" "$(get_token_decimals "$BRIDGE_TOKEN_OUT" "$TEMPO_RPC_URL")")
+  echo "Waiting for bridge arrival... attempt $i/20 (balance: $USDC_E_POLL_HUMAN USDC.e)"
   sleep 30
 done
 [ "$USDC_E_ON_TEMPO" -ge "$BRIDGE_AMOUNT" ] || \

@@ -19,6 +19,14 @@ npx skills add Uniswap/uniswap-ai
 /plugin install uniswap-viem       # EVM integration (viem/wagmi)
 ```
 
+## Featured Skills
+
+| Skill                | Plugin          | Description                                                        |
+| -------------------- | --------------- | ------------------------------------------------------------------ |
+| `swap-integration`   | uniswap-trading | Integrate Uniswap swaps via Trading API, Universal Router, or SDKs |
+| `pay-with-any-token` | uniswap-trading | Pay HTTP 402 challenges (MPP/x402) using tokens via Uniswap swaps  |
+| `uniswap-v4-hooks`   | uniswap-hooks   | Secure Uniswap v4 hook development assistant                       |
+
 ## Documentation
 
 | Document                                   | Description                              |

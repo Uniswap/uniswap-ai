@@ -152,7 +152,10 @@ if [ "$X402_CHAIN_ID" = "4217" ]; then
     "balanceOf(address)(uint256)" "$WALLET_ADDRESS" \
     --rpc-url "$SOURCE_RPC_URL" 2>/dev/null || echo "0")
   if [ "$TEMPO_BALANCE" -lt "$X402_AMOUNT" ]; then
-    echo "Insufficient balance on Tempo ($TEMPO_BALANCE < $X402_AMOUNT)."
+    X402_DECIMALS=$(get_token_decimals "$X402_ASSET" "$SOURCE_RPC_URL")
+    TEMPO_BAL_HUMAN=$(format_token_amount "$TEMPO_BALANCE" "$X402_DECIMALS")
+    X402_AMT_HUMAN=$(format_token_amount "$X402_AMOUNT" "$X402_DECIMALS")
+    echo "Insufficient balance on Tempo ($TEMPO_BAL_HUMAN < $X402_AMT_HUMAN $X402_TOKEN_NAME)."
     echo "Acquire the asset first: run Phase 4A (swap to bridge asset) ->"
     echo "Phase 4B (bridge to Tempo) -> Phase 5, then return to Phase 6x."
     exit 1
@@ -164,8 +167,11 @@ ASSET_BALANCE=$(cast call "$X402_ASSET" \
   "balanceOf(address)(uint256)" "$WALLET_ADDRESS" \
   --rpc-url "$SOURCE_RPC_URL")
 if [ "$ASSET_BALANCE" -lt "$X402_AMOUNT" ]; then
+  X402_DECIMALS=${X402_DECIMALS:-$(get_token_decimals "$X402_ASSET" "$SOURCE_RPC_URL")}
+  ASSET_BAL_HUMAN=$(format_token_amount "$ASSET_BALANCE" "$X402_DECIMALS")
+  X402_AMT_HUMAN=$(format_token_amount "$X402_AMOUNT" "$X402_DECIMALS")
   echo "ERROR: Insufficient $X402_TOKEN_NAME balance on $X402_NETWORK."
-  echo "Have: $ASSET_BALANCE, need: $X402_AMOUNT"
+  echo "Have: $ASSET_BAL_HUMAN $X402_TOKEN_NAME, need: $X402_AMT_HUMAN $X402_TOKEN_NAME"
   echo "Acquire the asset first: if funds are on the same chain, run Phase 4A"
   echo "(swap to $X402_ASSET). If funds are on a different chain, run"
   echo "Phase 4A + Phase 4B (bridge to $X402_NETWORK) + Phase 5, then return here."
@@ -177,8 +183,7 @@ fi
 > signing anything:
 >
 > - Token: `$X402_TOKEN_NAME` (`$X402_ASSET`) on `$X402_NETWORK`
-> - Amount: `$X402_AMOUNT` base units
->   (e.g. `1000000` = 1.00 USDC for a 6-decimal token)
+> - Amount: `$(format_token_amount "$X402_AMOUNT" "$(get_token_decimals "$X402_ASSET" "$SOURCE_RPC_URL")")` `$X402_TOKEN_NAME`
 > - Recipient: `$X402_PAY_TO`
 > - Resource: `$X402_RESOURCE`
 >
