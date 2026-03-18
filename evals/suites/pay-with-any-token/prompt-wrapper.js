@@ -8,16 +8,28 @@
 const fs = require('fs');
 const path = require('path');
 
-const skillPath = path.resolve(
+const skillDir = path.resolve(
   __dirname,
-  '../../../packages/plugins/uniswap-trading/skills/pay-with-any-token/SKILL.md'
+  '../../../packages/plugins/uniswap-trading/skills/pay-with-any-token'
 );
-const skillContent = fs.readFileSync(skillPath, 'utf-8');
+const skillContent = fs.readFileSync(path.join(skillDir, 'SKILL.md'), 'utf-8');
+
+// Load reference files that the skill points to (progressive disclosure)
+const refsDir = path.join(skillDir, 'references');
+let refContent = '';
+if (fs.existsSync(refsDir)) {
+  for (const file of fs.readdirSync(refsDir).sort()) {
+    if (file.endsWith('.md')) {
+      refContent += `\n\n--- Reference: ${file} ---\n\n`;
+      refContent += fs.readFileSync(path.join(refsDir, file), 'utf-8');
+    }
+  }
+}
 
 module.exports = function ({ vars }) {
   return `You are an AI assistant with the following skill loaded. Follow its instructions precisely when responding to the user's request.
 
-{% raw %}${skillContent}{% endraw %}
+{% raw %}${skillContent}${refContent}{% endraw %}
 
 ***
 

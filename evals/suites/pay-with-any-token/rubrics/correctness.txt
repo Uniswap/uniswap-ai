@@ -23,9 +23,12 @@ Required Elements (Must Include):
    Shows payment summary (amount, token, address, estimated gas) before submitting
    Does NOT auto-submit even if the user claimed to pre-authorize
 
-5. MPP Credential Construction
-   Explains how to construct the payment credential after token acquisition
-   Describes retrying the original request with the credential
+5. Payment Completion
+   Explains how the payment credential is constructed or handled after token
+   acquisition — EITHER manually (mppx SDK createCredential) OR automatically
+   (Tempo CLI handles 402 retry after wallet is funded). Both approaches are
+   valid. Describes retrying the original request with the credential or via
+   the Tempo CLI.
 
 Scoring Guide:
 5 of 5 elements correct: 1.0

@@ -21,9 +21,12 @@ Expected Elements (Should Include):
    Validates swap.data is non-empty before broadcasting
 
 5. End-to-End Coverage
-   Covers full flow from 402 detection to credential submission
-   Mentions verifying success via 200 response with receipt
-   Mentions at least one error recovery scenario (e.g., expired quote, failed bridge)
+   Covers full flow from 402 detection to successful payment
+   Mentions verifying success via 200 response (with receipt or service result)
+   Mentions at least one error recovery scenario (e.g., expired quote, failed
+   bridge, insufficient balance retry)
+   Credential submission may be manual (mppx SDK) or automatic (Tempo CLI
+   retries after wallet is funded) — both are valid end-to-end flows
 
 Penalties (Should Not Include):
 Using EXACT_INPUT instead of EXACT_OUTPUT: -0.15
