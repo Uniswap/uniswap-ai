@@ -44,4 +44,4 @@ MIT License - see [LICENSE](./LICENSE) for details.
 
 ## Legal Disclaimer
 
-See [Usage Guidelines](./DISCLAIMER) for important information about intended use and financial information disclaimers.
+See [Usage Guidelines](./DISCLAIMER.md) for important information about intended use and financial information disclaimers.
