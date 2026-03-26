@@ -41,3 +41,7 @@ See [Project Overview](./docs/OVERVIEW.md) for development setup and contributio
 ## License
 
 MIT License - see [LICENSE](./LICENSE) for details.
+
+## Legal Disclaimer
+
+See [Usage Guidelines](./DISCLAIMER.md) for important information about intended use and financial information disclaimers.
