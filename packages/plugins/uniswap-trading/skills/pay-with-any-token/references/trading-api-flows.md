@@ -19,13 +19,23 @@ USDC to acquire.
 ```bash
 SOURCE_CHAIN_ID=8453              # Chain where you hold the source token (e.g. Base = 8453)
 TOKEN_IN_ADDRESS="0x..."          # Address of your source token on SOURCE_CHAIN_ID
-# For native ETH, use the WETH address for your chain (recommended — well-supported):
+# For native ETH, use the zero address (recommended — returns permitData: null,
+# no Permit2 signing needed):
+#   0x0000000000000000000000000000000000000000
+# The Universal Router wraps ETH before the swap, so msg.value (SWAP_VALUE) will be
+# non-zero in the swap response.
+#
+# Fallback: if the zero address returns a 400, try the WETH address for your chain:
 #   Base (8453):     0x4200000000000000000000000000000000000006
 #   Ethereum (1):    0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2
-# The Universal Router wraps ETH before the swap, so msg.value (SWAP_VALUE) will be
-# non-zero in the swap response. The ETH sentinel 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEEE
-# is also supported but try WETH first; use the sentinel only if WETH returns a 400.
-USDC_E_ADDRESS="0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"  # USDC on Base — update for other chains (see Key Addresses)
+# WETH may return non-null permitData requiring Permit2 signing (Step 4A-2.5).
+USDC_ADDRESS="0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"  # USDC on Base (8453)
+# For Ethereum (1): USDC_ADDRESS="0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+# See Key Addresses section in SKILL.md for other chains.
+CAST_ACCOUNT="uniswap-demo"      # Name of your cast keystore account (see Keystore Setup above)
+CAST_PASSWORD=""                  # Keystore password (empty string if none)
+SOURCE_RPC_URL="https://mainnet.base.org"  # RPC URL for SOURCE_CHAIN_ID
+# For Ethereum (1): SOURCE_RPC_URL="https://eth.llamarpc.com"
 REQUIRED_AMOUNT_IN="0"            # Use "0" for the initial approval check (Step 4A-1);
                                   # replace with the actual amountIn after Step 4A-2 (quote)
 USDC_E_AMOUNT_NEEDED="$REQUIRED_AMOUNT"  # For EXACT_OUTPUT: target = payment amount
@@ -45,6 +55,30 @@ USDC_E_AMOUNT_NEEDED="$REQUIRED_AMOUNT"  # For EXACT_OUTPUT: target = payment am
 Content-Type: application/json
 x-api-key: <UNISWAP_API_KEY>
 x-universal-router-version: 2.0
+```
+
+### Keystore Setup (recommended)
+
+Encrypted keystores avoid exposing raw private keys on the command line.
+Create one with `cast wallet import`:
+
+```bash
+cast wallet import <ACCOUNT_NAME> --interactive
+# Prompts for private key and password. Stores encrypted keystore in ~/.foundry/keystores/
+```
+
+All `cast send` examples below use `--account <ACCOUNT_NAME> --password <PW>`.
+If you prefer raw keys, substitute `--account ... --password ...` with
+`--private-key "$PRIVATE_KEY"` (some environments block this via hooks).
+
+### Hex-to-Decimal Conversion
+
+The Trading API returns hex values (e.g. `swap.value`), but `cast send --value`
+requires decimal (wei). Convert with:
+
+```bash
+hex_to_dec() { python3 -c "print(int('$1', 16))"; }
+# Usage: cast send <TO> <CALLDATA> --value "$(hex_to_dec "$SWAP_VALUE_HEX")"
 ```
 
 ### Step 4A-1 — Check approval
@@ -74,7 +108,7 @@ curl -s -X POST https://trade-api.gateway.uniswap.org/v1/check_approval \
 
 ### Step 4A-2 — Get exact-output quote for native USDC (bridge asset)
 
-> **Address note:** `USDC_E_ADDRESS` in the code below refers to the bridge
+> **Address note:** `USDC_ADDRESS` in the code below refers to the bridge
 > asset for the source chain. For Base (chain 8453), use native USDC:
 > `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913`. For Ethereum (chain 1), use
 > USDC: `0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48`. See Key Addresses section.
@@ -85,7 +119,7 @@ curl -s -X POST https://trade-api.gateway.uniswap.org/v1/check_approval \
 QUOTE_BODY=$(jq -n \
   --arg swapper "$WALLET_ADDRESS" \
   --arg tokenIn "$TOKEN_IN_ADDRESS" \
-  --arg tokenOut "$USDC_E_ADDRESS" \
+  --arg tokenOut "$USDC_ADDRESS" \
   --argjson tokenInChainId "$SOURCE_CHAIN_ID" \
   --argjson tokenOutChainId "$SOURCE_CHAIN_ID" \
   --arg amount "$USDC_E_AMOUNT_NEEDED" \
@@ -124,6 +158,11 @@ REQUIRED_AMOUNT_IN=$(echo "$QUOTE_RESPONSE" | jq -r '.quote.amountIn')
 > ERC-20 approval is required. `REQUIRED_AMOUNT_IN` is the ETH value sent with
 > the transaction — the approval re-check in Step 4A-1 is a no-op. Skip it and
 > proceed directly to Step 4A-2.5.
+>
+> **Quote expiration:** Quotes are valid for approximately **60 seconds**. Do not
+> delay between fetching the quote and broadcasting the swap. If user confirmation
+> or other steps take longer, re-fetch the quote immediately before calling `/swap`.
+> A stale quote will return empty `swap.data` from the `/swap` endpoint.
 
 ### Step 4A-2.5 — Sign the permitData
 
@@ -210,25 +249,27 @@ if [[ "$TOKEN_IN_ADDRESS" == "0x4200000000000000000000000000000000000006" || \
     echo "ERROR: SWAP_VALUE is zero for a native ETH swap — verify TOKEN_IN_ADDRESS and re-fetch the quote." && exit 1
 fi
 
-# Broadcast via cast (replace RPC URL with your source chain endpoint)
-SWAP_TX=$(cast send "$SWAP_TO" \
-  --data "$SWAP_DATA" \
-  --value "$SWAP_VALUE" \
-  --private-key "$PRIVATE_KEY" \
-  --rpc-url https://mainnet.base.org \
+# Broadcast via cast
+# Convert hex value to decimal (cast --value requires decimal wei)
+SWAP_VALUE_DEC=$(hex_to_dec "$SWAP_VALUE")
+
+SWAP_TX=$(cast send "$SWAP_TO" "$SWAP_DATA" \
+  --value "$SWAP_VALUE_DEC" \
+  --account "$CAST_ACCOUNT" --password "$CAST_PASSWORD" \
+  --rpc-url "$SOURCE_RPC_URL" \
   --json | jq -r '.transactionHash')
 
 # Wait for the swap to mine before bridging — a reverted swap leaves USDC at zero
-SWAP_STATUS=$(cast receipt "$SWAP_TX" --rpc-url https://mainnet.base.org --json | jq -r '.status')
+SWAP_STATUS=$(cast receipt "$SWAP_TX" --rpc-url "$SOURCE_RPC_URL" --json | jq -r '.status')
 [ "$SWAP_STATUS" = "0x1" ] || { echo "ERROR: Swap reverted (status=$SWAP_STATUS). Do not proceed to bridge." && exit 1; }
 echo "Swap confirmed: $SWAP_TX"
 
 # Verify USDC balance landed before proceeding to Phase 4B
-USDC_AFTER_SWAP=$(cast call "$USDC_E_ADDRESS" \
+USDC_AFTER_SWAP=$(cast call "$USDC_ADDRESS" \
   "balanceOf(address)(uint256)" "$WALLET_ADDRESS" \
-  --rpc-url https://mainnet.base.org)
+  --rpc-url "$SOURCE_RPC_URL")
 # Format balances for human-readable display (USDC = 6 decimals)
-USDC_DECIMALS=$(get_token_decimals "$USDC_E_ADDRESS" "https://mainnet.base.org")
+USDC_DECIMALS=$(get_token_decimals "$USDC_ADDRESS" "$SOURCE_RPC_URL")
 USDC_AFTER_HUMAN=$(format_token_amount "$USDC_AFTER_SWAP" "$USDC_DECIMALS")
 USDC_NEEDED_HUMAN=$(format_token_amount "$USDC_E_AMOUNT_NEEDED" "$USDC_DECIMALS")
 echo "USDC balance after swap: $USDC_AFTER_HUMAN USDC (need at least $USDC_NEEDED_HUMAN USDC)"
@@ -244,7 +285,7 @@ echo "USDC balance after swap: $USDC_AFTER_HUMAN USDC (need at least $USDC_NEEDE
 >
 > ```bash
 > USDC_E_AMOUNT_NEEDED="$REQUIRED_AMOUNT"
-> USDC_E_ADDRESS="0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"  # USDC on Base
+> USDC_ADDRESS="0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"  # USDC on Base
 > ```
 
 Use the Uniswap Trading API to bridge USDC from Base to USDC.e on Tempo. The
@@ -253,10 +294,17 @@ no manual contract calls required.
 
 **Bridge asset addresses:**
 
-| Chain              | Asset       | Address                                      |
-| ------------------ | ----------- | -------------------------------------------- |
-| Base (8453) — in   | Native USDC | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` |
-| Tempo (4217) — out | USDC.e      | `0x20C000000000000000000000b9537d11c60E8b50` |
+| Chain                 | Asset       | Address                                      |
+| --------------------- | ----------- | -------------------------------------------- |
+| Base (8453) — in      | Native USDC | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` |
+| Ethereum (1) — in     | USDC        | `0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48` |
+| Arbitrum (42161) — in | USDC.e      | `0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8` |
+| Tempo (4217) — out    | USDC.e      | `0x20C000000000000000000000b9537d11c60E8b50` |
+
+> **Source chain selection**: Check balances on all supported chains. Prefer the
+> chain with the lowest total cost (swap gas + bridge gas). Base has the cheapest
+> bridge gas (~$0.001), Ethereum is more expensive (~$0.25) but may be the only
+> chain where you hold assets.
 
 ### Step 4B-1 — Check approval
 
@@ -272,7 +320,7 @@ APPROVAL=$(curl -s "https://trade-api.gateway.uniswap.org/v1/check_approval" \
     --arg token         "$BRIDGE_TOKEN_IN" \
     --arg amount        "$BRIDGE_AMOUNT" \
     --arg walletAddress "$WALLET_ADDRESS" \
-    --argjson chainId 8453 \
+    --argjson chainId "$SOURCE_CHAIN_ID" \
     '{token: $token, amount: $amount, walletAddress: $walletAddress, chainId: $chainId}')")
 
 APPROVAL_TX=$(echo "$APPROVAL" | jq -r '.approval // empty')
@@ -289,14 +337,35 @@ If confirmed and `APPROVAL_TX` is non-empty:
 ```bash
 APPROVAL_TO=$(echo "$APPROVAL_TX"   | jq -r '.to')
 APPROVAL_DATA=$(echo "$APPROVAL_TX" | jq -r '.data')
-APPROVE_HASH=$(cast send "$APPROVAL_TO" \
-  --data "$APPROVAL_DATA" \
-  --private-key "$PRIVATE_KEY" \
-  --rpc-url https://mainnet.base.org \
+APPROVE_HASH=$(cast send "$APPROVAL_TO" "$APPROVAL_DATA" \
+  --account "$CAST_ACCOUNT" --password "$CAST_PASSWORD" \
+  --rpc-url "$SOURCE_RPC_URL" \
   --json | jq -r '.transactionHash')
-cast receipt "$APPROVE_HASH" --rpc-url https://mainnet.base.org > /dev/null
+cast receipt "$APPROVE_HASH" --rpc-url "$SOURCE_RPC_URL" > /dev/null
 echo "Approval confirmed: $APPROVE_HASH"
 ```
+
+> **Known issue:** The Trading API's `check_approval` may not cover the actual
+> bridge spender contract. If `check_approval` returns `null` but the bridge
+> reverts with "transfer amount exceeds allowance", run this on-chain check:
+>
+> ```bash
+> # Extract bridge spender from the /swap response (the contract the bridge calls transferFrom on)
+> # If you don't know the spender yet, get the bridge quote first (Step 4B-2), then
+> # call /swap to get the target address, and check allowance against it.
+> BRIDGE_SPENDER="$BRIDGE_TO"  # The 'to' field from the /swap response
+> ALLOWANCE=$(cast call "$BRIDGE_TOKEN_IN" \
+>   "allowance(address,address)(uint256)" "$WALLET_ADDRESS" "$BRIDGE_SPENDER" \
+>   --rpc-url "$SOURCE_RPC_URL")
+> if [ "$ALLOWANCE" -lt "$BRIDGE_AMOUNT" ]; then
+>   echo "Insufficient allowance for bridge spender. Approving..."
+>   cast send "$BRIDGE_TOKEN_IN" \
+>     "approve(address,uint256)" "$BRIDGE_SPENDER" \
+>     "115792089237316195423570985008687907853269984665640564039457584007913129639935" \
+>     --account "$CAST_ACCOUNT" --password "$CAST_PASSWORD" \
+>     --rpc-url "$SOURCE_RPC_URL" --json | jq -r '.transactionHash'
+> fi
+> ```
 
 ### Step 4B-2 — Get bridge quote (EXACT_OUTPUT)
 
@@ -306,7 +375,7 @@ BRIDGE_QUOTE=$(curl -s "https://trade-api.gateway.uniswap.org/v1/quote" \
   -H "x-api-key: $UNISWAP_API_KEY" \
   --data "$(jq -n \
     --arg tokenIn        "$BRIDGE_TOKEN_IN" \
-    --arg tokenInChainId "8453" \
+    --arg tokenInChainId "$SOURCE_CHAIN_ID" \
     --arg tokenOut       "$BRIDGE_TOKEN_OUT" \
     --arg tokenOutChainId "4217" \
     --arg amount         "$BRIDGE_AMOUNT" \
@@ -337,6 +406,9 @@ echo "Bridge quote: quoteId=$BRIDGE_QUOTE_ID fee=$BRIDGE_FEE eta=$BRIDGE_ETA"
 > - Recipient: `$WALLET_ADDRESS`
 >
 > Do not proceed until the user confirms.
+>
+> **Quote expiration:** Bridge quotes also expire after ~60 seconds. Re-fetch the
+> quote (Step 4B-2) if there was any delay before executing.
 
 ### Step 4B-3 — Execute the bridge
 
@@ -353,14 +425,16 @@ BRIDGE_TO=$(echo "$BRIDGE_RESPONSE"   | jq -r '.swap.to')
 BRIDGE_DATA=$(echo "$BRIDGE_RESPONSE" | jq -r '.swap.data')
 BRIDGE_VALUE=$(echo "$BRIDGE_RESPONSE"| jq -r '.swap.value // "0"')
 
-BRIDGE_TX=$(cast send "$BRIDGE_TO" \
-  --data "$BRIDGE_DATA" \
-  --value "$BRIDGE_VALUE" \
-  --private-key "$PRIVATE_KEY" \
-  --rpc-url https://mainnet.base.org \
+# Convert hex value to decimal
+BRIDGE_VALUE_DEC=$(hex_to_dec "$BRIDGE_VALUE")
+
+BRIDGE_TX=$(cast send "$BRIDGE_TO" "$BRIDGE_DATA" \
+  --value "$BRIDGE_VALUE_DEC" \
+  --account "$CAST_ACCOUNT" --password "$CAST_PASSWORD" \
+  --rpc-url "$SOURCE_RPC_URL" \
   --json | jq -r '.transactionHash')
 
-BRIDGE_STATUS=$(cast receipt "$BRIDGE_TX" --rpc-url https://mainnet.base.org --json | jq -r '.status')
+BRIDGE_STATUS=$(cast receipt "$BRIDGE_TX" --rpc-url "$SOURCE_RPC_URL" --json | jq -r '.status')
 [ "$BRIDGE_STATUS" = "0x1" ] || { echo "ERROR: Bridge tx reverted. Do not proceed."; exit 1; }
 echo "Bridge submitted: $BRIDGE_TX — waiting for funds on Tempo..."
 ```
@@ -394,3 +468,42 @@ Use this as `TOKEN_IN` in Phase 5 to swap to the required payment token.
 
 > **Do not re-submit** if the poll times out — duplicate bridge deposits result
 > in double payment. Have the user check the transaction on the Tempo explorer.
+
+### Step 4B-5 — Transfer USDC.e to Tempo wallet (if needed)
+
+The Trading API bridges to `WALLET_ADDRESS` on Tempo. If `WALLET_ADDRESS`
+differs from `TEMPO_WALLET_ADDRESS` (the Tempo CLI wallet), transfer the
+USDC.e so the Tempo CLI can use it to pay the 402.
+
+```bash
+if [ "$WALLET_ADDRESS" != "$TEMPO_WALLET_ADDRESS" ]; then
+  TRANSFER_DATA=$(cast calldata "transfer(address,uint256)" "$TEMPO_WALLET_ADDRESS" "$BRIDGE_AMOUNT")
+
+  # Show transfer details before sending
+  USDC_E_HUMAN=$(format_token_amount "$BRIDGE_AMOUNT" "6")
+  # (AskUserQuestion gate handled by the caller — confirm amount + destination before this step)
+
+  TRANSFER_TX=$(cast send "$BRIDGE_TOKEN_OUT" "$TRANSFER_DATA" \
+    --account "$CAST_ACCOUNT" --password "$CAST_PASSWORD" \
+    --rpc-url "$TEMPO_RPC_URL" \
+    --json | jq -r '.transactionHash')
+
+  TRANSFER_STATUS=$(cast receipt "$TRANSFER_TX" --rpc-url "$TEMPO_RPC_URL" --json | jq -r '.status')
+  [ "$TRANSFER_STATUS" = "0x1" ] || { echo "ERROR: Transfer to Tempo wallet reverted: $TRANSFER_TX"; exit 1; }
+  echo "USDC.e transferred to Tempo wallet ($TEMPO_WALLET_ADDRESS): $TRANSFER_TX"
+fi
+```
+
+After this step, `TEMPO_WALLET_ADDRESS` holds the required USDC.e and the
+Tempo CLI can retry the original `tempo request` to pay the 402.
+
+---
+
+## Future Optimization: Single Cross-Chain Swap
+
+A single cross-chain quote (e.g. ETH on Ethereum → USDC.e on Tempo) would
+collapse the 3-transaction flow (swap + bridge + transfer) into one. As of
+March 2026, the Trading API returns "No quotes available" for direct
+cross-chain swaps to Tempo (chain 4217). Monitor the Trading API changelog
+for cross-chain swap support to Tempo — when available, it eliminates Phase 4A
+and Step 4B-5 entirely.
