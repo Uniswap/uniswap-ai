@@ -1,0 +1,44 @@
+# Hook Type Accuracy Rubric
+
+Evaluate whether the response correctly selects and justifies the hook type from the v4-hook-generator
+decision table.
+
+## Required Elements (Must Include)
+
+Score based on how many of these are correctly addressed:
+
+1. **Correct Hook Type Named**
+   - For the dynamic LP fees use case, correctly identifies `BaseDynamicFee` as the primary recommendation
+   - Names one of the 14 valid hook types from the decision table (not an invented type)
+
+2. **Correct Justification**
+   - Explains why the selected type matches the user's stated goal (LP fee adjustment based on volatility)
+   - Does not recommend `BaseCustomCurve` for a fee-only goal (that would be wrong — custom curve
+     replaces AMM math entirely)
+
+3. **Distinction Between Similar Types**
+   - Correctly distinguishes `BaseDynamicFee` (LP fees) from `BaseOverrideFee` (swap fees)
+   - Explains which type is appropriate for LP fee adjustments specifically
+
+4. **No Incorrect Hook Type Recommended**
+   - Does not recommend `BaseHook` alone when a specialized type clearly fits
+   - Does not recommend a hook type unrelated to fee management (e.g., `AntiSandwichHook`, `BaseOracleHook`)
+
+5. **Important Caveats Noted**
+   - Mentions any relevant constraints or considerations for the chosen hook type
+   - Does not present the decision as trivial without acknowledging trade-offs
+
+## Scoring Guide
+
+- 5/5 elements correct: 1.0
+- 4/5 elements correct: 0.85
+- 3/5 elements correct: 0.7
+- 2/5 elements correct: 0.5
+- 1/5 elements correct: 0.3
+- 0/5 elements correct: 0.0
+
+## Instructions
+
+Evaluate the response for technical accuracy in hook type selection. The skill provides a 14-row
+decision table — the response should demonstrate the agent has used it correctly rather than
+guessing or recommending a generic base type when a specialized one is appropriate.

@@ -1,0 +1,47 @@
+# MCP Schema Correctness Rubric
+
+Evaluate whether the response produces a valid and complete MCP tool call JSON object matching
+the canonical schema from the v4-hook-generator skill.
+
+## Required Elements (Must Include)
+
+Score based on how many of these are correctly present in the generated JSON:
+
+1. **Required Top-Level Fields Present**
+   - JSON includes: `hook`, `name`, `permissions`, `access`, `shares`
+   - `hook` is set to `"AntiSandwichHook"` (matching the use case)
+   - `name` is set to `"AntiSandwichMEVHook"` (as specified)
+
+2. **All 14 Permission Flags Present and Correct**
+   - All 14 permission flags appear in the `permissions` object
+   - Only `beforeSwap` is `true`; all other 13 flags are `false`
+   - No flags are missing or misspelled
+
+3. **Shares and Access Correct**
+   - `shares.options` is `false` (hook does not issue share tokens)
+   - `access` is `"ownable"` (single deployer address)
+
+4. **Inputs Field Correct**
+   - `inputs.blockNumberOffset` is `2`
+   - `inputs.maxAbsTickDelta` is `50`
+
+5. **Post-Generation Steps Noted**
+   - Mentions HookMiner (address bit mining) as a required deployment step
+   - Notes that `safeCast` is set to `true` and `currencySettler` is set appropriately
+   - Mentions the MCP tool returns code only and does not write files
+
+## Scoring Guide
+
+- 5/5 elements correct: 1.0
+- 4/5 elements correct: 0.85
+- 3/5 elements correct: 0.7
+- 2/5 elements correct: 0.5
+- 1/5 elements correct: 0.3
+- 0/5 elements correct: 0.0
+
+## Instructions
+
+Evaluate the JSON for structural correctness and completeness against the canonical schema. A
+usable MCP tool call must have all required fields populated with the correct values for the
+specified use case. Pay particular attention to the permissions object — all 14 flags must be
+present and only `beforeSwap` should be `true`.

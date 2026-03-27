@@ -9,6 +9,7 @@ This plugin provides AI-powered, security-first assistance for creating Uniswap 
 ### Skills (./skills/)
 
 - **v4-security-foundations**: Security-first guide for v4 hook development (NoOp attacks, delta accounting, access control, audit checklists)
+- **v4-hook-generator**: Generate Uniswap v4 hook contracts via OpenZeppelin MCP (hook type selection, permission configuration, MCP tool call generation)
 
 ## Uniswap v4 Hooks Architecture
 
@@ -81,12 +82,14 @@ uniswap-hooks/
 ├── .claude-plugin/
 │   └── plugin.json
 ├── skills/
-│   └── v4-security-foundations/
-│       ├── SKILL.md
-│       └── references/
-│           ├── audit-checklist.md
-│           ├── base-hook-template.md
-│           └── vulnerabilities-catalog.md
+│   ├── v4-security-foundations/
+│   │   ├── SKILL.md
+│   │   └── references/
+│   │       ├── audit-checklist.md
+│   │       ├── base-hook-template.md
+│   │       └── vulnerabilities-catalog.md
+│   └── v4-hook-generator/
+│       └── SKILL.md
 ├── project.json
 ├── package.json
 ├── CLAUDE.md

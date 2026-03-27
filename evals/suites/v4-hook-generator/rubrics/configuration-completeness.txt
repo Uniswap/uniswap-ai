@@ -1,0 +1,51 @@
+# Configuration Completeness Rubric
+
+Evaluate whether the response addresses all six items from the Minimal Decision Checklist and
+provides complete, accurate configuration guidance.
+
+## Required Elements (Must Include)
+
+Score based on how many of these are correctly addressed:
+
+1. **Hook Type Decision Addressed**
+   - Response explains how to choose the hook type for the use case
+   - References or uses the decision table to justify the selection
+
+2. **Permission Flags Addressed**
+   - Identifies which permissions are needed (minimal set principle: only what logic requires)
+   - Explains the risk level of each enabled permission
+   - Does not recommend enabling unnecessary permissions
+
+3. **Utility Libraries Addressed**
+   - Mentions at least one utility library consideration (`currencySettler`, `safeCast`,
+     or `transientStorage`) in the context of the use case
+   - Guidance is correct (e.g., recommends `safeCast` when arithmetic conversions are involved)
+
+4. **Shares Configuration Addressed**
+   - Explains the relevant shares option(s) for the use case
+   - Correctly describes when to use `false` vs. a token standard
+
+5. **Access Control Addressed**
+   - Explains the relevant access control option(s) for the use case
+   - Correctly describes how the chosen option affects the constructor signature
+
+6. **Address Encoding / HookMiner Addressed** (for permission-related questions)
+   - Explains that enabled permissions must be encoded as bits in the hook's deployed address
+   - Names HookMiner as the tool used to mine a deployment salt matching the permission bit pattern
+
+## Scoring Guide
+
+- 6/6 elements correct: 1.0
+- 5/6 elements correct: 0.9
+- 4/6 elements correct: 0.75
+- 3/6 elements correct: 0.6
+- 2/6 elements correct: 0.4
+- 1/6 elements correct: 0.2
+- 0/6 elements correct: 0.0
+
+## Instructions
+
+Evaluate whether the response works through all six items on the Minimal Decision Checklist. A
+complete configuration response should not skip any of the six decisions, as each one affects the
+generated hook contract. For shares-and-access-control questions, the address encoding element
+may be omitted without penalty if it is not relevant to the question asked.
