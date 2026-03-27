@@ -453,7 +453,7 @@ for i in $(seq 1 20); do
     "balanceOf(address)(uint256)" "$WALLET_ADDRESS" \
     --rpc-url "$TEMPO_RPC_URL" 2>/dev/null || echo "0")
   USDC_E_ON_TEMPO=$(echo "$RAW_BALANCE" | awk '{print $1}')
-  if [ "$USDC_E_ON_TEMPO" -ge "$BRIDGE_AMOUNT" ] 2>/dev/null; then
+  if [[ "$USDC_E_ON_TEMPO" =~ ^[0-9]+$ ]] && [ "$USDC_E_ON_TEMPO" -ge "$BRIDGE_AMOUNT" ]; then
     USDC_E_DECIMALS=$(get_token_decimals "$BRIDGE_TOKEN_OUT" "$TEMPO_RPC_URL")
     USDC_E_HUMAN=$(format_token_amount "$USDC_E_ON_TEMPO" "$USDC_E_DECIMALS")
     echo "Bridge confirmed — $USDC_E_HUMAN USDC.e received on Tempo."

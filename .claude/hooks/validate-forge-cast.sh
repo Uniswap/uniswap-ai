@@ -44,7 +44,7 @@ fi
 # Now only blocks key-assignment patterns and key-piping to wallet commands.
 
 # 1) Key in variable assignment: KEY=0x..., export KEY=0x..., PRIVATE_KEY="0x..."
-if echo "$COMMAND" | grep -qiE '(private.?key|secret.?key|signing.?key)\s*=\s*["\x27]?0x[0-9a-fA-F]{64}\b'; then
+if echo "$COMMAND" | grep -qiE $'(private.?key|secret.?key|signing.?key)\\s*=\\s*["\']?0x[0-9a-fA-F]{64}\\b'; then
   echo '{"decision":"block","reason":"BLOCKED: Raw hex private key in variable assignment. Use --account (encrypted keystore) or --ledger (hardware wallet) instead."}'
   exit 0
 fi
