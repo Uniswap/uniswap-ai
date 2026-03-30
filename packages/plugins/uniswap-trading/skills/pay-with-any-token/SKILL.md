@@ -54,6 +54,13 @@ confirmation):
 After setup, report: install location, version (`--version`), wallet status
 (address, balance). If balance is 0, direct user to `tempo wallet fund`.
 
+> **Minimum balance reserve:** Keep at least **0.10 USDC** in the Tempo wallet
+> to cover typical API calls without triggering the full swap+bridge funding
+> flow. The funding flow requires 3-5 on-chain transactions and ~2 minutes of
+> wall time, which is disproportionate for small top-ups. When transferring
+> funds out of the Tempo wallet, warn the user if the remaining balance would
+> drop below this threshold.
+
 ## Using Tempo Services
 
 ```bash

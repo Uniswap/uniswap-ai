@@ -345,14 +345,13 @@ cast receipt "$APPROVE_HASH" --rpc-url "$SOURCE_RPC_URL" > /dev/null
 echo "Approval confirmed: $APPROVE_HASH"
 ```
 
-> **Known issue:** The Trading API's `check_approval` may not cover the actual
-> bridge spender contract. If `check_approval` returns `null` but the bridge
-> reverts with "transfer amount exceeds allowance", run this on-chain check:
+> **IMPORTANT — bridge spender approval:** The Trading API's `check_approval`
+> only covers the Permit2 contract. The bridge contract itself (the `to` address
+> from the `/swap` response) also needs an ERC-20 allowance. **Always run this
+> on-chain check after getting the bridge swap response in Step 4B-3**, before
+> broadcasting the bridge transaction:
 >
 > ```bash
-> # Extract bridge spender from the /swap response (the contract the bridge calls transferFrom on)
-> # If you don't know the spender yet, get the bridge quote first (Step 4B-2), then
-> # call /swap to get the target address, and check allowance against it.
 > BRIDGE_SPENDER="$BRIDGE_TO"  # The 'to' field from the /swap response
 > ALLOWANCE=$(cast call "$BRIDGE_TOKEN_IN" \
 >   "allowance(address,address)(uint256)" "$WALLET_ADDRESS" "$BRIDGE_SPENDER" \
@@ -366,6 +365,9 @@ echo "Approval confirmed: $APPROVE_HASH"
 >     --rpc-url "$SOURCE_RPC_URL" --json | jq -r '.transactionHash'
 > fi
 > ```
+>
+> Skipping this step will cause the bridge transaction to revert with
+> "ERC20: transfer amount exceeds allowance".
 
 ### Step 4B-2 — Get bridge quote (EXACT_OUTPUT)
 
@@ -446,17 +448,18 @@ Poll for USDC.e balance on Tempo every 30 seconds for up to 10 minutes:
 ```bash
 TEMPO_RPC_URL="https://rpc.presto.tempo.xyz"
 for i in $(seq 1 20); do
-  USDC_E_ON_TEMPO=$(cast call "$BRIDGE_TOKEN_OUT" \
+  # cast call returns "123456 [1.234e5]" — strip the bracket suffix to get a plain integer
+  RAW_BALANCE=$(cast call "$BRIDGE_TOKEN_OUT" \
     "balanceOf(address)(uint256)" "$WALLET_ADDRESS" \
     --rpc-url "$TEMPO_RPC_URL" 2>/dev/null || echo "0")
-  if [ "$USDC_E_ON_TEMPO" -ge "$BRIDGE_AMOUNT" ]; then
+  USDC_E_ON_TEMPO=$(echo "$RAW_BALANCE" | awk '{print $1}')
+  if [[ "$USDC_E_ON_TEMPO" =~ ^[0-9]+$ ]] && [ "$USDC_E_ON_TEMPO" -ge "$BRIDGE_AMOUNT" ]; then
     USDC_E_DECIMALS=$(get_token_decimals "$BRIDGE_TOKEN_OUT" "$TEMPO_RPC_URL")
     USDC_E_HUMAN=$(format_token_amount "$USDC_E_ON_TEMPO" "$USDC_E_DECIMALS")
     echo "Bridge confirmed — $USDC_E_HUMAN USDC.e received on Tempo."
     break
   fi
-  USDC_E_POLL_HUMAN=$(format_token_amount "$USDC_E_ON_TEMPO" "$(get_token_decimals "$BRIDGE_TOKEN_OUT" "$TEMPO_RPC_URL")")
-  echo "Waiting for bridge arrival... attempt $i/20 (balance: $USDC_E_POLL_HUMAN USDC.e)"
+  echo "Waiting for bridge arrival... attempt $i/20 (balance: $USDC_E_ON_TEMPO base units)"
   sleep 30
 done
 [ "$USDC_E_ON_TEMPO" -ge "$BRIDGE_AMOUNT" ] || \
@@ -483,9 +486,11 @@ if [ "$WALLET_ADDRESS" != "$TEMPO_WALLET_ADDRESS" ]; then
   USDC_E_HUMAN=$(format_token_amount "$BRIDGE_AMOUNT" "6")
   # (AskUserQuestion gate handled by the caller — confirm amount + destination before this step)
 
+  # Tempo chain gas estimation is unreliable — always set an explicit gas limit
   TRANSFER_TX=$(cast send "$BRIDGE_TOKEN_OUT" "$TRANSFER_DATA" \
     --account "$CAST_ACCOUNT" --password "$CAST_PASSWORD" \
     --rpc-url "$TEMPO_RPC_URL" \
+    --gas-limit 100000 \
     --json | jq -r '.transactionHash')
 
   TRANSFER_STATUS=$(cast receipt "$TRANSFER_TX" --rpc-url "$TEMPO_RPC_URL" --json | jq -r '.status')

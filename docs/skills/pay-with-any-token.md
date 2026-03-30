@@ -78,6 +78,13 @@ This skill is **not** needed for regular token swaps. Use the
 
 Payment destination is always the **Tempo network** (chain ID `4217`).
 
+## Best Practices
+
+- **Minimum balance reserve**: Keep at least **0.10 USDC** in the Tempo wallet.
+  The funding flow (swap + bridge + transfer) requires 3-5 on-chain transactions
+  and ~2 minutes of wall time — disproportionate for topping up small shortfalls.
+  When transferring funds out, avoid depleting below this threshold.
+
 ## Main Workflow
 
 1. **Setup** — Install Tempo CLI, login, verify wallet
