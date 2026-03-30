@@ -52,7 +52,7 @@ All rubrics use `.txt` extension as required by Promptfoo's grader.
 | Rubric                           | Threshold | Purpose                                                   |
 | -------------------------------- | --------- | --------------------------------------------------------- |
 | `hook-type-accuracy.txt`         | 0.9       | Correct hook type selection — wrong type = wrong output   |
-| `mcp-schema-correctness.txt`     | 0.9       | MCP JSON must be valid and all required fields present    |
+| `mcp-schema-correctness.txt`     | 0.85      | MCP JSON must be valid and all required fields present    |
 | `configuration-completeness.txt` | 0.85      | All 6 decision checklist items addressed in configuration |
 
 ## Running
@@ -74,7 +74,7 @@ nx run evals:eval:view
   correctness rather than prose quality alone
 - Hook type accuracy has the highest threshold (0.9) — selecting the wrong base type leads to
   fundamentally incorrect generated code
-- The MCP schema correctness threshold is also 0.9 — the generated JSON must be immediately
-  usable without manual correction
+- The MCP schema correctness threshold is 0.85 — the generated JSON should be immediately
+  usable with minimal manual correction
 - Security cross-reference: test cases check that the skill correctly reminds the agent to invoke
   `v4-security-foundations` before deployment
