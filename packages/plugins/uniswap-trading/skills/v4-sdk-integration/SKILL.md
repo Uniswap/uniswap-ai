@@ -83,6 +83,8 @@ const routePlanner = new RoutePlanner();
 routePlanner.addCommand(CommandType.V4_SWAP, [v4Planner.actions, v4Planner.params]);
 
 const deadline = Math.floor(Date.now() / 1000) + 3600;
+// Note: universalRouter.execute() is pseudocode for the viem call pattern.
+// With viem, use: walletClient.writeContract({ address: UNIVERSAL_ROUTER_ADDRESS, abi: universalRouterAbi, functionName: 'execute', args: [routePlanner.commands, [v4Planner.finalize()], deadline], ...txOptions })
 await universalRouter.execute(routePlanner.commands, [v4Planner.finalize()], deadline, txOptions);
 ```
 
@@ -104,6 +106,8 @@ const routePlanner = new RoutePlanner();
 routePlanner.addCommand(CommandType.V4_SWAP, [v4Planner.actions, v4Planner.params]);
 
 const deadline = Math.floor(Date.now() / 1000) + 3600;
+// Note: universalRouter.execute() is pseudocode for the viem call pattern.
+// With viem, use: walletClient.writeContract({ address: UNIVERSAL_ROUTER_ADDRESS, abi: universalRouterAbi, functionName: 'execute', args: [routePlanner.commands, [v4Planner.finalize()], deadline], ...txOptions })
 await universalRouter.execute(routePlanner.commands, [v4Planner.finalize()], deadline, txOptions);
 ```
 
