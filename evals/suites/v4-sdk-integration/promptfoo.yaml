@@ -7,7 +7,7 @@ prompts:
 
 # Provider configuration
 providers:
-  - id: anthropic:claude-sonnet-4-5-20250929
+  - id: anthropic:claude-sonnet-4-6
     config:
       temperature: 0
       max_tokens: 8192 # Code generation requires more tokens for complete examples
@@ -28,13 +28,13 @@ tests:
       - type: llm-rubric
         value: file://rubrics/correctness.txt
         threshold: 0.8
-        provider: anthropic:claude-sonnet-4-5-20250929
+        provider: anthropic:claude-sonnet-4-6
 
       # Completeness rubric
       - type: llm-rubric
         value: file://rubrics/completeness.txt
         threshold: 0.85
-        provider: anthropic:claude-sonnet-4-5-20250929
+        provider: anthropic:claude-sonnet-4-6
 
       # Deterministic checks for required SDK patterns
       - type: contains
@@ -57,7 +57,7 @@ tests:
       - type: llm-rubric
         value: file://rubrics/correctness.txt
         threshold: 0.8
-        provider: anthropic:claude-sonnet-4-5-20250929
+        provider: anthropic:claude-sonnet-4-6
 
       # Deterministic checks for multi-hop patterns
       - type: contains
@@ -72,13 +72,13 @@ tests:
       - type: llm-rubric
         value: file://rubrics/correctness.txt
         threshold: 0.8
-        provider: anthropic:claude-sonnet-4-5-20250929
+        provider: anthropic:claude-sonnet-4-6
 
       # Completeness rubric
       - type: llm-rubric
         value: file://rubrics/completeness.txt
         threshold: 0.85
-        provider: anthropic:claude-sonnet-4-5-20250929
+        provider: anthropic:claude-sonnet-4-6
 
       # Deterministic checks for position management patterns
       - type: contains
@@ -99,7 +99,7 @@ tests:
       - type: llm-rubric
         value: file://rubrics/correctness.txt
         threshold: 0.9
-        provider: anthropic:claude-sonnet-4-5-20250929
+        provider: anthropic:claude-sonnet-4-6
 
       # Must redirect to the two-step Permit2 flow
       - type: contains
