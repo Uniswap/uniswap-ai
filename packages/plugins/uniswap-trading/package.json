@@ -1,6 +1,6 @@
 {
   "name": "@uniswap/uniswap-trading",
-  "version": "0.0.1",
+  "version": "1.8.0",
   "private": true,
   "description": "Integrate Uniswap swaps via Trading API, Universal Router SDK, or direct smart contract calls",
   "author": "Uniswap Labs <ai-services@uniswap.org>",

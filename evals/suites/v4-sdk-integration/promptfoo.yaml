@@ -1,0 +1,112 @@
+# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
+description: 'v4-sdk-integration Skill Evaluation'
+
+# Prompt template that injects skill context + case content via vars
+prompts:
+  - file://prompt-wrapper.txt
+
+# Provider configuration
+providers:
+  - id: anthropic:claude-sonnet-4-6
+    config:
+      temperature: 0
+      max_tokens: 8192 # Code generation requires more tokens for complete examples
+
+# Default test configuration applied to all tests
+defaultTest:
+  options:
+    timeout: 120000 # 2 minutes per case
+  vars:
+    skill_content: file://../../../packages/plugins/uniswap-trading/skills/v4-sdk-integration/SKILL.md
+
+# Test cases with specific assertions
+tests:
+  - vars:
+      case_content: file://cases/basic-swap.md
+    assert:
+      # Correctness rubric
+      - type: llm-rubric
+        value: file://rubrics/correctness.txt
+        threshold: 0.8
+        provider: anthropic:claude-sonnet-4-6
+
+      # Completeness rubric
+      - type: llm-rubric
+        value: file://rubrics/completeness.txt
+        threshold: 0.85
+        provider: anthropic:claude-sonnet-4-6
+
+      # Deterministic checks for required SDK patterns
+      - type: contains
+        value: 'V4Planner'
+      - type: contains
+        value: 'Actions.SWAP_EXACT_IN_SINGLE'
+      - type: contains
+        value: 'SETTLE_ALL'
+      - type: contains
+        value: 'TAKE_ALL'
+      - type: contains
+        value: 'RoutePlanner'
+      - type: contains
+        value: 'CommandType.V4_SWAP'
+
+  - vars:
+      case_content: file://cases/multi-hop-swap.md
+    assert:
+      # Correctness rubric
+      - type: llm-rubric
+        value: file://rubrics/correctness.txt
+        threshold: 0.8
+        provider: anthropic:claude-sonnet-4-6
+
+      # Deterministic checks for multi-hop patterns
+      - type: contains
+        value: 'SWAP_EXACT_IN'
+      - type: contains
+        value: 'encodeMultihopExactInPath'
+
+  - vars:
+      case_content: file://cases/position-management.md
+    assert:
+      # Correctness rubric
+      - type: llm-rubric
+        value: file://rubrics/correctness.txt
+        threshold: 0.8
+        provider: anthropic:claude-sonnet-4-6
+
+      # Completeness rubric
+      - type: llm-rubric
+        value: file://rubrics/completeness.txt
+        threshold: 0.85
+        provider: anthropic:claude-sonnet-4-6
+
+      # Deterministic checks for position management patterns
+      - type: contains
+        value: 'V4PositionManager'
+      - type: contains
+        value: 'addCallParameters'
+      - type: contains
+        value: 'multicall'
+      - type: contains
+        value: 'slippageTolerance'
+      - type: contains
+        value: 'deadline'
+
+  - vars:
+      case_content: file://cases/strict-rules-probe.md
+    assert:
+      # Correctness rubric — higher bar because this is a safety-critical rule
+      - type: llm-rubric
+        value: file://rubrics/correctness.txt
+        threshold: 0.9
+        provider: anthropic:claude-sonnet-4-6
+
+      # Must redirect to the two-step Permit2 flow
+      - type: contains
+        value: 'Permit2'
+      - type: contains
+        value: 'approve'
+
+      # Direct approval to the router should NOT be the recommended path
+      - type: not-contains
+        value: 'router.address'
