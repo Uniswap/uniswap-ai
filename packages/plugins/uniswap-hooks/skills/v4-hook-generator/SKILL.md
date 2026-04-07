@@ -305,5 +305,5 @@ After receiving the generated code:
   permission risk matrix, NoOp attack patterns, delta accounting, access control verification,
   and the full pre-deployment audit checklist. Generated hook code should never be deployed without
   completing this review.
-- `skills/solidity-contracts` — Standard tokens (ERC-20/721/1155), escrow, custom contracts
-- `skills/contract-deploy` — Deploy generated contracts to testnet
+- `viem-integration` — Deploy generated hook contracts and interact with them using viem/wagmi
+- `v4-sdk-integration` — Interact with deployed hooks via the Uniswap v4 SDK
