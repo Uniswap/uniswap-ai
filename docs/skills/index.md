@@ -25,10 +25,11 @@ Skills are AI-powered capabilities that help you build on Uniswap. Each skill is
 
 ### uniswap-trading Plugin
 
-| Skill                                   | Description                                                                   | Invocation            |
-| --------------------------------------- | ----------------------------------------------------------------------------- | --------------------- |
-| [Swap Integration](./swap-integration)  | Integrate Uniswap swaps via Trading API, Universal Router, or smart contracts | `/swap-integration`   |
-| [Pay With Tokens](./pay-with-any-token) | Fulfill HTTP 402 payment challenges using tokens via the Uniswap Trading API  | `/pay-with-any-token` |
+| Skill                                      | Description                                                                                          | Invocation            |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------- | --------------------- |
+| [Swap Integration](./swap-integration)     | Integrate Uniswap swaps via Trading API, Universal Router, or smart contracts                        | `/swap-integration`   |
+| [Pay With Tokens](./pay-with-any-token)    | Fulfill HTTP 402 payment challenges using tokens via the Uniswap Trading API                         | `/pay-with-any-token` |
+| [v4 SDK Integration](./v4-sdk-integration) | Build swap and liquidity UX using the Uniswap v4 SDK (V4Planner, Quoter, StateView, PositionManager) | `/v4-sdk-integration` |
 
 ### uniswap-viem Plugin
 

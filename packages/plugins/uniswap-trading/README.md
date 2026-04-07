@@ -10,10 +10,11 @@ claude plugin add @uniswap/uniswap-trading
 
 ## Skills
 
-| Skill                | Description                                                        |
-| -------------------- | ------------------------------------------------------------------ |
-| `swap-integration`   | Integrate Uniswap swaps via Trading API, Universal Router, or SDKs |
-| `pay-with-any-token` | Pay HTTP 402 challenges (MPP/x402) using tokens via Uniswap swaps  |
+| Skill                | Description                                                                                                   |
+| -------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `swap-integration`   | Integrate Uniswap swaps via Trading API, Universal Router, or SDKs                                            |
+| `pay-with-any-token` | Pay HTTP 402 challenges (MPP/x402) using tokens via Uniswap swaps                                             |
+| `v4-sdk-integration` | Build swap and liquidity UX using the Uniswap v4 SDK directly (V4Planner, Quoter, StateView, PositionManager) |
 
 ## Use Cases
 
@@ -24,6 +25,7 @@ This plugin helps developers build:
 - **Smart Contract Integrations** - Solidity contracts calling Universal Router
 - **Smart Account (ERC-4337) Swaps** - Automated swaps via delegated smart accounts
 - **L2 DeFi Applications** - Handling WETH unwrapping and chain-specific patterns
+- **v4 SDK Swap/Liquidity Apps** - Direct SDK integration using V4Planner, Quoter, and PositionManager without the Trading API
 
 ## Quick Start
 

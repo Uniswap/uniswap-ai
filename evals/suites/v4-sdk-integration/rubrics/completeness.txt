@@ -1,0 +1,57 @@
+# Completeness Rubric for v4-sdk-integration
+
+Evaluate whether the generated output includes all expected elements for a complete v4 SDK integration.
+
+## Expected Elements (Should Include)
+
+Score based on how many of these are present:
+
+1. **Transaction Deadline**
+   - Sets a deadline on all swap and position management operations
+   - Deadline is computed as a future timestamp (e.g., current time + buffer)
+   - Not omitted or left as a hardcoded past timestamp
+
+2. **Native ETH Handling**
+   - Uses `Ether.onChain(chainId)` (or `NativeCurrency`) to represent native ETH in v4 contexts
+   - Does NOT wrap native ETH as WETH when constructing v4 pool keys or swap inputs
+   - Correctly handles native ETH as a zero-approval input (no Permit2 required)
+
+3. **Slippage Tolerance**
+   - Specifies slippage tolerance on swap and liquidity operations
+   - Uses a meaningful value (e.g., Percent from sdk-core) rather than zero or unbounded
+
+4. **Chain-Specific Address Lookup**
+   - Notes or demonstrates that contract addresses (PoolManager, Universal Router, Quoter,
+     StateView, PositionManager) differ per chain
+   - Does NOT hardcode a single address without acknowledging chain dependency
+   - Permit2 address is the only address that is consistent across chains
+
+5. **Error Handling**
+   - Includes try/catch or error handling for async operations
+   - Handles potential failures from Quoter callStatic calls
+   - Provides meaningful error context rather than swallowing errors silently
+
+## Penalties (Should Not Include)
+
+Deduct points for:
+
+- Calling PoolManager directly for swap execution instead of using V4Planner/Universal Router (-0.15)
+- Skipping Permit2 and approving the Universal Router directly on ERC20 tokens (-0.1)
+- Hardcoding contract addresses without noting chain-specific lookup requirement (-0.1)
+
+## Scoring Guide
+
+Base score from expected elements:
+
+- 5/5 elements: 1.0
+- 4/5 elements: 0.85
+- 3/5 elements: 0.65
+- 2/5 elements: 0.5
+- 1/5 elements: 0.3
+- 0/5 elements: 0.0
+
+Then subtract any penalties.
+
+## Instructions
+
+Count the expected elements present, then apply any penalties for issues found. Provide the final score.
