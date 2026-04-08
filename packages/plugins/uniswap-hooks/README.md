@@ -34,6 +34,31 @@ Or ask about security:
 "How do I prevent NoOp attacks in my v4 hook?"
 ```
 
+### v4-hook-generator
+
+Generate Uniswap v4 hook contracts using the OpenZeppelin Contracts Wizard MCP. Covers:
+
+- Hook type selection from a 14-type decision table
+- Permission flag configuration (all 14 flags)
+- Utility library selection (currencySettler, safeCast, transientStorage)
+- Shares and access control configuration
+- Canonical MCP tool call JSON assembly
+
+**Usage:**
+
+```text
+/v4-hook-generator
+```
+
+Or describe what you want to build:
+
+```text
+"Generate a v4 hook with dynamic fees based on volatility"
+"Create a hook that implements custom accounting for my AMM curve"
+```
+
+**Note**: Run `/v4-security-foundations` after generation to audit the produced hook code for fund-handling risks.
+
 ## Installation
 
 ### Via Skills CLI (Any Agent)

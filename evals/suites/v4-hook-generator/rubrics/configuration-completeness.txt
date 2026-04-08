@@ -1,0 +1,69 @@
+# Configuration Completeness Rubric
+
+Evaluate whether the response addresses the relevant items from the Minimal Decision Checklist
+for the specific question asked. Questions may be narrowly scoped (e.g., permissions only, shares
+only) — only penalize an element if the question actually asked about it.
+
+## Elements (Score Only What the Question Covers)
+
+1. **Hook Type Decision Addressed**
+   - Response explains how to choose the hook type for the use case
+   - References or uses the decision table to justify the selection
+   - **Required only when**: the question asks about hook type selection
+
+2. **Permission Flags Addressed**
+   - Identifies which permissions are needed (minimal set principle: only what logic requires)
+   - Explains the risk level of each enabled permission
+   - Does not recommend enabling unnecessary permissions
+   - **Required only when**: the question asks about permission configuration
+
+3. **Utility Libraries Addressed**
+   - Mentions at least one utility library consideration (`currencySettler`, `safeCast`,
+     or `transientStorage`) in the context of the use case
+   - Guidance is correct (e.g., recommends `safeCast` when arithmetic conversions are involved)
+   - **Required only when**: the question asks about utility library selection or hook generation
+
+4. **Shares Configuration Addressed**
+   - Explains the relevant shares option(s) for the use case
+   - Correctly describes when to use `false` vs. a token standard
+   - **Required only when**: the question asks about shares configuration
+
+5. **Access Control Addressed**
+   - Explains the relevant access control option(s) for the use case
+   - Correctly describes how the chosen option affects the constructor signature
+   - **Required only when**: the question asks about access control or constructor shape
+
+6. **Address Encoding / HookMiner Addressed**
+   - Explains that enabled permissions must be encoded as bits in the hook's deployed address
+   - Names HookMiner as the tool used to mine a deployment salt matching the permission bit pattern
+   - **Required only when**: the question asks about permissions, deployment, or address encoding
+
+## Scoring Guide
+
+Score based on how many of the **applicable** elements (those covered by the question) are
+correctly addressed:
+
+- All applicable elements correct: 1.0
+- All but one applicable element correct: 0.9
+- Missing two applicable elements: 0.75
+- Missing three applicable elements: 0.6
+- Missing four applicable elements: 0.4
+- Missing five or more applicable elements: 0.2 or lower
+
+## Pass Criteria
+
+Set `pass: true` when the score is **0.85 or higher** based on applicable elements only.
+
+## Instructions
+
+1. First, identify which of the six elements the question actually asks about. Elements not
+   covered by the question's scope should be excluded from scoring entirely.
+2. Score the response based only on the applicable elements.
+3. Set `pass: true` when the resulting score is 0.85 or above.
+
+Example scope mapping:
+- Permission-focused questions: elements 2 and 6 are required; elements 1, 3, 4, 5 are excluded
+  unless the question explicitly mentions them
+- Shares/access-control questions: elements 4 and 5 are required; element 6 is excluded unless
+  the question asks about deployment or address encoding
+- Full hook generation questions: all six elements apply

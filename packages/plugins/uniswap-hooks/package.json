@@ -1,6 +1,6 @@
 {
   "name": "@uniswap/uniswap-hooks",
-  "version": "0.0.1",
+  "version": "1.6.0",
   "private": true,
   "description": "AI-powered assistance for creating Uniswap v4 hooks - includes custom fee hooks and more",
   "author": "Uniswap Labs <ai-services@uniswap.org>",

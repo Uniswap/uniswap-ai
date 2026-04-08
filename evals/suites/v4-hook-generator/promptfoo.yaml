@@ -1,0 +1,108 @@
+# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
+description: 'V4 Hook Generator Skill Evaluation'
+
+# Prompt template that injects skill context + case content via vars
+prompts:
+  - file://prompt-wrapper.txt
+
+# Provider configuration
+providers:
+  - id: anthropic:claude-sonnet-4-5-20250929
+    config:
+      temperature: 0
+      max_tokens: 4096
+
+# Default test configuration applied to all tests
+defaultTest:
+  options:
+    timeout: 120000 # 2 minutes per case
+  vars:
+    skill_content: file://../../../packages/plugins/uniswap-hooks/skills/v4-hook-generator/SKILL.md
+
+# Test cases with specific assertions
+tests:
+  # Test 1: Hook Type Selection
+  - vars:
+      case_content: file://cases/hook-type-selection.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/hook-type-accuracy.txt
+        threshold: 0.9
+        provider: anthropic:claude-sonnet-4-5-20250929
+
+      # Must name one of the 14 valid hook types
+      - type: contains-any
+        value:
+          - 'BaseHook'
+          - 'BaseAsyncSwap'
+          - 'BaseCustomAccounting'
+          - 'BaseCustomCurve'
+          - 'BaseDynamicFee'
+          - 'BaseOverrideFee'
+          - 'BaseDynamicAfterFee'
+          - 'BaseHookFee'
+          - 'AntiSandwichHook'
+          - 'LiquidityPenaltyHook'
+          - 'LimitOrderHook'
+          - 'ReHypothecationHook'
+          - 'BaseOracleHook'
+          - 'OracleHookWithV3Adapters'
+
+  # Test 2: MCP Tool Call Generation
+  - vars:
+      case_content: file://cases/mcp-tool-call-generation.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/mcp-schema-correctness.txt
+        threshold: 0.85
+        provider: anthropic:claude-sonnet-4-5-20250929
+
+      # Must include required MCP JSON fields
+      - type: contains
+        value: '"hook"'
+      - type: contains
+        value: '"permissions"'
+      - type: contains
+        value: '"access"'
+
+  # Test 3: Permission Configuration
+  - vars:
+      case_content: file://cases/permission-configuration.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/configuration-completeness.txt
+        threshold: 0.85
+        provider: anthropic:claude-sonnet-4-5-20250929
+
+      # Must mention beforeSwap permission and address encoding
+      - type: contains-any
+        value:
+          - 'beforeSwap'
+          - 'before_swap'
+      - type: contains-any
+        value:
+          - 'HookMiner'
+          - 'address'
+          - 'encoded'
+
+  # Test 4: Shares and Access Control
+  - vars:
+      case_content: file://cases/shares-and-access-control.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/configuration-completeness.txt
+        threshold: 0.85
+        provider: anthropic:claude-sonnet-4-5-20250929
+
+      # Must explain shares options
+      - type: contains-any
+        value:
+          - 'ERC20'
+          - 'ERC6909'
+          - 'ERC1155'
+      # Must explain access control options
+      - type: contains-any
+        value:
+          - 'ownable'
+          - 'roles'
+          - 'managed'
