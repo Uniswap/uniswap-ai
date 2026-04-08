@@ -57,6 +57,14 @@ The skill assembles and outputs a JSON object conforming to the OpenZeppelin Con
 ```json
 {
   "hook": "<HookTypeName>",
+  "name": "MyHook",
+  "pausable": false,
+  "currencySettler": false,
+  "safeCast": false,
+  "transientStorage": false,
+  "shares": {
+    "options": false
+  },
   "permissions": {
     "beforeInitialize": false,
     "afterInitialize": false,
@@ -73,11 +81,8 @@ The skill assembles and outputs a JSON object conforming to the OpenZeppelin Con
     "afterAddLiquidityReturnDelta": false,
     "afterRemoveLiquidityReturnDelta": false
   },
-  "shares": {
-    "options": false
-  },
-  "access": "ownable",
   "inputs": {},
+  "access": "ownable",
   "info": {
     "license": "MIT"
   }
