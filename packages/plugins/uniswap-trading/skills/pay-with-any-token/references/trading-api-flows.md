@@ -371,6 +371,12 @@ echo "Approval confirmed: $APPROVE_HASH"
 
 ### Step 4B-2 — Get bridge quote (EXACT_OUTPUT)
 
+> **API constraint:** The Trading API does not support a separate `recipient`
+> field for cross-chain bridge quotes. The `swapper` address is always the
+> recipient on the destination chain. If your `WALLET_ADDRESS` differs from
+> `TEMPO_WALLET_ADDRESS`, the bridge will deliver USDC.e to `WALLET_ADDRESS`
+> on Tempo — a follow-up transfer (Phase 4B-5) moves it to `TEMPO_WALLET_ADDRESS`.
+
 ```bash
 BRIDGE_QUOTE=$(curl -s "https://trade-api.gateway.uniswap.org/v1/quote" \
   -H "Content-Type: application/json" \
@@ -405,7 +411,7 @@ echo "Bridge quote: quoteId=$BRIDGE_QUOTE_ID fee=$BRIDGE_FEE eta=$BRIDGE_ETA"
 > - Destination: `$BRIDGE_TOKEN_OUT` (USDC.e) on Tempo (chain 4217)
 > - Bridge fee: `$BRIDGE_FEE`
 > - Estimated time: `$BRIDGE_ETA`
-> - Recipient: `$WALLET_ADDRESS`
+> - Recipient on Tempo: `$WALLET_ADDRESS` (funds arrive here; transferred to Tempo wallet in Phase 4B-5)
 >
 > Do not proceed until the user confirms.
 >
