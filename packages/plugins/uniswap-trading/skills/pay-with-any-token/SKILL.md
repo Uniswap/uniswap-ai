@@ -243,14 +243,28 @@ PAYMENT_TOKEN=$(echo "$PAYMENT_METHODS" | jq -r ".[$SELECTED_INDEX].token")
 
 ### Step 3 — Plan the Payment Path
 
+Determine which phases apply based on where the user's tokens are:
+
 ```text
-Source token (Base/Ethereum)
-  -> [Phase 4A: Uniswap Trading API swap] -> native USDC (bridge asset)
-  -> [Phase 4B: bridge via Trading API]   -> USDC.e on Tempo (to TEMPO_WALLET_ADDRESS)
-  -> tempo request retries automatically with funded wallet
+Case A — Source token is already on Tempo:
+  Source token (Tempo)
+    -> [Phase 5: on-Tempo swap via Stablecoin DEX] -> required payment token
+    -> tempo request retries automatically with funded wallet
+
+Case B — Source token is on Base/Ethereum/Arbitrum:
+  Source token (Base/Ethereum)
+    -> [Phase 4A: Uniswap Trading API swap] -> native USDC (bridge asset)
+    -> [Phase 4B: bridge via Trading API]   -> USDC.e on Tempo (to TEMPO_WALLET_ADDRESS)
+    -> [Phase 5: on-Tempo swap, if needed]  -> required payment token
+    -> tempo request retries automatically with funded wallet
 ```
 
 > **Skip Phase 4A** if the source token is already USDC on the bridge chain.
+>
+> **Skip Phase 4B** if tokens are already on Tempo (Case A).
+>
+> **Skip Phase 5** if the bridge delivers the exact required token (USDC.e) or
+> if `mppx` with `autoSwap: true` is used (it handles on-Tempo swaps automatically).
 >
 > **Gas-aware funding:** Bridging a tiny amount (e.g. $0.05) wastes gas — the
 > bridge gas on Ethereum (~$0.25) or Base (~$0.001) can exceed the shortfall.
@@ -307,41 +321,119 @@ Key points:
 - Quotes expire in ~60 seconds — re-fetch if any delay before broadcast
 
 After the bridge confirms, retry the original `tempo request` — the Tempo CLI
-will automatically use the newly funded wallet to pay the 402.
+will automatically use the newly funded wallet to pay the 402. If the payment
+token is not USDC.e, proceed to Phase 5 to swap to the required token before
+retrying.
 
 > **Balance buffer:** On Tempo, `balanceOf` may report more than is spendable.
 > Apply a **2x buffer** when comparing to `REQUIRED_AMOUNT`. If short, swap
 > additional tokens to top up.
 
+### Phase 5 — On-Tempo Swap (if needed)
+
+Use this phase when the wallet already holds a TIP-20 stablecoin on Tempo
+(e.g. USDC.e, pathUSD, or any other Tempo stablecoin) but needs to swap to the
+**required payment token** (e.g. PATH_USD or another TIP-20). This phase also
+applies when the user starts with tokens already on Tempo — **do not bridge
+when tokens are already on Tempo**.
+
+> **Simplest path:** Pass `autoSwap: true` to `mppx`'s `tempo.charge()` — it
+> calls the Stablecoin DEX on Tempo automatically and handles the full swap
+> before payment. Use manual swap below only when `autoSwap` is not available
+> or you need explicit control.
+
+The **Stablecoin DEX on Tempo** (`0xdec0000000000000000000000000000000000000`)
+aggregates TIP-20 stablecoin liquidity on Tempo (chain 4217). To swap:
+
+```bash
+TEMPO_RPC_URL="https://rpc.presto.tempo.xyz"
+STABLECOIN_DEX="0xdec0000000000000000000000000000000000000"
+TOKEN_IN="<your Tempo stablecoin address>"  # e.g. USDC.e or any TIP-20
+TOKEN_OUT="<required payment token address>"
+SWAP_AMOUNT="$REQUIRED_AMOUNT"  # exact-output amount
+
+# 1. Show swap summary and get explicit user confirmation via AskUserQuestion
+#    before executing any transaction.
+
+# 2. Approve the DEX to spend TOKEN_IN (if allowance is insufficient)
+ALLOWANCE=$(cast call "$TOKEN_IN" \
+  "allowance(address,address)(uint256)" "$WALLET_ADDRESS" "$STABLECOIN_DEX" \
+  --rpc-url "$TEMPO_RPC_URL")
+if [ "$ALLOWANCE" -lt "$SWAP_AMOUNT" ]; then
+  cast send "$TOKEN_IN" \
+    "approve(address,uint256)" "$STABLECOIN_DEX" \
+    "115792089237316195423570985008687907853269984665640564039457584007913129639935" \
+    --account "$CAST_ACCOUNT" --password "$CAST_PASSWORD" \
+    --rpc-url "$TEMPO_RPC_URL" --gas-limit 100000 \
+    --json | jq -r '.transactionHash'
+fi
+
+# 3. Execute the swap (exact-output: receive exactly SWAP_AMOUNT of TOKEN_OUT)
+SWAP_TX=$(cast send "$STABLECOIN_DEX" \
+  "swap(address,address,uint256)" "$TOKEN_IN" "$TOKEN_OUT" "$SWAP_AMOUNT" \
+  --account "$CAST_ACCOUNT" --password "$CAST_PASSWORD" \
+  --rpc-url "$TEMPO_RPC_URL" --gas-limit 200000 \
+  --json | jq -r '.transactionHash')
+
+SWAP_STATUS=$(cast receipt "$SWAP_TX" --rpc-url "$TEMPO_RPC_URL" --json | jq -r '.status')
+[ "$SWAP_STATUS" = "0x1" ] || { echo "ERROR: On-Tempo swap reverted: $SWAP_TX"; exit 1; }
+echo "On-Tempo swap confirmed: $SWAP_TX"
+```
+
+> **Confirmation gate:** Use `AskUserQuestion` before every transaction
+> (approval and swap). Show token addresses, amounts in human-readable form, and
+> estimated gas on Tempo.
+>
+> **Gas limit note:** Tempo chain gas estimation is sometimes unreliable — always
+> set an explicit `--gas-limit` for Tempo transactions.
+
+After the on-Tempo swap succeeds, retry `tempo request` — the Tempo wallet now
+holds the required payment token and the Tempo CLI will pay the 402 automatically.
+
 ---
 
 ## x402 Payment Flow
 
-The x402 protocol uses a different mechanism than MPP — it is **not handled by
-the Tempo CLI**. When `PROTOCOL` is `"x402"` (detected by checking
-`has("x402Version")` in the 402 body), use this flow instead.
+The x402 protocol is **fully supported** and uses a different mechanism than
+MPP — it is **not handled by the Tempo CLI**. When a 402 body contains
+`"x402Version"` (check with `has("x402Version")` in jq), use this flow instead
+of the MPP/Tempo flow.
 
-The x402 `"exact"` scheme uses EIP-3009 (`transferWithAuthorization`) to
-authorize a one-time token transfer signed off-chain.
+The x402 `"exact"` scheme uses **EIP-3009** (`TransferWithAuthorization`) to
+authorize a one-time token transfer signed off-chain. The full flow:
+
+1. **Detect x402**: parse `x402Version`, `accepts[].scheme`, `accepts[].network`,
+   `accepts[].maxAmountRequired`, `accepts[].payTo`, `accepts[].asset`,
+   `accepts[].extra` (token name + version for EIP-3009 domain).
+2. **Check balance** on the target chain; fund via Phase 4A/4B if insufficient.
+3. **Confirm with user** (`AskUserQuestion`): show token, amount, recipient, resource.
+4. **Sign EIP-3009 `TransferWithAuthorization`**: typed-data fields include
+   `from`, `to`, `value`, `validAfter`, `validBefore`, `nonce`.
+   Set `validBefore = now + maxTimeoutSeconds`.
+5. **Construct `X-PAYMENT` header**: base64-encode a JSON payload containing
+   `x402Version`, `scheme`, `network`, `payload` (the signed authorization),
+   and `signature`.
+6. **Retry** the original request with the `X-PAYMENT` header.
 
 > **Detailed steps:** Read
 > [references/credential-construction.md](references/credential-construction.md#phase-6x--x402-payment)
-> for full code: prerequisite checks, nonce generation, EIP-3009 signing,
+> for full bash code: prerequisite checks, nonce generation, EIP-3009 signing,
 > X-PAYMENT payload construction, and retry.
 
 Key points:
 
-- Detect x402: check `has("x402Version")` in 402 body before using Tempo CLI
-- Maps `X402_NETWORK` to chain ID and RPC URL (base, ethereum, tempo supported)
-- Checks wallet balance on target chain; runs Phase 4A/4B if insufficient
-- Signs `TransferWithAuthorization` typed data using token's own domain
-- `value` in payload must be a **string** (`--arg`, not `--argjson`) for uint256
+- Detect x402: check `has("x402Version")` in 402 body **before** attempting Tempo CLI
+- Maps `X402_NETWORK` to chain ID and RPC URL (base, ethereum, tempo all supported)
+- Checks wallet balance on target chain; runs Phase 4A/4B/5 if insufficient
+- Signs `TransferWithAuthorization` typed data using the token's own EIP-712 domain
+- `value` in the typed-data payload must be a **string** (`--arg`, not `--argjson`) for uint256
 - Confirmation gate required before signing
+- Send the result in `X-PAYMENT` header (base64-encoded), not `Authorization`
 
-| Protocol | Version | Handler        |
-| -------- | ------- | -------------- |
-| MPP      | v1      | Tempo CLI      |
-| x402     | v1      | Manual (above) |
+| Protocol | Version | Handler              |
+| -------- | ------- | -------------------- |
+| MPP      | v1      | Tempo CLI            |
+| x402     | v1      | EIP-3009 manual flow |
 
 ---
 
