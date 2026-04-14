@@ -358,14 +358,17 @@ SWAP_AMOUNT="$REQUIRED_AMOUNT"  # exact-output amount
 # 2. Approve the DEX to spend TOKEN_IN (if allowance is insufficient)
 ALLOWANCE=$(cast call "$TOKEN_IN" \
   "allowance(address,address)(uint256)" "$WALLET_ADDRESS" "$STABLECOIN_DEX" \
-  --rpc-url "$TEMPO_RPC_URL")
-if [ "$ALLOWANCE" -lt "$SWAP_AMOUNT" ]; then
-  cast send "$TOKEN_IN" \
+  --rpc-url "$TEMPO_RPC_URL") || { echo "ERROR: Failed to read allowance for $TOKEN_IN"; exit 1; }
+if [ "$(echo "$ALLOWANCE < $SWAP_AMOUNT" | bc)" -eq 1 ]; then
+  APPROVE_HASH=$(cast send "$TOKEN_IN" \
     "approve(address,uint256)" "$STABLECOIN_DEX" \
     "115792089237316195423570985008687907853269984665640564039457584007913129639935" \
     --account "$CAST_ACCOUNT" --password "$CAST_PASSWORD" \
     --rpc-url "$TEMPO_RPC_URL" --gas-limit 100000 \
-    --json | jq -r '.transactionHash'
+    --json | jq -r '.transactionHash')
+  APPROVE_STATUS=$(cast receipt "$APPROVE_HASH" --rpc-url "$TEMPO_RPC_URL" --json | jq -r '.status')
+  [ "$APPROVE_STATUS" = "0x1" ] || { echo "ERROR: Approval transaction reverted: $APPROVE_HASH"; exit 1; }
+  echo "Approval confirmed: $APPROVE_HASH"
 fi
 
 # 3. Execute the swap (exact-output: receive exactly SWAP_AMOUNT of TOKEN_OUT)
