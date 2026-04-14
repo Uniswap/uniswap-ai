@@ -274,7 +274,8 @@ USDC_AFTER_HUMAN=$(format_token_amount "$USDC_AFTER_SWAP" "$USDC_DECIMALS")
 USDC_NEEDED_HUMAN=$(format_token_amount "$USDC_E_AMOUNT_NEEDED" "$USDC_DECIMALS")
 echo "USDC balance after swap: $USDC_AFTER_HUMAN USDC (need at least $USDC_NEEDED_HUMAN USDC)"
 # Halt if swap produced insufficient USDC — bridging 0 USDC wastes gas and fails silently
-[ "$USDC_AFTER_SWAP" -lt "$USDC_E_AMOUNT_NEEDED" ] && \
+# Use bc for arbitrary-precision comparison (uint256 values overflow bash's integer arithmetic)
+[ "$(echo "$USDC_AFTER_SWAP < $USDC_E_AMOUNT_NEEDED" | bc)" -eq 1 ] && \
   echo "ERROR: swap produced $USDC_AFTER_HUMAN USDC but $USDC_NEEDED_HUMAN USDC needed — check receipt, do NOT proceed to bridge." && exit 1
 ```
 
@@ -355,14 +356,21 @@ echo "Approval confirmed: $APPROVE_HASH"
 > BRIDGE_SPENDER="$BRIDGE_TO"  # The 'to' field from the /swap response
 > ALLOWANCE=$(cast call "$BRIDGE_TOKEN_IN" \
 >   "allowance(address,address)(uint256)" "$WALLET_ADDRESS" "$BRIDGE_SPENDER" \
->   --rpc-url "$SOURCE_RPC_URL")
-> if [ "$ALLOWANCE" -lt "$BRIDGE_AMOUNT" ]; then
+>   --rpc-url "$SOURCE_RPC_URL" 2>/dev/null | awk '{print $1}')
+> if [ -z "$ALLOWANCE" ] || ! [[ "$ALLOWANCE" =~ ^[0-9]+$ ]]; then
+>   echo "ERROR: Failed to read allowance from chain. Check RPC connectivity and token address."
+>   exit 1
+> fi
+> # Use bc for arbitrary-precision comparison (uint256 values overflow bash's integer arithmetic)
+> if [ "$(echo "$ALLOWANCE < $BRIDGE_AMOUNT" | bc)" -eq 1 ]; then
 >   echo "Insufficient allowance for bridge spender. Approving..."
->   cast send "$BRIDGE_TOKEN_IN" \
+>   BRIDGE_APPROVE_HASH=$(cast send "$BRIDGE_TOKEN_IN" \
 >     "approve(address,uint256)" "$BRIDGE_SPENDER" \
 >     "115792089237316195423570985008687907853269984665640564039457584007913129639935" \
 >     --account "$CAST_ACCOUNT" --password "$CAST_PASSWORD" \
->     --rpc-url "$SOURCE_RPC_URL" --json | jq -r '.transactionHash'
+>     --rpc-url "$SOURCE_RPC_URL" --json | jq -r '.transactionHash')
+>   cast receipt "$BRIDGE_APPROVE_HASH" --rpc-url "$SOURCE_RPC_URL" > /dev/null
+>   echo "Bridge spender approval confirmed: $BRIDGE_APPROVE_HASH"
 > fi
 > ```
 >
@@ -459,7 +467,8 @@ for i in $(seq 1 20); do
     "balanceOf(address)(uint256)" "$WALLET_ADDRESS" \
     --rpc-url "$TEMPO_RPC_URL" 2>/dev/null || echo "0")
   USDC_E_ON_TEMPO=$(echo "$RAW_BALANCE" | awk '{print $1}')
-  if [[ "$USDC_E_ON_TEMPO" =~ ^[0-9]+$ ]] && [ "$USDC_E_ON_TEMPO" -ge "$BRIDGE_AMOUNT" ]; then
+  # Use bc for arbitrary-precision comparison (uint256 values overflow bash's integer arithmetic)
+  if [[ "$USDC_E_ON_TEMPO" =~ ^[0-9]+$ ]] && [ "$(echo "$USDC_E_ON_TEMPO >= $BRIDGE_AMOUNT" | bc)" -eq 1 ]; then
     USDC_E_DECIMALS=$(get_token_decimals "$BRIDGE_TOKEN_OUT" "$TEMPO_RPC_URL")
     USDC_E_HUMAN=$(format_token_amount "$USDC_E_ON_TEMPO" "$USDC_E_DECIMALS")
     echo "Bridge confirmed — $USDC_E_HUMAN USDC.e received on Tempo."
@@ -468,7 +477,8 @@ for i in $(seq 1 20); do
   echo "Waiting for bridge arrival... attempt $i/20 (balance: $USDC_E_ON_TEMPO base units)"
   sleep 30
 done
-[ "$USDC_E_ON_TEMPO" -ge "$BRIDGE_AMOUNT" ] || \
+# Use bc for arbitrary-precision comparison (uint256 values overflow bash's integer arithmetic)
+[ "$(echo "$USDC_E_ON_TEMPO >= $BRIDGE_AMOUNT" | bc)" -eq 1 ] || \
   { echo "Bridge not confirmed after 10 minutes. Check $BRIDGE_TX on https://explore.mainnet.tempo.xyz"; exit 1; }
 ```
 
