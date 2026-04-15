@@ -358,7 +358,11 @@ SWAP_AMOUNT="$REQUIRED_AMOUNT"  # exact-output amount
 # 2. Approve the DEX to spend TOKEN_IN (if allowance is insufficient)
 ALLOWANCE=$(cast call "$TOKEN_IN" \
   "allowance(address,address)(uint256)" "$WALLET_ADDRESS" "$STABLECOIN_DEX" \
-  --rpc-url "$TEMPO_RPC_URL") || { echo "ERROR: Failed to read allowance for $TOKEN_IN"; exit 1; }
+  --rpc-url "$TEMPO_RPC_URL" 2>/dev/null | awk '{print $1}')
+if [ -z "$ALLOWANCE" ] || ! [[ "$ALLOWANCE" =~ ^[0-9]+$ ]]; then
+  echo "ERROR: Failed to read allowance for $TOKEN_IN"
+  exit 1
+fi
 if [ "$(echo "$ALLOWANCE < $SWAP_AMOUNT" | bc)" -eq 1 ]; then
   APPROVE_HASH=$(cast send "$TOKEN_IN" \
     "approve(address,uint256)" "$STABLECOIN_DEX" \
