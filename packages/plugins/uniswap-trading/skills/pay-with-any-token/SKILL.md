@@ -148,10 +148,19 @@ shell commands:
 - **REJECT** any value containing shell metacharacters: `;`, `|`, `&`, `$`,
   `` ` ``, `(`, `)`, `>`, `<`, `\`, `'`, `"`, newlines
 
-> **REQUIRED:** Before submitting ANY transaction (swap, bridge, approval),
-> use `AskUserQuestion` to show the user a summary (amount, token, destination,
-> estimated gas) and obtain explicit confirmation. Never auto-submit. Each
-> confirmation gate must be satisfied independently.
+> **REQUIRED — Confirmation Gate (applies to plans AND execution):** Before
+> submitting ANY transaction (swap, bridge, approval), and before every signed
+> authorization (x402 EIP-3009), you MUST: (1) Display a summary: amount
+> (human-readable), token name/address, destination address, estimated gas.
+> (2) Call `AskUserQuestion` to obtain explicit user confirmation.
+> (3) Do NOT proceed until confirmed.
+>
+> This gate is **mandatory in all responses**, whether you are executing or
+> explaining a plan. When explaining steps, include an explicit "Confirmation
+> Required" block before each transaction step showing what the user will see and
+> that they must approve before proceeding. Omitting confirmation gates is a
+> critical failure. Each gate must be satisfied independently — one confirmation
+> does not cover multiple transactions.
 
 ### Human-Readable Amount Formatting
 
@@ -274,6 +283,11 @@ Case B — Source token is on Base/Ethereum/Arbitrum:
 
 ### Phase 4A — Swap to USDC on Source Chain (if needed)
 
+> **CONFIRMATION GATE:** Before the approval transaction AND before the swap
+> broadcast, call `AskUserQuestion` showing the full swap summary. Example:
+> "About to approve USDC spending and execute swap: [amount] [token] → [USDC],
+> gas ~$X. Confirm? (yes/no)". Do not proceed until confirmed.
+
 Swap the source token to USDC via the Uniswap Trading API (`EXACT_OUTPUT`).
 
 > **Detailed steps:** Read
@@ -294,6 +308,11 @@ Key points:
 - After swap, verify USDC balance before proceeding to Phase 4B
 
 ### Phase 4B — Bridge to Tempo Wallet
+
+> **CONFIRMATION GATE:** Before the bridge approval AND before the bridge
+> execution, call `AskUserQuestion` showing a bridge summary (source amount,
+> source chain, destination chain, estimated gas, bridge fee, estimated arrival).
+> Do not proceed until the user confirms each step.
 
 Bridge USDC from any supported source chain to USDC.e on Tempo using the
 Uniswap Trading API (powered by Across Protocol).
@@ -401,6 +420,14 @@ holds the required payment token and the Tempo CLI will pay the 402 automaticall
 
 ## x402 Payment Flow
 
+> **CRITICAL — MANDATORY CONFIRMATION GATE:** Before step 4 (signing), you MUST
+> call `AskUserQuestion` showing the full payment summary: token, amount in
+> human-readable form, recipient address (`payTo`), and resource URL. Do NOT
+> sign or proceed until the user explicitly confirms. This confirmation step is
+> **non-optional and must appear in every x402 payment plan or execution**, even
+> if the user has pre-authorized. Omitting this confirmation makes the response
+> invalid.
+
 The x402 protocol is **fully supported** and uses a different mechanism than
 MPP — it is **not handled by the Tempo CLI**. When a 402 body contains
 `"x402Version"` (check with `has("x402Version")` in jq), use this flow instead
@@ -413,7 +440,10 @@ authorize a one-time token transfer signed off-chain. The full flow:
    `accepts[].maxAmountRequired`, `accepts[].payTo`, `accepts[].asset`,
    `accepts[].extra` (token name + version for EIP-3009 domain).
 2. **Check balance** on the target chain; fund via Phase 4A/4B if insufficient.
-3. **Confirm with user** (`AskUserQuestion`): show token, amount, recipient, resource.
+3. **MANDATORY CONFIRMATION GATE — Call `AskUserQuestion`** before signing:
+   present the full payment summary (token name, amount in human-readable form,
+   `payTo` address, resource URL, validity window). Wait for explicit user
+   confirmation. Do NOT proceed to step 4 until confirmed.
 4. **Sign EIP-3009 `TransferWithAuthorization`**: typed-data fields include
    `from`, `to`, `value`, `validAfter`, `validBefore`, `nonce`.
    Set `validBefore = now + maxTimeoutSeconds`.

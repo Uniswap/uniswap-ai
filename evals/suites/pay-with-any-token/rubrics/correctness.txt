@@ -13,10 +13,14 @@ Required Elements (Must Include):
    Identifies whether a swap, bridge, or both are needed
    Uses native USDC or USDC-e as bridge asset for Base→Tempo paths, or USDC for Ethereum→Tempo paths
 
-3. Trading API Usage
-   References the correct base URL (trade-api.gateway.uniswap.org)
-   Uses EXACT_OUTPUT type for the swap quote (NOT EXACT_INPUT — penalize if EXACT_INPUT is used)
-   Includes check_approval step before the swap
+3. Trading API Usage (skip this element if Phase 5 on-Tempo swap is the correct path)
+   For ERC-20 source chains (Base, Ethereum, Arbitrum): references the correct base URL
+   (trade-api.gateway.uniswap.org), uses EXACT_OUTPUT type for the swap quote (NOT EXACT_INPUT
+   — penalize if EXACT_INPUT is used), and includes check_approval step before the swap.
+   For Phase 5 (on-Tempo swap — tokens already on Tempo): uses the Stablecoin DEX
+   (0xdec0000000000000000000000000000000000000) directly with cast send. No Trading API
+   required for this path — mark element 3 as satisfied if Phase 5 DEX calls are present
+   and correctly structured (allowance check + approve + swap(address,address,uint256)).
 
 4. User Confirmation Gate (CRITICAL — required for any passing score)
    Requires explicit user confirmation before EVERY transaction (approval, swap, bridge)
