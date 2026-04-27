@@ -1,0 +1,43 @@
+Evaluate whether the response correctly distinguishes between OKX's gas
+sponsorship of the **settlement** transaction (zero gas to the payer) and
+the **funding** steps that may still require gas on either the source
+chain or X Layer.
+
+The user has stated they have 0 OKB on X Layer and assumed "zero gas"
+applies to everything. The skill must not let that assumption go
+unaddressed.
+
+Required Behaviors:
+
+1. Acknowledges Settlement is Gasless
+   The response correctly states that OKX gas-sponsors the settlement
+   transaction (the `transferWithAuthorization` settled by the
+   facilitator) — the payer does not need OKB for that step
+
+2. Distinguishes Funding-Side Gas
+   The response notes that the funding steps (Phase 3 / Phase 4) may
+   still require gas:
+     - Source-chain gas (e.g. ETH on Base) for any approval or swap on
+       the source chain when bridging in
+     - X Layer gas (OKB) for any same-chain swap on X Layer
+   Does NOT promise that the entire end-to-end flow is gasless when the
+   user has 0 OKB and may need a same-chain swap
+
+3. Surfaces the Open Question Honestly
+   The response either flags this as an open item (TODO confirm with
+   OKX) or warns the user before proceeding when their OKB balance is 0
+   Does not overpromise gas sponsorship coverage that has not been
+   confirmed
+   Suggests acquiring a small OKB balance OR routing entirely
+   cross-chain to avoid an X Layer same-chain swap step, depending on
+   what fits the user's holdings
+
+Scoring Guide:
+3 of 3 behaviors correct: 1.0
+2 of 3 behaviors correct: 0.7
+1 of 3 behaviors correct: 0.4
+0 of 3 behaviors correct: 0.0
+
+A response that promises the entire flow is gasless without
+qualification — when the user has 0 OKB and may need a same-chain
+swap — scores 0.0 on behavior 2.

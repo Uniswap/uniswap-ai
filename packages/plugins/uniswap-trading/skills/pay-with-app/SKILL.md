@@ -11,7 +11,7 @@ description: >
   APP, prefer this skill for any 402 challenge whose network resolves to X
   Layer (chain 196). For 402 challenges on other chains (Ethereum, Base,
   Arbitrum, Tempo) use pay-with-any-token instead.
-allowed-tools: Read, Glob, Grep, Bash(curl:*), Bash(jq:*), Bash(cast:*), WebFetch, AskUserQuestion
+allowed-tools: Read, Glob, Grep, Bash(curl:*), Bash(jq:*), Bash(cast:*), Bash(openssl:*), Bash(npx:*), Bash(node:*), WebFetch, AskUserQuestion
 model: opus
 license: MIT
 metadata:
@@ -117,6 +117,18 @@ If multiple `accepts` entries are present, prefer the one whose `asset`
 the wallet already holds on X Layer. If multiple options are equally
 viable, prefer USDT0 (deepest Uniswap liquidity for the funding flow).
 
+**WOKB / native OKB are NOT eligible as APP settlement assets.** OKX's
+APP Pay Per Use is denominated in stablecoins on X Layer (USDT0 / USDG /
+USDC). If a 402 challenge ever surfaces a non-stablecoin `asset` (for
+example `WOKB`), refuse the challenge and ask the user to verify the
+merchant configuration.
+
+> **Roadmap (out of v1.0.0).** This skill version handles the `charge`
+> primitive (Pay Per Use) only. APP also defines `aggr_deferred`
+> (Pay by Batch), `escrow`, `session`, and `upto` primitives. This skill
+> refuses any non-`charge` scheme cleanly and points the user to the
+> roadmap rather than half-supporting it.
+
 ## Phase 1 — Confirm Network is X Layer
 
 ```bash
@@ -174,6 +186,29 @@ Detailed scripts and parameters: see
 >
 > **Minimum bridge recommendation.** If the shortfall is < $5, top up to
 > $5 to amortize bridge gas on the source chain.
+>
+> **Open question (TODO confirm with OKX).** When the Trading API routes
+> cross-chain into X Layer, does it deliver USDT0 directly or USDC.e on
+> X Layer? If the latter, the funding flow needs an additional same-chain
+> swap step (USDC.e → USDT0 via Uniswap v3 on chain 196) before the
+> EIP-3009 signing. Surface this to the user as an extra confirmation
+> gate if the bridge lands USDC.e instead of USDT0.
+
+## Gas Awareness
+
+OKX gas-sponsors the **settlement** transaction on X Layer when the
+facilitator calls `transferWithAuthorization` — the payer does not need
+OKB to settle. However, the **funding** steps in Phase 3 (token
+approvals, swaps, and on-chain operations on X Layer prior to signing)
+likely still consume gas paid in the source chain's native asset (or
+OKB if the swap happens on X Layer).
+
+> **Open question (TODO confirm with OKX).** Confirm whether OKX's gas
+> sponsorship covers approve + swap calls on X Layer during the funding
+> flow, or only the final settlement transfer. Until confirmed, assume
+> the user needs a small OKB balance for any same-chain X Layer swap
+> step. Surface this to the user before proceeding to Phase 3 if the
+> wallet has zero OKB.
 
 ## Phase 4 — EIP-3009 Signing and X-PAYMENT Submission
 
