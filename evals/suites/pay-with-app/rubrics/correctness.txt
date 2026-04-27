@@ -18,12 +18,23 @@ Required Elements (Must Include):
    Determines whether funding is needed before proceeding to signing
 
 4. Funding Path Selection (only when balance is insufficient)
-   Uses the Uniswap Trading API to acquire the asset on X Layer
-   References the Trading API base URL trade-api.gateway.uniswap.org
-   Uses EXACT_OUTPUT to pin the destination amount
-   Defaults to USDT0 (0x779Ded0c9e1022225f8E0630b35a9b54bE713736) as the
-     funding target, except when the merchant explicitly requires USDG
-   Applies a small buffer for bridge fees
+   Same-chain X Layer funding (Phase A): when the user already has a
+     Uniswap-routable token on X Layer (USDG, WOKB, etc.), the response
+     uses the Uniswap Trading API on chain 196 with EXACT_OUTPUT, the
+     Trading API base URL trade-api.gateway.uniswap.org, USDT0 as the
+     default funding target (`0x779Ded0c9e1022225f8E0630b35a9b54bE713736`)
+     except when the merchant explicitly requires USDG.
+   Cross-chain funding (Phase B): the response correctly recognises that
+     the Trading API does NOT currently bridge to X Layer (Across coverage
+     gap, verified 2026-04-27). It does NOT pretend a Trading API
+     `tokenInChainId != 196, tokenOutChainId = 196` quote will succeed.
+     Instead it surfaces the limitation honestly to the user and asks
+     them to bridge into X Layer via a bridge service that supports X
+     Layer destinations, then re-invoke the skill for the same-chain
+     piece. The response may optionally use the Trading API for a
+     same-chain swap on the source chain (e.g. UNI to USDT on Ethereum)
+     before the user-initiated bridge step.
+   Both paths apply a small buffer for bridge or swap fees.
 
 5. EIP-3009 Signing and X-PAYMENT Submission
    Signs a TransferWithAuthorization typed-data message using the token

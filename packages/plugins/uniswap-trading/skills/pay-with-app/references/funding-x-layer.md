@@ -94,7 +94,7 @@ QUOTE_FETCHED_AT=$(date +%s)
 QUOTE=$(curl -fsS -X POST https://trade-api.gateway.uniswap.org/v1/quote \
   -H "Content-Type: application/json" \
   -H "x-api-key: $UNISWAP_API_KEY" \
-  -H "x-universal-router-version: 2.1" \
+  -H "x-universal-router-version: 2.1.1" \
   -d "$(jq -n \
     --arg type           "EXACT_OUTPUT" \
     --argjson tokenInChainId  196 \
@@ -136,8 +136,32 @@ ELAPSED=$(($(date +%s) - QUOTE_FETCHED_AT))
 
 ## Phase B: Cross-Chain Bridge into X Layer
 
-Use when the wallet holds tokens on a different chain. The Trading API
-handles the swap-and-bridge in one quote.
+> **Important: Across coverage gap (verified 2026-04-27).** The Uniswap
+> Trading API uses Across Protocol for cross-chain routing. **Across
+> does not currently include X Layer (chain 196) in its destination
+> list.** Live `/quote` calls with `tokenOutChainId=196` and a different
+> `tokenInChainId` return `ResourceNotFound: No quotes available` for
+> every source chain we tested (Ethereum, Base, Arbitrum, native ETH).
+> Same-chain X Layer swaps (Phase A) work normally.
+>
+> **What this means for the agent.** Until Across adds X Layer, the
+> Trading API cannot bridge tokens onto X Layer in a single quote. If
+> the user holds funds on a chain other than X Layer, the cross-chain
+> leg must be done through a bridge service that supports X Layer as a
+> destination (the user must run that step outside this skill, then
+> re-invoke for the same-chain swap + 402 settlement).
+>
+> **TODO (research before mid-May launch follow-up):** confirm and
+> document the recommended X-Layer-supporting bridge for Uniswap+OKX
+> co-marketing alignment. Until then, do not prescribe a specific bridge
+> service in user-facing responses; surface the limitation honestly and
+> let the user choose.
+
+The block below describes the design intent: a single Trading API quote
+that handles swap + bridge into X Layer. It is preserved so the skill
+works without code changes the day Across adds X Layer. Today, expect
+the quote call to return `ResourceNotFound`. When that happens, fall
+through to the user-handoff path documented at the end of this section.
 
 Apply a **0.5% buffer** to compute `X402_AMOUNT_WITH_BUFFER` from
 `X402_AMOUNT` to absorb bridge fees. If the shortfall is < $5 worth,
@@ -154,7 +178,7 @@ QUOTE_FETCHED_AT=$(date +%s)
 QUOTE=$(curl -fsS -X POST https://trade-api.gateway.uniswap.org/v1/quote \
   -H "Content-Type: application/json" \
   -H "x-api-key: $UNISWAP_API_KEY" \
-  -H "x-universal-router-version: 2.1" \
+  -H "x-universal-router-version: 2.1.1" \
   -d "$(jq -n \
     --arg type           "EXACT_OUTPUT" \
     --argjson tokenInChainId  "$SOURCE_CHAIN_ID" \
@@ -172,12 +196,34 @@ QUOTE=$(curl -fsS -X POST https://trade-api.gateway.uniswap.org/v1/quote \
       amount:           $amount,
       swapper:          $swapper,
       urgency:          "normal"
-    }')") || { echo "Trading API cross-chain quote failed" >&2; exit 1; }
+    }')")
+QUOTE_STATUS=$?
 ```
 
-Quote response contains `permitData` (sign with EIP-712) and the
-`/swap` endpoint then returns the calldata to broadcast on the source
-chain. Across handles the X Layer arrival.
+If `QUOTE_STATUS` is non-zero or the response body contains
+`"errorCode":"ResourceNotFound"`, **the Trading API cannot currently
+deliver to X Layer cross-chain.** This is the expected state today
+(Across does not list X Layer as a destination). Surface a clear
+message to the user via `AskUserQuestion`:
+
+> "The Uniswap Trading API does not currently support X Layer as a
+> cross-chain destination via Across Protocol (verified
+> 2026-04-27). To pay this APP merchant, please bridge USDT0 (or
+> another stablecoin that lands as USDT0 on X Layer) to your wallet
+> using a bridge service that supports X Layer destinations. Once
+> the funds arrive on X Layer, re-invoke this skill and we will
+> handle the same-chain swap (if needed) and the 402 settlement."
+
+Do NOT recommend a specific bridge product to the user in this skill
+version; the v1.0.0 stance is "any bridge that supports X Layer is
+fine; pick what you trust." A future skill version may add a
+co-marketing-aligned bridge recommendation once verified.
+
+If the quote call DOES succeed (i.e. Across has shipped X Layer
+support since this doc was written), continue with the original flow:
+quote response contains `permitData` (sign with EIP-712), the `/swap`
+endpoint returns the calldata to broadcast on the source chain, and
+Across handles the X Layer arrival.
 
 Before broadcasting via `/swap`, gate on quote freshness:
 

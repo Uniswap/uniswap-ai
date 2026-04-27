@@ -1,7 +1,7 @@
 # Multi-Token Cross-Chain Funding (Pitch Differentiator)
 
 I got this 402 from an OKX agent merchant on X Layer. It wants USDT0 but
-all I'm holding is a non-stable token on a different chain — exactly the
+all I'm holding is a non-stable token on a different chain, exactly the
 "any token, any chain" use case that motivates the Uniswap rail for APP.
 
 ```json
@@ -36,6 +36,6 @@ My wallet is 0x742d35Cc6634C0532925a3b8D4C9B5927BB7C789. I have:
 - 0.02 ETH on Ethereum (enough for gas only)
 
 Walk me through paying the 2.5 USDT0 using my UNI on Ethereum. I want
-to understand the full route — what gets swapped, what gets bridged,
-where, and in what order — and how the X-PAYMENT credential is built
+to understand the full route, what gets swapped, what gets bridged,
+where, and in what order, and how the X-PAYMENT credential is built
 once funding lands on X Layer.

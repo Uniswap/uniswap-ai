@@ -377,3 +377,19 @@ tests:
         value:
           - 'UNI'
           - '0x1f9840'
+
+      # Under Option A (Across does not yet bridge to X Layer), a correct
+      # response surfaces the coverage gap honestly. Accept any of these
+      # framings.
+      - type: icontains-any
+        value:
+          - 'Across does not'
+          - "doesn't currently"
+          - 'not currently support'
+          - 'coverage gap'
+          - 'no quotes available'
+          - 'cannot currently bridge'
+          - 'not in Across'
+          - 'separate bridge'
+          - 'bridge service'
+          - 'bridge first'

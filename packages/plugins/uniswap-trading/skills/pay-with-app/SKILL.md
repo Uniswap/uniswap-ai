@@ -52,7 +52,7 @@ version. The skill refuses any non-`exact` scheme cleanly.
 > x402 is the underlying wire spec it builds on. Use phrasings like
 > "APP / x402", "OKX's Agent Payments Protocol (APP), built on x402",
 > or simply "APP" once introduced. Do not refer to a 402 challenge on
-> X Layer as "an x402 challenge" without naming APP — the user invoked
+> X Layer as "an x402 challenge" without naming APP, the user invoked
 > this skill specifically because the merchant is APP-backed, and the
 > name is what they will look for in the response.
 
@@ -196,6 +196,21 @@ When the wallet lacks the requested asset, acquire it via the Uniswap
 Trading API: `EXACT_OUTPUT` quote with `tokenOutChainId=196` and
 `tokenOut` set to the X Layer asset address. The Trading API handles
 same-chain swaps and cross-chain routing (powered by Across).
+
+> **Across coverage gap (verified 2026-04-27).** Across Protocol does
+> not currently list X Layer (chain 196) as a supported destination. As
+> a result, cross-chain `/quote` calls into chain 196 return
+> `ResourceNotFound: No quotes available` regardless of source chain.
+> Same-chain X Layer swaps (Phase A in `references/funding-x-layer.md`)
+> are unaffected and work normally.
+>
+> **What this means for the agent in v1.0.0.** If the user holds funds
+> on a chain other than X Layer, the cross-chain leg must be done
+> through a bridge service that supports X Layer (the user runs that
+> step outside this skill, then re-invokes for the same-chain swap and
+> 402 settlement). Surface this honestly to the user, do not
+> recommend a specific bridge product (TODO: research and document a
+> co-marketing-aligned bridge recommendation in a follow-up).
 
 **Default funding target = USDT0.** If the 402 challenge requests a
 different asset, fund into that asset directly only when it has reliable
@@ -347,7 +362,7 @@ challenge, otherwise the original request URL.
 
 - Base URL: `https://trade-api.gateway.uniswap.org/v1`
 - Header: `x-api-key: $UNISWAP_API_KEY`
-- Header: `x-universal-router-version: 2.1`
+- Header: `x-universal-router-version: 2.1.1`
 - Supported chains include 1, 8453, 42161, 10, 137, 130, **196**, and more
   (see Trading API supported-chains docs).
 
