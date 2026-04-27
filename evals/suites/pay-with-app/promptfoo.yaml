@@ -318,3 +318,49 @@ tests:
 
       - type: contains
         value: 'USDG'
+
+  - description: 'Multi-token cross-chain funding (UNI on Ethereum -> USDT0 on X Layer, pitch differentiator)'
+    vars:
+      case_content: file://cases/multi-token-funding.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/correctness.txt
+        threshold: 0.8
+
+      - type: llm-rubric
+        value: file://rubrics/confirmation-gate.txt
+        threshold: 0.85
+
+      - type: llm-rubric
+        value: file://rubrics/completeness.txt
+        threshold: 0.8
+
+      - type: contains
+        value: 'trade-api.gateway.uniswap.org'
+
+      - type: contains
+        value: 'EXACT_OUTPUT'
+
+      - type: not-contains
+        value: 'EXACT_INPUT'
+
+      - type: contains
+        value: 'USDT0'
+
+      - type: contains
+        value: '0x779Ded0c9e1022225f8E0630b35a9b54bE713736'
+
+      - type: contains-any
+        value:
+          - 'EIP-3009'
+          - 'eip-3009'
+          - 'TransferWithAuthorization'
+          - 'transferWithAuthorization'
+
+      - type: contains
+        value: 'X-PAYMENT'
+
+      - type: contains-any
+        value:
+          - 'UNI'
+          - '0x1f9840'
