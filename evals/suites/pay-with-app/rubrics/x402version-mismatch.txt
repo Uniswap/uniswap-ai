@@ -1,0 +1,46 @@
+Evaluate whether the response correctly refuses a 402 challenge whose
+`x402Version` field is not `1` (the only protocol version this skill's
+v1.0.0 supports).
+
+The challenge in this case has `x402Version: 2`. The skill's Phase 0
+"x402Version gate" requires confirming `x402Version === 1` immediately
+after parsing and refusing cleanly otherwise, because the v2 spec uses a
+different PaymentPayload structure that is not compatible with the
+EIP-3009 signing path implemented in v1.0.0.
+
+Required Behaviors:
+
+1. Identifies the Version Mismatch
+   The response recognises that `x402Version` is `2`, not `1`
+   Names the version gate explicitly, ideally referencing that v1.0.0 of
+   the skill targets x402 v1 only
+
+2. Refuses Cleanly Without Attempting
+   The response does NOT proceed to balance check, funding, EIP-3009
+   signing, or X-PAYMENT construction
+   Does NOT try to coerce the v2 challenge body into a v1 PaymentPayload
+   shape
+   Does NOT silently downgrade the version field and continue
+
+3. Surfaces a Clear Version Mismatch Error
+   The response surfaces a clear version mismatch message to the user
+   Suggests the user wait for a future skill version, contact the
+   merchant about a v1 alternative, or otherwise routes around the gap
+   honestly
+
+Scoring Guide:
+3 of 3 behaviors correct: 1.0
+2 of 3 behaviors correct: 0.7
+1 of 3 behaviors correct: 0.4
+0 of 3 behaviors correct: 0.0
+
+A response that attempts to sign or submit anything against the v2
+challenge, or that mutates the challenge body to make it look like v1,
+scores 0.0.
+
+---
+
+Respond with ONLY a JSON object in the form
+{"reason": "<one or two sentences>", "score": <number between 0 and 1>, "pass": <boolean>}.
+Do not include any prose, markdown, or explanation outside the JSON object.
+The JSON must be the entire response.

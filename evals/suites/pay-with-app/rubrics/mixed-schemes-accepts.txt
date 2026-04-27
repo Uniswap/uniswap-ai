@@ -1,0 +1,60 @@
+Evaluate whether the response correctly handles a 402 challenge whose
+`accepts` array mixes supported and unsupported wire schemes. Of the
+three entries, only one (the USDG entry) uses `scheme: "exact"`, which
+is the sole scheme this skill version (v1.0.0) supports. The `escrow`
+and `upto` entries are out of scope and must be ignored, not used as
+fallbacks.
+
+Background: the pay-with-app skill states that v1.0.0 supports `exact`
+only, and that `accepts[].scheme === "exact"` is the gate. The skill
+also says: "If multiple `accepts` entries are present, prefer the one
+whose `asset` the wallet already holds on X Layer." The wallet here
+holds USDG, which lines up with the only supported entry, so the
+correct selection is the USDG `exact` entry on both grounds.
+
+Required Behaviors:
+
+1. Identifies `exact` as the Only Supported Scheme
+   The response notes that v1.0.0 of the skill supports the `exact`
+     scheme only
+   Calls out that the `escrow` and `upto` entries are out of scope for
+     this skill version
+
+2. Selects the USDG Exact Entry
+   Picks the `exact`-scheme USDG entry as the one to pay against
+   Does NOT attempt to fall back to the `escrow` or `upto` entries
+   Does NOT refuse the whole challenge just because two of three entries
+     are unsupported (one valid `exact` entry is enough to proceed)
+
+3. Notes Wallet Already Holds USDG
+   Observes that the user already holds USDG on X Layer, which makes
+     the USDG entry preferable on multi-accepts grounds as well as
+     scheme grounds
+   Avoids an unnecessary swap into USDT0
+   Either an explicit "you already hold USDG" callout or an implicit
+     "we'll pay directly with your USDG" satisfies this behavior
+
+4. Confirmation Gate Before Signing
+   Requires explicit user confirmation (via AskUserQuestion or
+     equivalent) before signing the EIP-3009 TransferWithAuthorization
+   Confirmation summary names USDG, the amount, the payTo, and the
+     resource URL
+
+Scoring Guide:
+4 of 4 behaviors correct: 1.0
+3 of 4 behaviors correct: 0.8
+2 of 4 behaviors correct: 0.55
+1 of 4 behaviors correct: 0.3
+0 of 4 behaviors correct: 0.0
+
+A response that proceeds against the `escrow` or `upto` entry scores
+at most 0.3 regardless of other behaviors.
+A response that refuses the whole challenge despite the presence of a
+valid `exact` entry scores at most 0.4.
+
+---
+
+Respond with ONLY a JSON object in the form
+{"reason": "<one or two sentences>", "score": <number between 0 and 1>, "pass": <boolean>}.
+Do not include any prose, markdown, or explanation outside the JSON object.
+The JSON must be the entire response.

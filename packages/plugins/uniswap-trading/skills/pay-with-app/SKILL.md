@@ -366,6 +366,13 @@ challenge, otherwise the original request URL.
 - Supported chains include 1, 8453, 42161, 10, 137, 130, **196**, and more
   (see Trading API supported-chains docs).
 
+> The on-chain Universal Router contract on X Layer is labeled **2.1**
+> (deployed at `0xDa00aE15d3A71466517129255255db7c0c0956d3` above). The
+> Trading API expects the header value `2.1.1`, which is the API's
+> internal version-string for the routing path that targets the same
+> Universal Router 2.1 contract. The two version strings refer to
+> related but distinct things; do not substitute one for the other.
+
 ### OKX APP
 
 - **APP overview / dev docs**:

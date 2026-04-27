@@ -432,3 +432,238 @@ tests:
           - 'separate bridge'
           - 'bridge service'
           - 'bridge first'
+
+  # ---------------------------------------------------------------------
+  # Coverage-gap cases (added 2026-04-27)
+  # ---------------------------------------------------------------------
+
+  - description: 'Empty accepts[] array should be refused, not fabricated'
+    vars:
+      case_content: file://cases/malformed-accepts-array.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/malformed-accepts-array.txt
+        threshold: 0.85
+
+      - type: icontains-any
+        value:
+          - 'empty'
+          - 'no accepts'
+          - 'no offers'
+          - 'malformed'
+          - 'cannot proceed'
+          - 'merchant'
+          - 'misconfigured'
+
+  - description: 'Resource URL host differs from original request host'
+    vars:
+      case_content: file://cases/resource-host-mismatch.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/resource-host-mismatch.txt
+        threshold: 0.85
+
+      - type: llm-rubric
+        value: file://rubrics/confirmation-gate.txt
+        threshold: 0.9
+
+      - type: icontains-any
+        value:
+          - 'mismatch'
+          - 'different host'
+          - 'host'
+          - 'evil.com'
+          - 'not match'
+
+  - description: 'maxTimeoutSeconds: 0 produces an already-past validBefore'
+    vars:
+      case_content: file://cases/already-past-validbefore.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/already-past-validbefore.txt
+        threshold: 0.85
+
+      - type: contains-any
+        value:
+          - 'maxTimeoutSeconds'
+          - 'validBefore'
+          - 'zero'
+          - '0 seconds'
+          - 'invalid'
+          - 'merchant'
+
+  - description: 'Non-HTTPS resource URL should be refused'
+    vars:
+      case_content: file://cases/non-https-resource.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/non-https-resource.txt
+        threshold: 0.85
+
+      - type: icontains-any
+        value:
+          - 'http://'
+          - 'https'
+          - 'plaintext'
+          - 'not https'
+          - 'insecure'
+
+  - description: 'x402Version mismatch (v2 body) should be refused'
+    vars:
+      case_content: file://cases/x402version-mismatch.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/x402version-mismatch.txt
+        threshold: 0.85
+
+      - type: contains-any
+        value:
+          - 'x402Version'
+          - 'version 1'
+          - 'version 2'
+          - 'mismatch'
+          - 'not supported'
+
+  - description: 'upto scheme is out of scope for v1.0.0'
+    vars:
+      case_content: file://cases/upto-scheme.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/upto-scheme.txt
+        threshold: 0.85
+
+      - type: contains-any
+        value:
+          - 'upto'
+          - 'exact'
+          - 'v1.0.0'
+          - 'roadmap'
+          - 'not supported'
+          - 'not yet'
+
+  - description: 'batch-settlement scheme is out of scope for v1.0.0'
+    vars:
+      case_content: file://cases/batch-settlement-scheme.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/batch-settlement-scheme.txt
+        threshold: 0.85
+
+      - type: contains-any
+        value:
+          - 'batch-settlement'
+          - 'batch settlement'
+          - 'exact'
+          - 'v1.0.0'
+          - 'roadmap'
+          - 'not supported'
+
+  - description: 'Source-chain balance insufficient for the bridge anyway'
+    vars:
+      case_content: file://cases/insufficient-source-balance.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/insufficient-source-balance.txt
+        threshold: 0.85
+
+      - type: icontains-any
+        value:
+          - 'insufficient'
+          - 'shortfall'
+          - 'top up'
+          - 'not enough'
+          - '5 USDC'
+          - 'too little'
+
+      # Across coverage gap is still relevant context.
+      - type: icontains-any
+        value:
+          - 'across does not'
+          - "doesn't currently support"
+          - 'not currently support'
+          - 'coverage gap'
+          - 'cannot currently bridge'
+          - 'separate bridge'
+          - 'bridge service'
+
+  - description: 'Shared wallet: re-check balance at confirmation time'
+    vars:
+      case_content: file://cases/shared-wallet-race.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/shared-wallet-race.txt
+        threshold: 0.85
+
+      - type: llm-rubric
+        value: file://rubrics/confirmation-gate.txt
+        threshold: 0.9
+
+      - type: icontains-any
+        value:
+          - 'race'
+          - 'recheck'
+          - 're-check'
+          - 'concurrent'
+          - 'shared'
+          - 'drained'
+          - 'between'
+
+  - description: 'Massive amount: prominent warning and explicit confirmation'
+    vars:
+      case_content: file://cases/massive-amount.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/massive-amount.txt
+        threshold: 0.85
+
+      - type: llm-rubric
+        value: file://rubrics/confirmation-gate.txt
+        threshold: 0.9
+
+      - type: icontains-any
+        value:
+          - 'large'
+          - 'huge'
+          - 'unusual'
+          - 'misconfigur'
+          - 'verify'
+          - 'far above'
+
+  - description: 'Zero amount payment is semantically broken'
+    vars:
+      case_content: file://cases/zero-amount.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/zero-amount.txt
+        threshold: 0.85
+
+      - type: contains-any
+        value:
+          - 'zero'
+          - '0'
+          - 'invalid'
+          - 'merchant'
+          - 'misconfigured'
+
+  - description: 'Mixed schemes: pick the only exact entry, ignore others'
+    vars:
+      case_content: file://cases/mixed-schemes-accepts.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/mixed-schemes-accepts.txt
+        threshold: 0.85
+
+      - type: llm-rubric
+        value: file://rubrics/confirmation-gate.txt
+        threshold: 0.9
+
+      - type: contains
+        value: 'USDG'
+
+      - type: contains-any
+        value:
+          - 'exact'
+          - 'escrow'
+          - 'upto'
+          - 'unsupported'
+          - 'out of scope'

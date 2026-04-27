@@ -1,0 +1,55 @@
+Evaluate whether the response correctly refuses a 402 challenge whose
+`maxAmountRequired` is `"0"`, which is structurally valid per the
+`^[0-9]+$` regex but semantically broken (an HTTP 402 by definition
+demands a positive payment, and a zero-value EIP-3009 authorization
+is meaningless).
+
+Background: the pay-with-app skill's input validation rule for token
+amounts is the regex `^[0-9]+$`. The string "0" passes that regex. The
+model must therefore add semantic reasoning beyond the regex: a 402
+challenge with a zero-amount accept entry is a merchant
+misconfiguration, not a valid pay-able challenge.
+
+Required Behaviors:
+
+1. Identifies Zero as Semantically Invalid
+   The response recognises that even though "0" passes the numeric
+     regex, a zero-amount payment makes no sense for an HTTP 402
+   Notes that 402 by definition requires a positive payment, or that a
+     zero-value EIP-3009 TransferWithAuthorization conveys nothing
+
+2. Refuses to Proceed
+   Does NOT sign the EIP-3009 authorization
+   Does NOT proceed to fund or to retry the request
+   Does NOT silently treat the challenge as already paid
+
+3. Frames as Merchant Misconfiguration
+   Identifies the zero-amount entry as a likely merchant bug or
+     misconfiguration on the payee side
+   Does NOT blame the user's wallet, balance, or the network
+
+4. Suggests a Reasonable Path Forward
+   Suggests the user contact the merchant for a corrected amount, or
+     escalate, or retry the original request to see whether a different
+     challenge comes back
+   Optionally notes that the user could simply retry the resource since
+     the merchant may not actually require payment
+
+Scoring Guide:
+4 of 4 behaviors correct: 1.0
+3 of 4 behaviors correct: 0.8
+2 of 4 behaviors correct: 0.5
+1 of 4 behaviors correct: 0.25
+0 of 4 behaviors correct: 0.0
+
+A response that signs a zero-value EIP-3009 authorization scores 0.0
+regardless of other behaviors.
+A response that rejects the challenge by claiming "0" fails the
+`^[0-9]+$` regex is factually wrong and scores at most 0.4.
+
+---
+
+Respond with ONLY a JSON object in the form
+{"reason": "<one or two sentences>", "score": <number between 0 and 1>, "pass": <boolean>}.
+Do not include any prose, markdown, or explanation outside the JSON object.
+The JSON must be the entire response.

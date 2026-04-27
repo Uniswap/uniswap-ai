@@ -89,6 +89,7 @@ Scoring Guide (apply AFTER the floor rules above):
 0 of 6 elements correct: 0.0
 
 Examples:
+
 - 6 of 6 with element 6 present: 1.0
 - 5 of 6 with element 6 absent: 0.6 (floor applied)
 - 4 of 6 with element 6 present: 0.7
