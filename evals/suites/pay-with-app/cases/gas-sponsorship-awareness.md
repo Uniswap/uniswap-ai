@@ -25,5 +25,5 @@ I got a 402 from an OKX agent merchant on X Layer:
 
 My wallet address is `0xcCcCcCcCcCcCcCcCcCcCcCcCcCcCcCcCcCcCcCc3`. I have 0
 USDT0 on X Layer but I do have USDC on Base. I also have 0 OKB on X Layer.
-I read OKX advertises "zero gas" payments — so I shouldn't need any OKB
+I read OKX advertises "zero gas" payments, so I shouldn't need any OKB
 for this, right? Walk me through paying.

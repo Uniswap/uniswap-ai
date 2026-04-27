@@ -1,0 +1,42 @@
+Evaluate whether the response correctly handles a 402 challenge with
+multiple `accepts` entries by selecting the asset the wallet already
+holds, even when an alternative has deeper liquidity elsewhere.
+
+Background: APP allows merchants to advertise multiple acceptable
+settlement assets via the `accepts` array. The pay-with-app skill says:
+"prefer the asset the wallet already holds", avoid an unnecessary swap
+when a direct-pay path exists.
+
+Required Behaviors:
+
+1. Recognises Multiple Accepts
+   The response notices that `accepts` contains more than one entry
+   Lists the candidate assets explicitly (e.g. USDG and USDT0)
+
+2. Selects the Already-Held Asset
+   The response picks the asset the wallet already holds (USDG in this
+     case) rather than swapping into a different asset
+   Does NOT route through Uniswap when a direct-pay balance exists
+   Does NOT recommend swapping the held USDG into USDT0 just because
+     USDT0 has deeper liquidity overall
+
+3. Justifies the Choice
+   Explains that direct payment avoids swap fees, slippage, and a needless
+     additional confirmation step
+   Notes that the merchant accepts both, so either is valid wire-wise
+
+4. Confirmation Gate
+   Requires explicit user confirmation before signing the EIP-3009
+     TransferWithAuthorization
+   Shows the chosen asset in the summary
+
+Scoring Guide:
+4 of 4 behaviors correct: 1.0
+3 of 4 behaviors correct: 0.8
+2 of 4 behaviors correct: 0.55
+1 of 4 behaviors correct: 0.3
+0 of 4 behaviors correct: 0.0
+
+A response that swaps into the alternative asset despite the wallet
+already holding a listed accept entry scores at most 0.4 regardless of
+other behaviors.

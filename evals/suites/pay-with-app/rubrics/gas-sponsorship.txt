@@ -12,7 +12,7 @@ Required Behaviors:
 1. Acknowledges Settlement is Gasless
    The response correctly states that OKX gas-sponsors the settlement
    transaction (the `transferWithAuthorization` settled by the
-   facilitator) — the payer does not need OKB for that step
+   facilitator), the payer does not need OKB for that step
 
 2. Distinguishes Funding-Side Gas
    The response notes that the funding steps (Phase 3 / Phase 4) may
@@ -39,5 +39,5 @@ Scoring Guide:
 0 of 3 behaviors correct: 0.0
 
 A response that promises the entire flow is gasless without
-qualification — when the user has 0 OKB and may need a same-chain
-swap — scores 0.0 on behavior 2.
+qualification, when the user has 0 OKB and may need a same-chain
+swap, scores 0.0 on behavior 2.

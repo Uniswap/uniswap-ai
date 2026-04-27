@@ -1,26 +1,60 @@
 # APP x402 Flow on X Layer
 
 OKX's APP Pay Per Use uses the x402 `"exact"` scheme on EVM. The payer
-signs an EIP-3009 `TransferWithAuthorization` off-chain; OKX's
+signs an EIP-3009 `TransferWithAuthorization` off-chain. OKX's
 facilitator verifies and settles the transfer on chain 196 (zero gas to
 the payer).
 
 ## Table of Contents
 
-- [Step 1 — Helpers and Validation](#step-1--helpers-and-validation)
-- [Step 2 — Confirm Pre-Signing State](#step-2--confirm-pre-signing-state)
-- [Step 3 — Generate Nonce and Deadline](#step-3--generate-nonce-and-deadline)
-- [Step 4 — Sign the EIP-3009 Authorization](#step-4--sign-the-eip-3009-authorization)
-- [Step 5 — Construct the X-PAYMENT Payload](#step-5--construct-the-x-payment-payload)
-- [Step 6 — Retry the Original Request](#step-6--retry-the-original-request)
-- [Step 7 — Interpret the Response](#step-7--interpret-the-response)
+- [Step 0: Prerequisites](#step-0-prerequisites)
+- [Step 1: Helpers and Validation](#step-1-helpers-and-validation)
+- [Step 2: Confirm Pre-Signing State](#step-2-confirm-pre-signing-state)
+- [Step 3: Generate Nonce and Deadline](#step-3-generate-nonce-and-deadline)
+- [Step 3.5: User Confirmation Gate](#step-35-user-confirmation-gate)
+- [Step 4: Sign the EIP-3009 Authorization](#step-4-sign-the-eip-3009-authorization)
+- [Step 5: Construct the X-PAYMENT Payload](#step-5-construct-the-x-payment-payload)
+- [Step 6: Retry the Original Request](#step-6-retry-the-original-request)
+- [Step 7: Interpret the Response](#step-7-interpret-the-response)
 
-## Step 1 — Helpers and Validation
+## Step 0: Prerequisites
+
+Before running any block in this document, assert required CLI tools are
+installed. `bc` is needed for human-readable amount formatting and is
+not preinstalled on every macOS:
 
 ```bash
+set -euo pipefail
+command -v cast    >/dev/null || { echo "cast required (foundry)"            >&2; exit 1; }
+command -v jq      >/dev/null || { echo "jq required"                         >&2; exit 1; }
+command -v bc      >/dev/null || { echo "bc required (brew install bc)"       >&2; exit 1; }
+command -v openssl >/dev/null || { echo "openssl required"                    >&2; exit 1; }
+command -v curl    >/dev/null || { echo "curl required"                       >&2; exit 1; }
+```
+
+The X Layer RPC URL is overridable for rate-limiting or failover:
+
+```bash
+RPC_URL="${X_LAYER_RPC_URL:-https://rpc.xlayer.tech}"
+```
+
+## Step 1: Helpers and Validation
+
+```bash
+set -euo pipefail
+
 get_token_decimals() {
-  local token_addr="$1" rpc_url="${2:-https://rpc.xlayer.tech}"
-  cast call "$token_addr" "decimals()(uint8)" --rpc-url "$rpc_url" 2>/dev/null || echo "6"
+  local token_addr="$1" rpc_url="${2:-${X_LAYER_RPC_URL:-https://rpc.xlayer.tech}}"
+  local out
+  out=$(cast call "$token_addr" "decimals()(uint8)" --rpc-url "$rpc_url") || {
+    echo "ERROR: decimals() call failed for $token_addr on $rpc_url" >&2
+    return 1
+  }
+  [[ "$out" =~ ^[0-9]+$ ]] || {
+    echo "ERROR: non-numeric decimals returned: $out" >&2
+    return 1
+  }
+  echo "$out"
 }
 
 format_token_amount() {
@@ -30,97 +64,185 @@ format_token_amount() {
 ```
 
 > Always show the user **human-readable** amounts (e.g. `0.005 USDT0`),
-> not raw base units.
+> not raw base units. `get_token_decimals` fails loudly on RPC error.
+> Never default to `6`: a wrong decimals value silently misleads the
+> user-facing confirmation gate. Every call site MUST check the exit
+> code: `X402_DECIMALS=$(get_token_decimals "$X402_ASSET" "$RPC_URL") || exit 1`.
 
 Validate every value pulled from the 402 body before using it in shell
-commands or signing payloads:
+commands or signing payloads. The block in Step 2 below enforces these
+as hard gates, not advisory notes:
 
 - Addresses match `^0x[a-fA-F0-9]{40}$`
 - Amounts match `^[0-9]+$`
 - URLs start with `https://`
+- Nonce matches `^0x[a-fA-F0-9]{64}$`
 - Reject any value containing `;`, `|`, `&`, `$`, backtick, parentheses,
   redirection, backslash, quotes, newlines
 
-## Step 2 — Confirm Pre-Signing State
+## Step 2: Confirm Pre-Signing State
 
 ```bash
+set -euo pipefail
+
 # Required environment
 : "${X402_SCHEME:?missing}"        # must be "exact"
 : "${X402_NETWORK:?missing}"       # x-layer / xlayer / eip155:196 / 196
 : "${X402_ASSET:?missing}"         # token contract on X Layer
 : "${X402_AMOUNT:?missing}"        # base units, integer string
 : "${X402_PAY_TO:?missing}"        # recipient
-: "${X402_RESOURCE:?missing}"      # original URL
+: "${X402_RESOURCE:?missing}"      # original URL (or accepts[].resource override)
 : "${WALLET_ADDRESS:?missing}"     # source wallet
 
+# 0) Hard input-validation gates (no advisory notes; enforced)
+[[ "$X402_ASSET"     =~ ^0x[a-fA-F0-9]{40}$       ]] || { echo "bad asset address"     >&2; exit 1; }
+[[ "$X402_PAY_TO"    =~ ^0x[a-fA-F0-9]{40}$       ]] || { echo "bad payTo address"     >&2; exit 1; }
+[[ "$WALLET_ADDRESS" =~ ^0x[a-fA-F0-9]{40}$       ]] || { echo "bad wallet address"    >&2; exit 1; }
+[[ "$X402_AMOUNT"    =~ ^[0-9]+$                  ]] || { echo "bad amount"            >&2; exit 1; }
+[[ "$X402_RESOURCE"  =~ ^https://[^[:space:]]+$   ]] || { echo "bad resource URL"      >&2; exit 1; }
+
+# Note: $X402_RESOURCE should be set from accepts[selected].resource if the 402 challenge
+# provides one (it can override the original request URL for proxied or redirected
+# resources); fall back to the originally requested URL only if accepts[].resource is absent.
+
 # 1) Only "exact" scheme is supported in v1.0.0
-[ "$X402_SCHEME" = "exact" ] || { echo "Unsupported scheme: $X402_SCHEME"; exit 1; }
+[ "$X402_SCHEME" = "exact" ] || { echo "Unsupported scheme: $X402_SCHEME" >&2; exit 1; }
 
 # 2) Network must resolve to chain 196
 case "$X402_NETWORK" in
   x-layer|xlayer|"eip155:196"|196) X402_CHAIN_ID=196 ;;
-  *) echo "Network is not X Layer. Use pay-with-any-token instead."; exit 1 ;;
+  *) echo "Network is not X Layer. Use pay-with-any-token instead." >&2; exit 1 ;;
 esac
 
 # 3) Wallet must hold enough of the requested asset on X Layer
-RPC_URL="https://rpc.xlayer.tech"
+RPC_URL="${X_LAYER_RPC_URL:-https://rpc.xlayer.tech}"
+
 ASSET_BALANCE=$(cast call "$X402_ASSET" \
-  "balanceOf(address)(uint256)" "$WALLET_ADDRESS" --rpc-url "$RPC_URL")
+  "balanceOf(address)(uint256)" "$WALLET_ADDRESS" --rpc-url "$RPC_URL") || {
+  echo "ERROR: balanceOf call failed; check RPC connectivity" >&2; exit 1;
+}
+[[ "$ASSET_BALANCE" =~ ^[0-9]+$ ]] || {
+  echo "ERROR: balanceOf returned non-integer: $ASSET_BALANCE" >&2; exit 1;
+}
+
 if [ "$ASSET_BALANCE" -lt "$X402_AMOUNT" ]; then
-  X402_DECIMALS=$(get_token_decimals "$X402_ASSET" "$RPC_URL")
+  X402_DECIMALS=$(get_token_decimals "$X402_ASSET" "$RPC_URL") || exit 1
   HAVE=$(format_token_amount "$ASSET_BALANCE" "$X402_DECIMALS")
   NEED=$(format_token_amount "$X402_AMOUNT"   "$X402_DECIMALS")
   echo "Insufficient asset balance on X Layer. Have $HAVE, need $NEED."
   echo "Run the funding flow (references/funding-x-layer.md), then return here."
   exit 1
 fi
+
+# Capture quote freshness for the broadcast/sign gate (see Step 6).
+QUOTE_FETCHED_AT=$(date +%s)
 ```
 
-> **REQUIRED:** Use `AskUserQuestion` to show the user a payment summary
-> before signing:
->
-> - Token: `$X402_TOKEN_NAME` (`$X402_ASSET`) on X Layer (chain 196)
-> - Amount: human-readable amount + base units
-> - Recipient: `$X402_PAY_TO`
-> - Resource: `$X402_RESOURCE`
-> - Expiry: `validBefore`
->
-> Obtain explicit confirmation. Do not auto-submit.
-
-## Step 3 — Generate Nonce and Deadline
+## Step 3: Generate Nonce and Deadline
 
 ```bash
+set -euo pipefail
+
 X402_NONCE="0x$(openssl rand -hex 32)"     # 32-byte random nonce
+
+# Assert the nonce is the right shape. If openssl is missing or fails,
+# command substitution can yield "0x" (empty), which signs against
+# nonce: 0. First time works, second is a replay. Fail loud here.
+[ ${#X402_NONCE} -eq 66 ] || { echo "openssl missing or failed: nonce length=${#X402_NONCE}" >&2; exit 1; }
+[[ "$X402_NONCE" =~ ^0x[a-fA-F0-9]{64}$ ]] || { echo "bad nonce shape: $X402_NONCE" >&2; exit 1; }
+
 X402_VALID_AFTER=0                          # immediately valid
-X402_TIMEOUT="${X402_TIMEOUT:-300}"         # default 5 min
-X402_VALID_BEFORE=$(( $(date +%s) + X402_TIMEOUT ))
+
+# Default the requested timeout to 5 minutes if not provided by the challenge.
+X402_TIMEOUT="${X402_TIMEOUT:-300}"
+
+# `maxTimeoutSeconds` from the challenge body is an upper bound on
+# (validBefore - validAfter). Default the ceiling to the requested
+# timeout if the challenge omits it, then clamp.
+X402_MAX_TIMEOUT="${X402_MAX_TIMEOUT:-$X402_TIMEOUT}"
+if [ "$X402_TIMEOUT" -lt "$X402_MAX_TIMEOUT" ]; then
+  X402_EFFECTIVE_TIMEOUT="$X402_TIMEOUT"
+else
+  X402_EFFECTIVE_TIMEOUT="$X402_MAX_TIMEOUT"
+fi
+
+X402_VALID_BEFORE=$(( $(date +%s) + X402_EFFECTIVE_TIMEOUT ))
 ```
 
 The challenge body's `maxTimeoutSeconds` is an upper bound on
-`validBefore - validAfter`. Use a value that fits the bound and gives
-the facilitator time to settle.
+`validBefore - validAfter`. The clamp above keeps the request inside
+the bound while leaving the facilitator time to settle.
 
-## Step 4 — Sign the EIP-3009 Authorization
+## Step 3.5: User Confirmation Gate
+
+This step is mandatory and not optional. Do not auto-submit. Use
+`AskUserQuestion` (or the equivalent confirmation primitive in the host
+agent) to surface a payment summary and obtain explicit yes/no consent
+before signing:
+
+- Token: `$X402_TOKEN_NAME` (`$X402_ASSET`) on X Layer (chain 196)
+- Amount: human-readable amount + base units
+- Recipient: `$X402_PAY_TO`
+- Resource: `$X402_RESOURCE`
+- Expiry: `validBefore` (UTC + epoch)
+- Nonce (first 10 chars of `$X402_NONCE`, for traceability)
+
+If the user declines, abort. If the user does not respond, abort. Do
+not proceed to Step 4 without an affirmative answer in the transcript.
+
+## Step 4: Sign the EIP-3009 Authorization
 
 The EIP-712 domain uses the **token contract's own** `name` and
 `version` (taken verbatim from the challenge's `extra` field).
 `verifyingContract` is the token contract itself.
+
+> **Unicode warning.** USDT0's domain `name` is `"USD₮0"` with the
+> Unicode trademark sign `₮` (U+20AE), not an ASCII `T`. EIP-712 hashes
+> the domain `name` as byte-exact UTF-8: pass it through unchanged from
+> `extra.name`. Do not normalize. Do not substitute ASCII `T`. Any
+> mutation produces a signature the facilitator will reject.
 
 Sign with viem:
 
 ```typescript
 import { privateKeyToAccount } from 'viem/accounts';
 
-const account = privateKeyToAccount(process.env.PRIVATE_KEY as `0x${string}`);
+// Validate every input before constructing the typed-data payload.
+// `process.env.FOO!` casts hide undefined and empty-string bugs; an
+// empty domain or message field produces a valid-looking signature
+// the facilitator will reject, burning a fresh nonce.
+function requireEnv(key: string): string {
+  const v = process.env[key];
+  if (!v || !v.trim()) {
+    throw new Error(
+      `${key} is unset or empty. Re-parse the corresponding field from the 402 challenge.`
+    );
+  }
+  return v;
+}
+
+const privateKey = requireEnv('PRIVATE_KEY');
+const tokenName = requireEnv('X402_TOKEN_NAME'); // from extra.name (e.g. "USD₮0")
+const tokenVersion = requireEnv('X402_TOKEN_VERSION'); // from extra.version (e.g. "1")
+const walletAddress = requireEnv('WALLET_ADDRESS');
+const x402Asset = requireEnv('X402_ASSET');
+const x402PayTo = requireEnv('X402_PAY_TO');
+const x402Amount = requireEnv('X402_AMOUNT');
+const x402ValidAfter = requireEnv('X402_VALID_AFTER');
+const x402ValidBefore = requireEnv('X402_VALID_BEFORE');
+const x402Nonce = requireEnv('X402_NONCE');
+
+const account = privateKeyToAccount(privateKey as `0x${string}`);
 
 const domain = {
-  name: process.env.X402_TOKEN_NAME!, // from extra.name (e.g. "USD₮0")
-  version: process.env.X402_TOKEN_VERSION!, // from extra.version (e.g. "1")
+  name: tokenName,
+  version: tokenVersion,
   chainId: 196,
-  verifyingContract: process.env.X402_ASSET as `0x${string}`,
+  verifyingContract: x402Asset as `0x${string}`,
 };
 
-// REQUIRED: AskUserQuestion confirmation BEFORE this call
+// REQUIRED: AskUserQuestion confirmation already happened in Step 3.5.
+// Do not reach this line without an affirmative user answer.
 const signature = await account.signTypedData({
   domain,
   types: {
@@ -135,12 +257,12 @@ const signature = await account.signTypedData({
   },
   primaryType: 'TransferWithAuthorization',
   message: {
-    from: process.env.WALLET_ADDRESS as `0x${string}`,
-    to: process.env.X402_PAY_TO as `0x${string}`,
-    value: BigInt(process.env.X402_AMOUNT!),
-    validAfter: BigInt(process.env.X402_VALID_AFTER!),
-    validBefore: BigInt(process.env.X402_VALID_BEFORE!),
-    nonce: process.env.X402_NONCE as `0x${string}`,
+    from: walletAddress as `0x${string}`,
+    to: x402PayTo as `0x${string}`,
+    value: BigInt(x402Amount),
+    validAfter: BigInt(x402ValidAfter),
+    validBefore: BigInt(x402ValidBefore),
+    nonce: x402Nonce as `0x${string}`,
   },
 });
 process.env.X402_SIGNATURE = signature;
@@ -148,29 +270,43 @@ process.env.X402_SIGNATURE = signature;
 
 > **Domain warning.** `verifyingContract` is the **token contract**
 > (`X402_ASSET`), not a separate verifier. Use `name` and `version`
-> from `extra` — do not assume defaults. An incorrect domain produces a
+> from `extra`. Do not assume defaults. An incorrect domain produces a
 > signature the facilitator will reject with another 402.
 
-## Step 5 — Construct the X-PAYMENT Payload
+## Step 5: Construct the X-PAYMENT Payload
+
+The wire shape MUST match the x402 v1 spec §5.2 `PaymentPayload`
+schema exactly:
+
+```text
+{ x402Version, scheme, network, payload: { signature, authorization } }
+```
+
+Per spec §5.2.1, `value`, `validAfter`, and `validBefore` are all
+**string-typed** (uint256-as-decimal-string for `value`,
+Unix-timestamp-as-decimal-string for the timestamps). Use `--arg`, not
+`--argjson`, so jq emits JSON strings rather than numbers.
 
 ```bash
+set -euo pipefail
+
 X402_PAYMENT_JSON=$(jq -n \
+  --argjson x402Version  1 \
   --arg     scheme       "$X402_SCHEME" \
   --arg     network      "$X402_NETWORK" \
-  --argjson chainId      "$X402_CHAIN_ID" \
   --arg     from         "$WALLET_ADDRESS" \
   --arg     to           "$X402_PAY_TO" \
   --arg     value        "$X402_AMOUNT" \
-  --argjson validAfter   "$X402_VALID_AFTER" \
-  --argjson validBefore  "$X402_VALID_BEFORE" \
+  --arg     validAfter   "$X402_VALID_AFTER" \
+  --arg     validBefore  "$X402_VALID_BEFORE" \
   --arg     nonce        "$X402_NONCE" \
   --arg     sig          "$X402_SIGNATURE" \
-  --arg     asset        "$X402_ASSET" \
   '{
-    scheme:  $scheme,
-    network: $network,
-    chainId: $chainId,
+    x402Version: $x402Version,
+    scheme:      $scheme,
+    network:     $network,
     payload: {
+      signature: $sig,
       authorization: {
         from:        $from,
         to:          $to,
@@ -178,42 +314,85 @@ X402_PAYMENT_JSON=$(jq -n \
         validAfter:  $validAfter,
         validBefore: $validBefore,
         nonce:       $nonce
-      },
-      signature: $sig
-    },
-    asset: $asset
+      }
+    }
   }')
 
 # Base64-encode and strip whitespace (header spec requires no newlines)
 X402_PAYMENT=$(echo "$X402_PAYMENT_JSON" | base64 | tr -d '[:space:]')
 ```
 
-`value` MUST be a string (`--arg`, not `--argjson`) — uint256 amounts
-exceed JSON's safe integer range.
+`value`, `validAfter`, and `validBefore` MUST be strings (`--arg`, not
+`--argjson`): uint256 amounts exceed JSON's safe integer range, and the
+spec's PaymentPayload schema types all three as `string`. Top-level
+`chainId` and `asset` are intentionally omitted: `network` already
+encodes the chain, and the asset is implicit in the requirement
+matching.
 
-## Step 6 — Retry the Original Request
+## Step 6: Retry the Original Request
+
+Quote freshness gate: refuse to broadcast if too much time elapsed
+between the challenge fetch and the retry. Quotes (and pricing) are
+short-lived; the SKILL doc states roughly 60 seconds, so 45 is a safe
+ceiling that leaves margin:
 
 ```bash
-RETRY_RESPONSE=$(curl -si "$X402_RESOURCE" \
+set -euo pipefail
+
+if [ $(($(date +%s) - QUOTE_FETCHED_AT)) -ge 45 ]; then
+  echo "Quote is older than 45 seconds; refetch the 402 challenge before broadcasting." >&2
+  exit 1
+fi
+
+# Capture status and headers explicitly. `head -1 | grep -o '[0-9]\{3\}'`
+# is fragile (HTTP/2, 100-continue interim responses), so use curl's
+# own status-code writer.
+RETRY_HEADERS=$(mktemp)
+RETRY_BODY_FILE=$(mktemp)
+trap 'rm -f "$RETRY_HEADERS" "$RETRY_BODY_FILE"' EXIT
+
+RETRY_STATUS=$(curl -s -o "$RETRY_BODY_FILE" -D "$RETRY_HEADERS" \
+  -w '%{http_code}' \
+  "$X402_RESOURCE" \
   -H "X-PAYMENT: $X402_PAYMENT" \
   -H "Content-Type: application/json")
 
-RETRY_STATUS=$(echo "$RETRY_RESPONSE" | head -1 | grep -o '[0-9]\{3\}')
-RETRY_BODY=$(echo "$RETRY_RESPONSE" | awk 'found{print} /^\r?$/{found=1}')
-X402_PAYMENT_RESPONSE=$(echo "$RETRY_RESPONSE" \
-  | grep -i 'x-payment-response:' | cut -d' ' -f2- | tr -d '[:space:]')
+RETRY_BODY=$(cat "$RETRY_BODY_FILE")
+X402_PAYMENT_RESPONSE=$(grep -i '^x-payment-response:' "$RETRY_HEADERS" \
+  | cut -d' ' -f2- | tr -d '[:space:]' || true)
 
 echo "HTTP status: $RETRY_STATUS"
 ```
 
-## Step 7 — Interpret the Response
+### Retry policy (two attempts maximum)
 
-| Status | Meaning                              | Action                                                                                                                                                                |
-| ------ | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 200    | Payment accepted, resource delivered | Decode `X-PAYMENT-RESPONSE`: `echo "$X402_PAYMENT_RESPONSE" \| base64 --decode \| jq .` and surface the receipt to the user                                           |
-| 402    | Payment rejected                     | Most common causes: wrong domain `name` / `version`, expired `validBefore`, reused `nonce`, amount mismatch. Re-derive from the **fresh** challenge and try once more |
-| 400    | Malformed payload                    | Verify JSON structure and base64 encoding (no whitespace)                                                                                                             |
-| 5xx    | Facilitator or origin error          | Surface raw body to the user; do not auto-retry                                                                                                                       |
+The 402 path is bounded: at most one retry after the initial 402, and
+only against a freshly re-parsed challenge. Do not retry indefinitely:
 
-Do not retry indefinitely on 402 — two attempts maximum, then surface
+```bash
+set -euo pipefail
+
+X402_ATTEMPT="${X402_ATTEMPT:-0}"
+X402_MAX_ATTEMPTS=2
+
+if [ "$X402_ATTEMPT" -ge "$X402_MAX_ATTEMPTS" ]; then
+  echo "x402 retry budget exhausted ($X402_ATTEMPT/$X402_MAX_ATTEMPTS). Surface OKX's error to the user; do not loop." >&2
+  exit 1
+fi
+X402_ATTEMPT=$((X402_ATTEMPT + 1))
+```
+
+## Step 7: Interpret the Response
+
+| Status | Meaning                              | Action                                                                                                                                                                                                                                  |
+| ------ | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 200    | Payment accepted, resource delivered | If `X402_PAYMENT_RESPONSE` is non-empty, decode it: `echo "$X402_PAYMENT_RESPONSE" \| base64 --decode \| jq .` and surface the receipt. If empty, report "Payment accepted but no receipt header returned. The resource was delivered." |
+| 402    | Payment rejected                     | Most common causes: wrong domain `name` / `version`, expired `validBefore`, reused `nonce`, amount mismatch. Re-derive from the **fresh** challenge and try once more (max two attempts total)                                          |
+| 400    | Malformed payload                    | Verify JSON structure and base64 encoding (no whitespace), confirm `x402Version: 1` and `payload.{signature, authorization}` shape                                                                                                      |
+| 5xx    | Facilitator or origin error          | Surface raw body to the user. Do not auto-retry                                                                                                                                                                                         |
+
+Do not retry indefinitely on 402. Two attempts maximum, then surface
 the rejection details to the user with the exact message OKX returned.
+Empty `X402_PAYMENT_RESPONSE` is not an error: skip the decode step
+and report success without a receipt rather than feeding empty input
+to `base64 --decode`.

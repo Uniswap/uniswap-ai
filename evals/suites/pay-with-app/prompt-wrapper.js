@@ -4,6 +4,13 @@
  * Reads SKILL.md directly via fs and wraps it in {% raw %} blocks
  * to prevent Nunjucks from interpreting URL-encoded JSON patterns
  * like `{%22feeAmount%22}` as block tags.
+ *
+ * Caveat: {% raw %} blocks terminate at the first literal `{% endraw %}`
+ * sequence. If a future SKILL.md or reference file contains URL-encoded
+ * JSON inside a code block that happens to spell out `{% endraw %}` (or
+ * any other Nunjucks closing tag), the raw block will close early and
+ * Nunjucks will resume parsing the remainder. Audit reference files for
+ * this pattern when adding new ones.
  */
 const fs = require('fs');
 const path = require('path');

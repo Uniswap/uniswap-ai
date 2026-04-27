@@ -2,9 +2,9 @@ Evaluate whether the response correctly refuses a 402 challenge whose
 scheme is something other than `"exact"` (the only scheme this skill's
 v1.0.0 supports).
 
-The challenge in this case has scheme `"escrow"` — APP also defines
+The challenge in this case has scheme `"escrow"`, APP also defines
 `aggr_deferred` (Pay by Batch), `session`, and `upto` primitives. This
-skill refuses any non-`charge`/non-`exact` scheme cleanly.
+skill refuses any scheme other than `"exact"` cleanly.
 
 Required Behaviors:
 
@@ -20,11 +20,11 @@ Required Behaviors:
    Does not silently treat it as `exact` and try anyway
 
 3. Points the User to the Roadmap
-   The response explains that the v1.0.0 skill covers `charge` (Pay Per
-   Use, scheme `exact`) only
+   The response explains that the v1.0.0 skill supports the `"exact"`
+   scheme only
    Mentions that escrow / batch / session / upto are tracked as future
    work, OR points the user to wait for a v1.x update
-   Suggests the user contact the merchant about using `exact` if their
+   Suggests the user contact the merchant about using `"exact"` if their
    integration supports it
 
 Scoring Guide:

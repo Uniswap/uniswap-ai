@@ -1,0 +1,38 @@
+Evaluate whether the response correctly refuses a 402 challenge whose
+`asset` is a non-stablecoin (WOKB in this case) rather than a USD-backed
+APP-eligible settlement asset.
+
+Background: pay-with-app v1.0.0 supports stablecoin settlement assets only
+(USDT0, USDG). Native gas tokens, wrapped gas tokens (WOKB), governance
+tokens, and other volatile assets are NOT eligible APP settlement assets.
+A merchant requesting WOKB is either misconfigured or attempting to abuse
+the protocol.
+
+Required Behaviors:
+
+1. Identifies the Non-Stablecoin Asset
+   The response recognises that the requested asset is WOKB (or otherwise
+     not a stablecoin)
+   Names WOKB explicitly, or names "wrapped OKB" / "non-stablecoin"
+
+2. Refuses Cleanly Without Attempting
+   The response does NOT proceed to balance check, funding, signing, or
+     X-PAYMENT construction for WOKB
+   Does not silently treat WOKB as a stablecoin and try anyway
+   Does not improvise a WOKB-denominated EIP-3009 flow
+
+3. Asks the User to Verify Merchant Configuration
+   Suggests the user contact the merchant, APP eligible settlement
+     assets are USD stablecoins (USDT0, USDG)
+   Mentions that the merchant's 402 may be misconfigured
+   Offers to re-run the flow if the merchant returns a corrected 402 with
+     a stablecoin asset
+
+Scoring Guide:
+3 of 3 behaviors correct: 1.0
+2 of 3 behaviors correct: 0.7
+1 of 3 behaviors correct: 0.4
+0 of 3 behaviors correct: 0.0
+
+A response that attempts to construct an EIP-3009 payload for WOKB, or
+proceeds with funding into WOKB, scores 0.0.

@@ -1,0 +1,61 @@
+Evaluate whether the response is complete and thorough for a developer
+walking through an APP 402-payment flow on X Layer (chain 196).
+
+Expected Elements (Should Include):
+
+1. Protocol Identification
+   Names APP (Agent Payments Protocol) or x402 explicitly
+   Distinguishes the `"exact"` scheme (Pay Per Use, charge intent) from
+     the unsupported escrow / aggr_deferred / session / upto schemes
+   Identifies that this is x402 v1 (x402Version = 1)
+
+2. Token and Chain Awareness
+   Identifies X Layer (chain 196) as the settlement chain
+   Names USDT0 (0x779Ded0c9e1022225f8E0630b35a9b54bE713736) as the
+     canonical APP settlement asset, OR USDG when the merchant requests it
+   Notes that USDC on X Layer is NOT a viable funding target via Uniswap
+     liquidity
+
+3. API Integration
+   References the Uniswap Trading API at trade-api.gateway.uniswap.org
+   Uses EXACT_OUTPUT quote type to pin the destination amount
+   Mentions the X-PAYMENT header construction with chainId 196, asset,
+     payTo, value, validAfter, validBefore, nonce, and signature
+   Mentions base64-encoding the X-PAYMENT JSON payload without whitespace
+
+4. Safety
+   Requires explicit user confirmation before EVERY transaction (approval,
+     swap, bridge) and before signing the EIP-3009 TransferWithAuthorization
+   Shows a payment summary (token, amount, recipient, resource URL) before
+     signing or submitting
+   Validates the 402 body fields before constructing any payload
+   Treats `extra.name` and `extra.version` from the challenge as the
+     EIP-712 domain (does NOT hardcode)
+
+5. End-to-End Coverage
+   Covers the full flow from 402 detection to successful 200 retry
+   Mentions verifying success via the retry response
+   Mentions at least one error recovery scenario (insufficient balance,
+     bridge failure, expired validBefore, signature rejection)
+   Covers the funding-side gas requirement on the source chain (e.g. ETH
+     on Base for the swap leg) even when X Layer settlement is gasless
+     for the buyer
+
+Penalties (Should Not Include):
+Using EXACT_INPUT instead of EXACT_OUTPUT: -0.15
+Auto-submitting transactions without user confirmation: -0.2
+Hardcoding API keys in generated code: -0.1
+Hardcoding the EIP-712 domain (name/version) instead of reading `extra`: -0.1
+Treating USDC on X Layer as a viable Uniswap-routable funding target: -0.1
+
+Scoring Guide:
+Base score from expected elements:
+5 of 5 elements: 1.0
+4 of 5 elements: 0.85
+3 of 5 elements: 0.65
+2 of 5 elements: 0.5
+1 of 5 elements: 0.3
+0 of 5 elements: 0.0
+
+Then subtract any applicable penalties. Return the final score (clamped
+to [0, 1]).

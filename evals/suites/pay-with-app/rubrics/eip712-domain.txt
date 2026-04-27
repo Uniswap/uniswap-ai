@@ -1,0 +1,48 @@
+Evaluate whether the response correctly uses `extra.name` and
+`extra.version` from the 402 challenge as the EIP-712 domain for the
+TransferWithAuthorization signature, rather than hardcoding common
+defaults.
+
+Background: APP requires the EIP-3009 typed-data signature to use the
+token contract's own EIP-712 domain. Tokens disagree on naming: USDT0
+publishes itself as "USD₮0" with version "1", while a hypothetical
+TetherToken-derived contract may use "TetherToken" with version "2".
+Hardcoding "USD₮0"/"1" against a contract that publishes a different
+domain produces a signature that the verifier will reject. The skill
+must read `extra.name` and `extra.version` from the challenge body and
+use those exact values in the EIP-712 domain.
+
+Required Behaviors:
+
+1. Reads `extra.name` and `extra.version` from the Challenge
+   The response references the values inside `extra` rather than
+     defaulting to "USD₮0" / "1"
+   Quotes or names the actual values from the challenge (e.g.
+     "TetherToken" and "2")
+
+2. Uses the Values in the EIP-712 Domain
+   The response constructs the EIP-712 domain with `name` and `version`
+     populated from the challenge's `extra` object
+   Does NOT hardcode "USD₮0" or "1" when the challenge provides
+     different values
+
+3. Explains the Why
+   Notes that the EIP-712 domain must match the token contract's own
+     `name()` and `version()` for the signature to verify on-chain
+   Mentions that hardcoded defaults will produce an invalid signature
+     for a contract that publishes a different domain
+
+4. Confirmation Gate
+   Requires explicit user confirmation before signing
+   Shows the resolved domain values (and the chosen asset) in the summary
+
+Scoring Guide:
+4 of 4 behaviors correct: 1.0
+3 of 4 behaviors correct: 0.8
+2 of 4 behaviors correct: 0.55
+1 of 4 behaviors correct: 0.3
+0 of 4 behaviors correct: 0.0
+
+A response that hardcodes the EIP-712 domain or signs against
+"USD₮0"/"1" when the challenge supplies different values scores at most
+0.3 regardless of other behaviors.

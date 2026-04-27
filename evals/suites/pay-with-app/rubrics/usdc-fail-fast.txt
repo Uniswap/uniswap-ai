@@ -17,7 +17,7 @@ Required Behaviors:
 
 3. Suggests a Realistic Alternative
    Suggests bridging USDC directly from a chain where it is liquid (Base,
-     Arbitrum, Mainnet) — i.e. cross-chain funding rather than same-chain
+     Arbitrum, Mainnet), i.e. cross-chain funding rather than same-chain
      swap
    OR suggests asking the merchant whether USDT0 is acceptable
    OR clearly hands control back to the user with the constraint
