@@ -207,7 +207,7 @@ jobs:
         github.event.pull_request.user.login == 'claude[bot]'
       )
 
-    uses: Uniswap/ai-toolkit/.github/workflows/_claude-code-review.yml@b229e128e6a60bc6a495e80bda9f13d6bafdfc5e
+    uses: Uniswap/ai-toolkit/.github/workflows/_claude-code-review.yml@4d55967a0d8d941e8c815b3d2daea3770fecbc98
     with:
       pr_number: ${{ github.event.pull_request.number }}
       base_ref: ${{ github.base_ref }}
@@ -258,7 +258,7 @@ jobs:
       github.event_name == 'workflow_dispatch' &&
       needs.get-pr-info.outputs.should_run == 'true'
 
-    uses: Uniswap/ai-toolkit/.github/workflows/_claude-code-review.yml@b229e128e6a60bc6a495e80bda9f13d6bafdfc5e
+    uses: Uniswap/ai-toolkit/.github/workflows/_claude-code-review.yml@4d55967a0d8d941e8c815b3d2daea3770fecbc98
     with:
       pr_number: ${{ needs.get-pr-info.outputs.pr_number }}
       base_ref: ${{ needs.get-pr-info.outputs.base_ref }}
@@ -290,7 +290,7 @@ jobs:
       (github.event_name == 'issue_comment' || github.event_name == 'pull_request_review_comment') &&
       needs.get-pr-info.outputs.should_run == 'true'
 
-    uses: Uniswap/ai-toolkit/.github/workflows/_claude-code-review.yml@b229e128e6a60bc6a495e80bda9f13d6bafdfc5e
+    uses: Uniswap/ai-toolkit/.github/workflows/_claude-code-review.yml@4d55967a0d8d941e8c815b3d2daea3770fecbc98
     with:
       pr_number: ${{ needs.get-pr-info.outputs.pr_number }}
       base_ref: ${{ needs.get-pr-info.outputs.base_ref }}
