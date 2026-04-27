@@ -75,11 +75,24 @@ tests:
         value: file://rubrics/completeness.txt
         threshold: 0.85
 
-      - type: contains
-        value: 'trade-api.gateway.uniswap.org'
-
-      - type: contains
-        value: 'EXACT_OUTPUT'
+      # Under Option A (Across does not currently bridge to X Layer), the
+      # correct response either uses the Trading API for an optional
+      # source-chain swap leg AND surfaces the coverage gap, OR skips the
+      # Trading API call entirely because the gap makes it pointless. Either
+      # is acceptable; require at least one of the two framings.
+      - type: icontains-any
+        value:
+          - 'trade-api.gateway.uniswap.org'
+          - 'across does not'
+          - "doesn't currently support"
+          - 'not currently support'
+          - 'coverage gap'
+          - 'no quotes available'
+          - 'cannot currently bridge'
+          - 'not in Across'
+          - 'separate bridge'
+          - 'bridge service'
+          - 'bridge first'
 
       - type: not-contains
         value: 'EXACT_INPUT'
@@ -320,11 +333,24 @@ tests:
         value: file://rubrics/completeness.txt
         threshold: 0.85
 
-      - type: contains
-        value: 'trade-api.gateway.uniswap.org'
-
-      - type: contains
-        value: 'EXACT_OUTPUT'
+      # Under Option A (Across does not currently bridge to X Layer), the
+      # correct response either uses the Trading API for an optional
+      # source-chain leg AND surfaces the coverage gap, OR skips the Trading
+      # API call entirely because the gap makes it pointless. Either is
+      # acceptable; require at least one of the two framings.
+      - type: icontains-any
+        value:
+          - 'trade-api.gateway.uniswap.org'
+          - 'across does not'
+          - "doesn't currently support"
+          - 'not currently support'
+          - 'coverage gap'
+          - 'no quotes available'
+          - 'cannot currently bridge'
+          - 'not in Across'
+          - 'separate bridge'
+          - 'bridge service'
+          - 'bridge first'
 
       - type: not-contains
         value: 'EXACT_INPUT'
@@ -348,11 +374,24 @@ tests:
         value: file://rubrics/completeness.txt
         threshold: 0.8
 
-      - type: contains
-        value: 'trade-api.gateway.uniswap.org'
-
-      - type: contains
-        value: 'EXACT_OUTPUT'
+      # Under Option A (Across does not currently bridge to X Layer), the
+      # correct response surfaces the coverage gap; the Trading API URL or
+      # EXACT_OUTPUT keyword may not appear if the model decides the gap
+      # makes a Trading API call pointless.
+      - type: icontains-any
+        value:
+          - 'trade-api.gateway.uniswap.org'
+          - 'EXACT_OUTPUT'
+          - 'across does not'
+          - "doesn't currently support"
+          - 'not currently support'
+          - 'coverage gap'
+          - 'no quotes available'
+          - 'cannot currently bridge'
+          - 'not in Across'
+          - 'separate bridge'
+          - 'bridge service'
+          - 'bridge first'
 
       - type: not-contains
         value: 'EXACT_INPUT'

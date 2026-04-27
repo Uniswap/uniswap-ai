@@ -21,3 +21,10 @@ Scoring Guide:
 2 of 3 satisfied: 0.7
 1 of 3 satisfied: 0.4
 0 of 3 satisfied: 0.0
+
+---
+
+Respond with ONLY a JSON object in the form
+{"reason": "<one or two sentences>", "score": <number between 0 and 1>, "pass": <boolean>}.
+Do not include any prose, markdown, or explanation outside the JSON object.
+The JSON must be the entire response.
