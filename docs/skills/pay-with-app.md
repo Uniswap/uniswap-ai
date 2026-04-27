@@ -74,6 +74,12 @@ facilitator support.
   [developers.uniswap.org](https://developers.uniswap.org/)). Needed
   only for cross-chain funding.
 - `jq` and `cast` (Foundry) installed
+- Node 18+ and `viem` (used to produce the EIP-3009 typed-data
+  signature). If `viem` is not already reachable from your working
+  directory, the skill will prompt before running `npm install viem`
+  into a cached scratch directory at
+  `~/.cache/uniswap-pay-with-app/signer/` (~13 packages, ~5 MB). The
+  cache persists across runs.
 
 ## Funding Targets on X Layer
 
