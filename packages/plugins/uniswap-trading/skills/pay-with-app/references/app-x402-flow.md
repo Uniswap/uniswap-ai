@@ -59,7 +59,10 @@ get_token_decimals() {
 
 format_token_amount() {
   local amount="$1" decimals="$2"
-  echo "scale=$decimals; $amount / (10 ^ $decimals)" | bc -l | sed 's/0*$//' | sed 's/\.$//'
+  local result
+  result=$(echo "scale=$decimals; $amount / (10 ^ $decimals)" | bc -l | sed 's/0*$//' | sed 's/\.$//')
+  [ -z "$result" ] && result="0"
+  echo "$result"
 }
 ```
 
@@ -99,11 +102,20 @@ set -euo pipefail
 [[ "$X402_PAY_TO"    =~ ^0x[a-fA-F0-9]{40}$       ]] || { echo "bad payTo address"     >&2; exit 1; }
 [[ "$WALLET_ADDRESS" =~ ^0x[a-fA-F0-9]{40}$       ]] || { echo "bad wallet address"    >&2; exit 1; }
 [[ "$X402_AMOUNT"    =~ ^[0-9]+$                  ]] || { echo "bad amount"            >&2; exit 1; }
-[[ "$X402_RESOURCE"  =~ ^https://[^[:space:]]+$   ]] || { echo "bad resource URL"      >&2; exit 1; }
+[[ "$X402_RESOURCE"  =~ ^https://[A-Za-z0-9._~:/?\#@!\$\&\'\(\)*+,\;=%-]+$ ]] || { echo "bad resource URL" >&2; exit 1; }
+# Reject shell metacharacters that the bracket class above already excludes
+# (backticks, double/single backslash escapes, raw quotes), but assert
+# explicitly so future edits to the bracket class do not silently weaken the gate.
+case "$X402_RESOURCE" in
+  *\`*|*\\*|*\"*) echo "bad resource URL: contains shell metacharacter" >&2; exit 1 ;;
+esac
 
 # Note: $X402_RESOURCE should be set from accepts[selected].resource if the 402 challenge
 # provides one (it can override the original request URL for proxied or redirected
 # resources); fall back to the originally requested URL only if accepts[].resource is absent.
+# If accepts[selected].resource's host differs from the host of the originally-requested
+# URL, surface the mismatch to the user and require explicit confirmation before
+# continuing. A facilitator-mediated redirect is legitimate but should not be silent.
 
 # 1) Only "exact" scheme is supported in v1.0.0
 [ "$X402_SCHEME" = "exact" ] || { echo "Unsupported scheme: $X402_SCHEME" >&2; exit 1; }
@@ -134,8 +146,10 @@ if [ "$ASSET_BALANCE" -lt "$X402_AMOUNT" ]; then
   exit 1
 fi
 
-# Capture quote freshness for the broadcast/sign gate (see Step 6).
-QUOTE_FETCHED_AT=$(date +%s)
+# Capture 402 challenge freshness for the sign-time gate (see Step 4).
+# Named CHALLENGE_FETCHED_AT to disambiguate from the Trading API "quote"
+# concept used in funding-x-layer.md; here it refers to the 402 body itself.
+CHALLENGE_FETCHED_AT=$(date +%s)
 ```
 
 ## Step 3: Generate Nonce and Deadline
@@ -202,6 +216,22 @@ The EIP-712 domain uses the **token contract's own** `name` and
 > `extra.name`. Do not normalize. Do not substitute ASCII `T`. Any
 > mutation produces a signature the facilitator will reject.
 
+Freshness gate (refuse-to-sign-when-stale): a signed-but-stale
+authorization burns a nonce on the facilitator side; refusing to sign
+preserves the nonce. Run this gate **before** invoking `signTypedData`,
+not after. The challenge body's prices and `accepts[]` parameters are
+short-lived (the SKILL doc states roughly 60 seconds); 45 is a safe
+ceiling that leaves margin:
+
+```bash
+set -euo pipefail
+
+if [ $(($(date +%s) - CHALLENGE_FETCHED_AT)) -ge 45 ]; then
+  echo "402 challenge is older than 45 seconds; refetch before signing." >&2
+  exit 1
+fi
+```
+
 Sign with viem:
 
 ```typescript
@@ -221,16 +251,42 @@ function requireEnv(key: string): string {
   return v;
 }
 
+// Shape-validating wrappers: catch the case where a string is non-empty but
+// the wrong shape (e.g. truncated address, scientific-notation amount). An
+// empty-only check still produces a valid-looking signature the facilitator
+// will reject, burning a fresh nonce.
+function requireAddress(key: string): `0x${string}` {
+  const v = requireEnv(key);
+  if (!/^0x[a-fA-F0-9]{40}$/.test(v)) {
+    throw new Error(`${key} is not a valid 0x address: ${v}`);
+  }
+  return v as `0x${string}`;
+}
+function requireUint(key: string): bigint {
+  const v = requireEnv(key);
+  if (!/^[0-9]+$/.test(v)) {
+    throw new Error(`${key} is not a non-negative integer: ${v}`);
+  }
+  return BigInt(v);
+}
+function requireBytes32(key: string): `0x${string}` {
+  const v = requireEnv(key);
+  if (!/^0x[a-fA-F0-9]{64}$/.test(v)) {
+    throw new Error(`${key} is not a 0x bytes32: ${v}`);
+  }
+  return v as `0x${string}`;
+}
+
 const privateKey = requireEnv('PRIVATE_KEY');
 const tokenName = requireEnv('X402_TOKEN_NAME'); // from extra.name (e.g. "USD₮0")
 const tokenVersion = requireEnv('X402_TOKEN_VERSION'); // from extra.version (e.g. "1")
-const walletAddress = requireEnv('WALLET_ADDRESS');
-const x402Asset = requireEnv('X402_ASSET');
-const x402PayTo = requireEnv('X402_PAY_TO');
-const x402Amount = requireEnv('X402_AMOUNT');
-const x402ValidAfter = requireEnv('X402_VALID_AFTER');
-const x402ValidBefore = requireEnv('X402_VALID_BEFORE');
-const x402Nonce = requireEnv('X402_NONCE');
+const walletAddress = requireAddress('WALLET_ADDRESS');
+const x402Asset = requireAddress('X402_ASSET');
+const x402PayTo = requireAddress('X402_PAY_TO');
+const x402Amount = requireUint('X402_AMOUNT');
+const x402ValidAfter = requireUint('X402_VALID_AFTER');
+const x402ValidBefore = requireUint('X402_VALID_BEFORE');
+const x402Nonce = requireBytes32('X402_NONCE');
 
 const account = privateKeyToAccount(privateKey as `0x${string}`);
 
@@ -238,7 +294,7 @@ const domain = {
   name: tokenName,
   version: tokenVersion,
   chainId: 196,
-  verifyingContract: x402Asset as `0x${string}`,
+  verifyingContract: x402Asset,
 };
 
 // REQUIRED: AskUserQuestion confirmation already happened in Step 3.5.
@@ -257,12 +313,12 @@ const signature = await account.signTypedData({
   },
   primaryType: 'TransferWithAuthorization',
   message: {
-    from: walletAddress as `0x${string}`,
-    to: x402PayTo as `0x${string}`,
-    value: BigInt(x402Amount),
-    validAfter: BigInt(x402ValidAfter),
-    validBefore: BigInt(x402ValidBefore),
-    nonce: x402Nonce as `0x${string}`,
+    from: walletAddress,
+    to: x402PayTo,
+    value: x402Amount,
+    validAfter: x402ValidAfter,
+    validBefore: x402ValidBefore,
+    nonce: x402Nonce,
   },
 });
 process.env.X402_SIGNATURE = signature;
@@ -286,6 +342,11 @@ Per spec §5.2.1, `value`, `validAfter`, and `validBefore` are all
 **string-typed** (uint256-as-decimal-string for `value`,
 Unix-timestamp-as-decimal-string for the timestamps). Use `--arg`, not
 `--argjson`, so jq emits JSON strings rather than numbers.
+
+`x402Version` is an integer per spec (not a string-typed field like the
+EIP-3009 timestamps): `--argjson x402Version 1` emits a JSON number,
+which is correct. If a future spec revision retypes this field as a
+string, switch to `--arg` instead.
 
 ```bash
 set -euo pipefail
@@ -331,18 +392,12 @@ matching.
 
 ## Step 6: Retry the Original Request
 
-Quote freshness gate: refuse to broadcast if too much time elapsed
-between the challenge fetch and the retry. Quotes (and pricing) are
-short-lived; the SKILL doc states roughly 60 seconds, so 45 is a safe
-ceiling that leaves margin:
+The freshness gate has already run in Step 4 (refuse-to-sign-when-stale).
+By the time control reaches this step, the signature is fresh and the
+nonce is committed.
 
 ```bash
 set -euo pipefail
-
-if [ $(($(date +%s) - QUOTE_FETCHED_AT)) -ge 45 ]; then
-  echo "Quote is older than 45 seconds; refetch the 402 challenge before broadcasting." >&2
-  exit 1
-fi
 
 # Capture status and headers explicitly. `head -1 | grep -o '[0-9]\{3\}'`
 # is fragile (HTTP/2, 100-continue interim responses), so use curl's
@@ -358,29 +413,43 @@ RETRY_STATUS=$(curl -s -o "$RETRY_BODY_FILE" -D "$RETRY_HEADERS" \
   -H "Content-Type: application/json")
 
 RETRY_BODY=$(cat "$RETRY_BODY_FILE")
-X402_PAYMENT_RESPONSE=$(grep -i '^x-payment-response:' "$RETRY_HEADERS" \
-  | cut -d' ' -f2- | tr -d '[:space:]' || true)
+# Use awk for header parsing rather than `cut -d' ' -f2-`: header names
+# may have variable whitespace after the colon, and `cut` mishandles
+# tabs and folded continuations.
+X402_PAYMENT_RESPONSE=$(awk 'BEGIN{IGNORECASE=1} /^x-payment-response:/ { sub(/^[^:]+:[ \t]*/, ""); print }' \
+  "$RETRY_HEADERS" | tr -d '\r\n' || true)
 
 echo "HTTP status: $RETRY_STATUS"
 ```
 
 ### Retry policy (two attempts maximum)
 
-The 402 path is bounded: at most one retry after the initial 402, and
-only against a freshly re-parsed challenge. Do not retry indefinitely:
+The 402 path is bounded: at most **one** retry after the initial 402, and
+only against a freshly re-parsed challenge. The retry budget is tracked
+at the agent level, not via a bash counter. Bash variable state does
+not survive across separate Bash tool invocations, so a counter would
+silently reset and permit unbounded retries.
 
-```bash
-set -euo pipefail
+**Agent-level retry instruction:** If the retry returns 402, you may
+attempt **one** more retry, but only after re-deriving `X402_NONCE` and
+`X402_VALID_BEFORE` from a freshly fetched 402 challenge. Do not retry a
+third time. After the second 402, surface the rejection to the user with
+the exact body OKX returned and stop.
 
-X402_ATTEMPT="${X402_ATTEMPT:-0}"
-X402_MAX_ATTEMPTS=2
+**Variable lifecycle on retry or re-confirmation.** On any retry, you
+MUST regenerate the following from a freshly fetched 402 challenge body
+before re-signing:
 
-if [ "$X402_ATTEMPT" -ge "$X402_MAX_ATTEMPTS" ]; then
-  echo "x402 retry budget exhausted ($X402_ATTEMPT/$X402_MAX_ATTEMPTS). Surface OKX's error to the user; do not loop." >&2
-  exit 1
-fi
-X402_ATTEMPT=$((X402_ATTEMPT + 1))
-```
+- `X402_NONCE` (Step 3): never reuse a prior nonce; the facilitator
+  rejects replays and you would burn the new attempt for nothing.
+- `X402_VALID_BEFORE` (Step 3): recompute from the fresh `date +%s` so
+  the freshness gate in Step 4 does not trip on an old deadline.
+- `CHALLENGE_FETCHED_AT` (Step 2): re-capture from `date +%s` at the
+  moment the new 402 body is read; this is the timestamp the Step 4
+  gate compares against.
+
+The user-confirmation gate (Step 3.5) MUST also re-prompt; do not silently
+re-sign on prior consent.
 
 ## Step 7: Interpret the Response
 

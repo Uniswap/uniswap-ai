@@ -16,7 +16,7 @@ accepts both USDG and USDT0:
       "mimeType": "application/json",
       "payTo": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
       "maxTimeoutSeconds": 300,
-      "asset": "0x4a1c3aD6Ed28a636ee1751C69071f6be75DEb8B8",
+      "asset": "0x4ae46a509F6b1D9056937BA4500cb143933D2dc8",
       "extra": {
         "name": "USDG",
         "version": "1"

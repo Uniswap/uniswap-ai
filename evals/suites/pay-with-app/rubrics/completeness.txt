@@ -38,8 +38,10 @@ Expected Elements (Should Include):
    Mentions at least one error recovery scenario (insufficient balance,
      bridge failure, expired validBefore, signature rejection)
    Covers the funding-side gas requirement on the source chain (e.g. ETH
-     on Base for the swap leg) even when X Layer settlement is gasless
-     for the buyer
+     on Base for the swap leg) when funding is required. If the user
+     already has sufficient balance of the requested asset and no
+     funding flow is needed, this element is not applicable and should
+     not lower the score.
 
 Penalties (Should Not Include):
 Using EXACT_INPUT instead of EXACT_OUTPUT: -0.15

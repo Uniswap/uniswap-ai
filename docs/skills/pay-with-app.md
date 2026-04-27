@@ -80,7 +80,7 @@ facilitator support.
 | Asset | Address                                      | Funding                                                                                                                                                                                    |
 | ----- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | USDT0 | `0x779Ded0c9e1022225f8E0630b35a9b54bE713736` | ✅ default (deepest Uniswap v3 liquidity on X Layer)                                                                                                                                       |
-| USDG  | `0x4ae46a509f6b1d9056937ba4500cb143933d2dc8` | ✅ direct, or one-hop USDT0 to USDG                                                                                                                                                        |
+| USDG  | `0x4ae46a509F6b1D9056937BA4500cb143933D2dc8` | ✅ direct, or one-hop USDT0 to USDG                                                                                                                                                        |
 | USDC  | `0x74b7F16337b8972027F6196A17a631aC6dE26d22` | ❌ no reliable Uniswap v3 routing on X Layer (pools exist but liquidity is thin and Trading API does not consistently return routes); bridge USDC directly from a chain where it is liquid |
 
 ## Main Workflow

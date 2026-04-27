@@ -17,7 +17,7 @@ routing into X Layer (powered by Across).
 
 | Asset on X Layer      | Recommended?                  | Notes                                                                                                                                                                                                                                                                                                                                                |
 | --------------------- | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| USDT0 (`0x779Ded0c…`) | ✅ default                    | Deepest Uniswap v3 liquidity (USDT0/USDG and USDT0/WOKB pools: fee tiers may shift over time; the Trading API will pick the optimal route). Use this if the 402 challenge accepts USDT0.                                                                                                                                                             |
+| USDT0 (`0x779Ded0c…`) | ✅ default                    | Deepest Uniswap v3 liquidity (USDT0/USDG and USDT0/WOKB pools; additional pools at other fee tiers may be deployed, and the Trading API will pick the optimal route across all available pools). Use this if the 402 challenge accepts USDT0.                                                                                                        |
 | USDG (`0x4ae46a50…`)  | ✅ supported                  | Reachable via direct Trading API quote, or one-hop USDT0 to USDG.                                                                                                                                                                                                                                                                                    |
 | USDC (`0x74b7F163…`)  | ❌ not via Uniswap on X Layer | Trading API does not consistently return routes for USDC swaps on X Layer despite pools at 0.05% and 0.3% existing: TVL is too thin for reliable execution. If the merchant requires USDC, bridge USDC directly from a chain where it is liquid (Base, Arbitrum, Mainnet) using the Trading API rather than attempting a same-chain swap on X Layer. |
 
@@ -77,6 +77,10 @@ challenge. Skip if the wallet has no relevant tokens on X Layer.
 > set -euo pipefail
 > OKB_BAL=$(cast balance "$WALLET_ADDRESS" \
 >   --rpc-url "${X_LAYER_RPC_URL:-https://rpc.xlayer.tech}")
+> # Non-zero OKB sanity check. This does not guarantee enough gas to broadcast
+> # a swap; it only catches the common "wallet has literally zero OKB" case.
+> # Replace with a real threshold (e.g. 0.001 OKB) if you want to gate on
+> # usable gas.
 > [ "$OKB_BAL" != "0" ] || {
 >   echo "Same-chain X Layer swap requires OKB for gas. Wallet has 0 OKB. Either acquire OKB first, or route entirely cross-chain (Phase B) which only needs source-chain gas." >&2
 >   exit 1
@@ -198,24 +202,40 @@ hash into `SOURCE_TX_HASH` (used in the bridge timeout message below).
 >
 > **Quotes expire in ~60 seconds.** Re-fetch if any delay before
 > broadcast (the freshness gate above enforces a 45s ceiling).
+>
+> **Retry hygiene.** On any retry of the quote-then-broadcast cycle,
+> re-derive both `QUOTE_FETCHED_AT` (the freshness timestamp) and
+> `X402_AMOUNT_WITH_BUFFER` (the buffered output amount) from the new
+> quote. Reusing stale values from an earlier attempt will either trip
+> the freshness gate or quote against an outdated buffer.
 
 ## Verify the Destination Balance
 
 After the bridge or same-chain swap completes, poll for the asset
 arrival on X Layer before returning to the EIP-3009 signing step. The
 loop tolerates transient RPC failures and validates that the returned
-balance is a non-negative integer:
+balance is a non-negative integer.
+
+If after 10 minutes the wallet still has insufficient `$X402_ASSET`,
+the funds may have arrived at a different token address (rare for
+current Across paths to X Layer) or the bridge may have failed.
+Surface the ambiguity to the user with the source-chain tx hash and
+the Across explorer link, and ask them to verify on-chain. v1.0.0
+does not auto-detect alternate-token arrival on X Layer.
 
 ```bash
 set -euo pipefail
 
-# Canonical USDC on X Layer (USDC.e variant addresses may differ).
-# TODO: confirm USDC.e address if Across delivers the bridged variant
-# instead of native USDT0.
-USDC_XLAYER="0x74b7F16337b8972027F6196A17a631aC6dE26d22"
+# Assert prerequisites are set. SOURCE_TX_HASH must have been captured
+# from the /swap response before entering the polling loop.
+: "${SOURCE_TX_HASH:?missing, capture from /swap response before polling}"
+: "${X402_ASSET:?missing}"
+: "${X402_AMOUNT:?missing}"
+: "${WALLET_ADDRESS:?missing}"
 
-XLAYER_BAL=""
-USDC_BAL=""
+# Track successful RPC reads so we can distinguish "20 RPC failures" from
+# "20 successful reads, all under target" at the end.
+RPC_SUCCESS_COUNT=0
 
 for i in {1..20}; do
   XLAYER_BAL=$(cast call "$X402_ASSET" \
@@ -230,26 +250,31 @@ for i in {1..20}; do
     sleep 5
     continue
   }
+  RPC_SUCCESS_COUNT=$((RPC_SUCCESS_COUNT + 1))
   if [ "$XLAYER_BAL" -ge "$X402_AMOUNT" ]; then
     echo "Funded. Balance: $XLAYER_BAL"
     break
-  fi
-
-  # Parallel check: did the bridge deliver USDC.e instead of USDT0?
-  USDC_BAL=$(cast call "$USDC_XLAYER" \
-    "balanceOf(address)(uint256)" "$WALLET_ADDRESS" \
-    --rpc-url "${X_LAYER_RPC_URL:-https://rpc.xlayer.tech}") || USDC_BAL=""
-  if [[ "$USDC_BAL" =~ ^[0-9]+$ ]] && [ "$USDC_BAL" -ge "$X402_AMOUNT" ]; then
-    echo "Bridge delivered USDC.e instead of USDT0; an additional same-chain swap step (USDC.e to USDT0 via Uniswap v3 on chain 196) is required." >&2
-    exit 2
   fi
 
   echo "Waiting for arrival... attempt $i/20 (balance: $XLAYER_BAL base units)"
   sleep 30
 done
 
-[[ "${XLAYER_BAL:-0}" =~ ^[0-9]+$ ]] && [ "${XLAYER_BAL:-0}" -ge "$X402_AMOUNT" ] || {
-  echo "Bridge not confirmed after 10 minutes. Source tx: ${SOURCE_TX_HASH:-unknown}. Check https://app.across.to/transactions or https://www.oklink.com/x-layer/address/$WALLET_ADDRESS to see if the destination transfer is pending. Do not re-submit the source-chain transaction." >&2
+# Assert we have a usable balance reading. No `:-0` defaults here, those
+# would defeat `set -u` and silently coerce a missing read into "below
+# target".
+[[ -n "${XLAYER_BAL:-}" && "$XLAYER_BAL" =~ ^[0-9]+$ ]] || {
+  echo "ERROR: bridge polling completed without a successful RPC read." >&2
+  echo "20 RPC failures or non-integer responses; cannot determine arrival state." >&2
+  echo "Source tx: $SOURCE_TX_HASH. Check https://app.across.to/transactions before re-submitting." >&2
+  exit 1
+}
+
+[ "$XLAYER_BAL" -ge "$X402_AMOUNT" ] || {
+  echo "Bridge not confirmed after 10 minutes. Wallet still holds $XLAYER_BAL of $X402_ASSET on X Layer (need $X402_AMOUNT)." >&2
+  echo "Source tx: $SOURCE_TX_HASH." >&2
+  echo "The funds may have arrived at a different token address (rare for current Across paths to X Layer) or the bridge may have failed." >&2
+  echo "Verify on-chain via https://app.across.to/transactions and https://www.oklink.com/x-layer/address/$WALLET_ADDRESS before re-submitting." >&2
   exit 1
 }
 ```

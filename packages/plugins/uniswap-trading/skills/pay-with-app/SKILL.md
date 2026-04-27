@@ -141,11 +141,12 @@ If multiple `accepts` entries are present, prefer the one whose `asset`
 the wallet already holds on X Layer. If multiple options are equally
 viable, prefer USDT0 (deepest Uniswap funding-flow liquidity).
 
-**WOKB / native OKB are NOT eligible as APP settlement assets.** OKX's
-APP Instant Payment is denominated in stablecoins on X Layer (USDT0 /
-USDG / USDC). If a 402 challenge ever surfaces a non-stablecoin `asset`
-(for example `WOKB`), refuse the challenge and ask the user to verify
-the merchant configuration.
+**WOKB / native OKB likely not eligible as APP settlement assets.** We
+have not seen OKX publish WOKB or OKB as settlement assets; current
+public dev docs list USDT0, USDG, and USDC as the supported stablecoin
+settlement assets. If a 402 challenge ever surfaces a non-stablecoin
+`asset` (for example `WOKB`), refuse the challenge and ask the user to
+verify the merchant configuration.
 
 ## Phase 1, Confirm Network is X Layer
 
@@ -323,7 +324,7 @@ challenge, otherwise the original request URL.
 
 - Base URL: `https://trade-api.gateway.uniswap.org/v1`
 - Header: `x-api-key: $UNISWAP_API_KEY`
-- Header: `x-universal-router-version: 2.0`
+- Header: `x-universal-router-version: 2.1`
 - Supported chains include 1, 8453, 42161, 10, 137, 130, **196**, and more
   (see Trading API supported-chains docs).
 

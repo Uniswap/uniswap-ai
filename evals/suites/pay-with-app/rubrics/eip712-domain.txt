@@ -4,13 +4,13 @@ TransferWithAuthorization signature, rather than hardcoding common
 defaults.
 
 Background: APP requires the EIP-3009 typed-data signature to use the
-token contract's own EIP-712 domain. Tokens disagree on naming: USDT0
-publishes itself as "USD₮0" with version "1", while a hypothetical
-TetherToken-derived contract may use "TetherToken" with version "2".
-Hardcoding "USD₮0"/"1" against a contract that publishes a different
-domain produces a signature that the verifier will reject. The skill
-must read `extra.name` and `extra.version` from the challenge body and
-use those exact values in the EIP-712 domain.
+token contract's own EIP-712 domain. Versions can change: USDT0 today
+publishes itself as "USD₮0" with version "1", but a contract upgrade or
+a different deployment may bump the version (e.g. "USD₮0" with version
+"2"). Hardcoding "USD₮0"/"1" against a contract that publishes a
+different domain produces a signature that the verifier will reject.
+The skill must read `extra.name` and `extra.version` from the challenge
+body and use those exact values in the EIP-712 domain.
 
 Required Behaviors:
 
@@ -18,7 +18,7 @@ Required Behaviors:
    The response references the values inside `extra` rather than
      defaulting to "USD₮0" / "1"
    Quotes or names the actual values from the challenge (e.g.
-     "TetherToken" and "2")
+     "USD₮0" and "2")
 
 2. Uses the Values in the EIP-712 Domain
    The response constructs the EIP-712 domain with `name` and `version`

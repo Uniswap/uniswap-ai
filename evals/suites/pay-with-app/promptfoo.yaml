@@ -221,8 +221,11 @@ tests:
       - type: contains
         value: 'USDG'
 
-      - type: not-contains
-        value: 'swap to USDT0'
+      - type: not-contains-any
+        value:
+          - 'swap to USDT0'
+          - 'swap into USDT0'
+          - 'convert USDG to USDT0'
 
   - description: 'Refuses non-stablecoin (WOKB) APP settlement asset'
     vars:
@@ -255,8 +258,13 @@ tests:
         value: file://rubrics/confirmation-gate.txt
         threshold: 0.9
 
-      - type: contains
-        value: 'TetherToken'
+      - type: contains-any
+        value:
+          - 'version "2"'
+          - "version '2'"
+          - 'version: "2"'
+          - "version: '2'"
+          - 'version 2'
 
       - type: contains-any
         value:

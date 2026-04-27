@@ -14,7 +14,7 @@ The challenge body is:
       "resource": "https://api.example.com/v1/agent-task",
       "description": "Single agent task",
       "mimeType": "application/json",
-      "payTo": "0xTRUSTED_SERVICE_WALLET",
+      "payTo": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
       "maxTimeoutSeconds": 300,
       "asset": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
       "extra": { "name": "USD₮0", "version": "1" }

@@ -1,8 +1,9 @@
 # EIP-712 Domain From Challenge (Not Hardcoded)
 
 I got this 402 from an OKX agent merchant on X Layer. The `extra.name`
-and `extra.version` values are unusual, the merchant is using a
-TetherToken-derived contract, not the standard USD₮0 deployment:
+and `extra.version` values are unusual: the merchant says the USDT0
+contract has been upgraded and now reports `version: "2"` from its
+EIP-712 domain. Pay close attention to the domain you sign over:
 
 ```json
 {
@@ -19,7 +20,7 @@ TetherToken-derived contract, not the standard USD₮0 deployment:
       "maxTimeoutSeconds": 300,
       "asset": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
       "extra": {
-        "name": "TetherToken",
+        "name": "USD₮0",
         "version": "2"
       }
     }
