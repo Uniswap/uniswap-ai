@@ -64,6 +64,16 @@ version. The skill refuses any non-`exact` scheme cleanly.
   [developers.uniswap.org](https://developers.uniswap.org/)). Required
   only if the wallet must be funded via cross-chain routing.
 - `jq` and `cast` (Foundry) installed.
+- **Node 18+** (LTS). The signing step in
+  [references/app-x402-flow.md](references/app-x402-flow.md) Step 4 uses
+  `viem` to produce the EIP-3009 typed-data signature.
+- **`viem`** (npm). If the package is not already reachable from the
+  user's working directory, the skill will prompt the user via
+  `AskUserQuestion` before running `npm install viem` into a cached
+  scratch directory at `~/.cache/uniswap-pay-with-app/signer/`. The
+  install adds ~13 packages totaling ~5 MB. If the user declines, the
+  skill stops cleanly before signing. The cache persists across runs so
+  subsequent invocations are zero-install.
 
 ## Input Validation Rules
 

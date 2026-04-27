@@ -30,6 +30,8 @@ command -v jq      >/dev/null || { echo "jq required"                         >&
 command -v bc      >/dev/null || { echo "bc required (brew install bc)"       >&2; exit 1; }
 command -v openssl >/dev/null || { echo "openssl required"                    >&2; exit 1; }
 command -v curl    >/dev/null || { echo "curl required"                       >&2; exit 1; }
+command -v node    >/dev/null || { echo "node 18+ required (used by viem)"    >&2; exit 1; }
+command -v npm     >/dev/null || { echo "npm required (used to install viem)" >&2; exit 1; }
 ```
 
 The X Layer RPC URL is overridable for rate-limiting or failover:
@@ -37,6 +39,48 @@ The X Layer RPC URL is overridable for rate-limiting or failover:
 ```bash
 RPC_URL="${X_LAYER_RPC_URL:-https://rpc.xlayer.tech}"
 ```
+
+### Resolve a viem-capable Node environment
+
+Step 4 signs the EIP-3009 authorization with viem. Pick the directory
+the signer script will run from, in this order:
+
+1. The user's current working directory, if `viem/accounts` is already
+   resolvable there (zero install).
+2. A cached scratch directory at `~/.cache/uniswap-pay-with-app/signer/`
+   (or whatever `X402_SIGNER_DIR` is set to). Persists across runs.
+3. If neither has viem, **prompt the user via `AskUserQuestion` before
+   installing**. The user must know what is being installed on their
+   machine. The summary you present must include: "package=viem,
+   target=`$X402_SIGNER_DIR`, command=`npm install viem`, footprint=~13
+   packages and ~5 MB". Only run the install on an explicit `yes`. If
+   the user declines, exit cleanly before any signing happens.
+
+```bash
+set -euo pipefail
+X402_SIGNER_DIR="${X402_SIGNER_DIR:-$HOME/.cache/uniswap-pay-with-app/signer}"
+
+viem_resolves_in() {
+  ( cd "$1" && node -e "require.resolve('viem/accounts')" ) >/dev/null 2>&1
+}
+
+if viem_resolves_in .; then
+  SIGNER_CWD=.
+elif viem_resolves_in "$X402_SIGNER_DIR"; then
+  SIGNER_CWD="$X402_SIGNER_DIR"
+else
+  # Agent: invoke AskUserQuestion FIRST. Do not run the install lines below
+  # without an explicit user 'yes'. After confirmation:
+  mkdir -p "$X402_SIGNER_DIR"
+  ( cd "$X402_SIGNER_DIR" && [ -f package.json ] || npm init -y >/dev/null )
+  ( cd "$X402_SIGNER_DIR" && npm install viem --no-audit --no-fund --loglevel=error )
+  SIGNER_CWD="$X402_SIGNER_DIR"
+fi
+echo "viem resolved in: $SIGNER_CWD"
+```
+
+The signer script in Step 4 must be invoked with `cd "$SIGNER_CWD"` so
+Node's module resolution finds viem there.
 
 ## Step 1: Helpers and Validation
 
@@ -367,6 +411,36 @@ const signature = await account.signTypedData({
   },
 });
 process.env.X402_SIGNATURE = signature;
+```
+
+To execute the snippet above, write it to a `.mjs` file and run Node
+from the directory Step 0 resolved viem in (`$SIGNER_CWD`). Capture
+stdout into `X402_SIGNATURE`, then verify the shape before continuing,
+because `set -euo pipefail` does not fire on a failed command
+substitution unless `inherit_errexit` is set (which is bash 4.4+ only,
+not available on default macOS bash 3.2):
+
+```bash
+set -euo pipefail
+
+SIGNER_SCRIPT=$(mktemp -t x402-signer-XXXXXX).mjs
+trap 'rm -f "$SIGNER_SCRIPT"' EXIT
+
+cat > "$SIGNER_SCRIPT" <<'JS'
+// Paste the signing snippet above here, with `process.stdout.write(signature)`
+// at the end instead of assigning to process.env.
+JS
+
+SIG_FILE=$(mktemp)
+( cd "$SIGNER_CWD" && node "$SIGNER_SCRIPT" > "$SIG_FILE" )
+X402_SIGNATURE=$(cat "$SIG_FILE")
+rm -f "$SIG_FILE"
+
+if ! [[ "$X402_SIGNATURE" =~ ^0x[0-9a-fA-F]{130}$ ]]; then
+  echo "ERROR: signer returned bad signature shape" >&2
+  exit 1
+fi
+export X402_SIGNATURE
 ```
 
 > **Domain warning.** `verifyingContract` is the **token contract**
