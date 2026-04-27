@@ -102,12 +102,14 @@ set -euo pipefail
 [[ "$X402_PAY_TO"    =~ ^0x[a-fA-F0-9]{40}$       ]] || { echo "bad payTo address"     >&2; exit 1; }
 [[ "$WALLET_ADDRESS" =~ ^0x[a-fA-F0-9]{40}$       ]] || { echo "bad wallet address"    >&2; exit 1; }
 [[ "$X402_AMOUNT"    =~ ^[0-9]+$                  ]] || { echo "bad amount"            >&2; exit 1; }
-[[ "$X402_RESOURCE"  =~ ^https://[A-Za-z0-9._~:/?\#@!\$\&\'\(\)*+,\;=%-]+$ ]] || { echo "bad resource URL" >&2; exit 1; }
-# Reject shell metacharacters that the bracket class above already excludes
-# (backticks, double/single backslash escapes, raw quotes), but assert
-# explicitly so future edits to the bracket class do not silently weaken the gate.
+[[ "$X402_RESOURCE"  =~ ^https://[A-Za-z0-9._~:/?\#@%=+,-]+$ ]] || { echo "bad resource URL" >&2; exit 1; }
+# Reject shell metacharacters that the bracket class above already excludes.
+# Legitimate URLs encode dangerous characters as %XX, so the strict bracket
+# class is sufficient; assert explicitly so future edits to the bracket class
+# do not silently weaken the gate.
 case "$X402_RESOURCE" in
-  *\`*|*\\*|*\"*) echo "bad resource URL: contains shell metacharacter" >&2; exit 1 ;;
+  *\`*|*\\*|*\"*|*\'*|*\;*|*\|*|*\&*|*\$*|*\(*|*\)*|*\<*|*\>*|*\**|*\!*|*$'\n'*)
+    echo "bad resource URL: contains shell metacharacter" >&2; exit 1 ;;
 esac
 
 # Note: $X402_RESOURCE should be set from accepts[selected].resource if the 402 challenge
@@ -116,6 +118,14 @@ esac
 # If accepts[selected].resource's host differs from the host of the originally-requested
 # URL, surface the mismatch to the user and require explicit confirmation before
 # continuing. A facilitator-mediated redirect is legitimate but should not be silent.
+if [ -n "${ORIGINAL_REQUEST_URL:-}" ]; then
+  RESOURCE_HOST=$(echo "$X402_RESOURCE" | awk -F/ '{print $3}')
+  ORIGINAL_HOST=$(echo "$ORIGINAL_REQUEST_URL" | awk -F/ '{print $3}')
+  if [ "$RESOURCE_HOST" != "$ORIGINAL_HOST" ]; then
+    echo "WARNING: accepts[].resource host ($RESOURCE_HOST) differs from original request host ($ORIGINAL_HOST)." >&2
+    echo "Surface this to the user via AskUserQuestion before continuing." >&2
+  fi
+fi
 
 # 1) Only "exact" scheme is supported in v1.0.0
 [ "$X402_SCHEME" = "exact" ] || { echo "Unsupported scheme: $X402_SCHEME" >&2; exit 1; }
@@ -145,6 +155,12 @@ if [ "$ASSET_BALANCE" -lt "$X402_AMOUNT" ]; then
   echo "Run the funding flow (references/funding-x-layer.md), then return here."
   exit 1
 fi
+
+# When the funding flow runs, it captures SOURCE_TX_HASH from the Trading
+# API /swap response. See funding-x-layer.md for the capture + validate
+# pattern (jq with `// empty` fallback plus a 0x[a-fA-F0-9]{64} shape
+# check); a literal "null" or empty string must fail the funding flow
+# rather than propagating into this script.
 
 # Capture 402 challenge freshness for the sign-time gate (see Step 4).
 # Named CHALLENGE_FETCHED_AT to disambiguate from the Trading API "quote"
@@ -276,10 +292,23 @@ function requireBytes32(key: string): `0x${string}` {
   }
   return v as `0x${string}`;
 }
+// Free-text fields (extra.name, extra.version) feed the EIP-712 domain
+// bit-exact and may also be surfaced to the user. Per the SKILL.md
+// Input Validation Rules, reject the whole challenge rather than
+// mutating the value if it contains shell metacharacters.
+function requireSafeText(key: string): string {
+  const v = requireEnv(key);
+  if (/[;|&$`()<>\\'"\n]/.test(v)) {
+    throw new Error(
+      `${key} contains shell metacharacters; reject the whole challenge per skill policy.`
+    );
+  }
+  return v;
+}
 
 const privateKey = requireEnv('PRIVATE_KEY');
-const tokenName = requireEnv('X402_TOKEN_NAME'); // from extra.name (e.g. "USD₮0")
-const tokenVersion = requireEnv('X402_TOKEN_VERSION'); // from extra.version (e.g. "1")
+const tokenName = requireSafeText('X402_TOKEN_NAME'); // from extra.name (e.g. "USD₮0")
+const tokenVersion = requireSafeText('X402_TOKEN_VERSION'); // from extra.version (e.g. "1")
 const walletAddress = requireAddress('WALLET_ADDRESS');
 const x402Asset = requireAddress('X402_ASSET');
 const x402PayTo = requireAddress('X402_PAY_TO');
@@ -417,7 +446,7 @@ RETRY_BODY=$(cat "$RETRY_BODY_FILE")
 # may have variable whitespace after the colon, and `cut` mishandles
 # tabs and folded continuations.
 X402_PAYMENT_RESPONSE=$(awk 'BEGIN{IGNORECASE=1} /^x-payment-response:/ { sub(/^[^:]+:[ \t]*/, ""); print }' \
-  "$RETRY_HEADERS" | tr -d '\r\n' || true)
+  "$RETRY_HEADERS" | tr -d '\r\n')
 
 echo "HTTP status: $RETRY_STATUS"
 ```
@@ -435,6 +464,18 @@ attempt **one** more retry, but only after re-deriving `X402_NONCE` and
 `X402_VALID_BEFORE` from a freshly fetched 402 challenge. Do not retry a
 third time. After the second 402, surface the rejection to the user with
 the exact body OKX returned and stop.
+
+To enforce the cap across separate Bash tool invocations (where shell
+variable state does not persist), use a tmpfile-based stamp and pass
+`X402_ATTEMPT_FILE` through to subsequent invocations so the budget is
+shared:
+
+```bash
+X402_ATTEMPT_FILE="${X402_ATTEMPT_FILE:-/tmp/x402-attempt-$$}"
+attempts=$(wc -l < "$X402_ATTEMPT_FILE" 2>/dev/null || echo 0)
+[ "$attempts" -lt 2 ] || { echo "Retry budget exhausted (max 2 attempts)." >&2; exit 1; }
+date +%s >> "$X402_ATTEMPT_FILE"
+```
 
 **Variable lifecycle on retry or re-confirmation.** On any retry, you
 MUST regenerate the following from a freshly fetched 402 challenge body

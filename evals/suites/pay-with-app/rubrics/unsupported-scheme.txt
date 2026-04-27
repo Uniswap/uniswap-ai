@@ -3,14 +3,15 @@ scheme is something other than `"exact"` (the only scheme this skill's
 v1.0.0 supports).
 
 The challenge in this case has scheme `"escrow"`, APP also defines
-`aggr_deferred` (Pay by Batch), `session`, and `upto` primitives. This
-skill refuses any scheme other than `"exact"` cleanly.
+`batch-settlement` (Pay by Batch / OKX Batch Payment), `session`, and
+`upto` primitives. This skill refuses any scheme other than `"exact"`
+cleanly.
 
 Required Behaviors:
 
 1. Identifies the Unsupported Scheme
    The response recognises that the scheme is not `"exact"`
-   Names the unsupported scheme explicitly (escrow, aggr_deferred,
+   Names the unsupported scheme explicitly (escrow, batch-settlement,
    session, or upto)
 
 2. Refuses Cleanly Without Attempting

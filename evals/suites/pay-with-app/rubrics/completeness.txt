@@ -6,7 +6,7 @@ Expected Elements (Should Include):
 1. Protocol Identification
    Names APP (Agent Payments Protocol) or x402 explicitly
    Distinguishes the `"exact"` scheme (Pay Per Use, charge intent) from
-     the unsupported escrow / aggr_deferred / session / upto schemes
+     the unsupported escrow / batch-settlement / session / upto schemes
    Identifies that this is x402 v1 (x402Version = 1)
 
 2. Token and Chain Awareness

@@ -19,9 +19,15 @@ Required Behaviors:
    still require gas:
      - Source-chain gas (e.g. ETH on Base) for any approval or swap on
        the source chain when bridging in
-     - X Layer gas (OKB) for any same-chain swap on X Layer
-   Does NOT promise that the entire end-to-end flow is gasless when the
-   user has 0 OKB and may need a same-chain swap
+     - If the response chooses a path that involves a same-chain swap
+       on X Layer, it must acknowledge X Layer gas (OKB) is required
+       and warn the user given their 0 OKB balance
+     - If the response chooses cross-chain only (e.g. Base USDC into
+       X Layer USDT0 in one Trading API quote), this acknowledgment is
+       not required since no X Layer gas is consumed by the user
+   Does NOT promise that the entire end-to-end flow is gasless when
+   the chosen path requires a same-chain swap on X Layer and the user
+   has 0 OKB
 
 3. Surfaces the Open Question Honestly
    The response either flags this as an open item (TODO confirm with
@@ -39,5 +45,7 @@ Scoring Guide:
 0 of 3 behaviors correct: 0.0
 
 A response that promises the entire flow is gasless without
-qualification, when the user has 0 OKB and may need a same-chain
-swap, scores 0.0 on behavior 2.
+qualification, when the chosen path requires a same-chain swap on
+X Layer and the user has 0 OKB, scores 0.0 on behavior 2. A response
+that selects a cross-chain-only path and therefore correctly omits
+X Layer gas warnings does NOT lose points on behavior 2.

@@ -192,7 +192,15 @@ ELAPSED=$(($(date +%s) - QUOTE_FETCHED_AT))
 ```
 
 When you broadcast the source-chain transaction, capture the resulting
-hash into `SOURCE_TX_HASH` (used in the bridge timeout message below).
+hash into `SOURCE_TX_HASH` (used in the bridge timeout message below):
+
+```bash
+SOURCE_TX_HASH=$(echo "$SWAP_RESPONSE" | jq -r '.transactionHash // empty')
+[[ "$SOURCE_TX_HASH" =~ ^0x[a-fA-F0-9]{64}$ ]] || {
+  echo "no tx hash from /swap response" >&2
+  exit 1
+}
+```
 
 > **Bridge recipient.** The Trading API delivers funds to the same
 > `swapper` address on chain 196. If the user wants the funds at a
@@ -259,6 +267,14 @@ for i in {1..20}; do
   echo "Waiting for arrival... attempt $i/20 (balance: $XLAYER_BAL base units)"
   sleep 30
 done
+
+# If every attempt was an RPC failure, surface that distinctly before the
+# generic "no usable balance" check below.
+[ "$RPC_SUCCESS_COUNT" -gt 0 ] || {
+  echo "ERROR: all 20 attempts were RPC failures; bridge state unknown." >&2
+  echo "Source tx: $SOURCE_TX_HASH. Check https://app.across.to/transactions before re-submitting." >&2
+  exit 1
+}
 
 # Assert we have a usable balance reading. No `:-0` defaults here, those
 # would defeat `set -u` and silently coerce a missing read into "below

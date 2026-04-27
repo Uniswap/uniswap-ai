@@ -191,11 +191,11 @@ same-chain swaps and cross-chain routing (powered by Across).
 different asset, fund into that asset directly only when it has reliable
 Uniswap routing on X Layer:
 
-| Asset | Address                                      | Decimals | Funding                                                                                                                                                                                                                                                                                                                                                  |
-| ----- | -------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| USDT0 | `0x779Ded0c9e1022225f8E0630b35a9b54bE713736` | 6        | ✅ Direct via Trading API                                                                                                                                                                                                                                                                                                                                |
-| USDG  | `0x4ae46a509F6b1D9056937BA4500cb143933D2dc8` | 6        | ✅ Direct, or one-hop USDT0 to USDG                                                                                                                                                                                                                                                                                                                      |
-| USDC  | `0x74b7F16337b8972027F6196A17a631aC6dE26d22` | 6        | ⏳ No reliable Uniswap v3 routing on X Layer. USDC pools exist at 0.05% and 0.3% but liquidity is thin and the Trading API does not consistently return routes. If the merchant requires USDC, bridge USDC directly from a chain where it is liquid (Base, Arbitrum, Mainnet) using the Trading API rather than attempting a same-chain swap on X Layer. |
+| Asset | Address                                      | Decimals | Funding                                                                                                                                                                                                                                                                                                                                                                            |
+| ----- | -------------------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| USDT0 | `0x779Ded0c9e1022225f8E0630b35a9b54bE713736` | 6        | ✅ Direct via Trading API                                                                                                                                                                                                                                                                                                                                                          |
+| USDG  | `0x4ae46a509F6b1D9056937BA4500cb143933D2dc8` | 6        | ✅ Direct, or one-hop USDT0 to USDG                                                                                                                                                                                                                                                                                                                                                |
+| USDC  | `0x74b7F16337b8972027F6196A17a631aC6dE26d22` | 6        | ⏳ No reliable Uniswap v3 routing on X Layer. The Trading API does not consistently return routes for USDC swaps on X Layer; available pool liquidity is too thin for reliable execution. If the merchant requires USDC, bridge USDC directly from a chain where it is liquid (Base, Arbitrum, Mainnet) using the Trading API rather than attempting a same-chain swap on X Layer. |
 
 Detailed scripts and parameters: see
 [references/funding-x-layer.md](references/funding-x-layer.md).
@@ -219,12 +219,12 @@ acting if any apply:
   needs a same-chain X Layer swap, surface this and ask before
   proceeding. Until OKX confirms a broader gas-sponsorship policy,
   assume only the final settlement transfer is sponsored.
-- **Bridge destination token.** The Trading API may deliver USDT0
-  directly on X Layer or USDC.e (which would need an extra same-chain
-  swap step before the EIP-3009 signing). Detect this by polling the
-  on-chain `balanceOf` of both tokens after the bridge completes, not
-  just USDT0. If USDC.e arrives, surface an extra confirmation gate to
-  the user covering the additional same-chain swap.
+- **Bridge destination token.** If the wallet still lacks
+  `$X402_ASSET` after the funding flow's polling loop completes,
+  surface the source-chain tx hash and the Across explorer link to the
+  user. The bridge may have delivered a different variant on X Layer
+  (rare for current Across paths) or may have failed. v1.0.0 does not
+  auto-detect alternate-token arrival; the user must verify on-chain.
 
 ## Phase 4, EIP-3009 Signing and X-PAYMENT Submission
 
