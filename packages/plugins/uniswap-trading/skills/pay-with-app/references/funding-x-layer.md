@@ -175,7 +175,22 @@ X402_AMOUNT_WITH_BUFFER=$(python3 -c "print(($X402_AMOUNT * 1005) // 1000)")
 [[ "$X402_AMOUNT_WITH_BUFFER" =~ ^[0-9]+$ ]] || { echo "buffer math failed" >&2; exit 1; }
 
 QUOTE_FETCHED_AT=$(date +%s)
-QUOTE=$(curl -fsS -X POST https://trade-api.gateway.uniswap.org/v1/quote \
+
+# Capture HTTP status and body separately so we can distinguish:
+#   (a) HTTP 200 success      -> proceed with the original Phase B flow
+#   (b) errorCode=ResourceNotFound (Across coverage gap) -> deferred-bridge handoff
+#   (c) network errors / 5xx  -> surface as transient, advise retry
+#
+# IMPORTANT: do NOT use `curl -f` here. Under `set -e` a non-zero curl
+# exit would terminate the script before we read $? into QUOTE_HTTP_STATUS,
+# making the deferred-bridge branch unreachable on the exact failure
+# path it is designed to handle. We capture status with `-w` instead.
+QUOTE_BODY_FILE=$(mktemp)
+trap 'rm -f "$QUOTE_BODY_FILE"' EXIT
+
+QUOTE_HTTP_STATUS=$(curl -sS -X POST https://trade-api.gateway.uniswap.org/v1/quote \
+  -o "$QUOTE_BODY_FILE" \
+  -w '%{http_code}' \
   -H "Content-Type: application/json" \
   -H "x-api-key: $UNISWAP_API_KEY" \
   -H "x-universal-router-version: 2.1.1" \
@@ -196,12 +211,40 @@ QUOTE=$(curl -fsS -X POST https://trade-api.gateway.uniswap.org/v1/quote \
       amount:           $amount,
       swapper:          $swapper,
       urgency:          "normal"
-    }')")
-QUOTE_STATUS=$?
+    }')") || {
+  # curl itself failed (DNS, TLS, network unreachable, etc.) -> case (c)
+  echo "ERROR: Trading API call failed at the network layer (curl exit \$? = $?)." >&2
+  echo "This is most likely a transient connectivity issue (DNS, TLS, network)." >&2
+  echo "Advise the user to retry; do NOT route them to an external bridge for this case." >&2
+  exit 1
+}
+
+QUOTE=$(cat "$QUOTE_BODY_FILE")
+QUOTE_ERROR_CODE=$(echo "$QUOTE" | jq -r '.errorCode // empty' 2>/dev/null || echo "")
 ```
 
-If `QUOTE_STATUS` is non-zero or the response body contains
-`"errorCode":"ResourceNotFound"`, **the Trading API cannot currently
+Branch on the result:
+
+```bash
+set -euo pipefail
+
+if [ "$QUOTE_HTTP_STATUS" = "200" ] && [ -z "$QUOTE_ERROR_CODE" ]; then
+  : # success -> continue with permitData + /swap on the source chain
+elif [ "$QUOTE_ERROR_CODE" = "ResourceNotFound" ]; then
+  : # case (b): the deferred-bridge handoff below
+elif [ "$QUOTE_HTTP_STATUS" -ge 500 ] 2>/dev/null; then
+  echo "ERROR: Trading API returned HTTP $QUOTE_HTTP_STATUS (server error)." >&2
+  echo "This is most likely transient. Advise the user to retry shortly." >&2
+  exit 1
+else
+  echo "ERROR: Trading API returned HTTP $QUOTE_HTTP_STATUS, errorCode=$QUOTE_ERROR_CODE." >&2
+  echo "Body: $QUOTE" >&2
+  echo "Surface raw body to the user; do not route to an external bridge automatically." >&2
+  exit 1
+fi
+```
+
+If `errorCode` is `ResourceNotFound`, **the Trading API cannot currently
 deliver to X Layer cross-chain.** This is the expected state today
 (Across does not list X Layer as a destination). Surface a clear
 message to the user via `AskUserQuestion`:
