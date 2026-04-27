@@ -32,7 +32,7 @@ My wallet is 0x742d35Cc6634C0532925a3b8D4C9B5927BB7C789. I have:
 
 - 0 USDT0 on X Layer
 - 0 USDC anywhere (no stables on any chain)
-- 50 UNI on Ethereum (`0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984`)
+- 50 UNI on Ethereum (`0x1f9840a85d5aF5bf1D1762F925BDADDc4201F984`)
 - 0.02 ETH on Ethereum (enough for gas only)
 
 Walk me through paying the 2.5 USDT0 using my UNI on Ethereum. I want
