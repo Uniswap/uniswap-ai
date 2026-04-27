@@ -103,12 +103,16 @@ set -euo pipefail
 [[ "$WALLET_ADDRESS" =~ ^0x[a-fA-F0-9]{40}$       ]] || { echo "bad wallet address"    >&2; exit 1; }
 [[ "$X402_AMOUNT"    =~ ^[0-9]+$                  ]] || { echo "bad amount"            >&2; exit 1; }
 [[ "$X402_RESOURCE"  =~ ^https://[A-Za-z0-9._~:/?\#@%=+,\&\;-]+$ ]] || { echo "bad resource URL" >&2; exit 1; }
-# Reject shell metacharacters that the bracket class above already excludes.
-# Legitimate URLs encode dangerous characters as %XX, so the strict bracket
-# class is sufficient; assert explicitly so future edits to the bracket class
-# do not silently weaken the gate.
+# Defense in depth: the regex bracket class above already constrains the
+# character set. This case block is a hard backstop against the
+# highest-impact characters that could escape a quote, in case a future
+# edit relaxes the regex. Note: `&` and `;` are valid sub-delims in real
+# query strings (?a=1&b=2) and are admitted by the regex; they are NOT
+# rejected here because $X402_RESOURCE is only ever interpolated inside
+# double-quoted shell contexts (e.g. curl "$X402_RESOURCE"), where they
+# cannot trigger word-splitting or command separation.
 case "$X402_RESOURCE" in
-  *\`*|*\\*|*\"*|*\'*|*\;*|*\|*|*\&*|*\$*|*\(*|*\)*|*\<*|*\>*|*\**|*\!*|*$'\n'*)
+  *\`*|*\\*|*\"*|*\'*|*\|*|*\$*|*\(*|*\)*|*\<*|*\>*|*\**|*\!*|*$'\n'*)
     echo "bad resource URL: contains shell metacharacter" >&2; exit 1 ;;
 esac
 
@@ -487,7 +491,7 @@ shared:
 # defeating the cap. The agent MUST export X402_ATTEMPT_FILE explicitly before
 # the first invocation of this block (e.g. /tmp/x402-attempt-${WALLET_ADDRESS}-${X402_NONCE_PREFIX})
 # and reuse the SAME path across retries.
-: "${X402_ATTEMPT_FILE:?missing — agent must set a stable path so the retry budget persists across Bash invocations}"
+: "${X402_ATTEMPT_FILE:?missing: agent must set a stable path so the retry budget persists across Bash invocations}"
 [ -e "$X402_ATTEMPT_FILE" ] && [ ! -r "$X402_ATTEMPT_FILE" ] && {
   echo "ERROR: X402_ATTEMPT_FILE exists but is unreadable: $X402_ATTEMPT_FILE" >&2
   exit 1
