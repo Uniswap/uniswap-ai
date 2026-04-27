@@ -1,0 +1,23 @@
+Evaluate whether the response correctly recognises that the 402 challenge
+is on a network other than X Layer (chain 196), and that pay-with-app is
+not the right skill for it.
+
+Required Behaviors:
+
+1. Identifies the Wrong Network
+   Recognises that the challenge's network field is not X Layer / chain 196
+
+2. Recommends the Correct Skill
+   Recommends using the pay-with-any-token skill (or equivalent) instead of
+     pay-with-app
+   OR clearly explains that pay-with-app only handles X Layer challenges
+
+3. Does Not Attempt to Pay
+   Does NOT proceed to fund the wallet on X Layer
+   Does NOT proceed to sign an EIP-3009 authorization for the wrong chain
+
+Scoring Guide:
+3 of 3 satisfied: 1.0
+2 of 3 satisfied: 0.7
+1 of 3 satisfied: 0.4
+0 of 3 satisfied: 0.0

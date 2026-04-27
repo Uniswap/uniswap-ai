@@ -1,0 +1,109 @@
+# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
+description: 'pay-with-app Skill Evaluation'
+
+# Note: The same model family (claude-sonnet-4-5) is used as both subject and judge.
+# This is a known cost/speed tradeoff. The rubric thresholds are set conservatively
+# to partially compensate. For high-stakes eval runs, consider a different judge model.
+
+prompts:
+  - file://prompt-wrapper.js
+
+providers:
+  - id: anthropic:claude-sonnet-4-5-20250929
+    config:
+      temperature: 0
+      max_tokens: 8192
+
+defaultTest:
+  options:
+    timeout: 120000
+    provider:
+      id: anthropic:claude-sonnet-4-5-20250929
+      config:
+        temperature: 0
+
+tests:
+  - description: 'Basic APP Pay Per Use payment on X Layer with sufficient USDT0'
+    vars:
+      case_content: file://cases/basic-app-payment.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/correctness.txt
+        threshold: 0.85
+
+      - type: llm-rubric
+        value: file://rubrics/confirmation-gate.txt
+        threshold: 0.9
+
+      - type: contains
+        value: '402'
+
+      - type: contains-any
+        value:
+          - 'X Layer'
+          - 'x-layer'
+          - 'xlayer'
+          - '196'
+
+      - type: contains-any
+        value:
+          - 'EIP-3009'
+          - 'eip-3009'
+          - 'TransferWithAuthorization'
+          - 'transferWithAuthorization'
+
+      - type: contains
+        value: 'X-PAYMENT'
+
+  - description: 'Cross-chain funding into USDT0 on X Layer (insufficient balance)'
+    vars:
+      case_content: file://cases/cross-chain-funding.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/correctness.txt
+        threshold: 0.8
+
+      - type: llm-rubric
+        value: file://rubrics/confirmation-gate.txt
+        threshold: 0.85
+
+      - type: contains
+        value: 'trade-api.gateway.uniswap.org'
+
+      - type: contains
+        value: 'EXACT_OUTPUT'
+
+      - type: contains
+        value: 'USDT0'
+
+      - type: contains
+        value: '0x779Ded0c9e1022225f8E0630b35a9b54bE713736'
+
+  - description: 'USDC requested on X Layer should fail fast (no Uniswap liquidity)'
+    vars:
+      case_content: file://cases/usdc-fail-fast.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/usdc-fail-fast.txt
+        threshold: 0.85
+
+      - type: contains-any
+        value:
+          - 'no usable'
+          - 'no liquidity'
+          - 'not liquid'
+          - 'not supported'
+          - 'cannot satisfy'
+
+  - description: 'Wrong-network 402 should escalate to pay-with-any-token'
+    vars:
+      case_content: file://cases/wrong-network-escalation.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/wrong-network.txt
+        threshold: 0.85
+
+      - type: contains-any
+        value:
+          - 'pay-with-any-token'
+          - 'different skill'
