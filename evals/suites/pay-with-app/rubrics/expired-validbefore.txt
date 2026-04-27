@@ -4,7 +4,7 @@ warns the user accordingly.
 
 Background: APP's `maxTimeoutSeconds` field bounds how long the merchant
 will accept a signed authorization. Cross-chain bridges (e.g. Base → X
-Layer) typically take 1–5 minutes. A `maxTimeoutSeconds` of 30 seconds
+Layer) typically take 1 to 5 minutes. A `maxTimeoutSeconds` of 30 seconds
 is not enough time to bridge funds and then sign, so the signed
 TransferWithAuthorization is likely to be rejected by the merchant when
 submitted.

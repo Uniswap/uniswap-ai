@@ -102,7 +102,7 @@ set -euo pipefail
 [[ "$X402_PAY_TO"    =~ ^0x[a-fA-F0-9]{40}$       ]] || { echo "bad payTo address"     >&2; exit 1; }
 [[ "$WALLET_ADDRESS" =~ ^0x[a-fA-F0-9]{40}$       ]] || { echo "bad wallet address"    >&2; exit 1; }
 [[ "$X402_AMOUNT"    =~ ^[0-9]+$                  ]] || { echo "bad amount"            >&2; exit 1; }
-[[ "$X402_RESOURCE"  =~ ^https://[A-Za-z0-9._~:/?\#@%=+,-]+$ ]] || { echo "bad resource URL" >&2; exit 1; }
+[[ "$X402_RESOURCE"  =~ ^https://[A-Za-z0-9._~:/?\#@%=+,\&\;-]+$ ]] || { echo "bad resource URL" >&2; exit 1; }
 # Reject shell metacharacters that the bracket class above already excludes.
 # Legitimate URLs encode dangerous characters as %XX, so the strict bracket
 # class is sufficient; assert explicitly so future edits to the bracket class
@@ -119,11 +119,23 @@ esac
 # URL, surface the mismatch to the user and require explicit confirmation before
 # continuing. A facilitator-mediated redirect is legitimate but should not be silent.
 if [ -n "${ORIGINAL_REQUEST_URL:-}" ]; then
-  RESOURCE_HOST=$(echo "$X402_RESOURCE" | awk -F/ '{print $3}')
-  ORIGINAL_HOST=$(echo "$ORIGINAL_REQUEST_URL" | awk -F/ '{print $3}')
+  # Strip userinfo (user:pass@) and port (:NNNN) before comparing so that
+  # equivalent hosts don't trip the gate.
+  strip_host() {
+    echo "$1" | awk -F/ '{print $3}' | sed -E 's/^[^@]+@//' | sed -E 's/:[0-9]+$//'
+  }
+  RESOURCE_HOST=$(strip_host "$X402_RESOURCE")
+  ORIGINAL_HOST=$(strip_host "$ORIGINAL_REQUEST_URL")
+  [ -n "$RESOURCE_HOST" ] && [ -n "$ORIGINAL_HOST" ] || {
+    echo "ERROR: could not parse host from URLs (resource=$X402_RESOURCE, original=$ORIGINAL_REQUEST_URL)" >&2
+    exit 1
+  }
   if [ "$RESOURCE_HOST" != "$ORIGINAL_HOST" ]; then
-    echo "WARNING: accepts[].resource host ($RESOURCE_HOST) differs from original request host ($ORIGINAL_HOST)." >&2
-    echo "Surface this to the user via AskUserQuestion before continuing." >&2
+    if [ "${X402_HOST_MISMATCH_ACK:-}" != "yes" ]; then
+      echo "ERROR: accepts[].resource host ($RESOURCE_HOST) differs from original request host ($ORIGINAL_HOST)." >&2
+      echo "Surface this via AskUserQuestion. After explicit user confirmation, re-invoke with X402_HOST_MISMATCH_ACK=yes." >&2
+      exit 1
+    fi
   fi
 fi
 
@@ -471,7 +483,15 @@ variable state does not persist), use a tmpfile-based stamp and pass
 shared:
 
 ```bash
-X402_ATTEMPT_FILE="${X402_ATTEMPT_FILE:-/tmp/x402-attempt-$$}"
+# IMPORTANT: $$ would evaluate to a fresh PID on every Bash tool invocation,
+# defeating the cap. The agent MUST export X402_ATTEMPT_FILE explicitly before
+# the first invocation of this block (e.g. /tmp/x402-attempt-${WALLET_ADDRESS}-${X402_NONCE_PREFIX})
+# and reuse the SAME path across retries.
+: "${X402_ATTEMPT_FILE:?missing — agent must set a stable path so the retry budget persists across Bash invocations}"
+[ -e "$X402_ATTEMPT_FILE" ] && [ ! -r "$X402_ATTEMPT_FILE" ] && {
+  echo "ERROR: X402_ATTEMPT_FILE exists but is unreadable: $X402_ATTEMPT_FILE" >&2
+  exit 1
+}
 attempts=$(wc -l < "$X402_ATTEMPT_FILE" 2>/dev/null || echo 0)
 [ "$attempts" -lt 2 ] || { echo "Retry budget exhausted (max 2 attempts)." >&2; exit 1; }
 date +%s >> "$X402_ATTEMPT_FILE"
