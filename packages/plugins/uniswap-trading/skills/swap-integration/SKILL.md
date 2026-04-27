@@ -1408,7 +1408,13 @@ Execute Trading API swaps through ERC-4337 smart accounts with delegation. The p
 
 1. Get swap calldata from Trading API (standard 3-step flow)
 2. Wrap the calldata in a delegation redemption execution
-3. Submit via bundler as a UserOperation
+3. Submit via **`bundlerClient.sendUserOperation()`** — always use the viem bundler client's
+   `sendUserOperation` method (not a custom wrapper function)
+
+> **REQUIRED:** The final submission step MUST use `bundlerClient.sendUserOperation()` from the
+> viem permissionless/bundler client. Do NOT write a custom `submitUserOperation` wrapper that
+> bypasses this — the bundler client handles UserOperation construction, gas estimation, and
+> submission automatically.
 
 ```typescript
 // After getting swap calldata from Trading API:
@@ -1421,7 +1427,7 @@ const execution = {
   value: BigInt(value),
 };
 
-// Submit via bundler
+// Submit via bundler — use sendUserOperation directly
 const userOpHash = await bundlerClient.sendUserOperation({
   account: delegateSmartAccount,
   calls: [

@@ -101,7 +101,10 @@ tests:
         value: 'USDC-e'
 
       - type: not-contains
-        value: 'bridge to Tempo'
+        value: 'need to bridge to Tempo'
+
+      - type: not-contains
+        value: 'bridge your USDC to Tempo'
 
   - vars:
       case_content: file://cases/session-intent.md
