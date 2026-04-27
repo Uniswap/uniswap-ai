@@ -46,6 +46,16 @@ rail on X Layer. This skill version (v1.0.0) handles the `exact` scheme
 (escrow, session, batch / Batch Payment) are out of scope for this
 version. The skill refuses any non-`exact` scheme cleanly.
 
+> **Protocol naming in your responses.** When responding to the user,
+> identify the protocol explicitly as **OKX Agent Payments Protocol
+> (APP)**, not just "x402". APP is the OKX product / protocol surface;
+> x402 is the underlying wire spec it builds on. Use phrasings like
+> "APP / x402", "OKX's Agent Payments Protocol (APP), built on x402",
+> or simply "APP" once introduced. Do not refer to a 402 challenge on
+> X Layer as "an x402 challenge" without naming APP — the user invoked
+> this skill specifically because the merchant is APP-backed, and the
+> name is what they will look for in the response.
+
 ## Prerequisites
 
 - A `PRIVATE_KEY` env var (`export PRIVATE_KEY=0x...`). Never commit or
@@ -208,8 +218,9 @@ Detailed scripts and parameters: see
 
 ### Gas and Routing Caveats
 
-Surface these to the user before proceeding to fund, and ask before
-acting if any apply:
+Surface these to the user before proceeding to fund, and **call
+`AskUserQuestion`** (not an echoed bash prompt) before acting if any
+apply:
 
 - **OKB on X Layer for same-chain swaps.** OKX gas-sponsors only the
   facilitator's settlement transfer. Approvals, swaps, and other
@@ -237,8 +248,10 @@ on-chain (zero gas to the payer on X Layer).
 ### Step 5, User Confirmation
 
 Before signing or submitting **any** transaction in this skill (token
-approval, swap, bridge, EIP-3009 signature), use `AskUserQuestion` to
-show the user a concrete summary covering:
+approval, swap, bridge, EIP-3009 signature), call the **`AskUserQuestion`
+agent tool** (not `read -p`, not `echo` to a bash prompt, not a printed
+"(yes/no)" line in your response) and **block on the user's reply** before
+moving on. The summary you present must cover:
 
 - Action (approve, swap, bridge, sign EIP-3009 authorization).
 - Amount and token.
@@ -250,6 +263,16 @@ Obtain explicit confirmation per gate. Each gate is independent.
 **Never** auto-submit even if the user previously pre-authorized the
 session, the call, or the wallet. A "yes" earlier in the flow does not
 carry forward.
+
+> **What does NOT count as a confirmation gate.** Emitting a bash script
+> that prints `"⚠️ CONFIRMATION REQUIRED"` and `"(yes/no)"` to stdout and
+> then continues with `echo "Signing..."` is **not** a gate, because the
+> script proceeds regardless of user input. A correct gate uses the
+> `AskUserQuestion` tool (or, if the user explicitly opts into shell-only
+> mode, an actual blocking `read -p` followed by an explicit `yes`/`no`
+> branch in the script). When in doubt, prefer `AskUserQuestion`.
+
+<!-- markdownlint-disable-next-line -->
 
 > **Shared-wallet race.** If the wallet is shared (for example, multiple
 > agents running concurrently against the same key), the balance can be
