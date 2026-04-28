@@ -157,6 +157,55 @@ ELAPSED=$(($(date +%s) - QUOTE_FETCHED_AT))
 > service in user-facing responses; surface the limitation honestly and
 > let the user choose.
 
+### Source-chain shortfall preflight (REQUIRED before quoting)
+
+Before calling `/quote` or recommending a bridge, **verify the user's
+source-chain wallet actually has enough of `SOURCE_TOKEN` to cover the
+required output amount plus fees**. The most common funding failure is
+not the route, it is the user's source balance: e.g. user has 5 USDC
+on Base but the 402 demands 100 USDT0 on X Layer. Recommending "bridge
+100.5 USDC from Base" in that situation is wrong; the user does not
+have 100.5 USDC to bridge.
+
+```bash
+set -euo pipefail
+
+# X402_AMOUNT is in base units of the X Layer DESTINATION asset (e.g.
+# USDT0 6 decimals). For a same-decimal source token (USDC also 6), the
+# minimum source amount needed is X402_AMOUNT plus buffer. For a
+# different-decimal source token, scale appropriately and consult an
+# oracle or quote for an estimate. The check below uses the same-decimal
+# stablecoin path (USDC -> USDT0, USDG -> USDT0, etc.). For different
+# decimals or non-stable source tokens, fetch a price quote first and
+# use the input-amount it returns to gate this check.
+SOURCE_REQUIRED_BASE_UNITS=$(python3 -c "print(($X402_AMOUNT * 1005) // 1000)")
+
+SOURCE_BALANCE=$(cast call "$SOURCE_TOKEN_ADDRESS" \
+  "balanceOf(address)(uint256)" "$WALLET_ADDRESS" \
+  --rpc-url "$SOURCE_CHAIN_RPC_URL")
+
+# Strip cast's "(uint256)" suffix if present and compare via python (uint256-safe).
+SOURCE_BALANCE_RAW=$(echo "$SOURCE_BALANCE" | awk '{print $1}')
+if ! python3 -c "import sys; sys.exit(0 if int('$SOURCE_BALANCE_RAW') >= int('$SOURCE_REQUIRED_BASE_UNITS') else 1)"; then
+  echo "ERROR: source-chain shortfall on $SOURCE_CHAIN_NAME." >&2
+  echo "  needed (base units): $SOURCE_REQUIRED_BASE_UNITS" >&2
+  echo "  have   (base units): $SOURCE_BALANCE_RAW"          >&2
+  echo "Cannot fund the 402 from this source. Ask the user for an"  >&2
+  echo "alternative source chain, a smaller payment amount, or to"  >&2
+  echo "top up the source wallet first." >&2
+  exit 1
+fi
+```
+
+Refusing here is the correct behavior: a bridge instruction the user
+cannot execute is worse than no instruction. If multiple source chains
+are available and one has the funds, suggest that one. If none do,
+surface the shortfall in plain language and stop, do not auto-pivot
+into a different funding plan without re-confirming with the user via
+`AskUserQuestion`.
+
+### Quote and bridge
+
 The block below describes the design intent: a single Trading API quote
 that handles swap + bridge into X Layer. It is preserved so the skill
 works without code changes the day Across adds X Layer. Today, expect

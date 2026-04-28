@@ -134,7 +134,14 @@ The x402 challenge is JSON in the response body. Extract:
 - `accepts[].scheme`, only `"exact"` is supported in v1.0.0.
 - `accepts[].network`, accept `"x-layer"` / `"xlayer"` / `"eip155:196"` /
   `196`.
-- `accepts[].maxAmountRequired`, base units of the asset.
+- `accepts[].maxAmountRequired`, base units of the asset. Must match
+  `^[0-9]+$` AND be **strictly greater than zero**. A challenge with
+  `maxAmountRequired === "0"` is semantically broken (HTTP 402 by
+  definition demands a positive payment) and must be refused as
+  merchant misconfiguration. Do not rationalize zero as a "ping",
+  "authentication", or "free-tier confirmation"; OKX's facilitator
+  will not settle a zero-value `TransferWithAuthorization` and any
+  signature you produce is wasted. Surface this to the user and stop.
 - `accepts[].asset`, token contract on X Layer.
 - `accepts[].payTo`, recipient address.
 - `accepts[].resource`, the URL the facilitator binds the payment to.
@@ -221,6 +228,24 @@ same-chain swaps and cross-chain routing (powered by Across).
 > 402 settlement). Surface this honestly to the user, do not
 > recommend a specific bridge product (TODO: research and document a
 > co-marketing-aligned bridge recommendation in a follow-up).
+>
+> **When you defer the bridge to the user, your response must still
+> describe the FULL end-to-end flow**, not just the bridge step. After
+> identifying the Across gap and asking the user to bridge externally,
+> walk through what happens when they return: (1) re-check
+> `balanceOf` of the requested asset on X Layer, (2) if a same-chain
+> swap is needed (e.g. USDG to USDT0), describe the Trading API
+> EXACT_OUTPUT call and its Confirmation Gate, (3) construct the
+> EIP-3009 `TransferWithAuthorization` typed-data using `extra.name`
+> and `extra.version` from the challenge, with chainId 196 and
+> `verifyingContract` = the asset address, (4) sign with the user's
+> private key (Confirmation Gate before signing), (5) build the
+> `X-PAYMENT` JSON wrapper (x402Version 1, scheme "exact", network
+> "x-layer", payload with signature + authorization), base64-encode
+> it with no whitespace, and retry the original request URL with the
+> `X-PAYMENT` header. Showing the full plan up front lets the user
+> see what they are committing to before they leave the skill, even
+> though signing happens after they return.
 
 **Default funding target = USDT0.** If the 402 challenge requests a
 different asset, fund into that asset directly only when it has reliable
@@ -272,22 +297,86 @@ on-chain (zero gas to the payer on X Layer).
 
 ### Step 5, User Confirmation
 
-Before signing or submitting **any** transaction in this skill (token
-approval, swap, bridge, EIP-3009 signature), call the **`AskUserQuestion`
-agent tool** (not `read -p`, not `echo` to a bash prompt, not a printed
-"(yes/no)" line in your response) and **block on the user's reply** before
-moving on. The summary you present must cover:
+**Every** transaction this skill touches requires a separate
+`AskUserQuestion` gate, with no exceptions for funding legs.
+"Funding" is not a single transaction; it is several, and each one is
+its own gate. The required gates, in order they typically fire:
+
+1. **Source-chain ERC-20 approval** to Permit2 / Universal Router (only
+   if `tokenIn` is not native and the allowance is insufficient).
+2. **Same-chain swap** on the source chain (e.g. UNI to USDC on
+   Ethereum), if the funding plan includes a source-chain leg.
+3. **Bridge submission** to the cross-chain rail (Across, OKX bridge,
+   etc.). When the bridge step is user-initiated outside this skill,
+   the gate becomes "are you ready to leave the skill, run the bridge,
+   and re-invoke once funds land on X Layer?".
+4. **Same-chain swap on X Layer** (e.g. USDG to USDT0), if the funding
+   plan includes a destination-chain leg.
+5. **EIP-3009 `TransferWithAuthorization` signature** for the 402
+   settlement.
+
+Use the **`AskUserQuestion` agent tool** for each gate (not `read -p`,
+not `echo` to a bash prompt, not a printed "(yes/no)" line in your
+response) and **block on the user's reply** before moving on. The
+summary you present at every gate must cover:
 
 - Action (approve, swap, bridge, sign EIP-3009 authorization).
-- Amount and token.
+- Amount and token (input AND output amounts for swaps and bridges).
+- Source chain and destination chain (where they differ).
 - Recipient (`payTo` for the EIP-3009 step).
 - Resource URL the payment is bound to.
 - Estimated gas (where applicable).
 
+> **Common failure mode.** When describing a multi-step funding plan
+> in your response, do NOT collapse multiple transactions into a
+> single confirmation question like "Proceed with funding and
+> payment?". Each transaction needs its own gate at the moment it is
+> about to fire. A consolidated upfront "yes" is not consent for
+> later transactions; the user has not seen the live amounts, gas,
+> and recipient at the time those transactions execute.
+
 Obtain explicit confirmation per gate. Each gate is independent.
 **Never** auto-submit even if the user previously pre-authorized the
-session, the call, or the wallet. A "yes" earlier in the flow does not
-carry forward.
+session, the call, or the wallet. A "yes" earlier in the flow does
+not carry forward, and a "yes" to a multi-step plan is not a "yes" to
+the individual transactions inside it.
+
+> **What a correct gate looks like in your response.** Whether you are
+> executing the skill in real time or describing a plan in text, every
+> transaction step MUST appear as its own labelled "Confirmation Gate"
+> block, with both the structured summary and an explicit
+> `AskUserQuestion` invocation. Reproduce this template literally for
+> each gate. Do not collapse the gate into a single line. Do not
+> describe the gate in passive voice ("we will confirm before
+> signing"). Show the gate as a discrete action.
+>
+> **Template (use for every gate, even when there is only one):**
+>
+> ```text
+> ### Confirmation Gate N: <Action name>
+>
+> | Field        | Value                                    |
+> | ------------ | ---------------------------------------- |
+> | Action       | <approve / swap / bridge / sign EIP-3009>|
+> | Amount in    | <amount + symbol on source chain>        |
+> | Amount out   | <amount + symbol on destination chain>   |
+> | Source chain | <chain name + id>                        |
+> | Dest chain   | <chain name + id>                        |
+> | Recipient    | <address>                                |
+> | Resource URL | <url the payment is bound to>            |
+> | Est. gas     | <amount + token>                         |
+>
+> Then call AskUserQuestion("Proceed with <action>?")
+> and BLOCK on the user's reply. If anything other than an explicit
+> "yes", stop and report.
+> ```
+>
+> A response that only lists fields without the
+> `AskUserQuestion("Proceed?") + block` step is not a gate, even if it
+> looks comprehensive. The model's natural inclination is to summarize
+> and continue; resist that inclination, name the gate, and stop.
+
+<!-- markdownlint-disable-next-line -->
 
 > **What does NOT count as a confirmation gate.** Emitting a bash script
 > that prints `"⚠️ CONFIRMATION REQUIRED"` and `"(yes/no)"` to stdout and
@@ -330,22 +419,23 @@ challenge, otherwise the original request URL.
 
 ## Error Handling
 
-| Situation                                           | Action                                                                                                                                                                                       |
-| --------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 402 challenge has no `network` field                | Inspect challenge body; if `chainId` resolves to 196 use this skill, otherwise escalate to `pay-with-any-token`                                                                              |
-| Network is not chain 196                            | Escalate to `pay-with-any-token`                                                                                                                                                             |
-| `x402Version !== 1`                                 | Refuse cleanly; surface a version mismatch error. v1.0.0 of this skill targets x402 v1 only.                                                                                                 |
-| `accepts[].scheme !== "exact"`                      | Refuse cleanly; v1.0.0 supports the `exact` scheme only. Other x402 schemes (`upto`, `batch-settlement`) are out of scope.                                                                   |
-| APP requests USDC on X Layer                        | Surface a clear caveat: USDC has no reliable Uniswap v3 routing on X Layer. Suggest bridging USDC directly from a chain where it is liquid (Base, Arbitrum, Mainnet), or asking about USDT0. |
-| Insufficient asset on X Layer                       | Trigger funding flow (Phase 3)                                                                                                                                                               |
-| Trading API returns 400                             | Log request/response; check amount formatting and address checksums                                                                                                                          |
-| Trading API returns 429                             | Back off and retry with exponential delay                                                                                                                                                    |
-| Quote expired                                       | Re-fetch quote; do not reuse old `permitData`                                                                                                                                                |
-| Bridge times out                                    | Check Across bridge explorer; do not re-submit                                                                                                                                               |
-| EIP-3009 signature rejected (402 on retry)          | Verify domain `name` / `version` from `extra` (byte-exact, including any non-ASCII characters), check `validBefore` is fresh, confirm `nonce` was unused                                     |
-| Amount mismatch on retry                            | Recompute base units using on-chain `decimals()` of the actual asset; do not assume 6                                                                                                        |
-| On-chain settlement reverts (`transferFrom` failed) | Re-check `balanceOf` at retry time; the balance may have been drained between sign and submit (shared wallet, concurrent agent, manual transfer). Surface to the user before retrying.       |
-| User asks about escrow / session / batch / `upto`   | Inform that this skill version covers Instant Payment (`exact` scheme) only. Other primitives are out of scope for v1.0.0; a v1.x follow-up will track them as OKX ships.                    |
+| Situation                                           | Action                                                                                                                                                                                                                  |
+| --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 402 challenge has no `network` field                | Inspect challenge body; if `chainId` resolves to 196 use this skill, otherwise escalate to `pay-with-any-token`                                                                                                         |
+| Network is not chain 196                            | Escalate to `pay-with-any-token`                                                                                                                                                                                        |
+| `x402Version !== 1`                                 | Refuse cleanly; surface a version mismatch error. v1.0.0 of this skill targets x402 v1 only.                                                                                                                            |
+| `accepts[].scheme !== "exact"`                      | Refuse cleanly; v1.0.0 supports the `exact` scheme only. Other x402 schemes (`upto`, `batch-settlement`) are out of scope.                                                                                              |
+| `accepts[].maxAmountRequired === "0"`               | Refuse cleanly as merchant misconfiguration. HTTP 402 demands a positive payment; OKX's facilitator will not settle a zero-value transfer. Do not sign and do not rationalize zero as a ping, auth check, or free tier. |
+| APP requests USDC on X Layer                        | Surface a clear caveat: USDC has no reliable Uniswap v3 routing on X Layer. Suggest bridging USDC directly from a chain where it is liquid (Base, Arbitrum, Mainnet), or asking about USDT0.                            |
+| Insufficient asset on X Layer                       | Trigger funding flow (Phase 3)                                                                                                                                                                                          |
+| Trading API returns 400                             | Log request/response; check amount formatting and address checksums                                                                                                                                                     |
+| Trading API returns 429                             | Back off and retry with exponential delay                                                                                                                                                                               |
+| Quote expired                                       | Re-fetch quote; do not reuse old `permitData`                                                                                                                                                                           |
+| Bridge times out                                    | Check Across bridge explorer; do not re-submit                                                                                                                                                                          |
+| EIP-3009 signature rejected (402 on retry)          | Verify domain `name` / `version` from `extra` (byte-exact, including any non-ASCII characters), check `validBefore` is fresh, confirm `nonce` was unused                                                                |
+| Amount mismatch on retry                            | Recompute base units using on-chain `decimals()` of the actual asset; do not assume 6                                                                                                                                   |
+| On-chain settlement reverts (`transferFrom` failed) | Re-check `balanceOf` at retry time; the balance may have been drained between sign and submit (shared wallet, concurrent agent, manual transfer). Surface to the user before retrying.                                  |
+| User asks about escrow / session / batch / `upto`   | Inform that this skill version covers Instant Payment (`exact` scheme) only. Other primitives are out of scope for v1.0.0; a v1.x follow-up will track them as OKX ships.                                               |
 
 ## Key Addresses and References
 
