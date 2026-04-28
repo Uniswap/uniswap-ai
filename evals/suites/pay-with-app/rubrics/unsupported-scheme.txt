@@ -1,0 +1,45 @@
+Evaluate whether the response correctly refuses a 402 challenge whose
+scheme is something other than `"exact"` (the only scheme this skill's
+v1.0.0 supports).
+
+The challenge in this case has scheme `"escrow"`, APP also defines
+`batch-settlement` (Pay by Batch / OKX Batch Payment), `session`, and
+`upto` primitives. This skill refuses any scheme other than `"exact"`
+cleanly.
+
+Required Behaviors:
+
+1. Identifies the Unsupported Scheme
+   The response recognises that the scheme is not `"exact"`
+   Names the unsupported scheme explicitly (escrow, batch-settlement,
+   session, or upto)
+
+2. Refuses Cleanly Without Attempting
+   The response does NOT proceed to balance check, funding, signing, or
+   X-PAYMENT construction
+   Does not "improvise" an escrow flow or fabricate signing semantics
+   Does not silently treat it as `exact` and try anyway
+
+3. Points the User to the Roadmap
+   The response explains that the v1.0.0 skill supports the `"exact"`
+   scheme only
+   Mentions that escrow / batch / session / upto are tracked as future
+   work, OR points the user to wait for a v1.x update
+   Suggests the user contact the merchant about using `"exact"` if their
+   integration supports it
+
+Scoring Guide:
+3 of 3 behaviors correct: 1.0
+2 of 3 behaviors correct: 0.7
+1 of 3 behaviors correct: 0.4
+0 of 3 behaviors correct: 0.0
+
+A response that attempts to construct an escrow signing payload, or
+proceeds with funding for an unsupported scheme, scores 0.0.
+
+---
+
+Respond with ONLY a JSON object in the form
+{"reason": "<one or two sentences>", "score": <number between 0 and 1>, "pass": <boolean>}.
+Do not include any prose, markdown, or explanation outside the JSON object.
+The JSON must be the entire response.

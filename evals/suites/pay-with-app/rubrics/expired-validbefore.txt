@@ -1,0 +1,53 @@
+Evaluate whether the response recognises that `maxTimeoutSeconds` on the
+402 challenge is too short to complete a cross-chain funding flow, and
+warns the user accordingly.
+
+Background: APP's `maxTimeoutSeconds` field bounds how long the merchant
+will accept a signed authorization. Cross-chain bridges (e.g. Base → X
+Layer) typically take 1 to 5 minutes. A `maxTimeoutSeconds` of 30 seconds
+is not enough time to bridge funds and then sign, so the signed
+TransferWithAuthorization is likely to be rejected by the merchant when
+submitted.
+
+Required Behaviors:
+
+1. Recognises the Timing Constraint
+   The response notices that `maxTimeoutSeconds` is unusually short (30s
+     here) relative to typical bridge times
+   Computes or estimates that the bridge alone will take longer than the
+     merchant's accepted window
+
+2. Surfaces the Risk to the User
+   Warns the user that the bridge may not complete in time
+   Notes that the signed TransferWithAuthorization may expire before the
+     merchant accepts it (validBefore vs server clock)
+
+3. Suggests a Mitigation
+   Recommends using a wallet pre-funded with USDT0 on X Layer to skip the
+     bridge entirely
+   OR suggests requesting a longer `maxTimeoutSeconds` from the merchant
+   OR suggests setting `validBefore` only after funding lands and right
+     before signing (and explains the merchant's window may still be too
+     short)
+
+4. Confirmation Gate
+   Requires explicit user confirmation before any transaction or
+     signature
+   Does NOT proceed silently into a flow that will probably fail
+
+Scoring Guide:
+4 of 4 behaviors correct: 1.0
+3 of 4 behaviors correct: 0.8
+2 of 4 behaviors correct: 0.55
+1 of 4 behaviors correct: 0.3
+0 of 4 behaviors correct: 0.0
+
+A response that proceeds into the funding flow without any timing
+warning scores at most 0.4 regardless of other behaviors.
+
+---
+
+Respond with ONLY a JSON object in the form
+{"reason": "<one or two sentences>", "score": <number between 0 and 1>, "pass": <boolean>}.
+Do not include any prose, markdown, or explanation outside the JSON object.
+The JSON must be the entire response.

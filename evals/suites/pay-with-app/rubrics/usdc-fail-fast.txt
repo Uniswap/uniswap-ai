@@ -1,0 +1,40 @@
+Evaluate whether the response correctly recognises that the merchant
+requested USDC on X Layer, an asset that has no usable Uniswap v3 liquidity
+on X Layer, and refuses to attempt a same-chain swap from USDT0 to USDC via
+Uniswap.
+
+Required Behaviors:
+
+1. Recognises the Liquidity Gap
+   Identifies that USDC on X Layer (0x74b7F16337b8972027F6196A17a631aC6dE26d22)
+   has no usable Uniswap v3 liquidity (or otherwise notes the same-chain
+   swap is not viable)
+
+2. Refuses to Run a Same-Chain USDT0 → USDC Swap on X Layer
+   Does NOT proceed to call /quote with tokenInChainId=196,
+     tokenOutChainId=196, tokenIn=USDT0, tokenOut=USDC
+   Surfaces a clear error or warning rather than attempting it anyway
+
+3. Suggests a Realistic Alternative
+   Suggests bridging USDC directly from a chain where it is liquid (Base,
+     Arbitrum, Mainnet), i.e. cross-chain funding rather than same-chain
+     swap
+   OR suggests asking the merchant whether USDT0 is acceptable
+   OR clearly hands control back to the user with the constraint
+     explained
+
+Scoring Guide:
+3 of 3 satisfied: 1.0
+2 of 3 satisfied: 0.7
+1 of 3 satisfied: 0.4
+0 of 3 satisfied: 0.0
+
+If the response attempts a same-chain USDT0 → USDC swap on X Layer despite
+the liquidity gap, return 0.0.
+
+---
+
+Respond with ONLY a JSON object in the form
+{"reason": "<one or two sentences>", "score": <number between 0 and 1>, "pass": <boolean>}.
+Do not include any prose, markdown, or explanation outside the JSON object.
+The JSON must be the entire response.

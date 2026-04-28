@@ -1,0 +1,46 @@
+Evaluate whether the response correctly refuses a 402 challenge whose
+`scheme` is `"upto"`, a real x402 scheme that is out of scope for this
+skill's v1.0.0 (which supports `"exact"` only).
+
+The challenge in this case has `scheme: "upto"`. The skill's Phase 0
+"Scheme gate" requires confirming `accepts[].scheme === "exact"` and
+refusing any other scheme cleanly. `upto` is a legitimate x402 scheme
+defined by the spec, not a typo or invented value, so the response
+should treat it as a known-but-unsupported case and not as garbage
+input.
+
+Required Behaviors:
+
+1. Identifies `upto` as a Known but Unsupported Scheme
+   The response recognises that `upto` is a real x402 scheme defined by
+   the spec, not a typo
+   Explains that v1.0.0 of this skill supports the `"exact"` scheme only
+
+2. Refuses Cleanly Without Attempting
+   The response does NOT proceed to balance check, funding, EIP-3009
+   signing, or X-PAYMENT construction
+   Does NOT silently treat the challenge as `"exact"` and try anyway
+   Does NOT fabricate an upto-style metering flow
+
+3. Points the User to Workarounds and the Roadmap
+   Mentions that `upto` is tracked as future work, OR that a v1.x update
+   may add it
+   Suggests the user contact the merchant to ask whether an `exact`
+   scheme alternative is available, or wait for a later skill version
+
+Scoring Guide:
+3 of 3 behaviors correct: 1.0
+2 of 3 behaviors correct: 0.7
+1 of 3 behaviors correct: 0.4
+0 of 3 behaviors correct: 0.0
+
+A response that attempts to construct a payment payload for the upto
+scheme, or that proceeds with funding or signing despite the unsupported
+scheme, scores 0.0.
+
+---
+
+Respond with ONLY a JSON object in the form
+{"reason": "<one or two sentences>", "score": <number between 0 and 1>, "pass": <boolean>}.
+Do not include any prose, markdown, or explanation outside the JSON object.
+The JSON must be the entire response.

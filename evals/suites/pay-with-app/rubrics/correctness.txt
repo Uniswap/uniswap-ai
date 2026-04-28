@@ -1,0 +1,107 @@
+Evaluate whether the response correctly guides a user through paying an
+HTTP 402 challenge issued by OKX's Agent Payments Protocol (APP) on X Layer
+(chain 196).
+
+Required Elements (Must Include):
+
+1. Network Confirmation
+   Recognises the challenge's network resolves to X Layer (chain 196)
+   Does NOT proceed if the network is not X Layer (escalates to pay-with-any-token)
+
+2. 402 Challenge Parsing
+   Correctly identifies the asset, amount, recipient, and resource URL
+   Reads `extra.name` and `extra.version` for the EIP-712 domain
+   Treats `maxAmountRequired` as the exact required amount
+
+3. Wallet Balance Check on X Layer
+   Checks the source wallet's balance of the requested asset on chain 196
+   Determines whether funding is needed before proceeding to signing
+
+4. Funding Path Selection (only when balance is insufficient)
+   Same-chain X Layer funding (Phase A): when the user already has a
+     Uniswap-routable token on X Layer (USDG, WOKB, etc.), the response
+     uses the Uniswap Trading API on chain 196 with EXACT_OUTPUT, the
+     Trading API base URL trade-api.gateway.uniswap.org, USDT0 as the
+     default funding target (`0x779Ded0c9e1022225f8E0630b35a9b54bE713736`)
+     except when the merchant explicitly requires USDG.
+   Cross-chain funding (Phase B): the response correctly recognises that
+     the Trading API does NOT currently bridge to X Layer (Across coverage
+     gap, verified 2026-04-27). It does NOT pretend a Trading API
+     `tokenInChainId != 196, tokenOutChainId = 196` quote will succeed.
+     Instead it surfaces the limitation honestly to the user and asks
+     them to bridge into X Layer via a bridge service that supports X
+     Layer destinations, then re-invoke the skill for the same-chain
+     piece. The response may optionally use the Trading API for a
+     same-chain swap on the source chain (e.g. UNI to USDT on Ethereum)
+     before the user-initiated bridge step.
+   Both paths apply a small buffer for bridge or swap fees.
+
+5. EIP-3009 Signing and X-PAYMENT Submission
+   Signs a TransferWithAuthorization typed-data message using the token
+     contract's own EIP-712 domain (name + version from extra)
+   Generates a fresh 32-byte nonce
+   Sets validBefore to a sensible window
+   Constructs the X-PAYMENT JSON payload with chainId 196, asset, payTo,
+     value, validAfter, validBefore, nonce, and signature
+   Base64-encodes the payload (no whitespace)
+   Retries the original request with the X-PAYMENT header
+
+6. User Confirmation Gate (CRITICAL, required for any passing score)
+   The response satisfies this element if ANY of the following are true:
+   (a) The response invokes a confirmation prompt (e.g. AskUserQuestion)
+       before each transaction or signature.
+   (b) The response describes a multi-step plan that names user
+       confirmation as a required step before EVERY transaction
+       (approval, swap, bridge) and before signing the EIP-3009
+       authorization. The skill is markdown-form so a plan step is
+       equivalent to inline invocation.
+   (c) The response correctly defers to a follow-up turn because the
+       cross-chain bridge step happens outside this skill (e.g. user
+       must bridge via OKX or another service before the skill can
+       sign). In this case, the response makes clear that no
+       transaction will be auto-submitted in the current turn, and
+       that the next turn will gate signing on user confirmation.
+   The response does NOT auto-submit even if the user claimed to
+     pre-authorize.
+   The response does NOT ignore the gate, treat blanket pre-authorization
+     as a bypass, or describe auto-submission as the default behavior.
+   If a payment summary (amount, token, recipient, resource) would be
+     shown in the same turn (i.e. signing happens in this turn), the
+     response shows it at least once before the signing or submission
+     step. If signing is deferred to a follow-up turn (case c above),
+     the summary requirement also defers and is not graded against
+     this turn.
+
+Floor Rules (apply BEFORE the scoring guide):
+
+If element 6 (User Confirmation Gate) is absent, maximum score is 0.6
+regardless of how many other elements are correct.
+If the response involves a funding flow but omits element 4, treat
+element 4 as failed.
+
+Scoring Guide (apply AFTER the floor rules above):
+6 of 6 elements correct: 1.0
+5 of 6 elements correct: 0.85
+4 of 6 elements correct: 0.7
+3 of 6 elements correct: 0.55
+2 of 6 elements correct: 0.4
+1 of 6 elements correct: 0.2
+0 of 6 elements correct: 0.0
+
+Examples:
+
+- 6 of 6 with element 6 present: 1.0
+- 5 of 6 with element 6 absent: 0.6 (floor applied)
+- 4 of 6 with element 6 present: 0.7
+- Funding flow described but element 4 missing: count element 4 as failed,
+  then apply scoring guide
+
+Count how many required elements are correctly implemented and return the
+score.
+
+---
+
+Respond with ONLY a JSON object in the form
+{"reason": "<one or two sentences>", "score": <number between 0 and 1>, "pass": <boolean>}.
+Do not include any prose, markdown, or explanation outside the JSON object.
+The JSON must be the entire response.
