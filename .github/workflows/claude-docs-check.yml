@@ -54,7 +54,7 @@ jobs:
       (github.event_name == 'pull_request' &&
        !contains(github.event.pull_request.user.login, '[bot]') &&
        github.event.pull_request.head.repo.full_name == github.repository)
-    uses: Uniswap/ai-toolkit/.github/workflows/_claude-docs-check.yml@084ed0f93757da101364aecd5dd453cd3e888ff5 # main
+    uses: Uniswap/ai-toolkit/.github/workflows/_claude-docs-check.yml@e22669e1063f4540caa0bc0ffe1fb7d813ed0b09 # main
     with:
       pr_number: ${{ github.event.pull_request.number || github.event.inputs.pr_number }}
       suggestion_mode: ${{ github.event.inputs.suggestion_mode || 'suggest' }}
