@@ -79,7 +79,7 @@ jobs:
         with:
           node-version: ${{ vars.NODE_VERSION }}
           registry-url: 'https://registry.npmjs.org'
-          scope: '@uniswap-ai'
+          scope: '@uniswap'
 
       - name: Install npm
         env:
@@ -284,7 +284,7 @@ jobs:
         with:
           node-version: ${{ vars.NODE_VERSION }}
           registry-url: 'https://registry.npmjs.org'
-          scope: '@uniswap-ai'
+          scope: '@uniswap'
 
       - name: Install npm
         env:
