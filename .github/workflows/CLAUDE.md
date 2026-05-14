@@ -24,7 +24,7 @@ This directory contains GitHub Actions workflows for the uniswap-ai repository. 
 
 Core CI validation workflow that runs on all PRs:
 
-- Validates `package-lock.json` is in sync
+- Validates `bun.lock` is in sync via `bun install --frozen-lockfile`
 - Builds affected packages with Nx
 - Runs linting and formatting checks
 - Lints documentation prose with Vale (non-blocking)
@@ -87,7 +87,7 @@ Automatically generates API documentation using TypeDoc:
 
 - Triggers on push to main when TypeScript files in `evals/framework/**` or `packages/**` change
 - Also accepts `typedoc.json` changes and manual workflow_dispatch triggers
-- Runs `npx nx run docs:generate-api-docs` to generate documentation
+- Runs `bunx nx run docs:generate-api-docs` to generate documentation
 - Auto-commits generated docs to `docs/api/**` with `[skip ci]` flag
 - Skips execution if commit message starts with `docs: auto-generate` to prevent loops
 - Uses concurrency controls to prevent overlapping doc generation
@@ -98,7 +98,7 @@ Documentation is deployed via [Vercel](https://vercel.com) (not GitHub Actions).
 
 - Deploys to production on push to `main` when `docs/` changes
 - Creates preview deployments for every PR
-- Build command: `npx nx run docs:build`
+- Build command: `bunx nx run docs:build`
 
 Configuration is in `vercel.json` at the repo root.
 
@@ -144,15 +144,20 @@ Validates GitHub Actions workflows for security and syntax correctness:
 | `ANTHROPIC_API_KEY`               | Anthropic API authentication       | Evals                                       |
 | `CLAUDE_CODE_OAUTH_TOKEN`         | Claude AI authentication           | Code Review, Docs Check, PR Metadata, Evals |
 | `WORKFLOW_PAT`                    | Push commits/tags, branch creation | Docs Check, PR Metadata, Publish            |
-| `NODE_AUTH_TOKEN`                 | npm publishing (OIDC fallback)     | Publish                                     |
 | `SERVICE_ACCOUNT_GPG_PRIVATE_KEY` | Signing commits/tags               | Publish                                     |
+
+npm publish authentication uses **Trusted Publishing (OIDC)** via `id-token: write` —
+no `NPM_TOKEN` / `NODE_AUTH_TOKEN` secret is required. Configure a Trusted Publisher
+on npmjs.com mapping each package to `publish-packages.yml` and the `Production`
+environment before its first publish.
 
 ## Repository Variables
 
-| Variable       | Purpose                       |
-| -------------- | ----------------------------- |
-| `NODE_VERSION` | Node.js version for CI (22.x) |
-| `NPM_VERSION`  | npm version for CI (11.7.0)   |
+| Variable       | Purpose                                                 |
+| -------------- | ------------------------------------------------------- |
+| `NODE_VERSION` | Node.js version for CI (22.x)                           |
+| `NPM_VERSION`  | npm version for the publish job (11.7.0+, OIDC support) |
+| `BUN_VERSION`  | Bun version for CI (defaults to 1.3.13)                 |
 
 ## Security
 

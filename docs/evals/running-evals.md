@@ -12,19 +12,19 @@ Execute evaluations and interpret results.
 ### Run All Evals
 
 ```bash
-npx nx run evals:run
+bunx nx run evals:run
 ```
 
 ### Run Specific Suite
 
 ```bash
-npx nx run evals:run --suite=v4-security-foundations
+bunx nx run evals:run --suite=v4-security-foundations
 ```
 
 ### Run with Specific Model
 
 ```bash
-npx nx run evals:run --model=claude-opus-4-5-20251101
+bunx nx run evals:run --model=claude-opus-4-5-20251101
 ```
 
 ### Dry Run
@@ -32,7 +32,7 @@ npx nx run evals:run --model=claude-opus-4-5-20251101
 Preview what would be evaluated without executing:
 
 ```bash
-npx nx run evals:run --dry-run
+bunx nx run evals:run --dry-run
 ```
 
 ### Verbose Output
@@ -40,7 +40,7 @@ npx nx run evals:run --dry-run
 Get detailed information about each case:
 
 ```bash
-npx nx run evals:run --verbose
+bunx nx run evals:run --verbose
 ```
 
 ## Understanding Output
@@ -97,7 +97,7 @@ Add evals to your PR checks:
 ```yaml
 # .github/workflows/ci-pr-checks.yml
 - name: Run evals
-  run: npx nx run evals:run --affected
+  run: bunx nx run evals:run --affected
 ```
 
 ### Affected Detection
@@ -105,7 +105,7 @@ Add evals to your PR checks:
 Only run evals for changed skills:
 
 ```bash
-npx nx run evals:run --affected --base=main
+bunx nx run evals:run --affected --base=main
 ```
 
 ## Multi-Model Comparison
@@ -114,10 +114,10 @@ Compare performance across models:
 
 ```bash
 # Run against multiple models
-npx nx run evals:run --model=claude-sonnet-4-5-20250929,claude-opus-4-5-20251101,gpt-4
+bunx nx run evals:run --model=claude-sonnet-4-5-20250929,claude-opus-4-5-20251101,gpt-4
 
 # Output comparison table
-npx nx run evals:run --format=comparison
+bunx nx run evals:run --format=comparison
 ```
 
 ## Debugging Failures
@@ -126,10 +126,10 @@ npx nx run evals:run --format=comparison
 
 ```bash
 # Run single case with verbose output
-npx nx run evals:run --suite=v4-security-foundations --case=basic-security-check --verbose
+bunx nx run evals:run --suite=v4-security-foundations --case=basic-security-check --verbose
 
 # Save raw output
-npx nx run evals:run --suite=v4-security-foundations --save-outputs
+bunx nx run evals:run --suite=v4-security-foundations --save-outputs
 ```
 
 ### Common Failure Reasons
@@ -147,19 +147,19 @@ npx nx run evals:run --suite=v4-security-foundations --save-outputs
 ### JSON (for CI)
 
 ```bash
-npx nx run evals:run --format=json > results.json
+bunx nx run evals:run --format=json > results.json
 ```
 
 ### Markdown (for PRs)
 
 ```bash
-npx nx run evals:run --format=markdown > results.md
+bunx nx run evals:run --format=markdown > results.md
 ```
 
 ### HTML Report
 
 ```bash
-npx nx run evals:run --format=html --output=./eval-report
+bunx nx run evals:run --format=html --output=./eval-report
 ```
 
 ## Thresholds

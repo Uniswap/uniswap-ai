@@ -1,7 +1,6 @@
 name: Publish Packages
 
 # Unified publishing workflow that handles both CI (automatic) and force (manual) publishing.
-# This consolidation is required due to npm OIDC trusted publishing constraints.
 #
 # MODES:
 # - Auto (CI): Triggered on push to main, detects affected packages, publishes, generates changelog
@@ -11,10 +10,20 @@ name: Publish Packages
 # - Push to main: Auto mode with 'latest' npm tag, conventional versioning
 # - workflow_dispatch: Force mode with 'next' npm tag, prerelease versioning
 #
+# PUBLISH AUTH: npm Trusted Publishing (OIDC).
+# The publish job has `id-token: write` and invokes `npm publish` directly
+# (bypassing `nx release publish`, which routes through `bun publish` and
+# does not implement the OIDC token exchange). setup-node intentionally
+# omits `registry-url`/`scope` because those write a ~/.npmrc with
+# `_authToken=${NODE_AUTH_TOKEN}` which blocks OIDC fallback.
+# Required setup before first publish: configure a Trusted Publisher on
+# npmjs.com mapping the package + this workflow file + the `Production`
+# environment (per package).
+#
 # REQUIRED SECRETS:
 # - WORKFLOW_PAT: For pushing commits/tags
-# - NODE_AUTH_TOKEN: For npm publishing (fallback if OIDC unavailable)
 # - SERVICE_ACCOUNT_GPG_PRIVATE_KEY: For signing commits/tags
+# (NODE_AUTH_TOKEN is intentionally absent — OIDC trusted publishing replaces it.)
 
 on:
   push:
@@ -69,26 +78,23 @@ jobs:
       - uses: bullfrogsec/bullfrog@1831f79cce8ad602eef14d2163873f27081ebfb3 # v0.8.4
 
       - name: Checkout repository
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
           persist-credentials: false
 
       - name: Setup Node.js
-        uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
           node-version: ${{ vars.NODE_VERSION }}
-          registry-url: 'https://registry.npmjs.org'
-          scope: '@uniswap'
 
-      - name: Install npm
-        env:
-          NPM_VERSION: ${{ vars.NPM_VERSION }}
-        # nosemgrep: uniswap.npm-package-in-action-not-pinned-to-commit-sha -- npm CLI from npm registry, not a git-hosted action
-        run: npm install -g "npm@$NPM_VERSION"
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: ${{ vars.BUN_VERSION || '1.3.13' }}
 
       - name: Install dependencies
-        run: npm ci --prefer-offline --no-audit
+        run: bun install --frozen-lockfile
 
       - name: Determine workflow configuration
         id: config
@@ -144,8 +150,8 @@ jobs:
         run: |
           # Get all release-configured packages from nx.json
           echo "Scanning for release-configured packages..."
-          ALL_PACKAGES=$(npx nx show projects --json 2>/dev/null | jq -r '.[]' | while read project; do
-            PROJECT_ROOT=$(npx nx show project "$project" --json 2>/dev/null | jq -r '.root' || echo "")
+          ALL_PACKAGES=$(bunx nx show projects --json 2>/dev/null | jq -r '.[]' | while read project; do
+            PROJECT_ROOT=$(bunx nx show project "$project" --json 2>/dev/null | jq -r '.root' || echo "")
             if [ -n "$PROJECT_ROOT" ] && [ -f "$PROJECT_ROOT/package.json" ]; then
               IS_PRIVATE=$(jq -r '.private // false' "$PROJECT_ROOT/package.json")
               if [ "$IS_PRIVATE" != "true" ]; then
@@ -193,7 +199,7 @@ jobs:
             fi
           else
             echo "🔍 Auto mode: detecting affected packages"
-            RAW_OUTPUT=$(NODE_NO_WARNINGS=1 npx nx show projects --affected --base="$BASE_SHA" --head=HEAD --type=lib --json 2>&1 || echo "[]")
+            RAW_OUTPUT=$(NODE_NO_WARNINGS=1 bunx nx show projects --affected --base="$BASE_SHA" --head=HEAD --type=lib --json 2>&1 || echo "[]")
             AFFECTED_OUTPUT=$(echo "$RAW_OUTPUT" | grep -v '^npm warn' || echo "[]")
 
             if echo "$AFFECTED_OUTPUT" | jq empty 2>/dev/null; then
@@ -206,7 +212,7 @@ jobs:
             SELECTED_PACKAGES=""
 
             for project in $(echo "$AFFECTED_JSON" | jq -r '.[]'); do
-              PROJECT_ROOT=$(npx nx show project "$project" --json 2>/dev/null | jq -r '.root' || echo "")
+              PROJECT_ROOT=$(bunx nx show project "$project" --json 2>/dev/null | jq -r '.root' || echo "")
 
               if [ -n "$PROJECT_ROOT" ] && [ -f "$PROJECT_ROOT/package.json" ]; then
                 IS_PRIVATE=$(jq -r '.private // false' "$PROJECT_ROOT/package.json")
@@ -274,26 +280,35 @@ jobs:
 
       - name: Checkout repository
         # zizmor: ignore[artipacked] -- credentials needed for git push of version commits and tags
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
           token: ${{ secrets.WORKFLOW_PAT }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
+        # Do NOT set registry-url here — that writes a ~/.npmrc with
+        # `_authToken=${NODE_AUTH_TOKEN}` which, when unset, prevents npm
+        # from falling through to OIDC-based Trusted Publishing auth.
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
           node-version: ${{ vars.NODE_VERSION }}
-          registry-url: 'https://registry.npmjs.org'
-          scope: '@uniswap'
 
-      - name: Install npm
+      - name: Install npm with OIDC support
         env:
+          # npm 11.x is required for full Trusted Publishing OIDC support.
+          # npm 10.x (shipped with Node 22 by default) lacks the OIDC token
+          # exchange. NPM_VERSION repo var defaults to 11.7.0+.
           NPM_VERSION: ${{ vars.NPM_VERSION }}
         # nosemgrep: uniswap.npm-package-in-action-not-pinned-to-commit-sha -- npm CLI from npm registry, not a git-hosted action
         run: npm install -g "npm@$NPM_VERSION"
 
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: ${{ vars.BUN_VERSION || '1.3.13' }}
+
       - name: Install dependencies
-        run: npm ci --prefer-offline --no-audit
+        run: bun install --frozen-lockfile
 
       - name: Configure Git identity
         run: |
@@ -308,12 +323,12 @@ jobs:
           echo "Building packages: $INPUT_PROJECTS"
 
           if [ -n "$INPUT_BASE_SHA" ]; then
-            npx nx affected --target=build --base="$INPUT_BASE_SHA" --head=HEAD
+            bunx nx affected --target=build --base="$INPUT_BASE_SHA" --head=HEAD
           else
             IFS=',' read -ra PROJECT_ARRAY <<< "$INPUT_PROJECTS"
             for project in "${PROJECT_ARRAY[@]}"; do
               echo "Building $project..."
-              npx nx build "$project"
+              bunx nx build "$project"
             done
           fi
 
@@ -325,11 +340,11 @@ jobs:
           INPUT_NPM_TAG: ${{ needs.detect.outputs.npm_tag }}
           INPUT_VERSION_STRATEGY: ${{ needs.detect.outputs.version_strategy }}
           INPUT_BRANCH: ${{ github.ref_name }}
-          NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
+          # No NPM_TOKEN / NODE_AUTH_TOKEN — npm picks up GitHub Actions OIDC
+          # via ACTIONS_ID_TOKEN_REQUEST_URL/TOKEN (enabled by `id-token: write`)
+          # and exchanges it with the registry for a short-lived publish token.
         run: |
-          echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > ~/.npmrc
-
           echo "Processing packages with tag: $INPUT_NPM_TAG"
           echo "=========================================="
 
@@ -349,7 +364,7 @@ jobs:
             echo "Processing: $project → $package"
             echo "=========================================="
 
-            PROJECT_ROOT=$(npx nx show project "$project" --json 2>/dev/null | jq -r '.root' || echo "")
+            PROJECT_ROOT=$(bunx nx show project "$project" --json 2>/dev/null | jq -r '.root' || echo "")
 
             if [ -z "$PROJECT_ROOT" ] || [ ! -f "$PROJECT_ROOT/package.json" ]; then
               echo "❌ Could not find package.json for $project"
@@ -357,16 +372,19 @@ jobs:
               continue
             fi
 
-            # Version the package using Nx release
-            if npx nx release version --projects="$project" --git-commit --git-tag; then
+            # Version the package using Nx release (bumps version, commits, tags)
+            if bunx nx release version --projects="$project" --git-commit --git-tag; then
               echo "✅ Versioning complete"
 
-              # Get the new version
               NEW_VERSION=$(jq -r '.version' "$PROJECT_ROOT/package.json")
 
-              # Publish to npm
-              if npx nx release publish --projects="$project" --tag="$INPUT_NPM_TAG" --registry=https://registry.npmjs.org; then
-                echo "✅ Successfully published $package@$NEW_VERSION"
+              # Publish via `npm publish` directly (NOT `bunx nx release publish`).
+              # Nx's release-publish executor honors `packageManager: bun@x` in
+              # package.json and routes through `bun publish`, which does not
+              # implement npm OIDC trusted publishing. Shelling out to `npm
+              # publish` per package preserves OIDC auth.
+              if (cd "$PROJECT_ROOT" && npm publish --tag="$INPUT_NPM_TAG" --registry=https://registry.npmjs.org --provenance); then
+                echo "✅ Successfully published $package@$NEW_VERSION (with provenance)"
 
                 # Push commit and tag
                 git push origin "$INPUT_BRANCH"

@@ -48,10 +48,10 @@ tmp/
 temp/
 *.tmp
 
-# Lock files (keep package-lock.json)
+# Lock files (keep bun.lock)
 yarn.lock
 pnpm-lock.yaml
-bun.lock
+package-lock.json
 
 # Release artifacts
 *.tgz

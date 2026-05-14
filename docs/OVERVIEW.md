@@ -76,22 +76,22 @@ All tools in this repository are designed to work with any LLM coding agent, not
 ### Prerequisites
 
 - Node.js 22.x
-- npm 11.7.0
+- [Bun](https://bun.sh) 1.3.13 or later
 
 ### Setup
 
 ```bash
 # Install dependencies
-npm install
+bun install
 
 # Build all packages
-npx nx run-many -t build
+bunx nx run-many -t build
 
 # Run tests
-npx nx run-many -t test
+bunx nx run-many -t test
 
 # Run linting
-npx nx run-many -t lint
+bunx nx run-many -t lint
 ```
 
 ### Project Structure

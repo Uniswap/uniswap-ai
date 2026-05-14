@@ -1,4 +1,4 @@
-#!/usr/bin/env npx tsx
+#!/usr/bin/env bun
 
 /**
  * Eval Coverage Check Script
@@ -6,7 +6,7 @@
  * Checks if skills have corresponding eval suites.
  *
  * Usage:
- *   npx tsx scripts/check-eval-coverage.ts [--staged] [--strict]
+ *   bun run scripts/check-eval-coverage.ts [--staged] [--strict]
  *
  * Options:
  *   --staged   Only check skills that have staged changes (for pre-commit hooks)

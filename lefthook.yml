@@ -1,5 +1,4 @@
 # Lefthook configuration for git hooks
-
 # <https://github.com/evilmartians/lefthook>
 
 pre-commit:
@@ -7,10 +6,10 @@ pre-commit:
   commands:
     format:
       glob: '*.{js,ts,tsx,json,md}'
-      run: npx nx format:write --uncommitted
+      run: bunx nx format:write --uncommitted
       stage_fixed: true
     lint:
-      run: npx nx affected --target=lint --base=HEAD~1 --head=HEAD
+      run: bunx nx affected --target=lint --base=HEAD~1 --head=HEAD
     actionlint:
       glob: '.github/workflows/*.yml'
       # shellcheck disabled: env vars set via GitHub Actions env: context are
@@ -19,4 +18,5 @@ pre-commit:
       run: actionlint -shellcheck=""
     eval-coverage:
       glob: 'packages/plugins/**/*'
-      run: npx tsx scripts/check-eval-coverage.ts --staged
+      # bun runs TS natively; no need for npx tsx.
+      run: bun run scripts/check-eval-coverage.ts --staged
