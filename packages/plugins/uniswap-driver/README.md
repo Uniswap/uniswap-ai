@@ -59,7 +59,7 @@ All chains supported by the Uniswap interface:
 ```bash
 # From the uniswap-ai marketplace
 /plugin marketplace add Uniswap/uniswap-ai
-/plugin install uniswap-driver@uniswap-ai
+/plugin install uniswap-driver
 ```
 
 ## Data Sources
