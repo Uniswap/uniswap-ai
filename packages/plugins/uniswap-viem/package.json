@@ -1,6 +1,6 @@
 {
   "name": "@uniswap/uniswap-viem",
-  "version": "0.0.1",
+  "version": "1.1.4",
   "private": true,
   "description": "EVM blockchain integration using viem and wagmi - client setup, reading/writing data, accounts, contract interactions, and React hooks",
   "author": "Uniswap Labs <ai-services@uniswap.org>",

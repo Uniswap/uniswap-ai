@@ -88,7 +88,7 @@ runs:
         # ===========================================
 
         if [[ "$IS_AUTOMATED" == "false" && -n "$PR_TITLE" ]]; then
-          # Release commits (e.g., "chore(release): @uniswap-ai/core@0.5.30")
+          # Release commits (e.g., "chore(release): @uniswap/ai-core@0.5.30")
           if [[ "$PR_TITLE" == "chore(release):"* ]]; then
             IS_AUTOMATED="true"
             SKIP_REASON="Release commit (chore(release): prefix)"
