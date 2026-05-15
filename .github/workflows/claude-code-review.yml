@@ -78,7 +78,7 @@ jobs:
       - uses: bullfrogsec/bullfrog@1831f79cce8ad602eef14d2163873f27081ebfb3 # v0.8.4
 
       - name: Checkout repository (for composite action)
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           sparse-checkout: .github/actions
           sparse-checkout-cone-mode: false
@@ -175,11 +175,23 @@ jobs:
 
           BASE_REF=$(echo "$PR_DATA" | jq -r '.base.ref')
           HEAD_REF=$(echo "$PR_DATA" | jq -r '.head.ref')
+          HEAD_REPO=$(echo "$PR_DATA" | jq -r '.head.repo.full_name')
+
+          # Fork-PR RCE defense (Cantina #692): block comment-triggered reviews
+          # on fork PRs. The claude-review-auto job (pull_request event) already
+          # has this gate; the comment-triggered claude-review-comment job needs
+          # the same check enforced here because it processes attacker-supplied
+          # checkout SHA with WORKFLOW_PAT + CLAUDE_CODE_OAUTH_TOKEN in scope.
+          if [ "$HEAD_REPO" != "${{ github.repository }}" ]; then
+            echo "❌ Refusing to process trigger from fork PR ($HEAD_REPO)"
+            echo "should_run=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
 
           echo "base_ref=$BASE_REF" >> $GITHUB_OUTPUT
           echo "head_ref=$HEAD_REF" >> $GITHUB_OUTPUT
 
-          echo "✅ PR #$PR_NUMBER: base=$BASE_REF, head=$HEAD_REF"
+          echo "✅ PR #$PR_NUMBER: base=$BASE_REF, head=$HEAD_REF (same-repo)"
 
   # Automatic review triggered by pull_request events (opened, synchronize, ready_for_review)
   # Skips certain automated PRs but reviews dependency updates (for auto-merge support)

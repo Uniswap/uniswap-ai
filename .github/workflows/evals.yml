@@ -39,7 +39,7 @@ jobs:
       - uses: bullfrogsec/bullfrog@1831f79cce8ad602eef14d2163873f27081ebfb3 # v0.8.4
 
       - name: Checkout repository
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
 
@@ -66,27 +66,31 @@ jobs:
     steps:
       - uses: bullfrogsec/bullfrog@1831f79cce8ad602eef14d2163873f27081ebfb3 # v0.8.4
 
+      # Setup tools BEFORE checking out PR code so attacker-supplied configs
+      # (.npmrc, bunfig.toml) in the PR cannot influence tool installation.
+      # Note: secrets like ANTHROPIC_API_KEY are not passed to fork PRs by
+      # GitHub default; this is defense-in-depth for same-repo PRs.
+      - name: Setup Node.js
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: ${{ vars.NODE_VERSION || '22' }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: ${{ vars.BUN_VERSION || '1.3.13' }}
+
       - name: Checkout repository
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
           fetch-depth: 0
 
-      - name: Setup Node.js
-        uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
-        with:
-          node-version: ${{ vars.NODE_VERSION || '22' }}
-          cache: 'npm'
-
-      - name: Install npm
-        env:
-          NPM_VERSION: ${{ vars.NPM_VERSION || '11.7.0' }}
-        # NPM_VERSION is a repository variable controlled by admins
-        # Safe to use because: (1) admin-controlled (2) validated by npm version parser
-        run: npm install -g "npm@$NPM_VERSION" # nosemgrep: uniswap.npm-package-in-action-not-pinned-to-commit-sha
-
       - name: Install dependencies
-        run: npm ci --prefer-offline --no-audit
+        # --ignore-scripts blocks PR-controlled package.json preinstall/
+        # postinstall RCE (Shai-Hulud class). Eval workflow handles secrets
+        # (ANTHROPIC_API_KEY, CLAUDE_CODE_OAUTH_TOKEN) for same-repo PRs.
+        run: bun install --frozen-lockfile --ignore-scripts
 
       - name: Restore Nx cache
         uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
@@ -133,17 +137,17 @@ jobs:
             fi
             echo "::group::Running specific suite: $SUITE_INPUT"
             # shellcheck disable=SC2086
-            npx nx run "eval-suite-$SUITE_INPUT:eval" $NX_CACHE_FLAG || true
+            bunx --package=nx@22.0.2 nx run "eval-suite-$SUITE_INPUT:eval" $NX_CACHE_FLAG || true
             echo "::endgroup::"
           elif [ "$EVENT_NAME" = "workflow_dispatch" ]; then
             echo "::group::Running all eval suites (manual trigger)"
             # shellcheck disable=SC2086
-            npx nx run-many -t eval --projects='tag:type:eval-suite' $NX_CACHE_FLAG || true
+            bunx --package=nx@22.0.2 nx run-many -t eval --projects='tag:type:eval-suite' $NX_CACHE_FLAG || true
             echo "::endgroup::"
           else
             echo "::group::Running affected eval suites"
             # shellcheck disable=SC2086
-            npx nx affected -t eval --exclude=evals $NX_CACHE_FLAG || true
+            bunx --package=nx@22.0.2 nx affected -t eval --exclude=evals $NX_CACHE_FLAG || true
             echo "::endgroup::"
           fi
 

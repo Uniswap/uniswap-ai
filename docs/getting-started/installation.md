@@ -36,14 +36,14 @@ To contribute or develop locally:
 git clone https://github.com/uniswap/uniswap-ai.git
 cd uniswap-ai
 
-# Install dependencies
-npm install
+# Install dependencies (uses bun.lock + bunfig.toml minimumReleaseAge defense)
+bun install
 
 # Build all packages
-npx nx run-many -t build
+bunx nx run-many -t build
 
 # Run tests
-npx nx run-many -t test
+bunx nx run-many -t test
 ```
 
 ## System Requirements
@@ -52,15 +52,19 @@ npx nx run-many -t test
 | ----------- | ------- | ----------------- |
 | Claude Code | Latest  | Plugin runtime    |
 | Node.js     | 22.x    | Local development |
-| npm         | 11.7.0+ | Local development |
+| Bun         | 1.3.13+ | Local development |
 
-### npm Version (for contributors)
+### Bun (for contributors)
 
-Local development requires npm 11.7.0+:
+Local development uses [Bun](https://bun.sh) as the package manager. The
+repo's `bunfig.toml` enforces `minimumReleaseAge = 259200` (3 days) as a
+supply-chain defense — newly-published package versions are filtered out
+during install.
 
 ```bash
-npm install -g npm@latest
-npm --version  # Should output: 11.7.0 or higher
+# macOS / Linux
+curl -fsSL https://bun.sh/install | bash
+bun --version
 ```
 
 ## Verifying Installation

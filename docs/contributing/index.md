@@ -10,7 +10,7 @@ Thank you for your interest in contributing to Uniswap AI! This guide will help 
 ## Prerequisites
 
 - Node.js 22.x or later
-- npm 11.7.0 or later
+- [Bun](https://bun.sh) 1.3.13 or later (package manager)
 - Git
 - Familiarity with TypeScript and Nx
 
@@ -27,24 +27,26 @@ cd uniswap-ai
 ### 2. Install Dependencies
 
 ```bash
-# Ensure you have the correct npm version
-npm install -g npm@11.7.0
+# Install Bun (if not already installed)
+curl -fsSL https://bun.sh/install | bash
 
-# Install dependencies
-npm install
+# Install dependencies (uses bun.lock + bunfig.toml's minimumReleaseAge
+# supply-chain defense, which filters out package versions published less
+# than 3 days ago)
+bun install
 ```
 
 ### 3. Verify Setup
 
 ```bash
 # Run tests
-npx nx run-many --target=test
+bunx nx run-many --target=test
 
 # Build all packages
-npx nx run-many --target=build
+bunx nx run-many --target=build
 
 # Start docs dev server
-npm run docs:dev
+bun run docs:dev
 ```
 
 ## Development Workflow
@@ -63,13 +65,13 @@ npm run docs:dev
 
    ```bash
    # Run affected tests
-   npx nx affected --target=test
+   bunx nx affected --target=test
 
    # Run affected linting
-   npx nx affected --target=lint
+   bunx nx affected --target=lint
 
    # Check formatting
-   npx nx format:check
+   bunx nx format:check
    ```
 
 4. **Commit using conventional commits**:
@@ -108,7 +110,7 @@ After making changes:
 1. Update relevant CLAUDE.md files
 2. Update README.md if needed
 3. Add/update documentation in `docs/`
-4. Run `npm exec markdownlint-cli2 -- --fix "**/*.md"`
+4. Run `bunx markdownlint-cli2 --fix "**/*.md"`
 
 ## Creating New Packages
 

@@ -22,13 +22,13 @@ Traditional software tests verify deterministic behavior. AI tools are probabili
 
 ```bash
 # Run all evals
-npx nx run evals:run
+bunx nx run evals:run
 
 # Run specific suite
-npx nx run evals:run --suite=v4-security-foundations
+bunx nx run evals:run --suite=v4-security-foundations
 
 # Dry run (show what would be evaluated)
-npx nx run evals:run --dry-run
+bunx nx run evals:run --dry-run
 ```
 
 ### Writing Evals

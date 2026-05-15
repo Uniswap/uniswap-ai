@@ -1,45 +1,25 @@
 #!/usr/bin/env node
 
 /**
- * Prepare Script
- *
- * Runs after npm install to set up the development environment:
- * - Checks npm version
- * - Installs lefthook git hooks
+ * Runs during `bun install` to wire up local git hooks via lefthook. In CI
+ * we skip hook installation — hooks aren't needed there and lefthook's
+ * platform-specific binaries can fail in container environments.
  */
 
-const { execSync } = require('child_process');
-const { readFileSync } = require('fs');
-const { join } = require('path');
+const { spawnSync } = require('child_process');
 
-// Get required npm version from package.json
-const packageJson = JSON.parse(readFileSync(join(__dirname, '..', 'package.json'), 'utf8'));
-const requiredNpmVersion = packageJson.engines?.npm;
-
-if (requiredNpmVersion) {
-  try {
-    const currentNpmVersion = execSync('npm --version', { encoding: 'utf8' }).trim();
-
-    if (currentNpmVersion !== requiredNpmVersion) {
-      console.warn(`\n⚠️  npm version mismatch`);
-      console.warn(`   Required: ${requiredNpmVersion}`);
-      console.warn(`   Current:  ${currentNpmVersion}`);
-      console.warn(`   Run: npm install -g npm@${requiredNpmVersion}\n`);
-    }
-  } catch {
-    console.error('Failed to check npm version');
-  }
+if (process.env.CI) {
+  console.log('Skipping Lefthook installation in CI environment');
+  process.exit(0);
 }
 
-// Install lefthook if available
-try {
-  // Check if lefthook is installed (lefthook uses 'version' not '--version')
-  execSync('npx lefthook version', { stdio: 'ignore' });
+console.log('Installing Lefthook git hooks...');
+const result = spawnSync('bunx', ['lefthook', 'install'], { stdio: 'inherit' });
 
-  // Install git hooks
-  console.log('Installing lefthook git hooks...');
-  execSync('npx lefthook install', { stdio: 'inherit' });
-  console.log('✅ Lefthook installed successfully');
-} catch {
-  console.log('ℹ️  Lefthook not available, skipping git hooks installation');
+if (result.error || result.status !== 0) {
+  console.error('❌ Failed to install Lefthook hooks');
+  if (result.error) console.error(result.error.message);
+  process.exit(1);
 }
+
+console.log('✅ Lefthook hooks installed successfully');

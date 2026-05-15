@@ -29,11 +29,11 @@ This is the **uniswap-ai** monorepo providing Uniswap-specific AI tools (skills,
 
 After making any code changes, Claude Code MUST:
 
-1. **Format the code**: Run `npx nx format:write --uncommitted` to format all uncommitted files
-2. **Lint the code**: Run `npx nx affected --target=lint --base=HEAD~1` to check for linting errors
-3. **Typecheck the code**: Run `npx nx affected --target=typecheck --base=HEAD~1` to typecheck affected projects
-4. **Lint markdown files**: Run `npm exec markdownlint-cli2 -- --fix "**/*.md"`
-5. **Lint documentation prose**: Run `npm run docs:lint` to check documentation quality with Vale
+1. **Format the code**: Run `bunx nx format:write --uncommitted` to format all uncommitted files
+2. **Lint the code**: Run `bunx nx affected --target=lint --base=HEAD~1` to check for linting errors
+3. **Typecheck the code**: Run `bunx nx affected --target=typecheck --base=HEAD~1` to typecheck affected projects
+4. **Lint markdown files**: Run `bunx markdownlint-cli2 --fix "**/*.md"`
+5. **Lint documentation prose**: Run `bun run docs:lint` to check documentation quality with Vale
 
 ## Package Scopes
 
@@ -191,14 +191,30 @@ Each eval suite is a separate Nx project with `implicitDependencies` on its plug
 - **Nunjucks renders all prompt content** — including return values from JS prompt functions and content loaded via `file://` in `vars:`. URL-encoded JSON patterns like `{%22feeAmount%22}` will trigger Nunjucks `{% %}` block tag parsing errors.
 - **Use `{% raw %}...{% endraw %}`** to protect content containing `{%` patterns. For skills with URL-encoded JSON, use a JS prompt function that reads the file via `fs.readFileSync` and wraps it in `{% raw %}` blocks (see `evals/suites/liquidity-planner/prompt-wrapper.js`).
 
-## npm Version Requirement
+## Bun Package Manager
 
-**CRITICAL: This project requires npm >=11.7.0**
+**This project uses [Bun](https://bun.sh) as its package manager.** Local installs,
+CI installs, and Vercel docs builds all run `bun install --frozen-lockfile`.
 
 ```bash
-npm install -g npm@latest
-npm --version  # Should output: 11.7.0 or higher
+# macOS / Linux
+curl -fsSL https://bun.sh/install | bash
+bun --version  # Should match the version pinned in package.json `packageManager`
 ```
+
+### Supply-chain defense
+
+`bunfig.toml` sets `minimumReleaseAge = 259200` (3 days), so newly-published
+package versions are filtered out during install/update. This mitigates the
+rapid-response attack pattern where compromised npm accounts ship malicious
+versions that are typically yanked within hours.
+
+### npm carve-out for publishing
+
+`npm publish` (not `bun publish`) is invoked in `publish-packages.yml` because
+npm's Trusted Publishing OIDC flow is not yet implemented in `bun publish`.
+The `.npmrc` is retained for that publish step. All other workflows and local
+development use bun exclusively.
 
 ## GitHub Actions Best Practices
 

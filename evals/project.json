@@ -18,45 +18,45 @@
     "eval": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "set -a && [ -f .env ] && source .env && set +a && npx promptfoo eval -c suites/{args.suite}/promptfoo.yaml",
+        "command": "set -a && [ -f .env ] && source .env && set +a && bunx promptfoo eval -c suites/{args.suite}/promptfoo.yaml",
         "cwd": "evals"
       },
       "configurations": {
         "all": {
-          "command": "set -a && [ -f .env ] && source .env && set +a && npx promptfoo eval -c promptfoo.yaml"
+          "command": "set -a && [ -f .env ] && source .env && set +a && bunx promptfoo eval -c promptfoo.yaml"
         }
       }
     },
     "eval:all": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "set -a && [ -f .env ] && source .env && set +a && for suite in suites/*/; do npx promptfoo eval -c \"$suite/promptfoo.yaml\" --output \"$suite/results.json\"; done",
+        "command": "set -a && [ -f .env ] && source .env && set +a && for suite in suites/*/; do bunx promptfoo eval -c \"$suite/promptfoo.yaml\" --output \"$suite/results.json\"; done",
         "cwd": "evals"
       }
     },
     "eval:view": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "npx promptfoo view",
+        "command": "bunx promptfoo view",
         "cwd": "evals"
       }
     },
     "eval:cache-clear": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "npx promptfoo cache clear"
+        "command": "bunx promptfoo cache clear"
       }
     },
     "typecheck": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "npx tsc --noEmit -p evals/tsconfig.json"
+        "command": "bunx tsc --noEmit -p evals/tsconfig.json"
       }
     },
     "generate-api-docs": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "npx typedoc",
+        "command": "bunx typedoc",
         "cwd": "{workspaceRoot}"
       },
       "inputs": ["{projectRoot}/framework/**/*.ts", "{workspaceRoot}/typedoc.json"],

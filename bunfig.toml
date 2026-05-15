@@ -1,0 +1,19 @@
+[install]
+# Pin the default registry explicitly. Defends against registry-confusion
+# attacks (e.g. a PR shipping `.npmrc` redirecting installs to an attacker's
+# mirror — defense-in-depth alongside the workflow-level config cleanup).
+registry = "https://registry.npmjs.org"
+
+# Lockfile-drift defense: save dependencies with exact versions so a PR
+# bumping `^1.2.3 → ^1.2.4` cannot silently swap to a newer (possibly
+# malicious) version without explicit lockfile review.
+save = "exact"
+
+# Supply-chain defense: refuse to install package versions published less than
+# 3 days ago. Mitigates rapid-response attacks (e.g. Chalk/Debug-style account
+# compromises, Shai-Hulud worm propagation) where malicious versions are
+# typically yanked within hours. Value is in seconds: 3 days = 259200 seconds.
+minimumReleaseAge = 259200
+
+[install.scopes]
+"@uniswap" = { url = "https://registry.npmjs.org/" }

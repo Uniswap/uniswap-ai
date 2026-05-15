@@ -17,7 +17,7 @@
       ],
       "outputs": ["{projectRoot}/results.json"],
       "options": {
-        "command": "npx promptfoo eval -c suites/v4-sdk-integration/promptfoo.yaml --output suites/v4-sdk-integration/results.json --no-progress-bar",
+        "command": "bunx promptfoo eval -c suites/v4-sdk-integration/promptfoo.yaml --output suites/v4-sdk-integration/results.json --no-progress-bar",
         "cwd": "evals"
       },
       "metadata": {
