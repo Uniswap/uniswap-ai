@@ -128,12 +128,17 @@ runs:
         echo "plugin_count=$PLUGINS_COUNT" >> $GITHUB_OUTPUT
         echo "marketplace_name=$MARKETPLACE_NAME" >> $GITHUB_OUTPUT
 
-        # Handle multiline JSON output
+        # Handle multiline JSON output with a per-call unguessable delimiter
+        # (defense in depth against $GITHUB_OUTPUT injection).
+        RESULTS_DELIM_RAND=$(openssl rand -hex 16)
+        [ -n "$RESULTS_DELIM_RAND" ] || { echo "::error::openssl rand returned empty" >&2; exit 1; }
+        [ "$(printf '%s' "$RESULTS" | wc -c)" -lt 900000 ] || { echo "::error::plugins_json exceeds 900KB" >&2; exit 1; }
+        RESULTS_DELIM="PLUGINS_JSON_DELIMITER_$(date +%s%N)_${RESULTS_DELIM_RAND}"
         {
-          echo "plugins_json<<EOF"
+          echo "plugins_json<<${RESULTS_DELIM}"
           echo "$RESULTS"
-          echo "EOF"
-        } >> $GITHUB_OUTPUT
+          echo "${RESULTS_DELIM}"
+        } >> "$GITHUB_OUTPUT"
 
         # Create job summary
         {
