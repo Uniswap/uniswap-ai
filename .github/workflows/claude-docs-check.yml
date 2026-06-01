@@ -54,13 +54,13 @@ jobs:
       (github.event_name == 'pull_request' &&
        !contains(github.event.pull_request.user.login, '[bot]') &&
        github.event.pull_request.head.repo.full_name == github.repository)
-    uses: Uniswap/ai-toolkit/.github/workflows/_claude-docs-check.yml@83ac42bf6a63fdaa2fc71c760b02ab85df21068a # main
+    uses: Uniswap/ai-toolkit/.github/workflows/_claude-docs-check.yml@27e7e2de432ac025b23051c5ffab8d88a342b1f9 # main
     with:
       pr_number: ${{ github.event.pull_request.number || github.event.inputs.pr_number }}
       suggestion_mode: ${{ github.event.inputs.suggestion_mode || 'suggest' }}
       auto_commit: ${{ github.event.inputs.auto_commit == 'true' }}
       # Use sonnet for faster, cheaper checks
-      model: 'claude-sonnet-4-5-20250929'
+      model: 'claude-sonnet-4-6'
       # Fail if plugin versions aren't bumped
       fail_on_missing_version: true
       # Fail if documentation is not updated

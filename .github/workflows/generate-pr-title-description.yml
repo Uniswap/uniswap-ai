@@ -47,12 +47,12 @@ jobs:
       !contains(github.head_ref, 'release/') &&
       !startsWith(github.event.pull_request.title, 'chore(release):')
 
-    uses: Uniswap/ai-toolkit/.github/workflows/_generate-pr-metadata.yml@83ac42bf6a63fdaa2fc71c760b02ab85df21068a
+    uses: Uniswap/ai-toolkit/.github/workflows/_generate-pr-metadata.yml@27e7e2de432ac025b23051c5ffab8d88a342b1f9
     with:
       generation_mode: 'title,description'
       pr_number: ${{ github.event.pull_request.number }}
       base_ref: ${{ github.base_ref }}
-      # Use default model (claude-sonnet-4-5-20250929)
+      # Use default model (claude-sonnet-4-6)
       # Use default timeout (15 minutes)
       # Use default prompt from ai-toolkit
       commit_history_count: 30
