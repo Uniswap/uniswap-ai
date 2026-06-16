@@ -15,7 +15,6 @@ claude plugin add @uniswap/uniswap-trading
 | `swap-integration`   | Integrate Uniswap swaps via Trading API, Universal Router, or SDKs                                            |
 | `pay-with-any-token` | Pay HTTP 402 challenges (MPP/x402) using tokens via Uniswap swaps                                             |
 | `v4-sdk-integration` | Build swap and liquidity UX using the Uniswap v4 SDK directly (V4Planner, Quoter, StateView, PositionManager) |
-| `lp-integration`     | Integrate liquidity provisioning via the Uniswap LP API (create, increase, decrease, claim fees) for v2/v3/v4 |
 
 ## Use Cases
 

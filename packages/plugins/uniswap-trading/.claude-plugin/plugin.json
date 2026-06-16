@@ -1,6 +1,6 @@
 {
   "name": "uniswap-trading",
-  "version": "1.10.0",
+  "version": "1.9.0",
   "description": "Integrate Uniswap swaps via Trading API, Universal Router SDK, or direct smart contract calls",
   "author": {
     "name": "Uniswap Labs",
@@ -25,8 +25,7 @@
     "./skills/swap-integration",
     "./skills/pay-with-any-token",
     "./skills/v4-sdk-integration",
-    "./skills/pay-with-app",
-    "./skills/lp-integration"
+    "./skills/pay-with-app"
   ],
   "agents": ["./agents/swap-integration-expert.md"]
 }
