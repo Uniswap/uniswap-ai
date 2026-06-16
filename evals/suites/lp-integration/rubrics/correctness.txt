@@ -7,7 +7,7 @@ Evaluate whether the generated output correctly implements Uniswap LP integratio
 Score based on how many of these are correctly implemented:
 
 1. **LP API Flow**
-   - Uses correct base URL (https://trade-api.gateway.uniswap.org/v1)
+   - Uses correct base URL (https://liquidity.api.uniswap.org)
    - Calls /lp/check_approval before any LP action
    - Uses correct endpoint paths (/lp/create, /lp/increase, /lp/decrease, /lp/claim_fees)
    - Includes x-api-key header on every request

@@ -24,12 +24,12 @@ For token swaps (not liquidity), see the sibling **swap-integration** skill in t
 ## Base URL
 
 ```text
-LP_API_BASE_URL = https://trade-api.gateway.uniswap.org/v1
+LP_API_BASE_URL = https://liquidity.api.uniswap.org
 ```
 
-All LP endpoints are POST requests under the `/lp/` prefix (e.g. `https://trade-api.gateway.uniswap.org/v1/lp/create`).
+All LP endpoints are POST requests under the `/lp/` prefix (e.g. `https://liquidity.api.uniswap.org/lp/create`).
 
-> **CONFIRM BEFORE PRODUCTION:** The exact production host is being confirmed with the Uniswap LP team. The OpenAPI spec lists a per-path host of `https://liquidity.api.uniswap.org/`, while the unified Trading API gateway is `https://trade-api.gateway.uniswap.org/v1`. Keep the base URL as a single constant (as shown) so it can be swapped in one place once confirmed.
+> **The LP API host is intentionally different from the swap Trading API.** Liquidity provisioning lives at `https://liquidity.api.uniswap.org` (no `/v1` prefix), not the `https://trade-api.gateway.uniswap.org/v1` host used for swaps. Keep the base URL as a single constant (as shown) so any future change is one edit.
 
 ## Authentication
 
@@ -486,7 +486,7 @@ import { createWalletClient, createPublicClient, http, isAddress, parseUnits } f
 import { mainnet } from 'viem/chains';
 import { privateKeyToAccount } from 'viem/accounts';
 
-const LP_API_BASE_URL = 'https://trade-api.gateway.uniswap.org/v1';
+const LP_API_BASE_URL = 'https://liquidity.api.uniswap.org';
 const API_KEY = process.env.UNISWAP_API_KEY!; // never hardcode
 
 const account = privateKeyToAccount(process.env.PRIVATE_KEY as `0x${string}`);

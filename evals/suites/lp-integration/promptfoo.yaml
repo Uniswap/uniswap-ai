@@ -38,7 +38,7 @@ tests:
 
       # Deterministic checks for required patterns
       - type: contains
-        value: 'trade-api.gateway.uniswap.org'
+        value: 'liquidity.api.uniswap.org'
       - type: contains
         value: '/lp/check_approval'
       - type: contains

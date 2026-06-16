@@ -19,7 +19,7 @@ Build a complete LP integration using the Uniswap LP API.
 
 ## Constraints
 
-- Must use the Uniswap LP API (https://trade-api.gateway.uniswap.org/v1)
+- Must use the Uniswap LP API (https://liquidity.api.uniswap.org)
 - Must follow the approval -> create flow
 - Must validate transaction data is non-empty before broadcasting
 - API key must come from an environment variable, never hardcoded
