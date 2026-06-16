@@ -21,7 +21,7 @@ Score based on how many of these are correctly implemented:
    - Uses `transactions` (not `approvals`) from check_approval response
    - Uses `adjustedMinPrice` / `adjustedMaxPrice` (not `minPrice` / `maxPrice`) from create response
    - Uses `nftTokenId` for /lp/increase and /lp/decrease; uses `tokenId` for /lp/claim_fees
-   - Reads the correct action field from response (e.g. `created.create`, `increased.increase`, `decreased.decrease`, `claimed.claim`)
+   - Reads the correct transaction field from each response (`create`, `increase`, `decrease`, `claim` respectively for each endpoint)
 
 4. **Pre-Broadcast Validation**
    - Validates transaction `data` is non-empty and not `'0x'` before broadcasting
