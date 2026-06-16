@@ -1,0 +1,28 @@
+{
+  "name": "eval-suite-lp-integration",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "tags": ["type:eval-suite"],
+  "implicitDependencies": ["uniswap-trading", "evals"],
+  "targets": {
+    "eval": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": [
+        "{projectRoot}/**/*",
+        "{workspaceRoot}/packages/plugins/uniswap-trading/skills/lp-integration/**/*",
+        "{workspaceRoot}/evals/scripts/**/*",
+        "{workspaceRoot}/evals/rubrics/**/*",
+        "{workspaceRoot}/evals/promptfoo.yaml"
+      ],
+      "outputs": ["{projectRoot}/results.json"],
+      "options": {
+        "command": "bunx promptfoo eval -c suites/lp-integration/promptfoo.yaml --output suites/lp-integration/results.json --no-progress-bar",
+        "cwd": "evals"
+      },
+      "metadata": {
+        "description": "Run lp-integration eval suite"
+      }
+    }
+  }
+}
