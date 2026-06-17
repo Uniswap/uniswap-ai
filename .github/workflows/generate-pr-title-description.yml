@@ -47,7 +47,7 @@ jobs:
       !contains(github.head_ref, 'release/') &&
       !startsWith(github.event.pull_request.title, 'chore(release):')
 
-    uses: Uniswap/ai-toolkit/.github/workflows/_generate-pr-metadata.yml@83ac42bf6a63fdaa2fc71c760b02ab85df21068a
+    uses: Uniswap/ai-toolkit/.github/workflows/_generate-pr-metadata.yml@6d35d60ab7805aefae2837776d870787d93c8a18
     with:
       generation_mode: 'title,description'
       pr_number: ${{ github.event.pull_request.number }}
