@@ -45,6 +45,9 @@ tests:
         value: '/lp/create'
       - type: contains
         value: 'x-api-key'
+      # priceBounds requires quotedTokenAddress; omitting it is a 400 (regression guard)
+      - type: contains
+        value: 'quotedTokenAddress'
 
   - vars:
       case_content: file://cases/approval-permit-flow.md
@@ -66,6 +69,9 @@ tests:
         value: '/lp/check_approval'
       - type: contains
         value: 'transactions'
+      # discriminates the correct flow (sign the wrapped .transaction) from the wrong 'approvals' field
+      - type: contains
+        value: '.transaction'
       - type: contains
         value: 'signTypedData'
       - type: contains

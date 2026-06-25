@@ -153,7 +153,7 @@ Always call this first. Returns the approval transactions (and/or permit data) n
 ```ts
 interface CheckApprovalResponse {
   requestId: string;
-  transactions: ApprovalTransactionRequest[]; // sign each .transaction; empty = nothing to approve
+  transactions: ApprovalTransactionRequest[]; // sign each .transaction; empty (with kycRequiredWarnings also empty) = nothing to approve
   v4BatchPermitData?: NullablePermit; // v4: sign and pass into /lp/create or /lp/increase
   v3NftPermitData?: NullablePermit; // v3 NFT permit
   kycRequiredWarnings: KycRequiredWarning[]; // permissioned pools: non-empty when the wallet is NOT allowlisted. Always present (usually []).
@@ -214,18 +214,18 @@ Create a v3 or v4 concentrated-liquidity position. Specify a price range and one
 }
 ```
 
-| Field                                                      | Required     | Notes                                                                     |
-| ---------------------------------------------------------- | ------------ | ------------------------------------------------------------------------- |
-| `walletAddress`, `chainId`, `protocol`, `independentToken` | Yes          | `independentToken` is `{ tokenAddress, amount }`                          |
-| `existingPool` \| `newPool`                                | One required | See pool specification above                                              |
-| `priceBounds` \| `tickBounds`                              | One required | See price range above                                                     |
-| `dependentToken`                                           | No           | Override the computed dependent amount                                    |
-| `slippageTolerance`                                        | No           | Decimal percent (e.g. `0.5`)                                              |
-| `deadline`                                                 | No           | Unix seconds                                                              |
-| `simulateTransaction`                                      | No           | Include `gasFee` in response                                              |
-| `urgency`                                                  | No           | `NORMAL` \| `FAST` \| `URGENT`                                            |
-| `batchPermitData` + `signature`                            | No           | v4 permit from `/lp/check_approval` (note: create uses `batchPermitData`) |
-| `nativeTokenBalance`                                       | No           | Used when one side is native ETH                                          |
+| Field                                                      | Required     | Notes                                                                                    |
+| ---------------------------------------------------------- | ------------ | ---------------------------------------------------------------------------------------- |
+| `walletAddress`, `chainId`, `protocol`, `independentToken` | Yes          | `independentToken` is `{ tokenAddress, amount }`                                         |
+| `existingPool` \| `newPool`                                | One required | See pool specification above                                                             |
+| `priceBounds` \| `tickBounds`                              | One required | See price range above                                                                    |
+| `dependentToken`                                           | No           | Override the computed dependent amount                                                   |
+| `slippageTolerance`                                        | No           | Decimal percent (e.g. `0.5`)                                                             |
+| `deadline`                                                 | No           | Unix seconds                                                                             |
+| `simulateTransaction`                                      | No           | Include `gasFee` in response                                                             |
+| `urgency`                                                  | No           | `NORMAL` \| `FAST` \| `URGENT`                                                           |
+| `batchPermitData` + `signature`                            | No           | v4 permit from `/lp/check_approval` (note: create uses `batchPermitData`)                |
+| `nativeTokenBalance`                                       | No           | Used when one side is native ETH                                                         |
 | `includeApprovalSimulation`                                | No           | Include approval pre-calls in the gas simulation (only with `simulateTransaction: true`) |
 
 **Response**
@@ -301,12 +301,12 @@ Add liquidity to an existing v2/v3/v4 position. Provide one token amount; the AP
 }
 ```
 
-| Field                                                                                        | Required | Notes                                                                                                        |
-| -------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------ |
-| `walletAddress`, `chainId`, `protocol`, `token0Address`, `token1Address`, `independentToken` | Yes      | `token0Address`/`token1Address` must match the order in the existing position                                |
-| `nftTokenId`                                                                                 | v3/v4    | NFT id identifying the position                                                                              |
-| `slippageTolerance`, `deadline`, `simulateTransaction`, `urgency`                            | No       |                                                                                                              |
-| `v4BatchPermitData` + `signature`                                                            | No       | v4 permit from `/lp/check_approval` (note: increase uses `v4BatchPermitData`, create uses `batchPermitData`) |
+| Field                                                                                        | Required | Notes                                                                                                                         |
+| -------------------------------------------------------------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `walletAddress`, `chainId`, `protocol`, `token0Address`, `token1Address`, `independentToken` | Yes      | `token0Address`/`token1Address` must match the order in the existing position                                                 |
+| `nftTokenId`                                                                                 | v3/v4    | NFT id identifying the position                                                                                               |
+| `slippageTolerance`, `deadline`, `simulateTransaction`, `urgency`                            | No       |                                                                                                                               |
+| `v4BatchPermitData` + `signature`                                                            | No       | v4 permit from `/lp/check_approval` (note: increase uses `v4BatchPermitData`, create uses `batchPermitData`)                  |
 | `nativeTokenBalance`, `includeApprovalSimulation`, `permissioned`                            | No       | `nativeTokenBalance` when one side is native ETH; `permissioned` routes to the permissioned PositionManager (KYC-gated pools) |
 
 **Response**: `{ requestId, token0, token1, increase: TransactionRequest, gasFee?, slippage? }`.
@@ -332,13 +332,13 @@ Remove a percentage of liquidity from a v2/v3/v4 position.
 }
 ```
 
-| Field                                                                                                     | Required | Notes                                            |
-| --------------------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------ |
-| `walletAddress`, `chainId`, `protocol`, `token0Address`, `token1Address`, `liquidityPercentageToDecrease` | Yes      | Percentage is an integer 1-100                   |
-| `nftTokenId`                                                                                              | v3/v4    | NFT id identifying the position                  |
+| Field                                                                                                     | Required | Notes                                                                                                  |
+| --------------------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------ |
+| `walletAddress`, `chainId`, `protocol`, `token0Address`, `token1Address`, `liquidityPercentageToDecrease` | Yes      | Percentage is an integer 1-100                                                                         |
+| `nftTokenId`                                                                                              | v3/v4    | NFT id identifying the position                                                                        |
 | `withdrawAsWeth`                                                                                          | No       | Applies to V2 and V3 (ignored on V4). Default / `true` keeps WETH; `false` unwraps WETH to native ETH. |
-| `permissioned`                                                                                            | No       | Routes to the permissioned PositionManager (KYC-gated pools). |
-| `slippageTolerance`, `deadline`, `simulateTransaction`, `urgency`                                         | No       |                                                  |
+| `permissioned`                                                                                            | No       | Routes to the permissioned PositionManager (KYC-gated pools).                                          |
+| `slippageTolerance`, `deadline`, `simulateTransaction`, `urgency`                                         | No       |                                                                                                        |
 
 **Response**: `{ requestId, token0, token1, decrease: TransactionRequest, gasFee? }`.
 
@@ -402,9 +402,14 @@ const res = await fetch(`${LP_API_BASE_URL}/lp/check_approval`, {
   body: JSON.stringify({ walletAddress, protocol: 'V4', chainId: 1, lpTokens, action: 'CREATE' }),
 });
 if (!res.ok) throw new Error(`check_approval failed: ${res.status}`);
-const { transactions, v4BatchPermitData } = await res.json();
+const { transactions, v4BatchPermitData, kycRequiredWarnings } = await res.json();
 
-// transactions is an array of ApprovalTransactionRequest. Empty => already approved.
+// A permissioned pool gates LPing on KYC: a non-empty kycRequiredWarnings means render the
+// KYC CTA (warning.kycUrl) and stop — do NOT treat empty transactions as "approved" here.
+if (kycRequiredWarnings?.length)
+  throw new Error('Wallet not allowlisted for this permissioned pool');
+
+// transactions is an array of ApprovalTransactionRequest. Empty (and no KYC warnings) => already approved.
 for (const approval of transactions) {
   validateLpTransaction(approval.transaction); // see Critical Notes
   const hash = await walletClient.sendTransaction(approval.transaction);
@@ -426,7 +431,7 @@ let signature: string | undefined;
 if (v4BatchPermitData) {
   // Normalize the proto-encoded permit into viem's TypedData shape (for signing only).
   const types = Object.fromEntries(
-    Object.entries(v4BatchPermitData.types).map(([k, v]) => [k, (v as any).fields]),
+    Object.entries(v4BatchPermitData.types).map(([k, v]) => [k, (v as any).fields])
   );
   const domain = { ...v4BatchPermitData.domain, chainId }; // numeric chainId (e.g. 130), NOT "UNICHAIN"
 
@@ -578,7 +583,11 @@ async function createV3Position() {
       token1Address,
       poolReference: '0x3470447f3cecffac709d3e783a307790b0208d60',
     },
-    priceBounds: { minPrice: '0.00000000000324', maxPrice: '0.00000000000393', quotedTokenAddress: token1Address },
+    priceBounds: {
+      minPrice: '0.00000000000324',
+      maxPrice: '0.00000000000393',
+      quotedTokenAddress: token1Address,
+    },
     simulateTransaction: true,
   });
 
