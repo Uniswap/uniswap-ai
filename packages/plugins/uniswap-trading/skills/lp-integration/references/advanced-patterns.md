@@ -21,11 +21,11 @@ import { type WalletClient } from 'viem';
 async function signV4Permit(
   walletClient: WalletClient,
   v4BatchPermitData: any,
-  chainId: number,
+  chainId: number
 ): Promise<string> {
   // Unwrap each `{ fields: [...] }` into the bare array viem expects.
   const types = Object.fromEntries(
-    Object.entries(v4BatchPermitData.types).map(([k, v]) => [k, (v as any).fields]),
+    Object.entries(v4BatchPermitData.types).map(([k, v]) => [k, (v as any).fields])
   );
   return walletClient.signTypedData({
     account: walletClient.account!,
@@ -78,7 +78,7 @@ Migration moves liquidity between protocol versions within the same pair (e.g. v
 1. Call `/lp/check_approval` with `action: "MIGRATE"` to obtain the approvals/permits required for the migration.
 2. Build and execute the migration transaction. The migrate operations exist in the service's gRPC/Connect contract (`MigrateV2ToV3LPPosition`; a separate `MigrateV3ToV4LPPosition` lives only on the older v1 service) but are **not** exposed under a clean `/lp/*` REST alias, so confirm the supported migration path and its transaction-building flow with the LP team before building it.
 
-> The older `trade-api.gateway.uniswap.org/v1` LP surface *did* expose a standalone `POST /lp/migrate`; the newer `liquidity.api.uniswap.org` API does not. Do not port a `/lp/migrate` call from the old guide.
+> The older `trade-api.gateway.uniswap.org/v1` LP surface _did_ expose a standalone `POST /lp/migrate`; the newer `liquidity.api.uniswap.org` API does not. Do not port a `/lp/migrate` call from the old guide.
 
 ## NFT Position Manager Quirks
 
