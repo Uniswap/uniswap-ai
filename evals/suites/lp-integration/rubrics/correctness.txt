@@ -11,11 +11,12 @@ Score based on how many of these are correctly implemented:
    - Calls /lp/check_approval before any LP action
    - Uses correct endpoint paths (/lp/create, /lp/increase, /lp/decrease, /lp/claim_fees)
    - Includes x-api-key header on every request
+   - When creating with `priceBounds`, includes the required `quotedTokenAddress` (must equal one of the pool tokens) — omitting it is a 400
 
 2. **Approval Transaction Handling**
    - Iterates over `transactions` array (not `approvals`) from check_approval response
    - Signs `approval.transaction` (the inner object), not the outer `approval` wrapper
-   - For v4 permits: signs with signTypedData and passes `batchPermitData` + `signature` as a matched pair
+   - For v4 permits: normalizes the permit before signing — converts `domain.chainId` from the enum-name string (e.g. "UNICHAIN") to a numeric chain id, and unwraps each `types` entry's `.fields` array — then signs with signTypedData and passes `batchPermitData` + `signature` (or `v4BatchPermitData` for increase) as a matched pair
 
 3. **Response Field Names**
    - Uses `transactions` (not `approvals`) from check_approval response

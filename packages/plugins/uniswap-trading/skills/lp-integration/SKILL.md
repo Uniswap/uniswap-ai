@@ -33,7 +33,7 @@ All LP endpoints are POST requests under the `/lp/` prefix (e.g. `https://liquid
 
 ## Authentication
 
-Every request requires an API key sent as the `x-api-key` header.
+Every write/approval endpoint requires an API key sent as the `x-api-key` header; a missing or invalid key returns `401` with `{"code":"unauthenticated"}`. (`/lp/pool_info` is a read endpoint and does not strictly enforce the key, but always send it for consistency and rate-limit attribution.)
 
 ```text
 Content-Type: application/json
@@ -118,7 +118,7 @@ All field names below come from the LP API OpenAPI contract. Where the public in
 
 ### POST /lp/check_approval
 
-Always call this first. Returns the approval transactions (and/or permit data) needed before an LP action. If the response `transactions` array is empty and no permit data is returned, all approvals are already in place.
+Always call this first. Returns the approval transactions (and/or permit data) needed before an LP action. If the response `transactions` array is empty and no permit data is returned, all approvals are already in place — **unless** `kycRequiredWarnings` is non-empty, which means the pool contains a permissioned token and the wallet is not allowlisted. In that case the response is still `200`; render the KYC call-to-action from each warning's `kycUrl` instead of attempting the LP action.
 
 **Request**
 
@@ -156,6 +156,7 @@ interface CheckApprovalResponse {
   transactions: ApprovalTransactionRequest[]; // sign each .transaction; empty = nothing to approve
   v4BatchPermitData?: NullablePermit; // v4: sign and pass into /lp/create or /lp/increase
   v3NftPermitData?: NullablePermit; // v3 NFT permit
+  kycRequiredWarnings: KycRequiredWarning[]; // permissioned pools: non-empty when the wallet is NOT allowlisted. Always present (usually []).
 }
 
 interface ApprovalTransactionRequest {
@@ -163,6 +164,12 @@ interface ApprovalTransactionRequest {
   cancelApproval: boolean;
   action: 'CREATE' | 'INCREASE' | 'DECREASE' | 'MIGRATE';
   gasFee?: string;
+}
+
+interface KycRequiredWarning {
+  kycUrl: string;
+  tokenAddress: string;
+  chainId: number;
 }
 ```
 
@@ -179,7 +186,7 @@ Create a v3 or v4 concentrated-liquidity position. Specify a price range and one
 
 **Price range** — provide exactly one of:
 
-- `priceBounds`: `{ minPrice, maxPrice }` decimal price strings. The API snaps to valid ticks and returns the adjusted prices.
+- `priceBounds`: `{ minPrice, maxPrice, quotedTokenAddress }` — `minPrice`/`maxPrice` are decimal price strings and `quotedTokenAddress` is **required** (it must equal `token0Address` or `token1Address`). `quotedTokenAddress` sets which token the prices are denominated in; there is no default, and omitting it returns a `400`. The API snaps to valid ticks and returns the adjusted prices.
 - `tickBounds`: `{ tickLower, tickUpper }` raw integers.
 
 **Request**
@@ -198,7 +205,11 @@ Create a v3 or v4 concentrated-liquidity position. Specify a price range and one
     "tokenAddress": "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984",
     "amount": "198251669183062942"
   },
-  "priceBounds": { "minPrice": "0.00000000000324", "maxPrice": "0.00000000000393" },
+  "priceBounds": {
+    "minPrice": "0.00000000000324",
+    "maxPrice": "0.00000000000393",
+    "quotedTokenAddress": "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+  },
   "simulateTransaction": false
 }
 ```
@@ -215,6 +226,7 @@ Create a v3 or v4 concentrated-liquidity position. Specify a price range and one
 | `urgency`                                                  | No           | `NORMAL` \| `FAST` \| `URGENT`                                            |
 | `batchPermitData` + `signature`                            | No           | v4 permit from `/lp/check_approval` (note: create uses `batchPermitData`) |
 | `nativeTokenBalance`                                       | No           | Used when one side is native ETH                                          |
+| `includeApprovalSimulation`                                | No           | Include approval pre-calls in the gas simulation (only with `simulateTransaction: true`) |
 
 **Response**
 
@@ -229,6 +241,7 @@ interface CreatePositionResponse {
   tickUpper: number;
   create: TransactionRequest;
   gasFee?: string; // present when simulateTransaction: true
+  slippage?: number; // effective slippage the API applied (e.g. native-token v4 cases)
 }
 ```
 
@@ -294,8 +307,9 @@ Add liquidity to an existing v2/v3/v4 position. Provide one token amount; the AP
 | `nftTokenId`                                                                                 | v3/v4    | NFT id identifying the position                                                                              |
 | `slippageTolerance`, `deadline`, `simulateTransaction`, `urgency`                            | No       |                                                                                                              |
 | `v4BatchPermitData` + `signature`                                                            | No       | v4 permit from `/lp/check_approval` (note: increase uses `v4BatchPermitData`, create uses `batchPermitData`) |
+| `nativeTokenBalance`, `includeApprovalSimulation`, `permissioned`                            | No       | `nativeTokenBalance` when one side is native ETH; `permissioned` routes to the permissioned PositionManager (KYC-gated pools) |
 
-**Response**: `{ requestId, token0, token1, increase: TransactionRequest, gasFee? }`.
+**Response**: `{ requestId, token0, token1, increase: TransactionRequest, gasFee?, slippage? }`.
 
 > **Native ETH**: use `0x0000000000000000000000000000000000000000`. The API generates a multicall including `refundETH` to return any excess.
 
@@ -322,12 +336,13 @@ Remove a percentage of liquidity from a v2/v3/v4 position.
 | --------------------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------ |
 | `walletAddress`, `chainId`, `protocol`, `token0Address`, `token1Address`, `liquidityPercentageToDecrease` | Yes      | Percentage is an integer 1-100                   |
 | `nftTokenId`                                                                                              | v3/v4    | NFT id identifying the position                  |
-| `withdrawAsWeth`                                                                                          | No       | v3 only. If `false`, unwraps WETH to native ETH. |
+| `withdrawAsWeth`                                                                                          | No       | Applies to V2 and V3 (ignored on V4). Default / `true` keeps WETH; `false` unwraps WETH to native ETH. |
+| `permissioned`                                                                                            | No       | Routes to the permissioned PositionManager (KYC-gated pools). |
 | `slippageTolerance`, `deadline`, `simulateTransaction`, `urgency`                                         | No       |                                                  |
 
 **Response**: `{ requestId, token0, token1, decrease: TransactionRequest, gasFee? }`.
 
-> **v3 fee collection on decrease**: for v3, uncollected fees are bundled into the withdrawal automatically. You do not need to call `/lp/claim_fees` separately, and returned amounts may exceed the pro-rata liquidity.
+> **v3 fee collection on decrease**: for v3, the returned `decrease` calldata bundles uncollected fees into the withdrawal automatically, so you do not need to call `/lp/claim_fees` separately. Note the response `token0` / `token1` amounts reflect only the pro-rata liquidity removed — the swept fees are encoded in the calldata, not added to those response amounts.
 
 ### POST /lp/claim_fees
 
@@ -349,6 +364,7 @@ Collect accumulated trading fees from a v3 or v4 position. Not available for v2.
 | ------------------------------------------------- | -------- | --------------------------------------------------------------------------------------------- |
 | `protocol`, `walletAddress`, `chainId`, `tokenId` | Yes      | `protocol` of `V2` returns a validation error. Note: claim uses `tokenId` (not `nftTokenId`). |
 | `collectAsWeth`                                   | No       | v3 only. If `false`, unwraps WETH to native ETH.                                              |
+| `permissioned`                                    | No       | Routes to the permissioned PositionManager (KYC-gated pools).                                 |
 | `simulateTransaction`                             | No       |                                                                                               |
 
 **Response**: `{ requestId, token0, token1, claim: TransactionRequest, gasFee? }`.
@@ -359,7 +375,7 @@ Read live pool state (reserves, tick, `sqrtRatioX96`, liquidity) for one or more
 
 **Request**: `{ protocol, poolParameters?, poolReferences?, chainId?, pageSize?, currentPage? }` (only `protocol` is strictly required; supply `poolParameters` `{ tokenAddressA, tokenAddressB, fee?, tickSpacing?, hookAddress? }` or `poolReferences` to identify pools).
 
-**Response**: `{ requestId, pools: PoolInformation[], pageSize, currentPage }` where each `PoolInformation` includes `poolReferenceIdentifier, poolProtocol, tokenAddressA, tokenAddressB, tickSpacing, fee, hookAddress, chainId, tokenAmountA, tokenAmountB, tokenDecimalsA, tokenDecimalsB, poolLiquidity, sqrtRatioX96, currentTick, tokenAReserves, tokenBReserves`.
+**Response**: `{ requestId, pools: PoolInformation[], pageSize, currentPage }` where each `PoolInformation` includes `poolReferenceIdentifier, poolProtocol, tokenAddressA, tokenAddressB, tickSpacing, fee, hookAddress, chainId, tokenAmountA, tokenAmountB, tokenDecimalsA, tokenDecimalsB, poolLiquidity, sqrtRatioX96, currentTick, token0Reserves, token1Reserves` (note: address/amount/decimals fields use the `A`/`B` suffix, but the two reserve fields use `0`/`1`). Optional fields (e.g. amounts, `hookAddress`, reserves) are omitted when not applicable to the pool.
 
 ### Field-name quirks to preserve
 
@@ -398,20 +414,32 @@ for (const approval of transactions) {
 
 ### v4 permit (EIP-712 sign-and-return)
 
-For v4, `check_approval` may return `v4BatchPermitData` instead of an onchain transaction (a gasless approval). Sign it offchain and pass it into the next call.
+For v4, `check_approval` returns a `v4BatchPermitData` (a gasless Permit2 batch approval) — often **alongside** onchain ERC-20 → Permit2 approval `transactions`, not instead of them. Execute any returned `transactions` first (Permit2 needs the ERC-20 allowance), then sign the permit offchain and pass it into the next call.
+
+> **The permit payload is proto-encoded and is NOT directly viem-ready.** Normalize two fields before signing — the un-normalized object is still what you send back to the API:
+>
+> - `domain.chainId` arrives as the chain **enum-name string** (e.g. `"UNICHAIN"`), not a number — replace it with the numeric chain ID.
+> - each `types` entry is wrapped as `{ fields: [...] }`; viem (and the EIP-712 spec) expect a bare array — unwrap `.fields`.
 
 ```ts
 let signature: string | undefined;
 if (v4BatchPermitData) {
+  // Normalize the proto-encoded permit into viem's TypedData shape (for signing only).
+  const types = Object.fromEntries(
+    Object.entries(v4BatchPermitData.types).map(([k, v]) => [k, (v as any).fields]),
+  );
+  const domain = { ...v4BatchPermitData.domain, chainId }; // numeric chainId (e.g. 130), NOT "UNICHAIN"
+
   signature = await walletClient.signTypedData({
-    domain: v4BatchPermitData.domain,
-    types: v4BatchPermitData.types,
+    domain,
+    types,
     message: v4BatchPermitData.values,
     primaryType: 'PermitBatch',
   });
 }
 
-// Pass into /lp/create (uses batchPermitData) ...
+// Send the ORIGINAL (un-normalized) permit back to the API, with the signature.
+// /lp/create (uses batchPermitData) ...
 const createBody = { ...createParams, batchPermitData: v4BatchPermitData, signature };
 // ... or /lp/increase (uses v4BatchPermitData)
 const increaseBody = { ...increaseParams, v4BatchPermitData, signature };
@@ -550,7 +578,7 @@ async function createV3Position() {
       token1Address,
       poolReference: '0x3470447f3cecffac709d3e783a307790b0208d60',
     },
-    priceBounds: { minPrice: '0.00000000000324', maxPrice: '0.00000000000393' },
+    priceBounds: { minPrice: '0.00000000000324', maxPrice: '0.00000000000393', quotedTokenAddress: token1Address },
     simulateTransaction: true,
   });
 
@@ -583,7 +611,7 @@ The API returns ready-to-sign transactions, so a protocol SDK is not required. F
 | 500  | API error                | Retry with backoff                           |
 | 503  | Temporary unavailability | Retry                                        |
 
-Error body: `{ error: string, message: string, details?: object }`.
+Error body (Connect protocol): `{ code: string, message: string, details?: Array<{ type: string; value: string }> }` — e.g. `{"code":"invalid_argument","message":"RequestValidationError: ...","details":[...]}`. `code` is a Connect error-code string (`invalid_argument`, `unauthenticated`, `failed_precondition`, `internal`, …), **not** an HTTP number, and there is no top-level `error` field. Read `body.code` / `body.message`, not `body.error`.
 
 **Common errors**
 

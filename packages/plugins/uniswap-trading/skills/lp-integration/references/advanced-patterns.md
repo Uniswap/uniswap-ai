@@ -7,21 +7,30 @@ Deep-dive material referenced from `SKILL.md`. Use this when an integration move
 `/lp/check_approval` returns one or more of:
 
 - `transactions: ApprovalTransactionRequest[]` — onchain ERC-20 / NFT approvals to sign and broadcast. Each is `{ transaction, cancelApproval, action, gasFee? }`. Sign `element.transaction`.
-- `v4BatchPermitData?: NullablePermit` — a v4 batch permit (EIP-712 typed data) for a gasless approval.
+- `v4BatchPermitData?: NullablePermit` — a v4 batch permit (EIP-712 typed data) for a gasless approval. It can be returned **together with** onchain `transactions` (ERC-20 → Permit2 approvals), not only instead of them — execute those approvals first.
 - `v3NftPermitData?: NullablePermit` — a v3 `NonfungiblePositionManager` NFT permit.
 
-`NullablePermit` shape: `{ domain, values, types }` (all objects). `domain` and `types` feed an EIP-712 typed-data signature; `values` is the message.
+`NullablePermit` shape: `{ domain, values, types }`. **Caution — the JSON is proto-encoded, not viem-ready:** `domain.chainId` is the chain **enum name** (e.g. `"UNICHAIN"`) rather than a number, and each `types` entry is wrapped as `{ fields: [...] }` instead of a bare `[...]` array. Normalize both before passing to `signTypedData` (see below); `values` is the EIP-712 message and can be used as-is.
 
 ### v4 batch permit, signed with viem
 
 ```ts
 import { type WalletClient } from 'viem';
 
-async function signV4Permit(walletClient: WalletClient, v4BatchPermitData: any): Promise<string> {
+// chainId is the NUMERIC chain id (e.g. 130) — NOT the `"UNICHAIN"` enum-name string the API returns.
+async function signV4Permit(
+  walletClient: WalletClient,
+  v4BatchPermitData: any,
+  chainId: number,
+): Promise<string> {
+  // Unwrap each `{ fields: [...] }` into the bare array viem expects.
+  const types = Object.fromEntries(
+    Object.entries(v4BatchPermitData.types).map(([k, v]) => [k, (v as any).fields]),
+  );
   return walletClient.signTypedData({
     account: walletClient.account!,
-    domain: v4BatchPermitData.domain,
-    types: v4BatchPermitData.types,
+    domain: { ...v4BatchPermitData.domain, chainId }, // override the "UNICHAIN" string with a number
+    types,
     primaryType: 'PermitBatch', // confirm the primaryType key your permit uses
     message: v4BatchPermitData.values,
   });
@@ -44,17 +53,17 @@ For v3 positions, `check_approval` may return `v3NftPermitData` for the `Nonfung
 
 ### EIP712Domain edge case
 
-Some signing libraries require an explicit `EIP712Domain` type in the `types` object. If a signature is rejected onchain, inject it:
+Some signing libraries require an explicit `EIP712Domain` type in the `types` object. If a signature is rejected, inject it — but match the domain's actual fields, and spread the **unwrapped** types (`.fields` already stripped, per above), not the raw proto shape. Note the Permit2 domain is `{ name, chainId, verifyingContract }` with **no `version`**, so omit the `version` entry unless `domain.version` is actually present:
 
 ```ts
 const typesWithDomain = {
   EIP712Domain: [
     { name: 'name', type: 'string' },
-    { name: 'version', type: 'string' },
+    // include `{ name: 'version', type: 'string' }` ONLY if domain.version exists (Permit2 has none)
     { name: 'chainId', type: 'uint256' },
     { name: 'verifyingContract', type: 'address' },
   ],
-  ...permitData.types,
+  ...types, // the unwrapped types object, not the raw permitData.types
 };
 ```
 
@@ -62,20 +71,20 @@ const typesWithDomain = {
 
 If you pass `generatePermitAsTransaction: true` to `/lp/check_approval`, the permit comes back as a standard executable transaction inside `transactions` instead of typed data. Use this when the wallet cannot sign EIP-712 typed data.
 
-## Migration (v3 to v4)
+## Migration
 
-Migration moves liquidity from a v3 pool to a v4 pool within the same pair. There is no dedicated `/lp/migrate` path in the current OpenAPI contract; migration is driven through the approval action:
+Migration moves liquidity between protocol versions within the same pair (e.g. v3 → v4). The current LP API has **no REST `/lp/migrate` endpoint** (confirmed against the live `liquidity.api.uniswap.org` service); migration begins at `/lp/check_approval`:
 
 1. Call `/lp/check_approval` with `action: "MIGRATE"` to obtain the approvals/permits required for the migration.
-2. Follow the migration transaction-building flow the LP team documents for your protocol versions.
+2. Build and execute the migration transaction. The migrate operations exist in the service's gRPC/Connect contract (`MigrateV2ToV3LPPosition`; a separate `MigrateV3ToV4LPPosition` lives only on the older v1 service) but are **not** exposed under a clean `/lp/*` REST alias, so confirm the supported migration path and its transaction-building flow with the LP team before building it.
 
-> **Confirm with the LP team:** the public integration guide references a `/lp/migrate` endpoint, but the OpenAPI spec from PR #6934 does not include it. Verify whether migration is a standalone endpoint or is handled via `action: "MIGRATE"` before building a migration flow.
+> The older `trade-api.gateway.uniswap.org/v1` LP surface *did* expose a standalone `POST /lp/migrate`; the newer `liquidity.api.uniswap.org` API does not. Do not port a `/lp/migrate` call from the old guide.
 
 ## NFT Position Manager Quirks
 
 - v3 and v4 concentrated positions are ERC-721 NFTs. `increase` / `decrease` identify the position by `nftTokenId`; `claim_fees` uses `tokenId`; `check_approval` uses `v3NftTokenId` (integer). Same concept, three field names.
 - `token0Address` / `token1Address` on `increase` / `decrease` MUST match the canonical order in the existing position. Passing them reversed produces a mismatched dependent amount or a not-found error.
-- For v3, calling `/lp/decrease` automatically bundles uncollected fees into the withdrawal (via the SDK's `removeCallParameters`). Returned amounts may exceed the pro-rata liquidity. Do not also call `/lp/claim_fees` for the same v3 decrease.
+- For v3, the `decrease` calldata automatically bundles uncollected fees into the withdrawal (via the SDK's `removeCallParameters`), so do not also call `/lp/claim_fees` for the same v3 decrease. The response `token0` / `token1` amounts reflect only the pro-rata liquidity removed; the swept fees are encoded in the calldata, not added to those amounts.
 - For v4 fee claims, the API generates a zero-liquidity decrease via the v4 `PositionManager` followed by `TAKE_PAIR` to sweep fees.
 
 ## v4 Hooks in newPool
