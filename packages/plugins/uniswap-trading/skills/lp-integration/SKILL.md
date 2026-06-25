@@ -546,9 +546,13 @@ async function lpFetch(path: string, body: object) {
   return res.json();
 }
 
+// Same checks as the canonical validateLpTransaction in "Critical Implementation Notes" above.
 function validateLpTransaction(tx: any) {
-  if (!tx?.data || tx.data === '0x') throw new Error('Empty transaction data');
-  if (!isAddress(tx.to) || !isAddress(tx.from)) throw new Error('Invalid address in transaction');
+  if (!tx || !tx.data || tx.data === '' || tx.data === '0x')
+    throw new Error('Empty transaction data');
+  if (!tx.to || !isAddress(tx.to)) throw new Error('Invalid recipient address');
+  if (!tx.from || !isAddress(tx.from)) throw new Error('Invalid sender address');
+  if (tx.maxFeePerGas && tx.gasPrice) throw new Error('Cannot set both maxFeePerGas and gasPrice');
 }
 
 async function createV3Position() {
