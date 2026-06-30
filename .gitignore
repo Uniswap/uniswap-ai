@@ -69,3 +69,7 @@ package-lock.json
 .devenv/
 devenv.lock
 .npm-global/
+
+# Claude Code session outputs: screenshots, traces, ad-hoc reports. Never committed.
+.claude-outputs/
+.playwright-mcp/
