@@ -73,3 +73,13 @@ devenv.lock
 # Claude Code session outputs: screenshots, traces, ad-hoc reports. Never committed.
 .claude-outputs/
 .playwright-mcp/
+
+# Local-only tooling and draft files (per-developer; not committed)
+.agents/
+.claude/launch.json
+.claude/skills/
+.serena/
+.spec-workflow/
+.x402-signer.mjs
+docs/proposals/
+docs/uniswap-ai-one-pager.pdf
