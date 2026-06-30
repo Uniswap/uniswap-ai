@@ -40,6 +40,9 @@ coverage/
 docs/.vitepress/dist/
 docs/.vitepress/cache/
 
+# Promptfoo eval output (regenerated on every `nx run eval-suite-*:eval` — never commit)
+evals/suites/*/results.json
+
 # Claude Code output
 .claude-output/
 

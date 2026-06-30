@@ -1,0 +1,48 @@
+# Correctness Rubric for lp-integration
+
+Evaluate whether the generated output correctly implements Uniswap LP integration.
+
+## Required Elements (Must Include)
+
+Score based on how many of these are correctly implemented:
+
+1. **LP API Flow**
+   - Uses correct base URL (https://liquidity.api.uniswap.org)
+   - Calls /lp/check_approval before any LP action
+   - Uses correct endpoint paths (/lp/create, /lp/increase, /lp/decrease, /lp/claim_fees)
+   - Includes x-api-key header on every request
+   - When creating with `priceBounds`, includes the required `quotedTokenAddress` (must equal one of the pool tokens) — omitting it is a 400
+
+2. **Approval Transaction Handling**
+   - Iterates over `transactions` array (not `approvals`) from check_approval response
+   - Signs `approval.transaction` (the inner object), not the outer `approval` wrapper
+   - For v4 permits: normalizes the permit before signing — converts `domain.chainId` from the enum-name string (e.g. "UNICHAIN") to a numeric chain id, and unwraps each `types` entry's `.fields` array — then signs with signTypedData and passes `batchPermitData` + `signature` (or `v4BatchPermitData` for increase) as a matched pair
+
+3. **Response Field Names**
+   - Uses `transactions` (not `approvals`) from check_approval response
+   - Uses `adjustedMinPrice` / `adjustedMaxPrice` (not `minPrice` / `maxPrice`) from create response
+   - Uses `nftTokenId` for /lp/increase and /lp/decrease; uses `tokenId` for /lp/claim_fees
+   - Reads the correct transaction field from each response (`create`, `increase`, `decrease`, `claim` respectively for each endpoint)
+
+4. **Pre-Broadcast Validation**
+   - Validates transaction `data` is non-empty and not `'0x'` before broadcasting
+   - Validates `to` and `from` addresses with isAddress
+   - Uses wei-denominated integer strings for all token amounts (never ether-decimals)
+
+5. **Error Handling**
+   - Checks HTTP response status before parsing JSON (res.ok check)
+   - Handles API error responses (400, 401, 429, 500)
+   - Does not hardcode the API key in generated code
+
+## Scoring Guide
+
+- 5/5 elements correct: 1.0
+- 4/5 elements correct: 0.8
+- 3/5 elements correct: 0.6
+- 2/5 elements correct: 0.4
+- 1/5 elements correct: 0.2
+- 0/5 elements correct: 0.0
+
+## Instructions
+
+Count how many of the required elements are correctly implemented and provide the corresponding score.
