@@ -1,30 +1,45 @@
 ---
 name: swap-integration
-description: Integrate Uniswap swaps into applications. Use when user says "integrate swaps", "uniswap", "trading api", "add swap functionality", "build a swap frontend", "create a swap script", "smart contract swap integration", "use Universal Router", "Trading API", or mentions swapping tokens via Uniswap.
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash(npm:*), Bash(npx:*), Bash(yarn:*), Bash(curl:*), WebFetch, Task(subagent_type:swap-integration-expert)
+description: Integrate Uniswap swaps into applications. Use when user says "integrate swaps", "uniswap", "trading api", "add swap functionality", "build a swap frontend", "create a swap script", "swap bot", "smart contract swap integration", "use Universal Router", "Trading API", "uni CLI", or mentions swapping tokens via Uniswap.
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash(uni:*), Bash(bun:*), Bash(npm:*), Bash(npx:*), Bash(yarn:*), Bash(curl:*), WebFetch, Task(subagent_type:swap-integration-expert)
 model: opus
 license: MIT
 metadata:
   author: uniswap
-  version: '1.3.0'
+  version: '2.0.0'
 ---
 
 # Swap Integration
 
-Integrate Uniswap swaps into frontends, backends, and smart contracts.
+Integrate Uniswap swaps into scripts, agents, frontends, and smart contracts.
+
+There are two supported "swap engines" that handle the hard parts (routing, approvals, Permit2, routing-aware output) for you, plus lower-level fallbacks for cases they don't cover:
+
+- **The `uni` CLI** — drive swaps from a script, agent, or shell. Preview-by-default; a swap only sends with `--execute`.
+- **The `@uniswap/sdk` facade** — a typed `createUniswapClient(...)` you call from a frontend or Node app instead of hand-rolling `fetch` to the Trading API.
+
+Both wrap the Uniswap Trading API. Prefer them over hand-rolling the raw REST calls, because they absorb the request-body/permit/routing gotchas that this skill used to spend pages teaching. Reach for the raw Trading API (Method 3) or the lower-level engines (Universal Router SDK / contracts / smart accounts) only when an engine genuinely can't drive your case — those cases are called out explicitly below.
+
+> **MVP status (read this — it changes how you install).** As of this skill version the `uni` CLI and `@uniswap/sdk` are an **early / EOA-only MVP** and are **not yet published to npm**. You run them from a checkout of the [`Uniswap/uni-cli`](https://github.com/Uniswap/uni-cli) repo (`bun install`), not via `npm install -g`. What they cover today: same-chain and cross-chain swaps, quotes, and Permit2 inspection, for **externally-owned accounts (EOAs)**. What they do **not** cover today: ERC-4337 smart accounts / bundlers, direct Universal Router command encoding, and standalone WETH-unwrap helpers. For those, use the lower-level methods, which are unchanged. See [MVP surface & known gaps](#mvp-surface--known-gaps) before you pick a method.
 
 ## Prerequisites
 
 This skill assumes familiarity with viem basics (client setup, account management, contract interactions, transaction signing). Install the **uniswap-viem** plugin for comprehensive viem/wagmi guidance: `claude plugin add @uniswap/uniswap-viem`
 
+The `uni` CLI additionally needs [`bun`](https://bun.sh) and a checkout of `Uniswap/uni-cli` (see [Method 1](#1-uni-cli-scripts-agents-backends)). All engines need a Trading API key (see [Getting an API Key](#getting-an-api-key)).
+
 ## Quick Decision Guide
 
-| Building...                    | Use This Method               |
-| ------------------------------ | ----------------------------- |
-| Frontend with React/Next.js    | Trading API                   |
-| Backend script or bot          | Trading API                   |
-| Smart contract integration     | Universal Router direct calls |
-| Need full control over routing | Universal Router SDK          |
+| Building...                                         | Use This Method                                                                                                   |
+| --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| A script, agent, bot, or CLI-driven backend         | [`uni` CLI](#1-uni-cli-scripts-agents-backends)                                                                   |
+| A frontend / Node app (want typed calls, not fetch) | [`@uniswap/sdk` facade](#2-uniswapsdk-facade-frontends-and-apps)                                                  |
+| A stack that can't run the CLI or import the SDK    | [Raw Trading API](#3-raw-trading-api-fallback)                                                                    |
+| Full control over routing / manual command building | [Universal Router SDK](#universal-router-reference)                                                               |
+| On-chain / Solidity integration                     | [Smart contract calls](#direct-universal-router-integration-sdk)                                                  |
+| ERC-4337 smart account with a bundler               | [Raw Trading API](#3-raw-trading-api-fallback) + [Smart Account Integration](#smart-account-integration-erc-4337) |
+
+Both the CLI and the SDK are EOA-only today. If your case needs a smart account, direct Universal Router encoding, or a WETH-unwrap step, drop to the raw Trading API / SDK / contract methods — the CLI and facade don't drive those yet (see [known gaps](#mvp-surface--known-gaps)).
 
 ### Routing Types Quick Reference
 
@@ -36,19 +51,104 @@ This skill assumes familiarity with viem basics (client setup, account managemen
 | WRAP     | ETH to WETH conversion                  | All                                |
 | UNWRAP   | WETH to ETH conversion                  | All                                |
 
-See [Routing Types](#routing-types) for the complete list including DUTCH_V3, DUTCH_LIMIT, LIMIT_ORDER, BRIDGE, and QUICKROUTE.
+See [Routing Types](#routing-types) for the complete list including DUTCH_V3, DUTCH_LIMIT, LIMIT_ORDER, BRIDGE, and QUICKROUTE. With the CLI and SDK you rarely name a routing type — the engine picks it. You read it off the response (the `routing` field) to know what happened.
 
 ## Integration Methods
 
-### 1. Trading API (Recommended)
+### 1. `uni` CLI (scripts, agents, backends)
 
-Best for: Frontends, backends, scripts. Handles routing optimization automatically.
+Best for: shell scripts, coding agents, bots, and any backend that can shell out. The CLI wraps the Trading API and does the whole flow — quote, ERC-20 approval, Permit2 signing, submission, confirmation — behind three commands. You do not construct request bodies, pair `signature` with `permitData`, strip null fields, or read routing-specific output shapes: the CLI does all of that internally. **This is the whole point — the gotchas in the [Trading API Reference](#trading-api-reference) below are what the CLI absorbs.**
+
+**Setup** (MVP — from a checkout, not npm):
+
+```bash
+git clone https://github.com/Uniswap/uni-cli
+cd uni-cli
+bun install
+echo 'UNI_API_KEY=your-key' >> .env          # or TRADING_API_KEY
+echo 'UNI_PRIVATE_KEY=0x...' >> .env          # EOA signer; or UNI_MNEMONIC=...
+bun run uni --help                            # from inside the checkout
+```
+
+Invoke with `bun run uni <cmd>` from inside the checkout (or `uni <cmd>` if it's on your PATH). `quote` needs no signer; only `swap --execute` does.
+
+**The golden loop** — preview, then execute:
+
+```bash
+# 1. Quote (read-only, no signer, no tx). Read `routing` and `outputAmount`.
+uni quote USDC ETH 100 --chain base --format json
+
+# 2. Execute. The CLI checks/does the ERC-20 approval, signs Permit2 if needed,
+#    submits the swap, and waits for confirmation — all in one command.
+uni swap USDC ETH 100 --chain base --execute \
+  --filter-output routing,outputAmount,txHash,status,explorerUrl
+```
+
+That is the entire backend flow. There is no separate `check_approval` / `quote` / `swap` orchestration to write and no permit pairing to get right — `uni swap --execute` is the three-step Trading API flow (`check_approval -> quote -> swap`) collapsed into one gated command.
+
+**Human-approval gate — `--execute`, and there is no `--yes`.** Every `uni swap` is a _preview_ unless you pass `--execute` (alias `-x`). A run without `--execute` prints the quote and prepared calldata and sends nothing. This IS the transaction-confirmation gate: an agent shows the preview to the user, and only adds `--execute` after the user approves. There is deliberately no `--yes` / `--force-send` flag, so a tx can never be sent by a forgotten confirmation. When driving the CLI on a user's behalf:
+
+> **REQUIRED:** Before running any `uni swap ... --execute` (which spends gas and moves tokens), you MUST show the user the preview (run the same command **without** `--execute`, or `uni quote`) and get explicit approval. Only then re-run with `--execute`. Never add `--execute` without a confirmed user decision.
+
+**Approvals are automatic.** `uni swap --execute` sends a layer-1 ERC-20 -> Permit2 approval tx only when the current allowance is below the amount, and signs a fresh Permit2 permit for layer 2 when the spender allowance is insufficient or expired. To inspect approval state without swapping:
+
+```bash
+uni permit2 check USDC --chain base            # both layers side-by-side
+```
+
+**Cross-chain** is the same loop with `--to-chain` (routes through BRIDGE or CHAINED automatically):
+
+```bash
+uni swap ETH USDC 0.5 --chain ethereum --to-chain base --execute
+```
+
+**Structured, token-cheap output.** Default format is TOON; pass `--format json` when piping to `jq`. Every command supports `--filter-output <keys>`, `--token-count`, `--token-limit N`. Introspect the exact surface with `uni --llms-full`, `uni --schema <cmd>`, or `uni <cmd> --help` — prefer these over guessing a flag.
+
+See [Driving the CLI from a script/agent](#driving-the-cli-from-a-scriptagent) for a complete Node example and JSON parsing.
+
+### 2. `@uniswap/sdk` facade (frontends and apps)
+
+Best for: frontends and Node apps that want typed method calls instead of hand-rolled `fetch`. `createUniswapClient(config)` returns a flat client that wraps the Trading API. Like the CLI, it absorbs the permit/routing/body gotchas — you call `client.getQuote(...)`, `client.executeSwap(...)`, etc.
+
+> **MVP status:** `@uniswap/sdk` is **not yet published to npm** (it's `private` in the `Uniswap/uni-cli` monorepo today). Consume it from a workspace checkout, or use [Method 3 (raw Trading API)](#3-raw-trading-api-fallback) until it publishes. The API shape below is stable and is what will publish.
+
+```typescript
+// Throws-on-failure variant — idiomatic for try/catch consumers.
+import { createUniswapClient } from '@uniswap/sdk';
+
+const client = createUniswapClient({ apiKey: process.env.UNISWAP_API_KEY });
+
+// Quote (read-only). The client picks routing and normalizes the shape.
+const quote = await client.getQuote({
+  tokenIn: 'ETH',
+  tokenOut: 'USDC',
+  amount: '1',
+  chainId: 8453,
+});
+
+// Execute end-to-end: the client runs the approval / Permit2 / submit step
+// machine and observes each receipt before the next step. This is the
+// equivalent of `uni swap --execute` in-process.
+const result = await client.executeSwap({ quote });
+```
+
+Errors from the throwing variant are plain tagged objects (`{ _tag: 'TradingApiError', message, ... }`), **not** `instanceof Error` — narrow after `catch` via the `_tag` discriminant. For pattern-matching on typed `Result<A, E>` instead of try/catch, import from `@uniswap/sdk/safe`.
+
+The facade also exposes `checkApproval`, `createSwap` (prepare-only), `getSwapStatus`, `signTypedData`, and `sendTransaction` — so a frontend can wire the exact steps to a connected wallet (wagmi/viem) while still letting the SDK own request construction. Because the SDK owns the request body, the CLASSIC-vs-UniswapX `permitData` rules and the null-field stripping described in the [Trading API Reference](#trading-api-reference) are handled inside `executeSwap` / `createSwap` — you do not reproduce them.
+
+**Frontend wallet wiring** and the browser-environment setup (Buffer polyfill, CORS proxy) are unchanged whether you use the SDK or raw fetch — see [Browser Environment Setup](#5-browser-environment-setup) and [wagmi v2 Integration Pitfalls](#wagmi-v2-integration-pitfalls).
+
+### 3. Raw Trading API (fallback)
+
+Best for: any stack that can't run the CLI or import the SDK yet (other languages, constrained runtimes), and for cases the EOA-only MVP doesn't cover ([smart accounts](#smart-account-integration-erc-4337), etc.). This is the layer the CLI and SDK sit on top of — everything below documents it directly.
 
 **Base URL**: `https://trade-api.gateway.uniswap.org/v1`
 
 **Authentication**: `x-api-key: <your-api-key>` header required
 
-**Getting an API Key**: The Trading API requires an API key for authentication. Visit the [Uniswap Developer Portal](https://developers.uniswap.org/) to register and obtain your API key. Keys are typically available for immediate use after registration. Include it as an `x-api-key` header in all API requests.
+#### Getting an API Key
+
+The Trading API requires an API key for authentication. Visit the [Uniswap Developer Portal](https://developers.uniswap.org/) to register and obtain your API key. Keys are typically available for immediate use after registration. Include it as an `x-api-key` header in all API requests. The `uni` CLI and `@uniswap/sdk` read the same key from `UNI_API_KEY` / `TRADING_API_KEY` / the `apiKey` config field.
 
 **Required Headers** — Include these in ALL Trading API requests:
 
@@ -58,7 +158,7 @@ x-api-key: <your-api-key>
 x-universal-router-version: 2.0
 ```
 
-**3-Step Flow**:
+**3-Step Flow** (this is exactly what `uni swap --execute` and `client.executeSwap` do for you):
 
 ```text
 1. POST /check_approval  -> Check if token is approved
@@ -66,35 +166,37 @@ x-universal-router-version: 2.0
 3. POST /swap            -> Get transaction to sign and submit
 ```
 
-See the [Trading API Reference](#trading-api-reference) section below for complete documentation.
+See the [Trading API Reference](#trading-api-reference) section below for complete documentation of request/response shapes and the permit rules — but remember, if you're on a stack the CLI or SDK supports, they handle all of it.
 
-### 2. Universal Router SDK
+### Lower-level engines (not driven by the CLI/SDK MVP)
 
-Best for: Direct control over transaction construction.
+The following are unchanged and remain the right tool when you need control below the Trading API, or a case the EOA-only MVP doesn't cover. The `uni` CLI and `@uniswap/sdk` do **not** drive these:
 
-**Installation**:
+- **Universal Router SDK** — direct control over transaction construction and manual command building. `npm install @uniswap/universal-router-sdk @uniswap/sdk-core @uniswap/v3-sdk`. See [Universal Router Reference](#universal-router-reference).
+- **Smart contract integration** — call `execute()` on Universal Router with encoded commands from Solidity. See [Direct Universal Router Integration](#direct-universal-router-integration-sdk).
+- **ERC-4337 smart accounts** — bundler / `sendUserOperation` flow with delegation. See [Smart Account Integration](#smart-account-integration-erc-4337). The CLI/SDK are EOA-only, so this stays on the raw Trading API.
 
-```bash
-npm install @uniswap/universal-router-sdk @uniswap/sdk-core @uniswap/v3-sdk
-```
+## MVP surface & known gaps
 
-**Key Pattern**:
+The `uni` CLI and `@uniswap/sdk` are an early MVP. This table is the honest boundary — what you can drive through them vs. what still needs a lower-level method. It's kept explicit so you don't reach for a CLI flag that doesn't exist.
 
-```typescript
-import { SwapRouter } from '@uniswap/universal-router-sdk';
+| Capability                                      | `uni` CLI | `@uniswap/sdk` | How to do it today                                                |
+| ----------------------------------------------- | :-------: | :------------: | ----------------------------------------------------------------- |
+| Same-chain swap (CLASSIC / UniswapX / WRAP)     |    Yes    |      Yes       | `uni swap` / `client.executeSwap`                                 |
+| Cross-chain swap (BRIDGE / CHAINED)             |    Yes    |      Yes       | `uni swap --to-chain` / `client.executePlan`                      |
+| Quote (same- and cross-chain)                   |    Yes    |      Yes       | `uni quote` / `client.getQuote`                                   |
+| Permit2 inspection (both layers)                |    Yes    |      Yes       | `uni permit2 check` / chain-read methods                          |
+| Automatic approval + Permit2 on execute         |    Yes    |      Yes       | handled inside `swap --execute` / `executeSwap`                   |
+| MEV protection (Flashbots, mainnet + local key) |    Yes    |     Yes\*      | `uni swap --private`                                              |
+| EOA signer                                      |    Yes    |      Yes       | private key / mnemonic / keystore                                 |
+| **ERC-4337 smart account (bundler / UserOp)**   |  **No**   |     **No**     | raw Trading API + [bundler](#smart-account-integration-erc-4337)  |
+| **Direct Universal Router command encoding**    |  **No**   |     **No**     | [Universal Router SDK](#universal-router-reference)               |
+| **Standalone WETH-unwrap helper**               |  **No**   |     **No**     | [WETH Handling on L2s](#weth-handling-on-l2s) (manual `withdraw`) |
+| **Published npm package / global install**      |  **No**   |     **No**     | run from a `Uniswap/uni-cli` checkout                             |
 
-const { calldata, value } = SwapRouter.swapCallParameters(trade, options);
-```
+\* The SDK exposes the trading + wallet surface; MEV submission is wired at the CLI composition root today.
 
-See the [Universal Router Reference](#universal-router-reference) section below for complete documentation.
-
-### 3. Smart Contract Integration
-
-Best for: On-chain integrations, DeFi composability.
-
-**Interface**: Call `execute()` on Universal Router with encoded commands.
-
-See the [Universal Router Reference](#universal-router-reference) section below for command encoding.
+If a task needs a **No** row, do not invent a flag — use the linked lower-level method and say so. Reporting "the MVP can't drive X, here's the fallback" is correct; fabricating `uni swap --smart-account` is not.
 
 ---
 
@@ -1084,7 +1186,115 @@ async function executeRoute(planner: RoutePlanner, options?: { value?: bigint })
 
 ## Common Integration Patterns
 
-### Frontend Swap Hook (React)
+### Driving the CLI from a script/agent
+
+This is the **preferred backend pattern**: shell out to `uni` and parse its JSON. The CLI owns the whole Trading API flow (`check_approval -> quote -> swap`), the approval/Permit2 steps, and the routing-aware response reading — so your script is a thin wrapper around two commands, not a re-implementation of the [Backend Swap Script](#backend-swap-script-nodejs--raw-trading-api) below.
+
+```typescript
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+
+const run = promisify(execFile);
+
+// Adjust `cwd` to your uni-cli checkout (MVP runs from a checkout, not npm).
+const UNI_CWD = process.env.UNI_CLI_DIR ?? './uni-cli';
+
+async function uni<T>(args: string[]): Promise<T> {
+  // Always request JSON for machine parsing (default output is TOON).
+  const { stdout } = await run('bun', ['run', 'uni', ...args, '--format', 'json'], {
+    cwd: UNI_CWD,
+    // UNI_API_KEY / UNI_PRIVATE_KEY are read from the checkout's .env or the
+    // inherited environment. Never hardcode keys in the args.
+    env: process.env,
+  });
+  return JSON.parse(stdout) as T;
+}
+
+// 1. Preview: read routing + expected output. No signer, no tx.
+const quote = await uni<{ routing: string; outputAmount: string }>([
+  'quote',
+  'USDC',
+  'ETH',
+  '100',
+  '--chain',
+  'base',
+]);
+console.log(`routing=${quote.routing} out=${quote.outputAmount} ETH`);
+
+// 2. HUMAN-APPROVAL GATE: show `quote` to the user and get explicit approval
+//    before the next call. `--execute` is the only way a tx sends; there is no
+//    `--yes`. Do not add `--execute` without a confirmed user decision.
+
+// 3. Execute: the CLI does approval + Permit2 + submit + confirm in one call.
+const result = await uni<{ txHash: string; status: string; explorerUrl: string }>([
+  'swap',
+  'USDC',
+  'ETH',
+  '100',
+  '--chain',
+  'base',
+  '--execute',
+  '--filter-output',
+  'routing,outputAmount,txHash,status,explorerUrl',
+]);
+console.log(`sent ${result.txHash} (${result.status}) -> ${result.explorerUrl}`);
+```
+
+Notes:
+
+- **`--execute` is the gate.** Run step 1 (or `uni swap ...` without `--execute`) to preview; only pass `--execute` after the user approves. There is no `--yes`.
+- **Errors** come back as structured JSON with a `code` and `message`, and the process exit code categorizes the failure (`1` input, `2` config, `3` API, `4` wallet, `5` internal) — branch on the exit code, then read `message`.
+- **Never interpolate unvalidated user input into the args array** — validate token symbols/addresses, amounts, and chain names first (see [Input Validation Rules](#input-validation-rules)). `execFile` with an args array (not a shell string) already avoids shell-metacharacter injection; keep it that way (do not switch to `exec` with a concatenated command).
+- **Discover the surface** with `uni --schema swap` / `uni <cmd> --help` rather than guessing flags. If a capability isn't in [MVP surface & known gaps](#mvp-surface--known-gaps), it isn't there — fall back to the raw API, don't invent a flag.
+
+### Frontend Swap Hook (React) — via `@uniswap/sdk`
+
+Preferred frontend pattern: let the SDK own request construction; wire only the wallet interaction. This replaces the hand-rolled `fetch` + permit-pairing logic in the [raw-fetch hook below](#frontend-swap-hook-react--raw-trading-api).
+
+```typescript
+import { useState } from 'react';
+import { createUniswapClient } from '@uniswap/sdk';
+import { getWalletClient, switchChain } from '@wagmi/core';
+import type { Config } from 'wagmi';
+
+// One client per app. Point the SDK's Trading API key at your key.
+const client = createUniswapClient({ apiKey: import.meta.env.VITE_UNISWAP_API_KEY });
+
+function useSwap(config: Config, chainId: number) {
+  const [quote, setQuote] = useState<Awaited<ReturnType<typeof client.getQuote>> | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function getQuote(tokenIn: string, tokenOut: string, amount: string) {
+    setError(null);
+    try {
+      // SDK picks routing and normalizes the response shape.
+      setQuote(await client.getQuote({ tokenIn, tokenOut, amount, chainId }));
+    } catch (err) {
+      // SDK errors are tagged objects, not Error instances.
+      setError(
+        err && typeof err === 'object' && 'message' in err ? String(err.message) : 'Quote failed'
+      );
+    }
+  }
+
+  // Called only after the user reviews `quote` and clicks Swap (the UI is the
+  // human-approval gate). executeSwap runs the approval/Permit2/submit machine.
+  async function executeSwap() {
+    if (!quote) throw new Error('No quote available');
+    await switchChain(config, { chainId });
+    await getWalletClient(config, { chainId }); // ensure a ready wallet client
+    return client.executeSwap({ quote });
+  }
+
+  return { quote, error, getQuote, executeSwap };
+}
+```
+
+The SDK handles the CLASSIC-vs-UniswapX `permitData` rules, null-field stripping, and pre-broadcast validation internally — you do not reproduce the [Critical Implementation Notes](#critical-implementation-notes) permit logic. You still need the browser [Buffer polyfill and CORS proxy](#5-browser-environment-setup) if your bundler requires them.
+
+### Frontend Swap Hook (React) — raw Trading API
+
+Use this only when you can't import `@uniswap/sdk` (not yet published to npm; see [Method 2](#2-uniswapsdk-facade-frontends-and-apps)). It reproduces by hand what the SDK does for you.
 
 **Note**: Ensure you've set up the Buffer polyfill and CORS proxy (see Critical Implementation Notes). For wagmi v2 `useWalletClient()` pitfalls, see [wagmi v2 Integration Pitfalls](#wagmi-v2-integration-pitfalls) below.
 
@@ -1218,7 +1428,9 @@ async function executeSwapTransaction(
 - `getWalletClient(config, { chainId })` is a promise that resolves only when the client is ready, and includes the chain
 - `switchChain()` prevents "chain mismatch" errors when the wallet is on a different network than the swap
 
-### Backend Swap Script (Node.js)
+### Backend Swap Script (Node.js) — raw Trading API
+
+> **Prefer [Driving the CLI from a script/agent](#driving-the-cli-from-a-scriptagent)** for backends that can shell out — it's the same flow in two commands with the permit/routing gotchas already handled. Use this hand-rolled version only when the CLI isn't available (e.g. a language/runtime that can't run `bun`, or an [ERC-4337 smart account](#smart-account-integration-erc-4337) the EOA-only MVP doesn't cover). It's kept here as the reference implementation of what the CLI/SDK do internally.
 
 ```typescript
 import { createWalletClient, createPublicClient, http, isAddress, isHex, type Address } from 'viem';
