@@ -1,0 +1,22 @@
+{
+  "name": "uniswap-trading-tools",
+  "version": "0.2.0",
+  "description": "AI skills for automated trading tools on Uniswap, asset-agnostic across crypto-native tokens and tokenized real-world assets (RWAs); Robinhood Chain (chainId 4663) is provided as an example target chain: DCA, index/basket, and copy-trading bots that delegate execution to the uniswap-trading skills.",
+  "author": {
+    "name": "Uniswap Labs",
+    "email": "ai-services@uniswap.org"
+  },
+  "homepage": "https://github.com/Uniswap/uniswap-ai",
+  "keywords": [
+    "uniswap",
+    "trading-tools",
+    "crypto",
+    "rwa",
+    "trading-agent",
+    "dca",
+    "index",
+    "copy-trading"
+  ],
+  "license": "MIT",
+  "skills": ["./skills/dca-bot", "./skills/index-bot", "./skills/copy-trade"]
+}

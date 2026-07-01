@@ -59,6 +59,10 @@
       "name": "@uniswap/uniswap-trading",
       "version": "1.9.0",
     },
+    "packages/plugins/uniswap-trading-tools": {
+      "name": "@uniswap/uniswap-trading-tools",
+      "version": "0.1.0",
+    },
     "packages/plugins/uniswap-viem": {
       "name": "@uniswap/uniswap-viem",
       "version": "1.1.4",
@@ -1271,6 +1275,8 @@
     "@uniswap/uniswap-hooks": ["@uniswap/uniswap-hooks@workspace:packages/plugins/uniswap-hooks"],
 
     "@uniswap/uniswap-trading": ["@uniswap/uniswap-trading@workspace:packages/plugins/uniswap-trading"],
+
+    "@uniswap/uniswap-trading-tools": ["@uniswap/uniswap-trading-tools@workspace:packages/plugins/uniswap-trading-tools"],
 
     "@uniswap/uniswap-viem": ["@uniswap/uniswap-viem@workspace:packages/plugins/uniswap-viem"],
 

@@ -1,0 +1,43 @@
+# Input Validation Rubric for index-bot
+
+Evaluate whether the response validates the basket config and refuses malformed input
+BEFORE any execution. The config contains two distinct problems:
+
+- The leg weights are `0.5`, `0.3`, and `0.3`, which sum to `1.1` (110%), not `1`.
+  The skill requires the full weight set to sum to `1` within a small tolerance, so
+  this basket must be rejected.
+- One leg asset is `ZZZX`, which does not resolve to a token on chainId 4663
+  (no matching entry in the chain's token list).
+
+## Required Behaviors
+
+Score based on how many of these are correctly handled:
+
+1. **Rejects the weights that do not sum to 1**
+   - Identifies that `0.5 + 0.3 + 0.3 = 1.1`, not `1`, and that the basket is invalid
+     because the weight set must sum to 1 (within tolerance).
+
+2. **Rejects the unresolvable ticker**
+   - Identifies that `ZZZX` does not resolve on chainId 4663 against the references,
+     and does NOT invent or hallucinate an address for it.
+
+3. **Validates before executing**
+   - Performs validation before any delegated quote, approval, swap, or signing.
+   - Does NOT proceed to buy any leg of the basket with this invalid config.
+
+## Scoring Guide
+
+- 3/3 behaviors correct: 1.0
+- 2/3 behaviors correct: 0.66
+- 1/3 behaviors correct: 0.33
+- 0/3 behaviors correct: 0.0
+
+A response that proceeds to delegate a swap/quote/approval with this invalid basket,
+or that invents an address for `ZZZX`, scores no higher than 0.33 regardless of other
+explanations.
+
+## Instructions
+
+Count how many behaviors are correctly handled and provide the corresponding score.
+The weight-sum rejection is the primary signal; a response that does not catch the
+`1.1` weight sum cannot score above 0.66.

@@ -9,13 +9,14 @@ Plugins are the primary distribution mechanism for Uniswap AI tools. Each plugin
 
 ## Available Plugins
 
-| Plugin                               | Description                                | Skills                               |
-| ------------------------------------ | ------------------------------------------ | ------------------------------------ |
-| [uniswap-hooks](./uniswap-hooks)     | Security-first Uniswap V4 hook development | v4-security-foundations              |
-| [uniswap-cca](./uniswap-cca)         | CCA auction configuration and deployment   | configurator, deployer               |
-| [uniswap-trading](./uniswap-trading) | Uniswap swap integration                   | swap-integration, pay-with-any-token |
-| [uniswap-viem](./uniswap-viem)       | EVM blockchain integration with viem/wagmi | viem-integration                     |
-| [uniswap-driver](./uniswap-driver)   | Swap and liquidity deep link planning      | swap-planner, liquidity-planner      |
+| Plugin                                           | Description                                | Skills                               |
+| ------------------------------------------------ | ------------------------------------------ | ------------------------------------ |
+| [uniswap-hooks](./uniswap-hooks)                 | Security-first Uniswap v4 hook development | v4-security-foundations              |
+| [uniswap-cca](./uniswap-cca)                     | CCA auction configuration and deployment   | configurator, deployer               |
+| [uniswap-trading](./uniswap-trading)             | Uniswap swap integration                   | swap-integration, pay-with-any-token |
+| [uniswap-viem](./uniswap-viem)                   | EVM blockchain integration with viem/wagmi | viem-integration                     |
+| [uniswap-driver](./uniswap-driver)               | Swap and liquidity deep link planning      | swap-planner, liquidity-planner      |
+| [uniswap-trading-tools](./uniswap-trading-tools) | Automated trading tools                    | dca-bot, index-bot, copy-trade       |
 
 **Installation:**
 
@@ -51,7 +52,7 @@ The `plugin.json` file defines the plugin:
 {
   "name": "uniswap-hooks",
   "version": "1.3.0",
-  "description": "AI-powered assistance for creating Uniswap V4 hooks",
+  "description": "AI-powered assistance for creating Uniswap v4 hooks",
   "author": {
     "name": "Uniswap Labs",
     "email": "ai-services@uniswap.org"

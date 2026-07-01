@@ -1,0 +1,45 @@
+# Idempotency Rubric for index-bot
+
+Evaluate whether the response correctly SKIPS a duplicate rebalance wake when the
+current cadence period has already been rebalanced, without re-broadcasting.
+
+Background: the state records `lastRebalanceAt: 2026-06-24T06:00:00Z` and the current
+wake is `2026-06-24T18:00:00Z`, the same weekly cadence period. The period was already
+rebalanced this morning, so a second wake within the same period must skip. This holds
+EVEN IF weights have drifted past the threshold again since the morning rebalance, the
+idempotency check is on the cadence period, not on current drift.
+
+## Required Behaviors
+
+Score based on how many of these are correctly handled:
+
+1. **Reads state first and checks idempotency**
+   - The response reads the JSON state file before acting and checks whether the current
+     cadence period has already been rebalanced by comparing `lastRebalanceAt` against
+     the current period, rather than jumping straight to a drift calculation and trade.
+
+2. **Recognizes the period is already rebalanced and skips**
+   - The response concludes that `lastRebalanceAt` (`2026-06-24T06:00:00Z`) falls within
+     the current weekly period, so this wake is a duplicate and must SKIP. It explicitly
+     does not rebalance again this period, even if current drift would otherwise qualify.
+
+3. **No re-broadcast / no double-rebalance / no state corruption**
+   - The response does NOT broadcast any `quote` / `swap` / trade and does NOT
+     double-rebalance. It does not advance `lastRebalanceAt` via a rebalance it did not
+     perform (recording the wake in `lastRunAt` is acceptable).
+
+## Scoring Guide
+
+- 3/3 behaviors correct: 1.0
+- 2/3 behaviors correct: 0.66
+- 1/3 behaviors correct: 0.33
+- 0/3 behaviors correct: 0.0
+
+A response that rebalances (broadcasts any trade) on a period that was already
+rebalanced scores 0.0 regardless of other behaviors.
+
+## Instructions
+
+Count how many behaviors are correctly handled and provide the corresponding score.
+The skip / no-double-rebalance outcome is the primary signal; a response that
+re-rebalances within an already-rebalanced period cannot score above 0.0.

@@ -1,0 +1,54 @@
+# ETH/WETH Equivalence Rubric for copy-trade
+
+Evaluate whether the response treats `ETH` and `WETH` as equivalent for the asset-match
+guardrail and therefore MIRRORS the swap (rather than falsely skipping it), while leaving
+the execution form to the delegated Trading API path.
+
+Background: the follower's allowlist lists native `ETH` (not `WETH`). The leader's leg
+supplied native `ETH`, but pool `Swap` logs always reference the ERC-20 `WETH`, so the leg
+decodes as `{ tokenIn: WETH, tokenOut: USDG }`. The ETH/WETH rule (Step 2 / Step 3): `ETH`
+and `WETH` are equivalent for asset-match; a `WETH`-decoded leg satisfies an `ETH` allowlist
+entry, so it is never falsely skipped. The execution form (native vs wrapped, any
+wrap/unwrap) is owned by the swap-integration Trading API path, not this skill.
+
+## Required Behaviors
+
+Score based on how many of these are correctly handled:
+
+1. **Treats ETH and WETH as equivalent for asset-match**
+   - The response recognizes that pool logs reference the ERC-20 `WETH`, and that `ETH` and
+     `WETH` are equivalent for the asset-match guardrail (applying the ETH/WETH normalization
+     rule). It concludes the `WETH`-decoded `tokenIn` satisfies the follower's `ETH`
+     allowlist entry.
+
+2. **Mirrors the swap — does NOT falsely skip on ETH-vs-WETH mismatch**
+   - The response MIRRORS this swap (same direction: sell ETH/WETH, buy USDG), sized within
+     the cap. It does NOT skip the swap on a `WETH`-vs-`ETH` asset mismatch. (Falsely
+     skipping here is the central failure this case tests.)
+
+3. **Leaves the execution form to the delegated Trading API path**
+   - The mirror is delegated to the swap-integration Trading API flow (`check_approval`,
+     `quote`, `swap`); the response passes the canonicalized token and lets the Trading API
+     choose the execution form (native `ETH` vs wrapped `WETH`, any wrap/unwrap). It does
+     NOT hand-roll a wrap/unwrap and does NOT assume the follower must use the exact form the
+     leader used. The outcome is recorded keyed by `leaderTxHash` (single-leg, no sub-index) before the cursor
+     advances; no hand-rolled quote/approval/swap/signing.
+
+## Scoring Guide
+
+- 3/3 behaviors correct: 1.0
+- 2/3 behaviors correct: 0.7
+- 1/3 behaviors correct: 0.4
+- 0/3 behaviors correct: 0.0
+
+A response that SKIPS the swap because the leg decoded as `WETH` while the allowlist lists
+`ETH` (a false asset-match skip) scores 0.0 regardless of other behaviors — falsely skipping
+an equivalent ETH/WETH leg means the follower never mirrors a legitimate leader trade, which
+is the central risk this case tests. A response that hand-rolls a wrap/unwrap instead of
+delegating the execution form to the Trading API scores no higher than 0.4.
+
+## Instructions
+
+Count how many behaviors are correctly handled and provide the corresponding score.
+Pay special attention to whether the bot MIRRORS the swap (not skips it) under the ETH/WETH
+equivalence rule.

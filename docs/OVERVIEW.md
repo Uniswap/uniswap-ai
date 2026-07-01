@@ -57,6 +57,12 @@ Foundational EVM blockchain integration using viem and wagmi.
 
 **Skills:** `viem-integration`
 
+### uniswap-trading-tools
+
+Automated trading tools — dollar-cost averaging, weighted index baskets, and copy-trading — that delegate execution to existing Uniswap skills. Asset-agnostic across crypto-native tokens and tokenized real-world assets (RWAs), and portable to any chain where Uniswap is deployed.
+
+**Skills:** `dca-bot`, `index-bot`, `copy-trade`
+
 ## Agent-Agnostic Design
 
 All tools in this repository are designed to work with any LLM coding agent, not just Claude Code:

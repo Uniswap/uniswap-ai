@@ -39,47 +39,50 @@ All packages use [Nx](https://nx.dev) for:
 ```text
 uniswap-ai/
 ├── packages/
-│   └── plugins/              # Claude Code plugins
-│       ├── uniswap-hooks/    # V4 hook development
-│       ├── uniswap-cca/      # CCA auction configuration & deployment
-│       ├── uniswap-trading/  # Swap integration
-│       ├── uniswap-viem/     # EVM blockchain integration (viem/wagmi)
-│       └── uniswap-driver/   # Swap & liquidity deep link planning
-├── evals/                    # AI tool evaluations
-├── docs/                     # This documentation
-└── .github/                  # CI/CD workflows
+│   └── plugins/                    # Claude Code plugins
+│       ├── uniswap-hooks/          # v4 hook development
+│       ├── uniswap-cca/            # CCA auction configuration & deployment
+│       ├── uniswap-trading/        # Swap integration
+│       ├── uniswap-viem/           # EVM blockchain integration (viem/wagmi)
+│       ├── uniswap-driver/         # Swap & liquidity deep link planning
+│       └── uniswap-trading-tools/  # Automated trading tools (DCA, index, copy-trade)
+├── evals/                          # AI tool evaluations
+├── docs/                           # This documentation
+└── .github/                        # CI/CD workflows
 ```
 
 ## Package Relationships
 
 ```text
 ┌───────────────────────────────────────────────────────┐
-│                    Claude Code                         │
-│                    (Runtime)                           │
+│                      Claude Code                      │
+│                       (Runtime)                       │
 └───────────────────────────────────────────────────────┘
-                          │
-                          ▼
+                            │
+                            ▼
 ┌───────────────────────────────────────────────────────┐
-│                     Plugins                            │
-│  ┌───────────────┐ ┌───────────────┐ ┌─────────────┐ │
-│  │ uniswap-hooks │ │ uniswap-cca   │ │uniswap-viem │ │
-│  │ (2 skills)    │ │ (2 skills +   │ │ (1 skill +  │ │
-│  │               │ │  MCP server)  │ │  1 agent)   │ │
-│  └───────────────┘ └───────────────┘ └─────────────┘ │
-│  ┌─────────────────┐ ┌───────────────┐                │
-│  │uniswap-trading  │ │uniswap-driver │                │
-│  │ (1 skill +      │ │ (2 skills)    │                │
-│  │  1 agent)       │ │               │                │
-│  └─────────────────┘ └───────────────┘                │
+│                        Plugins                        │
+│  ┌───────────────────────┐ ┌───────────────────────┐  │
+│  │ uniswap-hooks         │ │ uniswap-cca           │  │
+│  │ (2 skills)            │ │ (2 skills + MCP)      │  │
+│  └───────────────────────┘ └───────────────────────┘  │
+│  ┌───────────────────────┐ ┌───────────────────────┐  │
+│  │ uniswap-viem          │ │ uniswap-trading       │  │
+│  │ (1 skill + 1 agent)   │ │ (1 skill + 1 agent)   │  │
+│  └───────────────────────┘ └───────────────────────┘  │
+│  ┌───────────────────────┐ ┌───────────────────────┐  │
+│  │ uniswap-driver        │ │ uniswap-trading-tools │  │
+│  │ (2 skills)            │ │ (3 skills)            │  │
+│  └───────────────────────┘ └───────────────────────┘  │
 └───────────────────────────────────────────────────────┘
-                          │
-                          ▼
+                            │
+                            ▼
 ┌───────────────────────────────────────────────────────┐
-│                      Evals                             │
+│                         Evals                         │
 │  ┌─────────────────────────────────────────────────┐  │
-│  │   Promptfoo-based evaluation framework           │  │
-│  │   One suite per skill                             │  │
-│  │   Measures: accuracy, safety, completeness       │  │
+│  │   Promptfoo-based evaluation framework          │  │
+│  │   One suite per skill                           │  │
+│  │   Measures: accuracy, safety, completeness      │  │
 │  └─────────────────────────────────────────────────┘  │
 └───────────────────────────────────────────────────────┘
 ```

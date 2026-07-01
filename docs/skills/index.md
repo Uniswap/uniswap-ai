@@ -13,8 +13,8 @@ Skills are AI-powered capabilities that help you build on Uniswap. Each skill is
 
 | Skill                                                | Description                                                      | Invocation                 |
 | ---------------------------------------------------- | ---------------------------------------------------------------- | -------------------------- |
-| [V4 Security Foundations](./v4-security-foundations) | Security-first guide for v4 hook development                     | `/v4-security-foundations` |
-| [V4 Hook Generator](./v4-hook-generator)             | Generate V4 hook contracts via OpenZeppelin Contracts Wizard MCP | `/v4-hook-generator`       |
+| [v4 Security Foundations](./v4-security-foundations) | Security-first guide for v4 hook development                     | `/v4-security-foundations` |
+| [v4 Hook Generator](./v4-hook-generator)             | Generate v4 hook contracts via OpenZeppelin Contracts Wizard MCP | `/v4-hook-generator`       |
 
 ### uniswap-cca Plugin
 
@@ -45,6 +45,14 @@ Skills are AI-powered capabilities that help you build on Uniswap. Each skill is
 | ---------------------------------------- | ------------------------------------------- | -------------------- |
 | [Swap Planner](./swap-planner)           | Plan token swaps with deep link generation  | `/swap-planner`      |
 | [Liquidity Planner](./liquidity-planner) | Plan LP positions with deep link generation | `/liquidity-planner` |
+
+### uniswap-trading-tools Plugin
+
+| Skill                      | Description                                                      | Invocation    |
+| -------------------------- | ---------------------------------------------------------------- | ------------- |
+| [DCA Bot](./dca-bot)       | Dollar-cost-average into a token on a schedule, optionally gated | `/dca-bot`    |
+| [Index Bot](./index-bot)   | Build and rebalance a weighted basket of assets                  | `/index-bot`  |
+| [Copy Trade](./copy-trade) | Mirror a target wallet's trades within guardrails                | `/copy-trade` |
 
 ## Using Skills
 

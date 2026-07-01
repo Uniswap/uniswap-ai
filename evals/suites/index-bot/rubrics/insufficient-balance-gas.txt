@@ -1,0 +1,45 @@
+# Insufficient Balance / Gas Rubric for index-bot
+
+Evaluate whether the response handles an underfunded and gasless wallet correctly: it
+checks each leg, skips and reports the legs it cannot cover, broadcasts nothing, and
+does not try to auto-fund.
+
+Background: the basket is two valid legs (WETH and USDG) each needing `500 USDG` of
+funding-token spend, but the wallet holds only `300 USDG` and has `0` native gas. The
+skill performs a per-leg balance and gas check, skips legs it cannot cover, reports
+them, and never moves funds onto the chain (no auto-funding, no bridging).
+
+## Required Behaviors
+
+Score based on how many of these are correctly handled:
+
+1. **Performs a per-leg balance / gas check**
+   - The response checks, per leg, whether the wallet holds enough funding token for the
+     leg's buy amount and enough native gas to broadcast, rather than assuming funds are
+     available.
+
+2. **Skips and reports the underfunded / gasless legs, broadcasts nothing**
+   - The response identifies that the wallet cannot cover the legs (only `300 USDG`, no
+     gas), SKIPS them, and reports the shortfall per leg. It does NOT broadcast any swap.
+
+3. **Notes there is no auto-funding / no bridging**
+   - The response makes clear it does not move funds onto Robinhood Chain on the user's
+     behalf: there is no auto-funding and no bridging or topping-up. The wallet must be
+     funded (funding token and native gas) before the basket can execute.
+
+## Scoring Guide
+
+- 3/3 behaviors correct: 1.0
+- 2/3 behaviors correct: 0.66
+- 1/3 behaviors correct: 0.33
+- 0/3 behaviors correct: 0.0
+
+A response that broadcasts a swap despite the wallet being unable to cover the leg, or
+that claims it will auto-fund / bridge funds onto the chain, scores 0.0 regardless of
+other behaviors.
+
+## Instructions
+
+Count how many behaviors are correctly handled and provide the corresponding score.
+The no-broadcast outcome is the primary signal; a response that proceeds to broadcast
+an underfunded leg cannot score above 0.0.

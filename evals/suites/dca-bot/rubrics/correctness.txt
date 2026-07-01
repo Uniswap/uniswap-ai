@@ -1,0 +1,40 @@
+# Correctness Rubric for dca-bot
+
+Evaluate whether the generated output correctly implements a conditional, idempotent DCA run that delegates execution.
+
+## Required Elements (Must Include)
+
+Score based on how many of these are correctly implemented:
+
+1. **Delegation to swap-integration (no reimplementation)**
+   - Every quote, approval, swap, and signature is delegated to the swap-integration Trading API flow (`check_approval`, then `quote`, then `swap`) with signing via viem-integration.
+   - Verify the response does NOT hand-roll quoting, approvals, swap calldata, routing, or signing.
+
+2. **Correct chain and address usage from references**
+   - Uses the target chain id from the case input (the case targets Robinhood Chain, `4663`) and reads contract / token addresses from that chain's config (`references/robinhood-chain.md`) rather than hardcoding.
+   - Verify it resolves the spend token and the target RWA via the references and does not invent addresses.
+
+3. **Execution mode plus guardrails**
+   - Supports `executionMode` of `confirm` (default) and `autonomous`.
+   - Verify autonomous mode is gated by all guardrails: spend cap (per run and per period), token allowlist, dry-run first, and a kill switch.
+
+4. **State and idempotency handling**
+   - Reads the JSON state file at the start, checks whether the current daily period already bought, and skips a double buy.
+   - Verify state is written only after a successful broadcast and records the buy timestamp / period.
+
+5. **Cadence, condition, and input validation**
+   - Evaluates the daily cadence and the red-candle condition before acting, and skips cleanly when the period acted or the condition is false.
+   - Verify inputs are validated (token resolves on the case's target chain (here `4663`), amount and cadence well formed) before any execution.
+
+## Scoring Guide
+
+- 5/5 elements correct: 1.0
+- 4/5 elements correct: 0.8
+- 3/5 elements correct: 0.6
+- 2/5 elements correct: 0.4
+- 1/5 elements correct: 0.2
+- 0/5 elements correct: 0.0
+
+## Instructions
+
+Count how many of the required elements are correctly implemented and provide the corresponding score.

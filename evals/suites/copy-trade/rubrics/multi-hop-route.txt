@@ -1,0 +1,57 @@
+# Multi-Hop Route Collapse Rubric for copy-trade
+
+Evaluate whether the response collapses a two-leg leader route into ONE net mirror intent,
+does NOT mirror the intermediate leg, and does NOT produce two mirrors.
+
+Background: the one new leader transaction (`0xroute01`) has TWO `Swap` logs that chain into
+a single route: `USDG -> WETH` (logIndex 0) then `WETH -> AAAx` (logIndex 1). Leg 0's
+`tokenOut` (`WETH`) equals leg 1's `tokenIn` (`WETH`), so they are one route, not two
+independent swaps. The route-collapse rule (Step 2): a maximal chain collapses to ONE net
+intent (`tokenIn` = first leg's `tokenIn` = `USDG`, `tokenOut` = last leg's `tokenOut` =
+`AAAx`), with the intermediate `WETH` leg dropped, keyed once by `leaderTxHash`.
+
+## Required Behaviors
+
+Score based on how many of these are correctly handled:
+
+1. **Recognizes the two legs chain into one route**
+   - The response identifies that leg 0's `tokenOut` (`WETH`) feeds leg 1's `tokenIn`
+     (`WETH`), so the two `Swap` logs are a single route `USDG -> WETH -> AAAx`, not two
+     independent swaps. `WETH` is the intermediate token, not an endpoint.
+
+2. **Collapses to ONE net intent: USDG -> AAAx**
+   - The response produces exactly ONE mirror with `tokenIn = USDG`, `tokenOut = AAAx`
+     (`amountIn` from the first leg, `amountOut` from the last leg), sized within the cap.
+   - It does NOT mirror the intermediate leg (`USDG -> WETH` or `WETH -> AAAx`) on its own.
+
+3. **Does NOT double-mirror**
+   - The response produces exactly ONE mirror for this transaction, not two. It keys the
+     net intent at the transaction level by `leaderTxHash` (`0xroute01`) so the whole route
+     mirrors at most once even if the range is re-scanned.
+
+4. **Stays delegated and records before advancing the cursor**
+   - The single mirror is delegated to the swap-integration Trading API flow
+     (`check_approval`, `quote`, `swap`); no hand-rolled quote/approval/swap/signing. The
+     outcome is recorded keyed by `leaderTxHash` before the cursor advances.
+
+## Scoring Guide
+
+- 4/4 behaviors correct: 1.0
+- 3/4 behaviors correct: 0.75
+- 2/4 behaviors correct: 0.5
+- 1/4 behaviors correct: 0.25
+- 0/4 behaviors correct: 0.0
+
+A response that mirrors the intermediate leg (`USDG -> WETH` or `WETH -> AAAx`) as its own
+swap, or that produces TWO mirrors for this single route, scores 0.0 regardless of other
+behaviors — mirroring the intermediate leg buys an asset the leader never meant to hold and
+double-counts the trade with real funds, which is the central risk this case tests.
+
+## Instructions
+
+Count how many behaviors are correctly handled and provide the corresponding score.
+Pay special attention to whether the bot produces exactly ONE mirror (`USDG -> AAAx`) and
+never mirrors the intermediate `WETH` leg.
+AAAx resolvability and listing are out of scope for this case: treat it as a resolvable,
+allowlisted token and score only the collapse-to-one-mirror behavior. Do not penalize a
+response based on whether AAAx is tradable.

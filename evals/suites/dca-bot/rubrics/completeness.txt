@@ -1,0 +1,44 @@
+# Completeness Rubric for dca-bot
+
+Evaluate whether the generated output includes all expected elements and follows the plugin's conventions.
+
+## Expected Elements (Should Include)
+
+Score based on how many of these are present:
+
+1. **Prerequisites referenced**
+   - References the swap-integration and viem-integration prerequisites as the execution path.
+   - Points to `references/robinhood-chain.md` and `references/execution-model.md` for config and rules.
+
+2. **Compliance handling**
+   - Handles token-level transfer-restriction reverts gracefully and reports them.
+   - Respects equity market hours and surfaces the repo root `DISCLAIMER.md`.
+
+3. **Skill-specific steps (DCA)**
+   - Covers cadence handling, the optional condition check (red daily candle), and per-period idempotency.
+   - Describes the scheduler-driven, single-self-contained-run model.
+
+4. **Execution and guardrails framing**
+   - States the execution mode (confirm default vs autonomous) and the autonomous guardrails (spend cap, allowlist, dry-run, kill switch).
+
+## Penalties (Should Not Include)
+
+Deduct points for:
+- Hand-rolled quote, approval, swap, or signing logic (-0.15)
+- Hardcoded addresses or chain values instead of reading references (-0.1)
+- Assuming an in-skill scheduler exists (-0.1)
+
+## Scoring Guide
+
+Base score from expected elements:
+- 4/4 elements: 1.0
+- 3/4 elements: 0.8
+- 2/4 elements: 0.55
+- 1/4 elements: 0.3
+- 0/4 elements: 0.0
+
+Then subtract any penalties.
+
+## Instructions
+
+Count the expected elements present, then apply any penalties for issues found. Provide the final score.

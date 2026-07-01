@@ -12,20 +12,24 @@ npx skills add Uniswap/uniswap-ai
 /plugin marketplace add uniswap/uniswap-ai
 
 # Install individual plugins
-/plugin install uniswap-hooks      # v4 hook development
-/plugin install uniswap-trading    # Swap integration
-/plugin install uniswap-cca        # CCA auctions
-/plugin install uniswap-driver     # Swap & liquidity planning
-/plugin install uniswap-viem       # EVM integration (viem/wagmi)
+/plugin install uniswap-hooks          # v4 hook development
+/plugin install uniswap-trading        # Swap integration
+/plugin install uniswap-cca            # CCA auctions
+/plugin install uniswap-driver         # Swap & liquidity planning
+/plugin install uniswap-viem           # EVM integration (viem/wagmi)
+/plugin install uniswap-trading-tools  # Automated trading tools (DCA, index, copy-trade)
 ```
 
 ## Featured Skills
 
-| Skill                | Plugin          | Description                                                        |
-| -------------------- | --------------- | ------------------------------------------------------------------ |
-| `swap-integration`   | uniswap-trading | Integrate Uniswap swaps via Trading API, Universal Router, or SDKs |
-| `pay-with-any-token` | uniswap-trading | Pay HTTP 402 challenges (MPP/x402) using tokens via Uniswap swaps  |
-| `uniswap-v4-hooks`   | uniswap-hooks   | Secure Uniswap v4 hook development assistant                       |
+| Skill                | Plugin                | Description                                                        |
+| -------------------- | --------------------- | ------------------------------------------------------------------ |
+| `swap-integration`   | uniswap-trading       | Integrate Uniswap swaps via Trading API, Universal Router, or SDKs |
+| `pay-with-any-token` | uniswap-trading       | Pay HTTP 402 challenges (MPP/x402) using tokens via Uniswap swaps  |
+| `uniswap-v4-hooks`   | uniswap-hooks         | Secure Uniswap v4 hook development assistant                       |
+| `dca-bot`            | uniswap-trading-tools | Dollar-cost-average into a token on a schedule (asset-agnostic)    |
+| `index-bot`          | uniswap-trading-tools | Build and rebalance a weighted basket of assets                    |
+| `copy-trade`         | uniswap-trading-tools | Mirror a target wallet's trades within guardrails                  |
 
 ## Documentation
 

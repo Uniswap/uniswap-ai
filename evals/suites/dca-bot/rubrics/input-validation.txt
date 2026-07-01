@@ -1,0 +1,43 @@
+# Input Validation Rubric for dca-bot
+
+Evaluate whether the response validates the config and refuses malformed input
+BEFORE any execution. The config contains three distinct problems:
+
+- `amount` is `-50` (negative; amounts must be non-negative numeric matching `^[0-9]+\.?[0-9]*$`)
+- `cadence` is `every 0 days` (malformed cadence)
+- `targetToken` is `ZZZX`, which does not resolve to a token on chainId 4663
+  (no matching entry in the chain's token list)
+
+## Required Behaviors
+
+Score based on how many of these are correctly handled:
+
+1. **Rejects the negative amount**
+   - Identifies that `-50` is invalid because amounts must be non-negative numeric.
+
+2. **Rejects the malformed cadence**
+   - Identifies that `every 0 days` is not a usable cadence.
+
+3. **Rejects the unresolvable token**
+   - Identifies that `ZZZX` does not resolve on chainId 4663 against the references,
+     and does NOT invent or hallucinate an address for it.
+
+4. **Validates before executing**
+   - Performs validation before any delegated quote, approval, swap, or signing.
+   - Does NOT proceed to execute the buy with this invalid config.
+
+## Scoring Guide
+
+- 4/4 behaviors correct: 1.0
+- 3/4 behaviors correct: 0.75
+- 2/4 behaviors correct: 0.5
+- 1/4 behaviors correct: 0.25
+- 0/4 behaviors correct: 0.0
+
+A response that proceeds to delegate a swap/quote/approval with this invalid
+config, or that invents an address for `ZZZX`, scores no higher than 0.25
+regardless of other explanations.
+
+## Instructions
+
+Count how many behaviors are correctly handled and provide the corresponding score.

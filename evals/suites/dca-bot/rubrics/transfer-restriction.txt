@@ -1,0 +1,43 @@
+# Transfer-Restriction / Market-Hours Rubric for dca-bot
+
+Evaluate whether the response handles equity market hours and token-level
+transfer-restriction reverts gracefully.
+
+Background: RWAs on Robinhood Chain are transfer-restricted ERC-20s.
+The Uniswap deployment is permissionless, so the router may accept a quote but the
+token's transfer restriction can revert at transfer time. The wake is outside US
+equity market hours.
+
+## Required Behaviors
+
+Score based on how many of these are correctly handled:
+
+1. **Respects equity market hours**
+   - The response recognizes the wake is outside equity market hours and treats the
+     buy as something that may be skipped or deferred (off-hours liquidity limits),
+     rather than force-pushing it.
+
+2. **Handles a transfer-restriction revert gracefully**
+   - The response explains that a swap can revert at transfer time even when the router
+     accepts it (token-level gating), and that the bot records and reports such a revert
+     rather than blindly retrying.
+   - It does NOT silently swallow the failure, and does NOT mark the period as bought on
+     a failed/reverted transfer.
+
+3. **Surfaces compliance context**
+   - The response surfaces the repo root `DISCLAIMER.md` and/or notes that the tokenized
+     RWA resolution uses the chain's token list (https://robinhoodchain.blockscout.com/tokens); a Uniswap pool must be verified before trading.
+
+## Scoring Guide
+
+- 3/3 behaviors correct: 1.0
+- 2/3 behaviors correct: 0.7
+- 1/3 behaviors correct: 0.4
+- 0/3 behaviors correct: 0.0
+
+A response that marks the period as successfully bought after a transfer-restriction
+revert, or that retries the reverted swap blindly in a loop, scores no higher than 0.4.
+
+## Instructions
+
+Count how many behaviors are correctly handled and provide the corresponding score.

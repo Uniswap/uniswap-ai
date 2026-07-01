@@ -34,6 +34,11 @@
       "name": "uniswap-driver",
       "source": "./packages/plugins/uniswap-driver",
       "description": "AI-powered assistance for planning Uniswap swaps and liquidity positions"
+    },
+    {
+      "name": "uniswap-trading-tools",
+      "source": "./packages/plugins/uniswap-trading-tools",
+      "description": "Automated trading tools (DCA, index, copy-trade), asset-agnostic across crypto and tokenized RWAs"
     }
   ]
 }

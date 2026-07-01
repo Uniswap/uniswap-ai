@@ -16,6 +16,7 @@ Uniswap AI provides Claude Code plugins and AI development tools specifically de
 - **Configure and deploy CCA auctions** for token distribution
 - **Build on EVM blockchains** with viem and wagmi integration guides
 - **Plan swaps and liquidity positions** with deep link generation
+- **Start automating trading tools** with DCA, index, and copy-trade
 
 ## Prerequisites
 
@@ -34,11 +35,12 @@ Install all plugins from the Claude Code Marketplace:
 Or install individual plugins:
 
 ```bash
-/plugin install uniswap-hooks      # V4 hook development
+/plugin install uniswap-hooks      # v4 hook development
 /plugin install uniswap-trading    # Swap integration
 /plugin install uniswap-cca        # CCA auctions
 /plugin install uniswap-driver     # Swap & liquidity planning
 /plugin install uniswap-viem       # EVM integration (viem/wagmi)
+/plugin install uniswap-trading-tools  # Automated trading tools (DCA, index, copy-trade)
 ```
 
 See [Installation](./installation) for detailed instructions.

@@ -61,11 +61,12 @@ uniswap-ai/
 │   └── templates/           # Templates for new suites
 ├── packages/
 │   └── plugins/             # Claude Code plugins
-│       ├── uniswap-cca/     # Continuous Clearing Auction (CCA) plugin
-│       ├── uniswap-driver/  # Swap & liquidity deep link planning
-│       ├── uniswap-hooks/   # Uniswap v4 hooks plugin
-│       ├── uniswap-trading/ # Uniswap swap integration
-│       └── uniswap-viem/    # EVM blockchain integration (viem/wagmi)
+│       ├── uniswap-cca/            # Continuous Clearing Auction (CCA) plugin
+│       ├── uniswap-driver/         # Swap & liquidity deep link planning
+│       ├── uniswap-hooks/          # Uniswap v4 hooks plugin
+│       ├── uniswap-trading/        # Uniswap swap integration
+│       ├── uniswap-trading-tools/  # Automated trading tools (DCA, index, copy-trade)
+│       └── uniswap-viem/           # EVM blockchain integration (viem/wagmi)
 ├── scripts/                 # Build/validation scripts
 ├── nx.json
 ├── package.json
@@ -264,6 +265,16 @@ After changes to files in this repository, update the relevant CLAUDE.md file to
 ### README.md File Management
 
 Check all README.md files in directories with changes and update if appropriate.
+
+### File Removal Hygiene
+
+When removing a tracked file, sweep the whole repo for references before committing. A deleted file leaves dangling references that don't surface as build or compile errors:
+
+- **Nx `inputs` / `namedInputs` in `project.json`**: Nx hashes explicit file paths; a deleted path becomes stale config that silently skips or miscaches affected targets.
+- **Eval rubrics and cases in `evals/`**: They keep instructing the grader to reward citing content that no longer ships, causing correct answers to be under-scored.
+- **Docs and skill prose** (`**/*.md`): References to a deleted file mislead readers and break any tooling that validates link targets.
+
+Grep the filename across `**/project.json`, `evals/**`, and `**/*.md` before committing the deletion.
 
 ## Skills
 
