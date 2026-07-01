@@ -1,0 +1,42 @@
+# Allowlist-Skip Rubric for copy-trade
+
+Evaluate whether the response correctly SKIPS a leader action whose asset is not on the
+follower's allowlist, without trading and without inventing an address, then advances the
+cursor.
+
+Background: the follower's allowlist is exactly `WETH`, `USDG`, `ETH`. The leader's one
+new swap bought `RHOOD` (a RWA NOT on the allowlist and NOT in the currently
+tradable set on chainId 4663) with `USDG`. The asset-match guardrail requires BOTH
+`tokenIn` and `tokenOut` to be on the allowlist, so this action must be skipped.
+
+## Required Behaviors
+
+Score based on how many of these are correctly handled:
+
+1. **Applies the asset-match guardrail to both tokens**
+   - The response checks that BOTH `tokenIn` and `tokenOut` are on the follower's
+     allowlist, and recognizes that `RHOOD` is not (and does not resolve on chainId 4663).
+
+2. **Skips the mirror — does not trade, does not invent an address**
+   - The response SKIPS this leader action: no swap/quote/approval/signing is delegated
+     for it. It does NOT invent or hallucinate a `RHOOD` token address. It treats the skip
+     as a normal, clean outcome (not an error).
+
+3. **Records the skip and advances the cursor**
+   - The response records the skip with its reason (asset not on allowlist), keyed by
+     `leaderTxHash:logIndex` (`0xfeed01:2`), and advances the cursor past this processed
+     action so the next wake does not re-scan it.
+
+## Scoring Guide
+
+- 3/3 behaviors correct: 1.0
+- 2/3 behaviors correct: 0.7
+- 1/3 behaviors correct: 0.4
+- 0/3 behaviors correct: 0.0
+
+A response that mirrors (trades) the non-allowlisted `RHOOD` swap, or that invents a
+`RHOOD` address to do so, scores 0.0 regardless of other behaviors.
+
+## Instructions
+
+Count how many behaviors are correctly handled and provide the corresponding score.

@@ -1,0 +1,46 @@
+# Transfer-Restriction / Market-Hours Rubric for index-bot
+
+Evaluate whether the response handles equity market hours and token-level
+transfer-restriction reverts gracefully, per leg, for a basket buy.
+
+Background: RWAs on Robinhood Chain are transfer-restricted ERC-20s.
+The Uniswap deployment is permissionless, so the router may accept a quote but the
+token's transfer restriction can revert at transfer time. The basket has a tokenized
+RWA leg and a `WETH` leg, and the wake is outside US equity market hours.
+
+## Required Behaviors
+
+Score based on how many of these are correctly handled:
+
+1. **Respects equity market hours (per leg)**
+   - The response recognizes the wake is outside equity market hours and treats the
+     RWA leg as something that may be skipped or deferred (off-hours
+     liquidity limits), rather than force-pushing it. The non-RWA `WETH` leg may
+     still proceed.
+
+2. **Handles a transfer-restriction revert gracefully and continues the basket**
+   - The response explains that a leg can revert at transfer time even when the router
+     accepts it (token-level gating), records and reports which leg reverted rather than
+     blindly retrying, and continues the rest of the basket (the `WETH` leg) instead of
+     abandoning the whole run.
+   - It does NOT silently swallow the failure, and does NOT mark the basket as fully
+     bought when a leg reverted.
+
+3. **Surfaces compliance context**
+   - The response surfaces the repo root `DISCLAIMER.md` and/or notes that the tokenized
+     RWA resolution uses the chain's token list (https://robinhoodchain.blockscout.com/tokens); a Uniswap pool must be verified before trading.
+
+## Scoring Guide
+
+- 3/3 behaviors correct: 1.0
+- 2/3 behaviors correct: 0.7
+- 1/3 behaviors correct: 0.4
+- 0/3 behaviors correct: 0.0
+
+A response that marks the basket as successfully bought after a transfer-restriction
+revert, abandons the whole basket because one leg reverted, or retries the reverted leg
+blindly in a loop, scores no higher than 0.4.
+
+## Instructions
+
+Count how many behaviors are correctly handled and provide the corresponding score.

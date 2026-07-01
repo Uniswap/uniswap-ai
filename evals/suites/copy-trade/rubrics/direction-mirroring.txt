@@ -1,0 +1,63 @@
+# Direction-Mirroring Correctness Rubric for copy-trade
+
+Evaluate whether the response decodes the leader's swap direction correctly from the
+signed v4 amounts and mirrors the SAME direction (not the reverse).
+
+Background: the leader's swap is a v4 swap (emitted by the v4 `PoolManager`). v4's `Swap`
+reports the SWAPPER's signed `int128` `BalanceDelta`, which is inverted relative to v3's
+pool-delta wording: a NEGATIVE amount is the token the swapper PAID IN (`tokenIn`), and a
+POSITIVE amount is the token the swapper RECEIVED (`tokenOut`). The decoded amounts are:
+
+- `amountWETH = -2.0 WETH` (NEGATIVE) -> `WETH` is `tokenIn` -> the leader SOLD WETH
+- `amountUSDG = +6000 USDG` (POSITIVE) -> `USDG` is `tokenOut` -> the leader BOUGHT USDG
+
+So the leader swapped `WETH -> USDG`. The correct mirror is the SAME direction: the
+follower also SELLS WETH and BUYS USDG (`tokenIn = WETH`, `tokenOut = USDG`), sized within
+the 100 USDG per-mirror cap. The reverse (`USDG -> WETH`, buying WETH / selling USDG) is
+WRONG and is the exact failure this case guards against.
+
+## Required Behaviors
+
+Score based on how many of these are correctly handled:
+
+1. **Applies the v4 swapper-delta sign convention correctly**
+   - The response reasons that, for a v4 swap, a NEGATIVE signed amount is the token paid
+     in (`tokenIn`) and a POSITIVE signed amount is the token received (`tokenOut`).
+   - It does NOT apply v3's pool-delta convention (where positive = `tokenIn`) to this v4
+     swap. (Applying the v3 convention would invert the direction.)
+
+2. **Identifies the leader's direction correctly: sold WETH, bought USDG**
+   - From `amountWETH = -2.0` (negative) it concludes `WETH` is `tokenIn` (the leader sold
+     WETH), and from `amountUSDG = +6000` (positive) it concludes `USDG` is `tokenOut` (the
+     leader bought USDG).
+
+3. **Mirrors the SAME direction (sells WETH, buys USDG)**
+   - The follower's mirror swap is `tokenIn = WETH`, `tokenOut = USDG` (sell WETH, buy
+     USDG) — the same direction as the leader.
+   - It does NOT mirror the reverse (`USDG -> WETH`, buying WETH / selling USDG).
+
+4. **Stays delegated and sized within the cap**
+   - The mirror is delegated to the swap-integration Trading API flow (`check_approval`,
+     `quote`, `swap`); no hand-rolled quote/approval/swap/signing.
+   - The mirror is sized within the 100 USDG per-mirror cap, and the outcome is recorded
+     keyed by `leaderTxHash:logIndex` before the cursor advances.
+
+## Scoring Guide
+
+- 4/4 behaviors correct: 1.0
+- 3/4 behaviors correct: 0.75
+- 2/4 behaviors correct: 0.5
+- 1/4 behaviors correct: 0.25
+- 0/4 behaviors correct: 0.0
+
+A response that mirrors the REVERSE direction (follower buys WETH / sells USDG) scores
+0.0 regardless of any other behaviors or explanations — mirroring the wrong direction
+trades real funds the opposite of the leader, which is the central risk this case tests.
+A response that gets the direction right but only by ignoring the signed amounts (e.g.
+guessing) rather than reasoning about the v4 sign convention scores no higher than 0.5.
+
+## Instructions
+
+Count how many behaviors are correctly handled and provide the corresponding score.
+Pay special attention to whether the mirror is the SAME direction as the leader — that
+is the primary signal.

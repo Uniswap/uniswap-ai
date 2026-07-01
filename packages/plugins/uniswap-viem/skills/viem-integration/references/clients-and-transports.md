@@ -172,37 +172,30 @@ const transport = fallback([
 
 ### Built-in Chains
 
-viem includes 50+ chain definitions:
+viem includes many chain definitions. Import the chain definitions you need, and define any newer chain locally with `defineChain` if your installed viem version does not export it yet:
 
 ```typescript
 import {
   // Mainnets
   mainnet,
   arbitrum,
-  arbitrumNova,
   avalanche,
   base,
   blast,
   bsc,
   celo,
-  fantom,
-  gnosis,
   linea,
-  mantle,
   optimism,
   polygon,
-  polygonZkEvm,
-  scroll,
+  unichain,
+  worldchain,
   zkSync,
   zora,
 
   // Testnets
   sepolia,
-  goerli,
-  arbitrumSepolia,
   baseSepolia,
-  optimismSepolia,
-  polygonMumbai,
+  unichainSepolia,
 } from 'viem/chains';
 ```
 
@@ -220,22 +213,34 @@ mainnet.rpcUrls; // { default: { http: [...] } }
 mainnet.blockExplorers; // { default: { name: "Etherscan", url: "..." } }
 ```
 
-### Common Chain IDs
+### Uniswap Trading API Supported Chain IDs
 
-| Chain      | ID       | Import      |
-| ---------- | -------- | ----------- |
-| Ethereum   | 1        | `mainnet`   |
-| Arbitrum   | 42161    | `arbitrum`  |
-| Optimism   | 10       | `optimism`  |
-| Base       | 8453     | `base`      |
-| Polygon    | 137      | `polygon`   |
-| BNB Chain  | 56       | `bsc`       |
-| Avalanche  | 43114    | `avalanche` |
-| Blast      | 81457    | `blast`     |
-| zkSync Era | 324      | `zkSync`    |
-| Linea      | 59144    | `linea`     |
-| Scroll     | 534352   | `scroll`    |
-| Sepolia    | 11155111 | `sepolia`   |
+The Uniswap Trading API supported-chain list is the source of truth for chains that can be used with the swapping API. Use the corresponding viem chain export when available; otherwise define the chain locally with `defineChain`.
+
+| Chain                      | ID       | viem import / definition      |
+| -------------------------- | -------- | ----------------------------- |
+| Ethereum Mainnet           | 1        | `mainnet`                     |
+| OP Mainnet                 | 10       | `optimism`                    |
+| BNB Smart Chain            | 56       | `bsc`                         |
+| Unichain                   | 130      | `unichain`                    |
+| Polygon                    | 137      | `polygon`                     |
+| Monad                      | 143      | define locally if unavailable |
+| X Layer                    | 196      | define locally if unavailable |
+| zkSync                     | 324      | `zkSync`                      |
+| World Chain                | 480      | `worldchain`                  |
+| Soneium                    | 1868     | define locally if unavailable |
+| Tempo                      | 4217     | define locally if unavailable |
+| Robinhood Chain            | 4663     | define locally if unavailable |
+| Base                       | 8453     | `base`                        |
+| Arbitrum                   | 42161    | `arbitrum`                    |
+| Celo                       | 42220    | `celo`                        |
+| Avalanche                  | 43114    | `avalanche`                   |
+| Linea                      | 59144    | `linea`                       |
+| Blast                      | 81457    | `blast`                       |
+| Zora                       | 7777777  | `zora`                        |
+| Unichain Sepolia (testnet) | 1301     | `unichainSepolia`             |
+| Base Sepolia (testnet)     | 84532    | `baseSepolia`                 |
+| Ethereum Sepolia (testnet) | 11155111 | `sepolia`                     |
 
 ### Custom Chain Definition
 

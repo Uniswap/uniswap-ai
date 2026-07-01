@@ -1,0 +1,61 @@
+# Rebalance Correctness Rubric for index-bot
+
+Evaluate whether the response rebalances the correct legs in the correct directions
+when the basket has drifted, catching BOTH overweight and underweight legs and leaving
+within-threshold legs alone.
+
+Background: target weights are `WETH: 0.5 / USDG: 0.3 / ETH: 0.2`. Current valued
+weights are `WETH: 0.60 / USDG: 0.18 / ETH: 0.22`. Drift = currentWeight − targetWeight:
+
+- `WETH`: `+0.10` — overweight, `|drift| = 0.10 > 0.05` threshold
+- `USDG`: `−0.12` — underweight, `|drift| = 0.12 > 0.05` threshold
+- `ETH`: `+0.02` — `|drift| = 0.02 < 0.05` threshold (within tolerance)
+
+The correct rebalance compares the ABSOLUTE drift against the threshold (so a negative,
+underweight drift is still caught), sells the overweight leg, buys the underweight leg,
+and leaves the within-threshold leg untouched.
+
+## Required Behaviors
+
+Score based on how many of these are correctly handled:
+
+1. **Uses absolute-value drift comparison**
+   - The response compares `|drift|` (not signed drift) against the threshold, so the
+     underweight `USDG` leg (`−0.12`) IS flagged for rebalancing. A response that only
+     looks at positive drift and therefore misses the underweight leg fails this.
+
+2. **Sells the overweight leg**
+   - The response sells (reduces) `WETH`, which is overweight at `+0.10`, to move it back
+     toward its `0.50` target.
+
+3. **Buys the underweight leg**
+   - The response buys (increases) `USDG`, which is underweight at `−0.12`, to move it
+     back toward its `0.30` target. (Selling `WETH` into `USDG`, the funding token, is a
+     reasonable way to satisfy this; the response should reason about that rather than
+     over-trading or double-counting.)
+
+4. **Leaves the within-threshold leg alone and does not re-buy the whole basket**
+   - The response does NOT trade the `ETH` leg (`|drift| = 0.02 < 0.05`).
+   - The response does NOT re-buy the entire basket from scratch; it only generates the
+     adjusting swaps for the drifted legs.
+
+## Scoring Guide
+
+- 4/4 behaviors correct: 1.0
+- 3/4 behaviors correct: 0.75
+- 2/4 behaviors correct: 0.5
+- 1/4 behaviors correct: 0.25
+- 0/4 behaviors correct: 0.0
+
+A response that fails to flag the underweight `USDG` leg (i.e. only rebalances the
+overweight `WETH` leg because it compared signed drift instead of absolute drift)
+scores no higher than 0.5 — this is the central thing the case is testing.
+
+A response that trades the within-threshold `ETH` leg, or that re-buys the whole basket
+instead of just the drifted legs, loses the fourth behavior.
+
+## Instructions
+
+Count how many behaviors are correctly handled and provide the corresponding score.
+Pay special attention to whether the underweight leg is caught — that is the primary
+signal of correct absolute-value drift handling.

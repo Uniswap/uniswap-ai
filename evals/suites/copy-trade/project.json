@@ -1,0 +1,29 @@
+{
+  "name": "eval-suite-copy-trade",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "tags": ["type:eval-suite"],
+  "implicitDependencies": ["uniswap-trading-tools", "evals"],
+  "targets": {
+    "eval": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": [
+        "{projectRoot}/**/*",
+        "{workspaceRoot}/packages/plugins/uniswap-trading-tools/skills/copy-trade/**/*",
+        "{workspaceRoot}/packages/plugins/uniswap-trading-tools/references/**/*",
+        "{workspaceRoot}/evals/scripts/**/*",
+        "{workspaceRoot}/evals/rubrics/**/*",
+        "{workspaceRoot}/evals/promptfoo.yaml"
+      ],
+      "outputs": ["{projectRoot}/results.json"],
+      "options": {
+        "command": "bunx promptfoo eval -c suites/copy-trade/promptfoo.yaml --output suites/copy-trade/results.json --no-progress-bar",
+        "cwd": "evals"
+      },
+      "metadata": {
+        "description": "Run copy-trade eval suite"
+      }
+    }
+  }
+}

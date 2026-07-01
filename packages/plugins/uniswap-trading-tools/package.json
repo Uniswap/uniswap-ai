@@ -1,0 +1,29 @@
+{
+  "name": "@uniswap/uniswap-trading-tools",
+  "version": "0.2.0",
+  "private": true,
+  "description": "AI skills for automated trading tools on Uniswap, asset-agnostic across crypto-native tokens and tokenized RWAs; Robinhood Chain (chainId 4663) is the example target chain.",
+  "author": {
+    "name": "Uniswap Labs",
+    "email": "ai-services@uniswap.org"
+  },
+  "license": "MIT",
+  "keywords": [
+    "claude-code",
+    "plugin",
+    "uniswap",
+    "trading-tools",
+    "crypto",
+    "rwa",
+    "trading-agent",
+    "dca",
+    "index",
+    "copy-trading"
+  ],
+  "files": [
+    ".claude-plugin",
+    "skills",
+    "references",
+    "README.md"
+  ]
+}

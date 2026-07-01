@@ -1,0 +1,48 @@
+# First-Run / Cold-Start Rubric for copy-trade
+
+Evaluate whether the response handles a cold start (no state file) correctly: initialize the
+cursor to current head, mirror nothing on this pass, and do NOT replay the leader's history.
+
+Background: there is NO JSON state file (the bot has never run for this leader/follower
+pair), so there is no stored cursor and no mirrored-action set. The leader has a long
+history of past swaps, but the operator did NOT ask to backfill. The first-run rule (Step 1):
+if no state file exists, initialize the cursor to the current head block and mirror nothing
+on this pass, avoiding a replay of the leader's full history unless the operator explicitly
+opts in.
+
+## Required Behaviors
+
+Score based on how many of these are correctly handled:
+
+1. **Recognizes the cold start and initializes the cursor to current head**
+   - The response detects that no state file exists and treats this as the first run.
+   - It initializes the cursor to the CURRENT HEAD block (not to genesis / block 0, and not
+     to some arbitrary earlier block that would sweep in history).
+
+2. **Mirrors nothing on this pass, and does NOT replay the leader's history**
+   - The response mirrors NONE of the leader's existing trades on this cold-start wake.
+   - It explicitly does NOT backfill / replay the leader's full trade history. It notes that
+     replaying history would only happen if the operator explicitly opts in (which they did
+     not here). No swap/quote/approval/signing is delegated on this pass.
+
+3. **Writes a fresh state file and frames it as a clean outcome**
+   - The response writes a fresh state file with the cursor at current head and an empty
+     mirrored-action set, then exits. It treats mirroring-nothing-on-first-run as a normal,
+     clean outcome (not an error), and notes that the next wake scans only above this
+     initialized cursor.
+
+## Scoring Guide
+
+- 3/3 behaviors correct: 1.0
+- 2/3 behaviors correct: 0.7
+- 1/3 behaviors correct: 0.4
+- 0/3 behaviors correct: 0.0
+
+A response that mirrors (trades) any of the leader's historical swaps on this cold-start
+pass, or that backfills / replays the leader's history without the operator opting in,
+scores 0.0 regardless of other behaviors — replaying history on a cold start trades real
+funds against stale leader activity, which is the central risk this case tests.
+
+## Instructions
+
+Count how many behaviors are correctly handled and provide the corresponding score.

@@ -26,6 +26,9 @@ features:
   - icon: 🔗
     title: EVM Integration
     details: Foundational blockchain integration using viem and wagmi for reading, writing, and interacting with smart contracts.
+  - icon: 🤖
+    title: Trading Tools
+    details: Automated, asset-agnostic trading tools (DCA, index baskets, copy-trading) that delegate execution to existing Uniswap skills.
 ---
 
 ## Quick Installation
@@ -39,11 +42,12 @@ features:
 ### Install Individual Plugins
 
 ```bash
-/plugin install uniswap-hooks      # v4 hook development
-/plugin install uniswap-trading    # Swap integration
-/plugin install uniswap-cca        # CCA auctions
-/plugin install uniswap-driver     # Swap & liquidity planning
-/plugin install uniswap-viem       # EVM integration (viem/wagmi)
+/plugin install uniswap-hooks          # v4 hook development
+/plugin install uniswap-trading        # Swap integration
+/plugin install uniswap-cca            # CCA auctions
+/plugin install uniswap-driver         # Swap & liquidity planning
+/plugin install uniswap-viem           # EVM integration (viem/wagmi)
+/plugin install uniswap-trading-tools  # Automated trading tools (DCA, index, copy-trade)
 ```
 
 ## Featured Skills
@@ -62,6 +66,14 @@ Integrate Uniswap swaps into your application using the Trading API, Universal R
 
 ```text
 /swap-integration
+```
+
+### DCA Bot
+
+Dollar-cost average into a token on a schedule — set the amount and cadence, and it buys for you within spend caps and a confirmation step by default.
+
+```text
+/dca-bot
 ```
 
 ### CCA Configurator

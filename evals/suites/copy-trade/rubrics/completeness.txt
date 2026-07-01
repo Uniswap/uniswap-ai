@@ -1,0 +1,55 @@
+# Completeness Rubric for copy-trade
+
+Evaluate whether the generated output includes all expected elements and follows the plugin's conventions.
+
+## Core Elements (gate the score)
+
+Score the base from how many of these THREE core elements are present. These are the
+elements a complete basic-mirror plan must cover.
+
+1. **Prerequisites referenced**
+   - References the swap-integration and viem-integration prerequisites as the execution path.
+   - Points to `references/robinhood-chain.md` and `references/execution-model.md` for config and rules.
+
+2. **Skill-specific steps (copy-trade)**
+   - Covers reading the leader's new actions via RPC polling and log scanning since the stored cursor, applying chain / asset / position-size guardrails, mirroring passing actions, and advancing the cursor.
+   - Describes the deterministic, single-self-contained-run-per-wake model and the v1 RPC-polling approach (v1 reads via RPC polling and log scanning).
+
+3. **Execution and guardrails framing**
+   - States the execution mode (confirm default vs autonomous) and the autonomous guardrails (spend cap, allowlist, dry-run, kill switch).
+
+## Bonus Element (does NOT lower the score when absent)
+
+This rubric intentionally does NOT gate a basic-mirror pass on a compliance mention.
+Compliance handling is exercised by the dedicated transfer-restriction / market-closed case
+(`cases/transfer-restriction-market-closed.md`), where the prompt forces it. On a plain
+basic-mirror run the model often omits transfer-restriction / market-hours / DISCLAIMER
+detail, and an otherwise-complete plan should still pass. So treat compliance as a bonus
+only:
+
+- **Compliance handling (bonus)**: Handles token-level transfer-restriction reverts
+  gracefully and reports them; respects equity market hours; surfaces the repo root
+  `DISCLAIMER.md`. Add `+0.1` (capped at 1.0) if present. Do NOT deduct when it is absent.
+
+## Penalties (Should Not Include)
+
+Deduct points for:
+- Hand-rolled quote, approval, swap, or signing logic (-0.15)
+- Hardcoded addresses or chain values instead of reading references (-0.1)
+- Assuming a hosted indexer exists instead of RPC polling when the template provides none (-0.1)
+
+## Scoring Guide
+
+Base score from the THREE core elements:
+- 3/3 elements: 1.0
+- 2/3 elements: 0.7
+- 1/3 elements: 0.4
+- 0/3 elements: 0.0
+
+Then add the compliance bonus (`+0.1`, capped at 1.0) if present, and subtract any penalties.
+
+## Instructions
+
+Count the THREE core elements present for the base score, add the compliance bonus if
+present (never penalize its absence), then apply any penalties for issues found. Provide
+the final score.

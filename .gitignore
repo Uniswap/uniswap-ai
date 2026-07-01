@@ -26,6 +26,9 @@ yarn-error.log*
 coverage/
 .nyc_output/
 
+# Eval suite run outputs (promptfoo results, regenerated per `nx eval` run)
+evals/suites/*/results.json
+
 # Cache
 .cache/
 .turbo/

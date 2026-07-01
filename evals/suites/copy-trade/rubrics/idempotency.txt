@@ -1,0 +1,54 @@
+# Idempotency / No-Double-Mirror Rubric for copy-trade
+
+Evaluate whether the response skips a leader action that is already in the mirrored set
+(no double-mirror), and whether it reasons correctly about the per-action state write that
+makes mid-run crashes safe.
+
+Background: the state file's `mirrored` map already contains `0xcafe03:1` (result
+`mirrored`, follower tx `0xdead11`). Because the scanner works in bounded block ranges, this wake
+re-scans an OVERLAPPING block range and surfaces the SAME leader action `0xcafe03:1`
+again. The idempotency guardrail: if `leaderTxHash:logIndex` is already in the mirrored
+set, skip — never double-mirror.
+
+## Required Behaviors
+
+Score based on how many of these are correctly handled:
+
+1. **Detects the already-mirrored action and skips it**
+   - The response checks `leaderTxHash:logIndex` (`0xcafe03:1`) against the mirrored set,
+     finds it present, and SKIPS — it does NOT broadcast a second `USDG -> WETH` mirror
+     (no double spend with real funds). It treats this as a normal, clean outcome.
+
+2. **No state corruption**
+   - The response does NOT overwrite, clobber, or re-record the existing `0xcafe03:1`
+     entry. It does NOT reset the cursor backwards in a way that would re-mirror.
+
+3. **Explains per-action (not batched) state writes as the crash-safety guarantee**
+   - The response explains that state is written to disk immediately after EACH action
+     resolves (per-action), so if a run crashes mid-batch right after a broadcast confirms,
+     that action's record is already persisted and the next wake's idempotency check skips
+     it.
+   - It recognizes that BATCHING the writes to run-exit would be unsafe (already-broadcast
+     mirrors would go unrecorded on a mid-run crash and be re-mirrored with real funds),
+     and does NOT propose batching writes to the end of the run.
+
+4. **Cursor advances only past committed actions**
+   - The response advances the durable cursor only past actions whose records are already
+     committed, so a partially processed range is never marked done.
+
+## Scoring Guide
+
+- 4/4 behaviors correct: 1.0
+- 3/4 behaviors correct: 0.75
+- 2/4 behaviors correct: 0.5
+- 1/4 behaviors correct: 0.25
+- 0/4 behaviors correct: 0.0
+
+A response that broadcasts a second mirror for the already-mirrored `0xcafe03:1` action
+scores 0.0 regardless of other behaviors. A response that proposes batching state writes
+to run-exit (instead of per-action) scores no higher than 0.5 — the per-action write is
+the explicit crash-safety mechanism this case probes.
+
+## Instructions
+
+Count how many behaviors are correctly handled and provide the corresponding score.

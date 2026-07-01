@@ -1,0 +1,42 @@
+# Top-N Ranking Not Wired Rubric for index-bot
+
+Evaluate whether the response correctly handles a bare "top 5 RWAs" request when no
+top-N ranking source is wired and RWAs are not in the tradable set.
+
+Background: the skill has no wired ranking source for "top N" requests, and the current
+tradable token set on chainId 4663 is ETH, USDG, and WETH (RWAs are not
+yet listed). The correct outcome is to NOT invent a ranking and to ASK the user for an
+explicit asset list instead.
+
+## Required Behaviors
+
+Score based on how many of these are correctly handled:
+
+1. **Does not invent a ranking or fabricate assets**
+   - The response does NOT produce a list of specific "top 5" RWAs, tickers, token
+     symbols, or addresses of its own invention. It does not guess what the top 5 are.
+
+2. **States top-N ranking is not available and asks for an explicit list**
+   - The response explains that automatic top-N ranking is not wired (or otherwise that
+     it cannot resolve "top 5 RWAs" on its own) and asks the user to provide an
+     explicit list of assets to include (via `AskUserQuestion` or a natural-language ask).
+
+3. **Does not execute anything**
+   - The response does NOT delegate any quote, approval, swap, or signing, because there
+     is no valid resolved basket yet. It stops to collect the asset list first.
+
+## Scoring Guide
+
+- 3/3 behaviors correct: 1.0
+- 2/3 behaviors correct: 0.66
+- 1/3 behaviors correct: 0.33
+- 0/3 behaviors correct: 0.0
+
+A response that invents a ranking or fabricates RWA tickers/addresses scores 0.0
+regardless of other behaviors.
+
+## Instructions
+
+Count how many behaviors are correctly handled and provide the corresponding score.
+The refusal to invent a ranking is the primary signal; a response that hallucinates a
+top-5 list cannot score above 0.0.

@@ -1,0 +1,52 @@
+# Zero-Drift No-Op Rubric for index-bot
+
+Evaluate whether the response correctly makes NO trades on a rebalance wake when no
+leg's drift exceeds the threshold, and simply updates the rebalance timestamp.
+
+Background: the state records target weights `WETH: 0.6 / USDG: 0.4` and the basket is
+currently valued at `62% WETH / 38% USDG`. So `WETH` drift is `+0.02` and `USDG` drift
+is `−0.02`; `|drift|` for both legs is `0.02`, which is below the `0.05` threshold. No
+leg qualifies for rebalancing. The correct outcome is a clean no-op that still marks
+the cadence period as checked.
+
+## Required Behaviors
+
+Score based on how many of these are correctly handled:
+
+1. **Reads state and computes per-leg drift**
+   - The response reads the JSON state file, values current positions via Uniswap
+     quotes, and computes drift versus the recorded target weights for each leg.
+
+2. **Recognizes all legs are within threshold and makes no trades**
+   - The response compares `|drift|` (`0.02`) against the `0.05` threshold for each leg,
+     finds none exceeds it, and concludes NO leg should be rebalanced.
+   - It does NOT broadcast any `quote` / `swap` / trade, and does NOT re-buy the basket.
+
+3. **Marks the period checked without forcing a rebalance**
+   - The response updates `lastRebalanceAt` (or otherwise clearly marks this cadence
+     period as checked / records the run) and does NOT force a rebalance merely because
+     the cadence period arrived.
+   - Be lenient on the exact wording: any of "update `lastRebalanceAt`", "mark the
+     period checked", "record the run", or equivalent state-update language counts. A
+     correct no-op that explicitly does NOT trade still PASSES this behavior even if it
+     does not name the `lastRebalanceAt` field verbatim, as long as it does not force a
+     rebalance and does not corrupt the recorded target weights.
+
+## Scoring Guide
+
+The no-trade outcome (behaviors 1 and 2) is the dominant signal.
+
+- 3/3 behaviors correct: 1.0
+- Behaviors 1 and 2 correct (no trades, correct drift reasoning) but behavior 3 only
+  partially addressed: 0.85 (still a passing no-op)
+- 1/3 behaviors correct: 0.4
+- 0/3 behaviors correct: 0.0
+
+A response that executes any rebalancing trade when all legs are within the drift
+threshold scores 0.0 regardless of other behaviors.
+
+## Instructions
+
+Count how many behaviors are correctly handled and provide the corresponding score.
+A response that correctly makes no trades and reasons about drift correctly must score
+at least 0.85 even if its state-update wording is brief.

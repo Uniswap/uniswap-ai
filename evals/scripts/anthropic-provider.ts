@@ -5,6 +5,13 @@
  * This provider wraps the Anthropic SDK to enable authentication via Claude Code's
  * OAuth token for local development without requiring a separate API key.
  *
+ * Auth shape matters: a console API key (sk-ant-api03...) authenticates via the
+ * x-api-key header (the SDK's `apiKey` option). An OAuth token (sk-ant-oat..., the
+ * CLAUDE_CODE_OAUTH_TOKEN local-dev credential) is rejected as x-api-key (HTTP 401);
+ * it must be sent as Authorization: Bearer (the SDK's `authToken` option) together
+ * with the `anthropic-beta: oauth-2025-04-20` header. The provider detects the token
+ * shape and wires up the correct path.
+ *
  * Usage in promptfoo.yaml:
  *   providers:
  *     - file://scripts/anthropic-provider.ts:AnthropicProvider
@@ -19,28 +26,40 @@ interface AnthropicProviderConfig {
   maxTokens?: number;
 }
 
+/** OAuth tokens (sk-ant-oat...) must use Bearer auth + the oauth beta header, not x-api-key. */
+const OAUTH_TOKEN_PREFIX = 'sk-ant-oat';
+const OAUTH_BETA_HEADER = 'oauth-2025-04-20';
+
 /**
  * Get authenticated Anthropic client
- * Supports both ANTHROPIC_API_KEY and CLAUDE_CODE_OAUTH_TOKEN
+ * Supports both ANTHROPIC_API_KEY and CLAUDE_CODE_OAUTH_TOKEN.
+ *
+ * Classifies by token shape, not by which env var held it: an OAuth token
+ * (sk-ant-oat...) is sent as Authorization: Bearer with the oauth beta header,
+ * while a console key (sk-ant-api03...) is sent as x-api-key.
  */
 function getAnthropicClient(): Anthropic {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  const oauthToken = process.env.CLAUDE_CODE_OAUTH_TOKEN;
+  // Prefer the OAuth token so a stray ANTHROPIC_API_KEY does not shadow the
+  // local-dev credential when both are present.
+  const token = process.env.CLAUDE_CODE_OAUTH_TOKEN ?? process.env.ANTHROPIC_API_KEY;
 
-  if (apiKey) {
-    return new Anthropic({ apiKey });
+  if (!token) {
+    throw new Error(
+      'Authentication required: Set ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN environment variable'
+    );
   }
 
-  if (oauthToken) {
-    // OAuth token can be used as API key for Claude Code authenticated sessions
+  if (token.startsWith(OAUTH_TOKEN_PREFIX)) {
+    // Bearer path. apiKey is explicitly null so the SDK does not also auto-load
+    // ANTHROPIC_API_KEY and send x-api-key, which the API rejects alongside Bearer.
     return new Anthropic({
-      apiKey: oauthToken,
+      apiKey: null,
+      authToken: token,
+      defaultHeaders: { 'anthropic-beta': OAUTH_BETA_HEADER },
     });
   }
 
-  throw new Error(
-    'Authentication required: Set ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN environment variable'
-  );
+  return new Anthropic({ apiKey: token });
 }
 
 /**
@@ -73,7 +92,9 @@ export class AnthropicProvider implements ApiProvider {
     this.client = getAnthropicClient();
     this.model = config.model ?? 'claude-sonnet-4-5-20250929';
     this.temperature = config.temperature ?? 0;
-    this.maxTokens = config.maxTokens ?? 4096;
+    // 8192 (not 4096) so detailed strategy-plan responses are not truncated mid-output,
+    // which otherwise starves the correctness/completeness rubrics and flakes the eval.
+    this.maxTokens = config.maxTokens ?? 8192;
   }
 
   id(): string {
@@ -94,10 +115,8 @@ export class AnthropicProvider implements ApiProvider {
         ],
       });
 
-      const output =
-        response.content[0].type === 'text'
-          ? response.content[0].text
-          : JSON.stringify(response.content[0]);
+      const block = response.content[0];
+      const output = block?.type === 'text' ? block.text : JSON.stringify(block ?? null);
 
       // Calculate cost based on token usage and model-specific pricing
       const pricing = getModelPricing(this.model);

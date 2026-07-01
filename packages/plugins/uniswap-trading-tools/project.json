@@ -1,0 +1,21 @@
+{
+  "name": "uniswap-trading-tools",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/plugins/uniswap-trading-tools",
+  "projectType": "library",
+  "tags": ["type:plugin", "scope:uniswap"],
+  "targets": {
+    "lint-markdown": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npm exec markdownlint-cli2 -- 'packages/plugins/uniswap-trading-tools/**/*.md'"
+      }
+    },
+    "validate": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node scripts/validate-plugin.cjs packages/plugins/uniswap-trading-tools"
+      }
+    }
+  }
+}
