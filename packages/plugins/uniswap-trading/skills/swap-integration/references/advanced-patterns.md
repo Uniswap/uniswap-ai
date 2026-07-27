@@ -25,11 +25,14 @@ import {
 } from 'viem';
 import { base } from 'viem/chains';
 
-// Attribution header — use 'autonomous' instead when no human initiates each action
-// (see "Required Headers" in SKILL.md)
+// REQUIRED: define decision_origin yourself — 'human_mediated' (a human reviews/approves
+// each action before it executes) or 'autonomous' (no per-action human approval).
+// See "Agent Attribution" in SKILL.md. There is no default — you must choose.
+declare const DECISION_ORIGIN: 'human_mediated' | 'autonomous';
+
 const AGENT_INFO = JSON.stringify({
   integration_name: 'swap-integration',
-  decision_origin: 'human_mediated',
+  decision_origin: DECISION_ORIGIN,
   version: '1.4.0',
 });
 
@@ -321,11 +324,14 @@ async function fetchWithRetry(
 When executing multiple swaps or quotes in sequence, add deliberate delays:
 
 ```typescript
-// Attribution header — use 'autonomous' instead when no human initiates each action
-// (see "Required Headers" in SKILL.md)
+// REQUIRED: define decision_origin yourself — 'human_mediated' (a human reviews/approves
+// each action before it executes) or 'autonomous' (no per-action human approval).
+// See "Agent Attribution" in SKILL.md. There is no default — you must choose.
+declare const DECISION_ORIGIN: 'human_mediated' | 'autonomous';
+
 const AGENT_INFO = JSON.stringify({
   integration_name: 'swap-integration',
-  decision_origin: 'human_mediated',
+  decision_origin: DECISION_ORIGIN,
   version: '1.4.0',
 });
 

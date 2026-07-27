@@ -53,10 +53,12 @@ Best for: Frontends, backends, scripts. Handles routing optimization automatical
 **Agent Attribution**: Also send the `X-Agent-Info` header (written `x-agent-info` in the examples below) on every Trading API request. It attributes traffic to this integration for analytics — it never affects the request. The value is a compact JSON object with exactly these three fields and no extras, kept under 1 KB:
 
 - `integration_name`: always `"swap-integration"`
-- `decision_origin`: `"human_mediated"` (default — a human prompt drives each action) or `"autonomous"` (no human initiates each action, e.g. scheduled jobs or agentic harnesses). These are the only valid values; anything else is treated as malformed.
+- `decision_origin`: **Required choice — do not copy a default.** Pick the one value that matches your integration (these are the only valid values; anything else is treated as malformed):
+  - `"human_mediated"` — a human reviews/approves each action before it executes
+  - `"autonomous"` — the agent acts without per-action human approval (e.g. scheduled jobs or agentic harnesses)
 - `version`: `"1.4.0"` — tracks this skill's `metadata.version`
 
-**Malformed header feedback**: If the `x-agent-info` value fails to parse (invalid JSON, unknown `decision_origin`, or over the 1 KB cap), the request still succeeds but the response carries `x-agent-info-status: malformed`. Check for this header when first integrating to catch attribution mistakes. (Ships with the gateway-side rollout; until then no status header is returned.)
+**Malformed header feedback**: If the `x-agent-info` value fails to parse (invalid JSON, unknown `decision_origin`, or over the 1 KB cap), the request still succeeds but the response carries `x-agent-info-status: malformed`. Check for this header when first integrating to catch attribution mistakes. The status header appears only on successful responses — a failed request (4xx/5xx) won't carry it, so don't rely on it during error handling. (Ships with the gateway-side rollout; until then no status header is returned.)
 
 **Required Headers** — Include these in ALL Trading API requests:
 
@@ -64,7 +66,7 @@ Best for: Frontends, backends, scripts. Handles routing optimization automatical
 Content-Type: application/json
 x-api-key: <your-api-key>
 x-universal-router-version: 2.0
-x-agent-info: {"integration_name":"swap-integration","decision_origin":"human_mediated","version":"1.4.0"}
+x-agent-info: {"integration_name":"swap-integration","decision_origin":"<human_mediated|autonomous>","version":"1.4.0"}
 ```
 
 **3-Step Flow**:
@@ -1105,10 +1107,14 @@ import { useWalletClient } from 'wagmi';
 // e.g., const API_URL = '/api/uniswap';
 const API_URL = 'https://trade-api.gateway.uniswap.org/v1';
 
-// Attribution header — use 'autonomous' instead when no human initiates each action
+// REQUIRED: define decision_origin yourself — 'human_mediated' (a human reviews/approves
+// each action before it executes) or 'autonomous' (no per-action human approval).
+// See Agent Attribution above. There is no default — you must choose.
+declare const DECISION_ORIGIN: 'human_mediated' | 'autonomous';
+
 const AGENT_INFO = JSON.stringify({
   integration_name: 'swap-integration',
-  decision_origin: 'human_mediated',
+  decision_origin: DECISION_ORIGIN,
   version: '1.4.0',
 });
 
@@ -1246,10 +1252,14 @@ import { mainnet } from 'viem/chains';
 const API_URL = 'https://trade-api.gateway.uniswap.org/v1';
 const API_KEY = process.env.UNISWAP_API_KEY!;
 
-// Attribution header — use 'autonomous' instead when no human initiates each action
+// REQUIRED: define decision_origin yourself — 'human_mediated' (a human reviews/approves
+// each action before it executes) or 'autonomous' (no per-action human approval).
+// See Agent Attribution above. There is no default — you must choose.
+declare const DECISION_ORIGIN: 'human_mediated' | 'autonomous';
+
 const AGENT_INFO = JSON.stringify({
   integration_name: 'swap-integration',
-  decision_origin: 'human_mediated',
+  decision_origin: DECISION_ORIGIN,
   version: '1.4.0',
 });
 
