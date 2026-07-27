@@ -25,6 +25,14 @@ import {
 } from 'viem';
 import { base } from 'viem/chains';
 
+// Attribution header — use 'autonomous' instead when no human initiates each action
+// (see "Required Headers" in SKILL.md)
+const AGENT_INFO = JSON.stringify({
+  integration_name: 'swap-integration',
+  decision_origin: 'human_mediated',
+  version: '1.4.0',
+});
+
 // Types for smart account integration
 interface SwapCalldata {
   to: Address;
@@ -56,7 +64,11 @@ async function getSwapCalldata(
 
   const swapRes = await fetch('https://trade-api.gateway.uniswap.org/v1/swap', {
     method: 'POST',
-    headers: { 'x-api-key': apiKey, 'Content-Type': 'application/json' },
+    headers: {
+      'x-api-key': apiKey,
+      'Content-Type': 'application/json',
+      'x-agent-info': AGENT_INFO,
+    },
     body: JSON.stringify({
       ...cleanQuote,
       ...(permitData && { permitData }),
@@ -309,6 +321,14 @@ async function fetchWithRetry(
 When executing multiple swaps or quotes in sequence, add deliberate delays:
 
 ```typescript
+// Attribution header — use 'autonomous' instead when no human initiates each action
+// (see "Required Headers" in SKILL.md)
+const AGENT_INFO = JSON.stringify({
+  integration_name: 'swap-integration',
+  decision_origin: 'human_mediated',
+  version: '1.4.0',
+});
+
 async function batchQuotes(
   params: QuoteParams[],
   apiKey: string,
@@ -319,7 +339,11 @@ async function batchQuotes(
   for (const param of params) {
     const response = await fetchWithRetry('https://trade-api.gateway.uniswap.org/v1/quote', {
       method: 'POST',
-      headers: { 'x-api-key': apiKey, 'Content-Type': 'application/json' },
+      headers: {
+        'x-api-key': apiKey,
+        'Content-Type': 'application/json',
+        'x-agent-info': AGENT_INFO,
+      },
       body: JSON.stringify(param),
     });
 

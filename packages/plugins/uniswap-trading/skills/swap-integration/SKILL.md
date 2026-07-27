@@ -6,7 +6,7 @@ model: opus
 license: MIT
 metadata:
   author: uniswap
-  version: '1.3.0'
+  version: '1.4.0'
 ---
 
 # Swap Integration
@@ -50,12 +50,19 @@ Best for: Frontends, backends, scripts. Handles routing optimization automatical
 
 **Getting an API Key**: The Trading API requires an API key for authentication. Visit the [Uniswap Developer Portal](https://developers.uniswap.org/) to register and obtain your API key. Keys are typically available for immediate use after registration. Include it as an `x-api-key` header in all API requests.
 
+**Agent Attribution**: Also send the `X-Agent-Info` header (written `x-agent-info` in the examples below) on every Trading API request. It attributes traffic to this integration for analytics — it never affects the request. The value is a compact JSON object with exactly these three fields and no extras, kept under 1 KB:
+
+- `integration_name`: always `"swap-integration"`
+- `decision_origin`: `"human_mediated"` (default — a human prompt drives each action) or `"autonomous"` (no human initiates each action, e.g. scheduled jobs or agentic harnesses). These are the only valid values; anything else is treated as malformed.
+- `version`: `"1.4.0"` — tracks this skill's `metadata.version`
+
 **Required Headers** — Include these in ALL Trading API requests:
 
 ```text
 Content-Type: application/json
 x-api-key: <your-api-key>
 x-universal-router-version: 2.0
+x-agent-info: {"integration_name":"swap-integration","decision_origin":"human_mediated","version":"1.4.0"}
 ```
 
 **3-Step Flow**:
@@ -1096,6 +1103,13 @@ import { useWalletClient } from 'wagmi';
 // e.g., const API_URL = '/api/uniswap';
 const API_URL = 'https://trade-api.gateway.uniswap.org/v1';
 
+// Attribution header — use 'autonomous' instead when no human initiates each action
+const AGENT_INFO = JSON.stringify({
+  integration_name: 'swap-integration',
+  decision_origin: 'human_mediated',
+  version: '1.4.0',
+});
+
 function useSwap() {
   const { data: walletClient } = useWalletClient();
   const [quoteResponse, setQuoteResponse] = useState(null);
@@ -1112,6 +1126,7 @@ function useSwap() {
           'Content-Type': 'application/json',
           'x-api-key': API_KEY,
           'x-universal-router-version': '2.0',
+          'x-agent-info': AGENT_INFO,
         },
         body: JSON.stringify(params),
       });
@@ -1156,6 +1171,7 @@ function useSwap() {
         'Content-Type': 'application/json',
         'x-api-key': API_KEY,
         'x-universal-router-version': '2.0',
+        'x-agent-info': AGENT_INFO,
       },
       body: JSON.stringify(swapRequest),
     });
@@ -1228,6 +1244,13 @@ import { mainnet } from 'viem/chains';
 const API_URL = 'https://trade-api.gateway.uniswap.org/v1';
 const API_KEY = process.env.UNISWAP_API_KEY!;
 
+// Attribution header — use 'autonomous' instead when no human initiates each action
+const AGENT_INFO = JSON.stringify({
+  integration_name: 'swap-integration',
+  decision_origin: 'human_mediated',
+  version: '1.4.0',
+});
+
 const account = privateKeyToAccount(process.env.PRIVATE_KEY as `0x${string}`);
 const publicClient = createPublicClient({ chain: mainnet, transport: http() });
 const walletClient = createWalletClient({ account, chain: mainnet, transport: http() });
@@ -1282,6 +1305,7 @@ async function executeSwap(tokenIn: Address, tokenOut: Address, amount: string, 
         'x-api-key': API_KEY,
         'Content-Type': 'application/json',
         'x-universal-router-version': '2.0',
+        'x-agent-info': AGENT_INFO,
       },
       body: JSON.stringify({
         walletAddress: account.address,
@@ -1309,6 +1333,7 @@ async function executeSwap(tokenIn: Address, tokenOut: Address, amount: string, 
       'x-api-key': API_KEY,
       'Content-Type': 'application/json',
       'x-universal-router-version': '2.0',
+      'x-agent-info': AGENT_INFO,
     },
     body: JSON.stringify({
       swapper: account.address,
@@ -1336,6 +1361,7 @@ async function executeSwap(tokenIn: Address, tokenOut: Address, amount: string, 
       'x-api-key': API_KEY,
       'Content-Type': 'application/json',
       'x-universal-router-version': '2.0',
+      'x-agent-info': AGENT_INFO,
     },
     body: JSON.stringify(swapRequest),
   });
