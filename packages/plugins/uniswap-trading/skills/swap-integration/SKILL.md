@@ -56,6 +56,8 @@ Best for: Frontends, backends, scripts. Handles routing optimization automatical
 - `decision_origin`: `"human_mediated"` (default — a human prompt drives each action) or `"autonomous"` (no human initiates each action, e.g. scheduled jobs or agentic harnesses). These are the only valid values; anything else is treated as malformed.
 - `version`: `"1.4.0"` — tracks this skill's `metadata.version`
 
+**Malformed header feedback**: If the `x-agent-info` value fails to parse (invalid JSON, unknown `decision_origin`, or over the 1 KB cap), the request still succeeds but the response carries `x-agent-info-status: malformed`. Check for this header when first integrating to catch attribution mistakes. (Ships with the gateway-side rollout; until then no status header is returned.)
+
 **Required Headers** — Include these in ALL Trading API requests:
 
 ```text
