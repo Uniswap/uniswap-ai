@@ -126,6 +126,47 @@ LLM-based evaluation of AI skills using [Promptfoo](https://github.com/promptfoo
 - Aggregates pass/fail across affected suites; requires ≥85% pass rate
 - Manual trigger supports: specific suite (`nx run eval-suite-<name>:eval`), skip cache, multi-model mode
 
+**Node version:** promptfoo refuses to start on a runtime outside its `engines`
+range (`^20.20.0 || >=22.22.0`), so `vars.NODE_VERSION` has to stay at or above
+that floor (see [Repository Variables](#repository-variables)).
+
+**better-sqlite3 native binding:** installs use `--ignore-scripts` so a PR cannot
+get code execution out of this repo's own `prepare` script in a job that holds
+`ANTHROPIC_API_KEY`. That flag also suppresses builds for packages bun would
+otherwise trust by default, so promptfoo's `better-sqlite3` dependency arrives
+without its compiled binding and promptfoo dies in `getDb()` during startup. A
+`Build better-sqlite3 native binding` step builds that single package after
+install, which keeps `--ignore-scripts` in place. Removing the flag instead would
+fix the binding and reopen the script-execution hole, so prefer the targeted
+build.
+
+Both of the above are smoke-tested by a `Verify promptfoo can run on this Node`
+preflight that runs `promptfoo --version` before any suite is dispatched.
+promptfoo's startup touches both the runtime check and the database, so this one
+cheap command fails the job immediately instead of letting the same abort repeat
+once per suite deep inside the Nx log.
+
+**Errored cases are gated separately from the pass rate.** promptfoo counts a case
+that never produced a verdict (rate limit, provider outage, broken suite config)
+as an `error`, not a `failure`. Errors land in neither side of the
+`successes / (successes + failures)` pass rate, so a suite where every case errors
+contributes `0` to both and drops out of the denominator completely. A full
+15-suite run hit exactly this: 31 rate-limited cases across three suites reported
+an 89.86% pass rate and a green job. The workflow now sums errors, shows them in
+the summary table, and fails on any non-zero count, so an incomplete measurement
+can never read as a good one. Rate-limit errors are the most likely cause when
+running many suites at once; re-run rather than lowering the threshold.
+
+**Distinguishing "no suites ran" from "every suite crashed":** the Nx invocation
+is deliberately `|| true`, because promptfoo also exits non-zero for ordinary
+assertion failures, which the ≥85% pass-rate threshold is what gates. That means
+Nx's exit code cannot tell a crash from a low score. So the workflow enumerates
+the suites Nx will select (`nx show projects`) before running them, and fails if
+any selected suite produced no `results.json`. A suite that wrote no output died
+before it could be scored, which is an infrastructure failure rather than a low
+score. Without that comparison, a run where every suite crashed looks exactly
+like a run where no suite was affected, and the job reports success.
+
 ### GitHub Actions Analysis
 
 **File:** `zizmor.yml`
@@ -158,6 +199,13 @@ environment before its first publish.
 | `NODE_VERSION` | Node.js version for CI (22.x)                           |
 | `NPM_VERSION`  | npm version for the publish job (11.7.0+, OIDC support) |
 | `BUN_VERSION`  | Bun version for CI (defaults to 1.3.13)                 |
+
+`NODE_VERSION` must stay at or above the floor promptfoo declares in its
+`engines` field (`^20.20.0 || >=22.22.0`). It sat at `22.21.1` for a stretch, one
+patch under the floor, which aborted every eval suite at startup while the Evals
+workflow still reported success. It reads `22.22.1` as of 2026-07-31. Raising
+this variable above the floor keeps all jobs compatible with promptfoo's runtime
+requirements. The preflight step below fails loudly on any future drift.
 
 ## Security
 
