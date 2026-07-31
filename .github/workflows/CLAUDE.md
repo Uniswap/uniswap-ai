@@ -127,8 +127,8 @@ LLM-based evaluation of AI skills using [Promptfoo](https://github.com/promptfoo
 - Manual trigger supports: specific suite (`nx run eval-suite-<name>:eval`), skip cache, multi-model mode
 
 **Node version:** promptfoo refuses to start on a runtime outside its `engines`
-range (`^20.20.0 || >=22.22.0`), so this workflow pins Node literally rather than
-reading `vars.NODE_VERSION` (see [Repository Variables](#repository-variables)).
+range (`^20.20.0 || >=22.22.0`), so `vars.NODE_VERSION` has to stay at or above
+that floor (see [Repository Variables](#repository-variables)).
 
 **better-sqlite3 native binding:** installs use `--ignore-scripts` so a PR cannot
 get code execution out of this repo's own `prepare` script in a job that holds
@@ -189,11 +189,12 @@ environment before its first publish.
 | `NPM_VERSION`  | npm version for the publish job (11.7.0+, OIDC support) |
 | `BUN_VERSION`  | Bun version for CI (defaults to 1.3.13)                 |
 
-`NODE_VERSION` is currently `22.21.1`, which is **below** the floor promptfoo
-declares in its `engines` field (`^20.20.0 || >=22.22.0`). `evals.yml` therefore
-pins its own Node version literally instead of reading the variable. Raising the
-variable to match `.nvmrc` (`22.22.2`) would let `evals.yml` read it again.
-Anything else that runs promptfoo must stay at or above that floor.
+`NODE_VERSION` must stay at or above the floor promptfoo declares in its
+`engines` field (`^20.20.0 || >=22.22.0`). It sat at `22.21.1` for a stretch, one
+patch under the floor, which aborted every eval suite at startup while the Evals
+workflow still reported success. It reads `22.22.1` as of 2026-07-31. Keep it in
+step with `.nvmrc`, and treat that floor as a constraint on any job that runs
+promptfoo.
 
 ## Security
 

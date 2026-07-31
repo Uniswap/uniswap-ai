@@ -70,16 +70,15 @@ jobs:
       # (.npmrc, bunfig.toml) in the PR cannot influence tool installation.
       # Note: secrets like ANTHROPIC_API_KEY are not passed to fork PRs by
       # GitHub default; this is defense-in-depth for same-repo PRs.
-      # Pinned literally rather than read from vars.NODE_VERSION: promptfoo
-      # refuses to start on a runtime outside its `engines` range
-      # (^20.20.0 || >=22.22.0), and that repo variable is 22.21.1, which is
-      # below the floor and killed every suite. Keep this in sync with .nvmrc;
-      # .nvmrc cannot be used here because checkout deliberately runs after
-      # tool setup. The preflight step below fails loudly on any future drift.
+      # vars.NODE_VERSION has to stay at or above promptfoo's `engines` floor
+      # (^20.20.0 || >=22.22.0). It sat at 22.21.1 for a stretch, one patch
+      # under, which aborted every suite at startup. The '22' fallback is safe
+      # because setup-node resolves it to the latest 22.x. The preflight step
+      # below fails loudly if the variable ever drifts back under the floor.
       - name: Setup Node.js
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
-          node-version: '22.22.2'
+          node-version: ${{ vars.NODE_VERSION || '22' }}
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
