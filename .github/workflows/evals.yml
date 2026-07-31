@@ -98,10 +98,33 @@ jobs:
         # (ANTHROPIC_API_KEY, CLAUDE_CODE_OAUTH_TOKEN) for same-repo PRs.
         run: bun install --frozen-lockfile --ignore-scripts
 
-      # promptfoo aborts on an unsupported Node runtime. Without this preflight
-      # that abort is repeated once per suite deep inside the Nx log while the
-      # job still reports success, which is how an every-suite outage went
-      # unnoticed. `--version` exercises the same guard for free and offline.
+      # `--ignore-scripts` also suppresses builds for packages bun would
+      # otherwise trust by default, so promptfoo's better-sqlite3 dependency
+      # lands without its native binding and promptfoo dies in getDb() during
+      # startup. Build that one package instead of dropping --ignore-scripts,
+      # which would also execute this repo's own PR-controlled `prepare` script
+      # in a job that holds ANTHROPIC_API_KEY. better-sqlite3's install script
+      # is `prebuild-install || node-gyp rebuild --release`, so it fetches a
+      # prebuilt binary when egress allows it and compiles from source if not.
+      - name: Build better-sqlite3 native binding
+        run: |
+          bs3_dir=$(echo node_modules/.bun/better-sqlite3@*/node_modules/better-sqlite3)
+          if [ ! -d "$bs3_dir" ]; then
+            echo "::error::Expected exactly one better-sqlite3 under node_modules/.bun, got '$bs3_dir'. If bun changed its store layout, update this step."
+            exit 1
+          fi
+          (cd "$bs3_dir" && bun run install)
+          if [ ! -f "$bs3_dir/build/Release/better_sqlite3.node" ]; then
+            echo "::error::better-sqlite3 produced no native binding, so promptfoo cannot open its database."
+            exit 1
+          fi
+
+      # Smoke-test promptfoo's startup path before handing it 16 suites: it
+      # aborts on an unsupported Node runtime and also on a missing
+      # better-sqlite3 binding. Without this, either abort is repeated once per
+      # suite deep inside the Nx log while the job still reports success, which
+      # is how an every-suite outage went unnoticed. `--version` exercises both
+      # guards for free and without network access.
       - name: Verify promptfoo can run on this Node
         working-directory: evals
         env:

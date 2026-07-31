@@ -129,8 +129,22 @@ LLM-based evaluation of AI skills using [Promptfoo](https://github.com/promptfoo
 **Node version:** promptfoo refuses to start on a runtime outside its `engines`
 range (`^20.20.0 || >=22.22.0`), so this workflow pins Node literally rather than
 reading `vars.NODE_VERSION` (see [Repository Variables](#repository-variables)).
-A `Verify promptfoo can run on this Node` preflight step fails the job
-immediately if the runtime ever drifts back below that floor.
+
+**better-sqlite3 native binding:** installs use `--ignore-scripts` so a PR cannot
+get code execution out of this repo's own `prepare` script in a job that holds
+`ANTHROPIC_API_KEY`. That flag also suppresses builds for packages bun would
+otherwise trust by default, so promptfoo's `better-sqlite3` dependency arrives
+without its compiled binding and promptfoo dies in `getDb()` during startup. A
+`Build better-sqlite3 native binding` step builds that single package after
+install, which keeps `--ignore-scripts` in place. Removing the flag instead would
+fix the binding and reopen the script-execution hole, so prefer the targeted
+build.
+
+Both of the above are smoke-tested by a `Verify promptfoo can run on this Node`
+preflight that runs `promptfoo --version` before any suite is dispatched.
+promptfoo's startup touches both the runtime check and the database, so this one
+cheap command fails the job immediately instead of letting the same abort repeat
+once per suite deep inside the Nx log.
 
 **Distinguishing "no suites ran" from "every suite crashed":** the Nx invocation
 is deliberately `|| true`, because promptfoo also exits non-zero for ordinary
