@@ -1,47 +1,47 @@
-name: Claude Code Review
+# AI PR review using @uniswap/review-cli (private GitHub Packages).
+#
+# Replaces the previous call into the Uniswap/ai-toolkit reusable
+# workflow (`_claude-code-review.yml`). Derived from the upstream
+# template (packages/review-cli/templates/workflows/review.yml in
+# Uniswap/internal-tools) and the shape already running in
+# Uniswap/backend, Uniswap/universe, and Uniswap/tjar, then adapted to
+# preserve this repo's extra behavior: automated-PR classification,
+# the skipped-review notice, and Dependabot auto-merge.
+#
+# Four triggers, four jobs:
+#
+#   pull_request                ┐
+#   issue_comment               ├──▶ triage (gate) ──▶ review ──▶ auto-merge-dependabot
+#   pull_request_review_comment │                  └──▶ review-skipped
+#   workflow_dispatch           ┘
+#
+# Gate, trigger-phrase, and reaction logic live in the cli
+# (`review-cli triage` / `react` / `reply`). This file is a thin adapter.
+# No `${{ github.event.* }}` interpolation reaches any `run:` block —
+# that is a command-injection sink when the field is user-controlled
+# (comment body, branch name, PR title). The cli reads those values as
+# data from GITHUB_EVENT_PATH, never as shell tokens.
+#
+# The workflow name is unchanged so existing branch-protection checks and
+# the documented `gh workflow run "Claude Code Review"` invocation keep
+# working.
 
-# Automated PR code reviews using Claude AI
-#
-# This workflow provides:
-# - Formal GitHub reviews (APPROVE/REQUEST_CHANGES/COMMENT)
-# - Inline comments on specific lines of code
-# - Auto-resolution of fixed issues on subsequent reviews
-# - Patch-ID based caching to skip rebases (no duplicate reviews)
-# - Iterative review tracking of previous comments
-#
-# TRIGGERS:
-# - Automatic: On PR open, synchronize (push), or ready_for_review
-# - Comment: Add a comment containing "@request-claude-review" to trigger a fresh review
-# - Manual: Via workflow_dispatch with PR number and optional force_review flag
-#
-# TRIGGERING A NEW REVIEW WITHOUT CODE CHANGES:
-# The easiest way is to add a comment on the PR containing "@request-claude-review".
-# This bypasses the cache and forces a fresh review.
-#
-# Alternatively, use the manual workflow_dispatch trigger via the Actions tab or CLI:
-#   gh workflow run "Claude Code Review" -f pr_number=123
-#
-# NOTE: Re-requesting a review from github-actions[bot] via the GitHub UI
-# does NOT work. GitHub does not fire events when re-requesting reviews
-# from bot accounts. Use the comment trigger or manual dispatch instead.
+name: Claude Code Review
 
 on:
   pull_request:
-    types:
-      - opened
-      - synchronize
-      - ready_for_review
+    types: [opened, synchronize, reopened, ready_for_review]
 
-  # Comment trigger: Add "@request-claude-review" to any PR comment to force a fresh review
-  # Works with both regular PR comments and inline review comments
+  # Comment trigger: "@request-claude-review" on a PR forces a fresh
+  # review. Works for both top-level PR comments and inline review
+  # comments.
   issue_comment:
     types: [created]
-
-  # Pull request review comments (inline comments on diffs)
   pull_request_review_comment:
     types: [created]
 
-  # Manual trigger for forcing a new review without code changes
+  # Manual trigger, for forcing a review without pushing code.
+  #   gh workflow run "Claude Code Review" -f pr_number=123
   workflow_dispatch:
     inputs:
       pr_number:
@@ -49,295 +49,558 @@ on:
         required: true
         type: string
       force_review:
-        description: "Force a full review even if the code hasn't changed (bypasses cache)"
+        description: "Force a full review even if the code hasn't changed (bypasses change detection)"
         required: false
         type: boolean
         default: true
 
 permissions: {}
 
-# Ensure only one review runs at a time per PR
-# New reviews wait for the current one to complete before starting
 concurrency:
-  group: claude-review-${{ github.event.pull_request.number || github.event.issue.number || inputs.pr_number }}
-  cancel-in-progress: false
+  group: claude-review-${{ github.event.pull_request.number || github.event.issue.number || inputs.pr_number || github.run_id }}
+  # Only pull_request events supersede an in-flight run: a re-push should
+  # cancel the review of the code it replaced. A comment trigger or a
+  # manual fire must not kill a review that is already running.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  # vars.REVIEW_CLI_VERSION is the authoritative pin — set it in repo
+  # settings to roll forward without a commit. Declared once here so the
+  # two install blocks below cannot drift onto different versions.
+  # Fallback matches what Uniswap/universe runs today.
+  REVIEW_CLI_VERSION: ${{ vars.REVIEW_CLI_VERSION || '1.10.1' }}
+  # The Claude Code binary the SDK shells out to. install.sh accepts
+  # `stable | latest | X.Y.Z`, so pin it rather than floating: an
+  # unpinned install makes the review non-reproducible run-to-run for no
+  # benefit. The installer verifies the binary's SHA256 against
+  # downloads.claude.ai's per-version manifest and hard-fails on
+  # mismatch, so integrity is already covered; this is about determinism.
+  CLAUDE_CODE_VERSION: ${{ vars.CLAUDE_CODE_VERSION || '2.1.212' }}
+  # Matches `packageManager` in the root package.json. vars.BUN_VERSION
+  # is documented in .github/workflows/CLAUDE.md but is not currently set
+  # on the repo, so the fallback is load-bearing.
+  BUN_VERSION: ${{ vars.BUN_VERSION || '1.3.13' }}
 
 jobs:
-  # Pre-check job for automatic reviews to detect automated PRs
-  # Only runs for pull_request events (not manual/comment triggers)
-  check-automated:
-    if: github.event_name == 'pull_request'
+  triage:
+    name: Triage
     runs-on: ubuntu-latest
+    # Coarse event-level gate. `review-cli triage` below is the
+    # authoritative policy lookup; this `if:` avoids paying runner
+    # startup for events that obviously don't apply, AND is the trust
+    # boundary for comment triggers: only OWNER / MEMBER / COLLABORATOR
+    # comments may start a run. That matters because the review job
+    # checks out PR head code in a job holding an LLM credential, so an
+    # outside contributor must not be able to trigger it by commenting.
+    #
+    # The draft condition reproduces the outgoing workflow exactly:
+    # drafts are skipped, EXCEPT the event that marks one ready, and
+    # EXCEPT drafts opened by claude[bot] (this repo's agent opens draft
+    # PRs and wants them reviewed — both currently-open PRs are
+    # claude-authored). `.claude/review.yml` sets `skip.drafts: false` so
+    # the cli defers the draft decision to this expression rather than
+    # applying its own default, which would drop the claude[bot] case.
+    if: |
+      (github.event_name == 'pull_request'
+        && !github.event.pull_request.head.repo.fork
+        && (github.event.pull_request.draft == false
+            || github.event.action == 'ready_for_review'
+            || github.event.pull_request.user.login == 'claude[bot]')) ||
+      (github.event_name == 'issue_comment'
+        && github.event.issue.pull_request != null
+        && contains(github.event.comment.body, '@request-claude-review')
+        && github.event.comment.user.type != 'Bot'
+        && contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)) ||
+      (github.event_name == 'pull_request_review_comment'
+        && contains(github.event.comment.body, '@request-claude-review')
+        && github.event.comment.user.type != 'Bot'
+        && contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)) ||
+      github.event_name == 'workflow_dispatch'
     permissions:
-      contents: read
+      contents: read # sparse checkout of the base-branch review policy
+      packages: read # pull @uniswap/review-cli from GitHub Packages
+      issues: write # 👀 reaction on issue_comment
+      pull-requests: write # 👀 reaction on pull_request_review_comment
     outputs:
-      is_automated: ${{ steps.check.outputs.is_automated }}
-      category: ${{ steps.check.outputs.category }}
-      skip_reason: ${{ steps.check.outputs.skip_reason }}
+      run: ${{ steps.gate.outputs.run }}
+      pr_number: ${{ steps.gate.outputs.pr_number }}
+      comment_id: ${{ steps.gate.outputs.comment_id }}
+      trigger_source: ${{ steps.gate.outputs.trigger_source }}
+      note: ${{ steps.gate.outputs.note }}
+      commenter: ${{ steps.gate.outputs.commenter }}
+      thread_anchor: ${{ steps.gate.outputs.thread_anchor }}
+      reply_id: ${{ steps.post_reply.outputs.id }}
+      is_automated: ${{ steps.automated.outputs.is_automated }}
+      category: ${{ steps.automated.outputs.category }}
+      skip_reason: ${{ steps.automated.outputs.skip_reason }}
     steps:
       - uses: bullfrogsec/bullfrog@1831f79cce8ad602eef14d2163873f27081ebfb3 # v0.8.4
 
-      - name: Checkout repository (for composite action)
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      # Install BEFORE any checkout, for two independent reasons:
+      #
+      # 1. Nothing is on disk yet, so dependency resolution cannot be
+      #    steered by repository content.
+      # 2. The reaction / reply steps below must be able to report a
+      #    terminal state even when a later step fails, and they need
+      #    `steps.install.outputs.bin`.
+      #
+      # review-cli is published only to GitHub Packages, so the @uniswap
+      # scope must be routed there — and only for this install. The repo's
+      # own bunfig.toml pins @uniswap to registry.npmjs.org (correctly:
+      # that is where this repo's public packages live). Bun supports
+      # per-scope but not per-package registry overrides, so the install
+      # runs from a scratch directory under $RUNNER_TEMP with its own
+      # bunfig, and BUN_CONFIG_FILE points at it explicitly so neither
+      # the repo's bunfig nor any other on disk can steer it.
+      #
+      # That isolation also sidesteps the repo bunfig's
+      # `minimumReleaseAge = 259200` (3 days), which would otherwise
+      # block a freshly published review-cli patch release.
+      - name: Install review-cli
+        id: install
+        env:
+          GH_PACKAGES_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          install_dir="$RUNNER_TEMP/review-cli-install"
+          mkdir -p "$install_dir"
+          cat > "$install_dir/bunfig.toml" <<EOF
+          [install.scopes]
+          "@uniswap" = { url = "https://npm.pkg.github.com", token = "$GH_PACKAGES_TOKEN" }
+          EOF
+          cd "$install_dir"
+          export BUN_CONFIG_FILE="$install_dir/bunfig.toml"
+          bun init -y > /dev/null
+          bun add "@uniswap/review-cli@${REVIEW_CLI_VERSION}"
+          echo "bin=$install_dir/node_modules/.bin/review-cli" >> "$GITHUB_OUTPUT"
+
+      # Gate policy and the automated-PR classifier are read from the
+      # DEFAULT BRANCH, never from the PR. Two reasons:
+      #
+      # 1. A PR must not be able to edit the rules that decide whether it
+      #    gets reviewed, or supply the shell that classifies it. A bare
+      #    `actions/checkout` on a `pull_request` event resolves to
+      #    `refs/pull/N/merge` — the PR author's tree — which is how the
+      #    outgoing workflow ended up running the PR's own copy of
+      #    `.github/actions/check-automated-pr`.
+      # 2. Only these two paths are fetched, so the repo's root
+      #    bunfig.toml / .npmrc never land on disk in this job.
+      - name: Checkout gate policy from the default branch
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          sparse-checkout: .github/actions
+          ref: ${{ github.event.repository.default_branch || github.ref_name }}
+          sparse-checkout: |
+            .claude/review.yml
+            .github/actions/check-automated-pr
           sparse-checkout-cone-mode: false
           persist-credentials: false
+          fetch-depth: 1
 
+      # Same shared composite action the outgoing workflow used, and the
+      # same one ci-pr-checks.yml and ci-check-pr-title.yml use, so
+      # automated-PR classification has exactly one definition. It is a
+      # pure string match over the branch name and PR title — no repo
+      # access, no network. Only meaningful for `pull_request`; comment
+      # and manual triggers are explicit human requests and are never
+      # classified as automated (matching the outgoing workflow, which
+      # documented "Comment triggers bypass automated PR checks — if you
+      # explicitly request a review, you get one").
       - name: Check for automated PR
-        id: check
+        id: automated
+        if: github.event_name == 'pull_request'
         uses: ./.github/actions/check-automated-pr
         with:
           branch_name: ${{ github.head_ref }}
           pr_title: ${{ github.event.pull_request.title }}
 
-  # Fetch PR details for manual triggers (workflow_dispatch) and comment triggers
-  # This job retrieves base_ref which isn't available in these event contexts
-  get-pr-info:
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'issue_comment' || github.event_name == 'pull_request_review_comment'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: read
-    outputs:
-      base_ref: ${{ steps.pr-info.outputs.base_ref }}
-      head_ref: ${{ steps.pr-info.outputs.head_ref }}
-      pr_number: ${{ steps.pr-info.outputs.pr_number }}
-      should_run: ${{ steps.pr-info.outputs.should_run }}
-    steps:
-      - name: Get PR Info
-        id: pr-info
+      # Reads GITHUB_EVENT_NAME + GITHUB_EVENT_PATH itself and writes the
+      # decision to GITHUB_OUTPUT. Config IS loaded (no --skip-config):
+      # `.claude/review.yml` sets `skip.authors: []` and
+      # `skip.drafts: false` to switch off cli defaults that would
+      # otherwise silently drop bot-authored and draft PRs — both of
+      # which this repo reviews today. See that file for the reasoning.
+      - name: Decide whether to run
+        id: gate
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REVIEW_CLI: ${{ steps.install.outputs.bin }}
+        run: '"$REVIEW_CLI" triage --from-github-actions'
+
+      - name: Acknowledge comment trigger (👀)
+        if: |
+          steps.gate.outputs.run == 'true' &&
+          steps.gate.outputs.comment_id != ''
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          COMMENT_ID: ${{ steps.gate.outputs.comment_id }}
           EVENT_NAME: ${{ github.event_name }}
-          INPUT_PR_NUMBER: ${{ inputs.pr_number }}
-          ISSUE_NUMBER: ${{ github.event.issue.number }}
-          PR_NUMBER_FROM_REVIEW: ${{ github.event.pull_request.number }}
-          COMMENT_BODY: ${{ github.event.comment.body }}
-          COMMENT_AUTHOR: ${{ github.event.comment.user.login }}
-          IS_PR: ${{ github.event.issue.pull_request && 'true' || 'false' }}
+          REVIEW_CLI: ${{ steps.install.outputs.bin }}
         run: |
-          # Determine PR number based on event type
-          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
-            PR_NUMBER="$INPUT_PR_NUMBER"
-            SHOULD_RUN="true"
-          elif [ "$EVENT_NAME" = "pull_request_review_comment" ]; then
-            PR_NUMBER="$PR_NUMBER_FROM_REVIEW"
-            # Ignore comments from github-actions[bot] to prevent self-triggering
-            if [ "$COMMENT_AUTHOR" = "github-actions[bot]" ]; then
-              echo "ℹ️  Ignoring comment from github-actions[bot] to prevent self-triggering"
-              echo "should_run=false" >> $GITHUB_OUTPUT
-              exit 0
-            fi
-            # Check if comment contains the trigger phrase
-            if echo "$COMMENT_BODY" | grep -qi "@request-claude-review"; then
-              SHOULD_RUN="true"
-              echo "🔍 Found @request-claude-review in review comment"
-            else
-              SHOULD_RUN="false"
-              echo "ℹ️  Comment does not contain @request-claude-review, skipping"
-            fi
-          elif [ "$EVENT_NAME" = "issue_comment" ]; then
-            # issue_comment fires for both issues and PRs
-            # Ignore comments from github-actions[bot] to prevent self-triggering
-            if [ "$COMMENT_AUTHOR" = "github-actions[bot]" ]; then
-              echo "ℹ️  Ignoring comment from github-actions[bot] to prevent self-triggering"
-              echo "should_run=false" >> $GITHUB_OUTPUT
-              exit 0
-            fi
-            # Check if this is a PR (has pull_request field)
-            if [ "$IS_PR" != "true" ]; then
-              echo "ℹ️  Comment is on an issue, not a PR. Skipping."
-              echo "should_run=false" >> $GITHUB_OUTPUT
-              exit 0
-            fi
-            PR_NUMBER="$ISSUE_NUMBER"
-            # Check if comment contains the trigger phrase
-            if echo "$COMMENT_BODY" | grep -qi "@request-claude-review"; then
-              SHOULD_RUN="true"
-              echo "🔍 Found @request-claude-review in PR comment"
-            else
-              SHOULD_RUN="false"
-              echo "ℹ️  Comment does not contain @request-claude-review, skipping"
-            fi
+          "$REVIEW_CLI" react \
+            --repo "$GH_REPO" \
+            --comment-id "$COMMENT_ID" \
+            --event "$EVENT_NAME" \
+            --reaction ack
+
+      # A visible "working on it" reply under the trigger comment. The 👀
+      # is glanceable; this carries the run URL. Best-effort.
+      - name: Post running-state reply
+        id: post_reply
+        if: |
+          steps.gate.outputs.run == 'true' &&
+          steps.gate.outputs.comment_id != ''
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ steps.gate.outputs.pr_number }}
+          COMMENT_ID: ${{ steps.gate.outputs.comment_id }}
+          EVENT_NAME: ${{ github.event_name }}
+          REVIEW_CLI: ${{ steps.install.outputs.bin }}
+          REPLY_BODY: |
+            ↻ **Reviewing now** · [view run ↗](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+            This comment will update when the review completes. Findings will appear in the sticky summary above.
+        run: |
+          OUT="$RUNNER_TEMP/reply-id.txt"
+          "$REVIEW_CLI" reply \
+            --repo "$GH_REPO" \
+            --pr "$PR_NUMBER" \
+            --event "$EVENT_NAME" \
+            --in-reply-to "$COMMENT_ID" \
+            --body "$REPLY_BODY" \
+            --out-id "$OUT"
+          if [ -s "$OUT" ]; then
+            echo "id=$(cat "$OUT")" >> "$GITHUB_OUTPUT"
           fi
 
-          echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
-          echo "should_run=$SHOULD_RUN" >> $GITHUB_OUTPUT
-
-          if [ "$SHOULD_RUN" != "true" ]; then
-            echo "ℹ️  Skipping - trigger condition not met"
-            exit 0
-          fi
-
-          echo "ℹ️  Fetching PR #$PR_NUMBER info..."
-          PR_DATA=$(gh api repos/${{ github.repository }}/pulls/$PR_NUMBER)
-
-          BASE_REF=$(echo "$PR_DATA" | jq -r '.base.ref')
-          HEAD_REF=$(echo "$PR_DATA" | jq -r '.head.ref')
-          HEAD_REPO=$(echo "$PR_DATA" | jq -r '.head.repo.full_name')
-
-          # Fork-PR RCE defense (Cantina #692): block comment-triggered reviews
-          # on fork PRs. The claude-review-auto job (pull_request event) already
-          # has this gate; the comment-triggered claude-review-comment job needs
-          # the same check enforced here because it processes attacker-supplied
-          # checkout SHA with WORKFLOW_PAT + CLAUDE_CODE_OAUTH_TOKEN in scope.
-          if [ "$HEAD_REPO" != "${{ github.repository }}" ]; then
-            echo "❌ Refusing to process trigger from fork PR ($HEAD_REPO)"
-            echo "should_run=false" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          echo "base_ref=$BASE_REF" >> $GITHUB_OUTPUT
-          echo "head_ref=$HEAD_REF" >> $GITHUB_OUTPUT
-
-          echo "✅ PR #$PR_NUMBER: base=$BASE_REF, head=$HEAD_REF (same-repo)"
-
-  # Automatic review triggered by pull_request events (opened, synchronize, ready_for_review)
-  # Skips certain automated PRs but reviews dependency updates (for auto-merge support)
-  # Skip categories: release, sync, action-update, merge-queue
-  # Review categories: deps (dependabot/renovate), and all non-automated PRs
-  claude-review-auto:
-    needs: check-automated
-    permissions:
-      actions: read
-      contents: write
-      id-token: write
-      issues: write
-      pull-requests: write
-    # Skip fork PRs (no secrets available)
+  review:
+    name: AI review
+    needs: triage
+    # Automated PRs are skipped EXCEPT dependency bumps, which are
+    # reviewed so auto-merge-dependabot below has a review result to gate
+    # on. Identical to the outgoing workflow's condition. `is_automated`
+    # is empty for comment and manual triggers (the classifier step is
+    # skipped), so those always proceed.
     if: |
-      github.event_name == 'pull_request' &&
-      github.event.pull_request.head.repo.full_name == github.repository &&
-      (
-        needs.check-automated.outputs.is_automated != 'true' ||
-        needs.check-automated.outputs.category == 'deps'
-      ) &&
-      (
-        github.event.pull_request.draft == false ||
-        github.event.action == 'ready_for_review' ||
-        github.event.pull_request.user.login == 'claude[bot]'
-      )
-
-    uses: Uniswap/ai-toolkit/.github/workflows/_claude-code-review.yml@6d35d60ab7805aefae2837776d870787d93c8a18
-    with:
-      pr_number: ${{ github.event.pull_request.number }}
-      base_ref: ${{ github.base_ref }}
-      force_review: false
-      max_diff_lines: 5000
-
-      # Use Sonnet for fast, cost-effective reviews
-      model: 'claude-sonnet-4-5-20250929'
-
-      # Standard timeout for most PRs
-      timeout_minutes: 20
-
-    secrets:
-      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-      WORKFLOW_PAT: ${{ secrets.WORKFLOW_PAT }}
-
-  # Summary job for skipped automatic reviews
-  review-skipped:
-    needs: check-automated
-    if: |
-      github.event_name == 'pull_request' &&
-      needs.check-automated.outputs.is_automated == 'true' &&
-      needs.check-automated.outputs.category != 'deps'
+      needs.triage.outputs.run == 'true' &&
+      (needs.triage.outputs.is_automated != 'true' || needs.triage.outputs.category == 'deps')
     runs-on: ubuntu-latest
+    # contents:write (not read) is required for the resolveReviewThread
+    # GraphQL mutation; pull-requests:write alone returns "Resource not
+    # accessible by integration".
+    # https://github.com/orgs/community/discussions/44650
+    permissions:
+      contents: write # resolveReviewThread GraphQL mutation (see above)
+      packages: read # pull @uniswap/review-cli from GitHub Packages
+      pull-requests: write # post the review, inline threads, and reactions
+      issues: write # reactions and replies on top-level PR comments
+    # The outgoing workflow passed timeout_minutes: 20 to the reusable
+    # workflow. 30 here because review-cli fans out to several reviewer
+    # agents rather than making one pass, and the budget caps in
+    # .claude/review.yml are the real cost limiter.
+    timeout-minutes: 30
+    steps:
+      - uses: bullfrogsec/bullfrog@1831f79cce8ad602eef14d2163873f27081ebfb3 # v0.8.4
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      # Install first — same two reasons as in triage, and here the
+      # second one has teeth: the finalization steps at the bottom of
+      # this job run `if: always()` under `continue-on-error: true`. If
+      # install ran after the guards below and a guard failed, those
+      # steps would find `steps.install.outputs.bin` empty, silently
+      # no-op, and a rejected trigger comment would keep its 👀 and
+      # "Reviewing now" reply forever — indistinguishable from a hung
+      # review.
+      - name: Install review-cli
+        id: install
+        env:
+          GH_PACKAGES_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          install_dir="$RUNNER_TEMP/review-cli-install"
+          mkdir -p "$install_dir"
+          cat > "$install_dir/bunfig.toml" <<EOF
+          [install.scopes]
+          "@uniswap" = { url = "https://npm.pkg.github.com", token = "$GH_PACKAGES_TOKEN" }
+          EOF
+          cd "$install_dir"
+          export BUN_CONFIG_FILE="$install_dir/bunfig.toml"
+          bun init -y > /dev/null
+          bun add "@uniswap/review-cli@${REVIEW_CLI_VERSION}"
+          echo "bin=$install_dir/node_modules/.bin/review-cli" >> "$GITHUB_OUTPUT"
+
+      # Defense in depth for the `ref:` on the PR-head checkout below.
+      # pr_number originates from an integer field in the event payload,
+      # but it reaches this job as a string job output, so assert it is
+      # digits before it can reach actions/checkout as a ref fragment.
+      - name: Validate PR number
+        env:
+          PR_NUMBER: ${{ needs.triage.outputs.pr_number }}
+        run: |
+          case "$PR_NUMBER" in
+            '' | *[!0-9]*)
+              echo "::error::Refusing to proceed: pr_number is not numeric."
+              exit 1
+              ;;
+          esac
+          echo "pr_number validated: $PR_NUMBER"
+
+      # Fork guard for the comment-trigger and manual paths. The triage
+      # job's `if:` blocks fork `pull_request` events, but
+      # `issue_comment` / `pull_request_review_comment` payloads carry no
+      # head-repo field and `workflow_dispatch` takes an arbitrary PR
+      # number — and all three run the base-ref workflow *with*
+      # repository secrets. Without this, a MEMBER commenting the trigger
+      # phrase on a fork PR would reach the `refs/pull/N/head` checkout
+      # below in a job holding contents:write and the LLM credential, and
+      # review-cli reads `.claude/` from the checked-out tree as agent
+      # policy. That is the Cantina #655 / #692 shape. Resolve the head
+      # repo over the API and fail closed before any fork content is on
+      # disk. `set -euo pipefail` means an API error or a deleted head
+      # repo (`null`) also exits non-zero.
+      - name: Refuse fork PRs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ needs.triage.outputs.pr_number }}
+        run: |
+          set -euo pipefail
+          HEAD_REPO=$(gh api "repos/$GH_REPO/pulls/$PR_NUMBER" --jq '.head.repo.full_name')
+          if [ "$HEAD_REPO" != "$GH_REPO" ]; then
+            echo "::error::Refusing to review a fork PR (head=$HEAD_REPO). Fork code must not run in a job holding repository secrets."
+            exit 1
+          fi
+          echo "same-repo PR confirmed (head=$HEAD_REPO)"
+
+      - name: Verify an LLM credential is present
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -z "$CLAUDE_CODE_OAUTH_TOKEN" ] && [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "::error::No LLM credential. Set CLAUDE_CODE_OAUTH_TOKEN (preferred) or ANTHROPIC_API_KEY as a repo secret."
+            exit 1
+          fi
+
+      # The SDK looks for a per-platform Claude Code binary shipped via
+      # optional deps; Bun on Linux extracts only the host variant while
+      # the SDK probes the musl path first. The official installer
+      # sidesteps that. Version is pinned (see CLAUDE_CODE_VERSION above)
+      # and install.sh verifies the download's SHA256 against the
+      # per-version manifest itself.
+      - name: Install Claude Code binary
+        run: |
+          set -euo pipefail
+          curl -fsSL https://claude.ai/install.sh | bash -s -- "$CLAUDE_CODE_VERSION"
+          for candidate in "$HOME/.local/bin/claude" "$HOME/.claude/bin/claude" "$HOME/.npm-global/bin/claude"; do
+            [ -x "$candidate" ] && { CLAUDE_BIN="$candidate"; break; }
+          done
+          [ -z "${CLAUDE_BIN:-}" ] && CLAUDE_BIN="$(command -v claude || true)"
+          [ -z "$CLAUDE_BIN" ] && { echo "::error::claude binary not found"; exit 1; }
+          echo "CLAUDE_CODE_EXECUTABLE_PATH=$CLAUDE_BIN" >> "$GITHUB_ENV"
+          dirname "$CLAUDE_BIN" >> "$GITHUB_PATH"
+
+      # The ONLY checkout of PR-author content in this workflow, and it is
+      # explicitly pinned to the PR head rather than left to default (a
+      # bare checkout resolves to refs/pull/N/merge on pull_request, and
+      # to the default branch on comment events — the latter silently
+      # reviews main instead of the PR).
+      #
+      # Everything from here runs with untrusted files in the working
+      # directory, so every subsequent step that can invoke bun sets
+      # BUN_CONFIG_FILE=/dev/null: bun auto-loads ./bunfig.toml from CWD
+      # and executes its `preload` array in-process, which is the
+      # mechanism behind Cantina #655. This repo genuinely has a root
+      # bunfig.toml, so that neutralization is load-bearing here rather
+      # than theoretical. The install above already completed against its
+      # own pinned bunfig, before any of this was on disk.
+      - name: Checkout PR head
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: refs/pull/${{ needs.triage.outputs.pr_number }}/head
+
+      - name: Pre — running sticky placeholder
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ needs.triage.outputs.pr_number }}
+          REVIEW_CLI: ${{ steps.install.outputs.bin }}
+          BUN_CONFIG_FILE: /dev/null
+        run: '"$REVIEW_CLI" post "$PR_NUMBER" --repo "$GH_REPO" --pre'
+
+      # Trigger context flows in via env vars, never shell interpolation,
+      # so a malicious comment body cannot break out.
+      #
+      # REVIEW_FORCE carries the workflow_dispatch force_review input
+      # through to --force (skip change detection), preserving the
+      # outgoing workflow's force_review behavior. Comment triggers force
+      # implicitly — the cli treats an explicit human request as a
+      # reason to re-review regardless of change detection.
+      - name: Analyze
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          REVIEW_NOTE: ${{ needs.triage.outputs.note }}
+          REVIEW_TRIGGER_SOURCE: ${{ needs.triage.outputs.trigger_source }}
+          REVIEW_COMMENTER: ${{ needs.triage.outputs.commenter }}
+          REVIEW_THREAD_ANCHOR: ${{ needs.triage.outputs.thread_anchor }}
+          REVIEW_FORCE: ${{ (github.event_name == 'workflow_dispatch' && inputs.force_review) && '1' || '' }}
+          # Pin the artifact paths so the upload steps below can read them
+          # back; the cli default is ./ which would land inside the PR
+          # checkout.
+          REVIEW_CLI_ARTIFACT_PATH: ${{ runner.temp }}/review-cli-output.json
+          REVIEW_CLI_TOKENS_ARTIFACT_PATH: ${{ runner.temp }}/agent-tokens.jsonl
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ needs.triage.outputs.pr_number }}
+          REVIEW_CLI: ${{ steps.install.outputs.bin }}
+          BUN_CONFIG_FILE: /dev/null
+        run: |
+          "$REVIEW_CLI" review "$PR_NUMBER" \
+            --repo "$GH_REPO" \
+            --trigger-source "$REVIEW_TRIGGER_SOURCE" \
+            ${REVIEW_NOTE:+--note "$REVIEW_NOTE"} \
+            ${REVIEW_COMMENTER:+--commenter "$REVIEW_COMMENTER"} \
+            ${REVIEW_THREAD_ANCHOR:+--thread-anchor "$REVIEW_THREAD_ANCHOR"} \
+            ${REVIEW_FORCE:+--force} \
+            --live
+
+      - name: Post
+        if: success() || failure()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ needs.triage.outputs.pr_number }}
+          REVIEW_CLI: ${{ steps.install.outputs.bin }}
+          BUN_CONFIG_FILE: /dev/null
+        run: '"$REVIEW_CLI" post "$PR_NUMBER" --repo "$GH_REPO"'
+
+      - name: Upload run artifact
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: review-cli-run-${{ needs.triage.outputs.pr_number }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/review-cli-output.json
+          if-no-files-found: warn
+          retention-days: 30
+
+      # Name MUST be exactly `agent-tokens` so the agent-scorecard
+      # aggregator finds it across consumer repos.
+      - name: Upload agent-tokens artifact
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: agent-tokens
+          path: ${{ runner.temp }}/agent-tokens.jsonl
+          if-no-files-found: ignore
+          retention-days: 30
+          overwrite: true
+
+      - name: Update reaction (✅ / ❌) on comment trigger
+        if: |
+          always() &&
+          needs.triage.outputs.comment_id != ''
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OUTCOME: ${{ job.status }}
+          GH_REPO: ${{ github.repository }}
+          COMMENT_ID: ${{ needs.triage.outputs.comment_id }}
+          EVENT_NAME: ${{ github.event_name }}
+          REVIEW_CLI: ${{ steps.install.outputs.bin }}
+          BUN_CONFIG_FILE: /dev/null
+        run: |
+          REACTION=$([ "$OUTCOME" = "success" ] && echo "success" || echo "failure")
+          "$REVIEW_CLI" react \
+            --repo "$GH_REPO" \
+            --comment-id "$COMMENT_ID" \
+            --event "$EVENT_NAME" \
+            --reaction "$REACTION" \
+            --clear-prior-ack
+
+      - name: Update threaded reply with terminal state
+        if: |
+          always() &&
+          needs.triage.outputs.reply_id != ''
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OUTCOME: ${{ job.status }}
+          GH_REPO: ${{ github.repository }}
+          REPLY_ID: ${{ needs.triage.outputs.reply_id }}
+          EVENT_NAME: ${{ github.event_name }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          REVIEW_CLI: ${{ steps.install.outputs.bin }}
+          BUN_CONFIG_FILE: /dev/null
+        run: |
+          if [ "$OUTCOME" = "success" ]; then
+            BODY="✅ **Reviewed** · [view run ↗](${RUN_URL}) · scroll up for the full summary."
+          else
+            BODY="⚠ **Review failed** · [view run ↗](${RUN_URL}) · scroll up for the partial state, or comment \`@request-claude-review\` to retry."
+          fi
+          "$REVIEW_CLI" reply \
+            --repo "$GH_REPO" \
+            --event "$EVENT_NAME" \
+            --edit-reply "$REPLY_ID" \
+            --body "$BODY"
+
+  # Explains in the checks UI why an automated PR got no review, so a
+  # missing review reads as "deliberately skipped" rather than "broken".
+  # Preserved from the outgoing workflow.
+  review-skipped:
+    name: Review skipped
+    needs: triage
+    if: |
+      needs.triage.outputs.is_automated == 'true' &&
+      needs.triage.outputs.category != 'deps'
+    runs-on: ubuntu-latest
+    # No token needed: this job only writes a ::notice:: annotation.
     permissions: {}
     steps:
       - uses: bullfrogsec/bullfrog@1831f79cce8ad602eef14d2163873f27081ebfb3 # v0.8.4
 
       - name: Report skipped review
         env:
-          SKIP_REASON: ${{ needs.check-automated.outputs.skip_reason }}
+          SKIP_REASON: ${{ needs.triage.outputs.skip_reason }}
         run: |
           echo "::notice::Code review skipped for automated PR: $SKIP_REASON"
           echo "✅ Automated PR detected - code review is not required for this PR type."
 
-  # Manual review triggered by workflow_dispatch
-  # This runs after get-pr-info to have access to PR metadata
-  # Note: Manual triggers bypass automated PR checks - if you explicitly request a review, you get one
-  claude-review-manual:
-    needs: get-pr-info
-    permissions:
-      actions: read
-      contents: write
-      id-token: write
-      issues: write
-      pull-requests: write
-    if: |
-      github.event_name == 'workflow_dispatch' &&
-      needs.get-pr-info.outputs.should_run == 'true'
-
-    uses: Uniswap/ai-toolkit/.github/workflows/_claude-code-review.yml@6d35d60ab7805aefae2837776d870787d93c8a18
-    with:
-      pr_number: ${{ needs.get-pr-info.outputs.pr_number }}
-      base_ref: ${{ needs.get-pr-info.outputs.base_ref }}
-      force_review: ${{ inputs.force_review }}
-      max_diff_lines: 5000
-
-      # Use Sonnet for fast, cost-effective reviews
-      model: 'claude-sonnet-4-5-20250929'
-
-      # Standard timeout for most PRs
-      timeout_minutes: 20
-
-    secrets:
-      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-      WORKFLOW_PAT: ${{ secrets.WORKFLOW_PAT }}
-
-  # Comment-triggered review: Add "@request-claude-review" to any PR comment
-  # This forces a fresh review, bypassing the cache
-  # Note: Comment triggers bypass automated PR checks - if you explicitly request a review, you get one
-  claude-review-comment:
-    needs: get-pr-info
-    permissions:
-      actions: read
-      contents: write
-      id-token: write
-      issues: write
-      pull-requests: write
-    if: |
-      (github.event_name == 'issue_comment' || github.event_name == 'pull_request_review_comment') &&
-      needs.get-pr-info.outputs.should_run == 'true'
-
-    uses: Uniswap/ai-toolkit/.github/workflows/_claude-code-review.yml@6d35d60ab7805aefae2837776d870787d93c8a18
-    with:
-      pr_number: ${{ needs.get-pr-info.outputs.pr_number }}
-      base_ref: ${{ needs.get-pr-info.outputs.base_ref }}
-      force_review: true # Always force when triggered by comment
-      max_diff_lines: 5000
-
-      # Use Sonnet for fast, cost-effective reviews
-      model: 'claude-sonnet-4-5-20250929'
-
-      # Standard timeout for most PRs
-      timeout_minutes: 20
-
-    secrets:
-      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-      WORKFLOW_PAT: ${{ secrets.WORKFLOW_PAT }}
-
-  # Auto-merge Dependabot security updates after successful review
-  # Only runs for pull_request events (dependabot only triggers pull_request)
+  # Auto-merge Dependabot security updates once the review passes.
+  # Preserved from the outgoing workflow, including the title filter.
+  # This is why `deps` PRs are exempted from the automated-PR skip above:
+  # without a review result to gate on, this job would never fire.
   auto-merge-dependabot:
-    needs: claude-review-auto
+    name: Auto-merge Dependabot
+    needs: review
     if: |
       github.event_name == 'pull_request' &&
       github.event.pull_request.user.login == 'dependabot[bot]' &&
       (contains(github.event.pull_request.title, 'security') || contains(github.event.pull_request.title, 'Bump')) &&
-      needs.claude-review-auto.result == 'success'
+      needs.review.result == 'success'
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-      pull-requests: write
+      contents: write # `gh pr merge --auto` queues a merge commit
+      pull-requests: write # sets the auto-merge flag on the PR
     steps:
       - uses: bullfrogsec/bullfrog@1831f79cce8ad602eef14d2163873f27081ebfb3 # v0.8.4
 
       - name: Enable auto-merge for Dependabot updates
-        run: gh pr merge --auto --squash "$PR_NUMBER"
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
+        run: gh pr merge --auto --squash "$PR_NUMBER"
