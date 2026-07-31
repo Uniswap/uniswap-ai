@@ -175,7 +175,16 @@ jobs:
           cd "$install_dir"
           export BUN_CONFIG_FILE="$install_dir/bunfig.toml"
           bun init -y > /dev/null
-          bun add "@uniswap/review-cli@${REVIEW_CLI_VERSION}"
+          # A 403 here means the package grant is missing, not that the
+          # workflow is wrong. Say so, rather than leaving the next reader
+          # to decode a bare `- 403` out of the raw log.
+          if ! bun add "@uniswap/review-cli@${REVIEW_CLI_VERSION}" 2> "$RUNNER_TEMP/bun-add.err"; then
+            cat "$RUNNER_TEMP/bun-add.err" >&2
+            if grep -q '403' "$RUNNER_TEMP/bun-add.err"; then
+              echo "::error::403 from GitHub Packages. $GITHUB_REPOSITORY has no read access to @uniswap/review-cli. Fix: Uniswap/internal-tools -> Packages -> review-cli -> Package settings -> Manage Actions access -> add this repository. This is a per-repo grant; no workflow change can confer it."
+            fi
+            exit 1
+          fi
           echo "bin=$install_dir/node_modules/.bin/review-cli" >> "$GITHUB_OUTPUT"
 
       # Gate policy and the automated-PR classifier are read from the
@@ -199,6 +208,27 @@ jobs:
           sparse-checkout-cone-mode: false
           persist-credentials: false
           fetch-depth: 1
+
+      # review-cli's loadConfig() returns its DEFAULT config when
+      # `.claude/review.yml` is missing OR unparseable — silently, by
+      # design. Those defaults are precisely the skip policy this repo must
+      # NOT inherit: `authors: ["*[bot]"]` stops reviewing claude[bot] and
+      # Dependabot PRs, and `drafts: true` drops claude[bot] drafts. So a
+      # typo in the sparse-checkout pattern above, or a YAML error in the
+      # config, would quietly restore the behavior this migration exists to
+      # prevent. Fail loudly instead.
+      - name: Verify gate policy is on disk and parseable
+        run: |
+          set -euo pipefail
+          if [ ! -s .claude/review.yml ]; then
+            echo "::error::.claude/review.yml is missing or empty after the sparse checkout. review-cli would silently fall back to its default skip policy, which skips bot-authored and Dependabot PRs. Refusing to run with unknown gate policy."
+            exit 1
+          fi
+          python3 -c 'import sys,yaml; yaml.safe_load(open(".claude/review.yml"))' || {
+            echo "::error::.claude/review.yml is not valid YAML. review-cli would silently fall back to its default skip policy. Refusing to run with unknown gate policy."
+            exit 1
+          }
+          echo ".claude/review.yml present and parseable ($(wc -c < .claude/review.yml) bytes)"
 
       # Same shared composite action the outgoing workflow used, and the
       # same one ci-pr-checks.yml and ci-check-pr-title.yml use, so
@@ -336,7 +366,16 @@ jobs:
           cd "$install_dir"
           export BUN_CONFIG_FILE="$install_dir/bunfig.toml"
           bun init -y > /dev/null
-          bun add "@uniswap/review-cli@${REVIEW_CLI_VERSION}"
+          # A 403 here means the package grant is missing, not that the
+          # workflow is wrong. Say so, rather than leaving the next reader
+          # to decode a bare `- 403` out of the raw log.
+          if ! bun add "@uniswap/review-cli@${REVIEW_CLI_VERSION}" 2> "$RUNNER_TEMP/bun-add.err"; then
+            cat "$RUNNER_TEMP/bun-add.err" >&2
+            if grep -q '403' "$RUNNER_TEMP/bun-add.err"; then
+              echo "::error::403 from GitHub Packages. $GITHUB_REPOSITORY has no read access to @uniswap/review-cli. Fix: Uniswap/internal-tools -> Packages -> review-cli -> Package settings -> Manage Actions access -> add this repository. This is a per-repo grant; no workflow change can confer it."
+            fi
+            exit 1
+          fi
           echo "bin=$install_dir/node_modules/.bin/review-cli" >> "$GITHUB_OUTPUT"
 
       # Defense in depth for the `ref:` on the PR-head checkout below.
