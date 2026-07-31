@@ -58,9 +58,22 @@ permissions: {}
 
 concurrency:
   group: claude-review-${{ github.event.pull_request.number || github.event.issue.number || inputs.pr_number || github.run_id }}
-  # Only pull_request events supersede an in-flight run: a re-push should
-  # cancel the review of the code it replaced. A comment trigger or a
-  # manual fire must not kill a review that is already running.
+  # `cancel-in-progress` is evaluated against the INCOMING run's event, so
+  # this reads: a push cancels whatever is in flight for this PR; a comment
+  # trigger or manual fire queues behind it instead of cancelling.
+  #
+  # This differs from the old workflow, which used `false` and never
+  # cancelled. The change is deliberate — reviewing code that a newer push
+  # has already replaced spends budget on a stale answer — but it is
+  # asymmetric on purpose and has one consequence worth naming: a push CAN
+  # cancel a review a human just asked for by comment. That is handled
+  # rather than ignored, in the finalization steps at the end of the review
+  # job, which report `cancelled` as "superseded" instead of "failed".
+  #
+  # Deliberately ONE group across all trigger types, not one per type.
+  # Splitting the group would stop pushes from cancelling comment runs, but
+  # would then let two reviews run concurrently against the same sticky
+  # comment. Serialization is worth more than avoiding the cancellation.
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
@@ -483,11 +496,22 @@ jobs:
       # Trigger context flows in via env vars, never shell interpolation,
       # so a malicious comment body cannot break out.
       #
-      # REVIEW_FORCE carries the workflow_dispatch force_review input
-      # through to --force (skip change detection), preserving the
-      # outgoing workflow's force_review behavior. Comment triggers force
-      # implicitly — the cli treats an explicit human request as a
-      # reason to re-review regardless of change detection.
+      # Change-detection bypass, precisely. `pipelines/analyze.ts` derives
+      # `isExplicitRerun = triggerSource in (comment, review_comment,
+      # manual)` and skips only when `!changed && !force && !isExplicitRerun`.
+      # So all three human-initiated paths already re-review regardless of
+      # change detection, purely from `--trigger-source`, which is always
+      # passed below.
+      #
+      # `--force` therefore does not control the bypass; it additionally
+      # lifts the per-agent size/turn guards. REVIEW_FORCE maps
+      # workflow_dispatch's `force_review: true` onto it, which is the
+      # closest equivalent to the old input.
+      #
+      # Honest note on parity: because `manual` is in `isExplicitRerun`, a
+      # dispatch with `force_review: false` still re-reviews rather than
+      # honoring the cache. That is more eager than the old workflow, not
+      # less, so it loses no coverage — but it is not exact parity.
       - name: Analyze
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -548,10 +572,17 @@ jobs:
           retention-days: 30
           overwrite: true
 
+      # Skipped when the job was CANCELLED. A push to the PR cancels an
+      # in-flight review (see `cancel-in-progress` above), and a cancelled
+      # run is not a failed one — the newer run is already starting. Leaving
+      # the 👀 in place is accurate in that case; overwriting it with ❌
+      # would tell the commenter their request failed when it was merely
+      # superseded.
       - name: Update reaction (✅ / ❌) on comment trigger
         if: |
           always() &&
-          needs.triage.outputs.comment_id != ''
+          needs.triage.outputs.comment_id != '' &&
+          job.status != 'cancelled'
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -585,8 +616,14 @@ jobs:
           REVIEW_CLI: ${{ steps.install.outputs.bin }}
           BUN_CONFIG_FILE: /dev/null
         run: |
+          # Three terminal states, not two. `job.status` is one of success /
+          # failure / cancelled, and conflating cancelled with failure tells
+          # a commenter their request broke when a newer push simply
+          # superseded it.
           if [ "$OUTCOME" = "success" ]; then
             BODY="✅ **Reviewed** · [view run ↗](${RUN_URL}) · scroll up for the full summary."
+          elif [ "$OUTCOME" = "cancelled" ]; then
+            BODY="⏹ **Superseded** · a newer push to this PR started a fresh review, so this one was cancelled · [view run ↗](${RUN_URL})"
           else
             BODY="⚠ **Review failed** · [view run ↗](${RUN_URL}) · scroll up for the partial state, or comment \`@request-claude-review\` to retry."
           fi
