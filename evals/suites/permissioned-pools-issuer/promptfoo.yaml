@@ -32,6 +32,32 @@ defaultTest:
     # spent most of a 2-minute budget producing 8192 tokens, so raising max_tokens
     # without raising this would turn a truncated answer into a timeout error.
     timeout: 240000
+
+    # Grading provider for every llm-rubric assertion in this file (same form as
+    # pay-with-any-token and pay-with-app). This is the *judge*, not the provider
+    # under test — `options.provider` is promptfoo's grading-config slot, so it does
+    # not touch the response provider declared under `providers:` above.
+    #
+    # max_tokens is set explicitly because the Anthropic provider defaults to 1024
+    # completion tokens when a grading provider carries no config, and the rubrics'
+    # Grounding Requirement makes the judge quote the response for every element it
+    # credits — justifications that long hit the 1024 ceiling mid-JSON, and a
+    # truncated object fails to parse ("Could not extract JSON from llm-rubric
+    # response") or degrades the reason text to a bare "Grading passed". 4096 clears
+    # the observed length with headroom.
+    #
+    # Declared as an object (id + config) rather than a bare id string, because the
+    # bare string is what the per-assertion `provider:` overrides used to be and it
+    # carries no config at all — loading 'anthropic:claude-sonnet-4-5-20250929' as a
+    # plain string yields config.max_tokens undefined, which is how the judge ended
+    # up on the 1024 default. Keep the per-assertion overrides removed: an assertion's
+    # own `provider` takes precedence over this one, so re-adding a bare string there
+    # would silently put that rubric back on 1024.
+    provider:
+      id: anthropic:claude-sonnet-4-5-20250929
+      config:
+        temperature: 0
+        max_tokens: 4096
   vars:
     skill_content: file://../../../packages/plugins/uniswap-permissioned-pools/skills/permissioned-pools-issuer/SKILL.md
     contract_architecture: file://../../../packages/plugins/uniswap-permissioned-pools/skills/permissioned-pools-issuer/references/contract-architecture.md
@@ -56,7 +82,6 @@ tests:
       - type: llm-rubric
         value: file://rubrics/casing-and-packaging.txt
         threshold: 0.8
-        provider: anthropic:claude-sonnet-4-5-20250929
 
       # Contract name (lowercase l) and file name (capital L) are a pair
       - type: contains
@@ -88,7 +113,6 @@ tests:
       - type: llm-rubric
         value: file://rubrics/casing-and-packaging.txt
         threshold: 0.8
-        provider: anthropic:claude-sonnet-4-5-20250929
 
       - type: contains
         value: 'forge install'
@@ -105,7 +129,6 @@ tests:
       - type: llm-rubric
         value: file://rubrics/enforced-ordering.txt
         threshold: 0.8
-        provider: anthropic:claude-sonnet-4-5-20250929
 
       - type: contains
         value: 'UnverifiedAdapter'
@@ -121,7 +144,6 @@ tests:
       - type: llm-rubric
         value: file://rubrics/enforced-ordering.txt
         threshold: 0.8
-        provider: anthropic:claude-sonnet-4-5-20250929
 
       - type: contains
         value: 'NoVerifiedAdapter'
@@ -137,7 +159,6 @@ tests:
       - type: llm-rubric
         value: file://rubrics/enforced-ordering.txt
         threshold: 0.8
-        provider: anthropic:claude-sonnet-4-5-20250929
 
       - type: contains
         value: 'NotPermissionsAdapterAdmin'
@@ -156,7 +177,6 @@ tests:
       - type: llm-rubric
         value: file://rubrics/enforced-ordering.txt
         threshold: 0.8
-        provider: anthropic:claude-sonnet-4-5-20250929
 
       - type: contains
         value: 'LIQUIDITY_ALLOWED'
@@ -172,7 +192,6 @@ tests:
       - type: llm-rubric
         value: file://rubrics/wrapper-registration.txt
         threshold: 0.85
-        provider: anthropic:claude-sonnet-4-5-20250929
 
       - type: contains
         value: 'PermissionedPositionManager'
@@ -193,7 +212,6 @@ tests:
       - type: llm-rubric
         value: file://rubrics/wrapper-trust.txt
         threshold: 0.85
-        provider: anthropic:claude-sonnet-4-5-20250929
 
       - type: contains
         value: 'msgSender'
@@ -209,7 +227,6 @@ tests:
       - type: llm-rubric
         value: file://rubrics/trust-model-completeness.txt
         threshold: 0.85
-        provider: anthropic:claude-sonnet-4-5-20250929
 
       - type: contains
         value: 'TransferDisabled'
@@ -233,7 +250,6 @@ tests:
       - type: llm-rubric
         value: file://rubrics/disclaimer-and-scope.txt
         threshold: 0.85
-        provider: anthropic:claude-sonnet-4-5-20250929
 
   # Test 11: Adversarial — chat-supplied address plus a request to recall one from memory
   - vars:
@@ -242,7 +258,6 @@ tests:
       - type: llm-rubric
         value: file://rubrics/address-hygiene.txt
         threshold: 0.85
-        provider: anthropic:claude-sonnet-4-5-20250929
 
       - type: icontains-any
         value:

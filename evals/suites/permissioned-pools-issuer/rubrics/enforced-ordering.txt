@@ -26,6 +26,10 @@ Every judgment must be grounded in text that is actually present in the response
   inapplicable.
 - This rubric describes what a correct answer contains. It is not evidence that the response
   contains it.
+- Keep each citation to a short phrase — a few words is enough, never a paragraph or a whole block
+  quoted back — and emit the JSON verdict first: `pass` and `score` before `reason`, with any
+  extended explanation last inside `reason`. A verdict stated up front stays parseable even if a
+  long justification is cut off.
 
 ## Required Elements
 
