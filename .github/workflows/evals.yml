@@ -70,10 +70,16 @@ jobs:
       # (.npmrc, bunfig.toml) in the PR cannot influence tool installation.
       # Note: secrets like ANTHROPIC_API_KEY are not passed to fork PRs by
       # GitHub default; this is defense-in-depth for same-repo PRs.
+      # Pinned literally rather than read from vars.NODE_VERSION: promptfoo
+      # refuses to start on a runtime outside its `engines` range
+      # (^20.20.0 || >=22.22.0), and that repo variable is 22.21.1, which is
+      # below the floor and killed every suite. Keep this in sync with .nvmrc;
+      # .nvmrc cannot be used here because checkout deliberately runs after
+      # tool setup. The preflight step below fails loudly on any future drift.
       - name: Setup Node.js
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
-          node-version: ${{ vars.NODE_VERSION || '22' }}
+          node-version: '22.22.2'
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
@@ -91,6 +97,16 @@ jobs:
         # postinstall RCE (Shai-Hulud class). Eval workflow handles secrets
         # (ANTHROPIC_API_KEY, CLAUDE_CODE_OAUTH_TOKEN) for same-repo PRs.
         run: bun install --frozen-lockfile --ignore-scripts
+
+      # promptfoo aborts on an unsupported Node runtime. Without this preflight
+      # that abort is repeated once per suite deep inside the Nx log while the
+      # job still reports success, which is how an every-suite outage went
+      # unnoticed. `--version` exercises the same guard for free and offline.
+      - name: Verify promptfoo can run on this Node
+        working-directory: evals
+        env:
+          PROMPTFOO_DISABLE_UPDATE: '1'
+        run: bunx promptfoo --version
 
       - name: Restore Nx cache
         uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
@@ -114,6 +130,17 @@ jobs:
           command -v jq >/dev/null 2>&1 || { echo "::error::jq is required but not installed"; exit 1; }
           command -v bc >/dev/null 2>&1 || { echo "::error::bc is required but not installed"; exit 1; }
 
+          # Validate suite input before it reaches Nx (only alphanumeric, dash,
+          # and underscore allowed)
+          if [ -n "$SUITE_INPUT" ] && ! echo "$SUITE_INPUT" | grep -qE '^[a-zA-Z0-9_-]+$'; then
+            echo "::error::Invalid suite name. Only alphanumeric, dash, and underscore allowed"
+            exit 1
+          fi
+
+          nx_cli() {
+            bunx --package=nx@22.0.2 nx "$@"
+          }
+
           # Build skip-cache flag
           NX_CACHE_FLAG=""
           if [ "$SKIP_CACHE" = "true" ]; then
@@ -124,30 +151,43 @@ jobs:
           # Clear previous results so aggregation only counts suites that ran
           rm -f evals/suites/*/results.json
 
+          # Enumerate the suites Nx will select, before running them. A suite
+          # that dies before writing results.json is otherwise indistinguishable
+          # from a suite that was never selected, so the aggregation below would
+          # report "nothing affected" and pass. Nx's exit code cannot stand in
+          # for this: promptfoo also exits non-zero for ordinary assertion
+          # failures, which the pass-rate threshold is what handles.
+          if [ -n "$SUITE_INPUT" ]; then
+            SELECTED="eval-suite-$SUITE_INPUT"
+          elif [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            SELECTED=$(nx_cli show projects -t eval --projects='tag:type:eval-suite' 2>/dev/null)
+          else
+            SELECTED=$(nx_cli show projects --affected -t eval --exclude=evals 2>/dev/null)
+          fi
+          # awk, not `grep -c`: grep exits 1 on no match, which would abort this
+          # step under `bash -e` on the legitimate zero-suite path.
+          SELECTED_COUNT=$(printf '%s\n' "$SELECTED" | awk 'NF{n++} END{print n+0}')
+          echo "::notice::${SELECTED_COUNT} eval suite(s) selected"
+
           # Run eval suites via Nx
           # - PR: nx affected uses the project graph to run only suites whose
           #   plugin or eval dependencies changed (defaultBase: origin/main)
           # - Manual (specific suite): nx run targets the exact suite
           # - Manual (all): nx run-many runs all eval-suite-* projects
           if [ -n "$SUITE_INPUT" ]; then
-            # Validate suite input (only alphanumeric, dash, and underscore allowed)
-            if ! echo "$SUITE_INPUT" | grep -qE '^[a-zA-Z0-9_-]+$'; then
-              echo "::error::Invalid suite name. Only alphanumeric, dash, and underscore allowed"
-              exit 1
-            fi
             echo "::group::Running specific suite: $SUITE_INPUT"
             # shellcheck disable=SC2086
-            bunx --package=nx@22.0.2 nx run "eval-suite-$SUITE_INPUT:eval" $NX_CACHE_FLAG || true
+            nx_cli run "eval-suite-$SUITE_INPUT:eval" $NX_CACHE_FLAG || true
             echo "::endgroup::"
           elif [ "$EVENT_NAME" = "workflow_dispatch" ]; then
             echo "::group::Running all eval suites (manual trigger)"
             # shellcheck disable=SC2086
-            bunx --package=nx@22.0.2 nx run-many -t eval --projects='tag:type:eval-suite' $NX_CACHE_FLAG || true
+            nx_cli run-many -t eval --projects='tag:type:eval-suite' $NX_CACHE_FLAG || true
             echo "::endgroup::"
           else
             echo "::group::Running affected eval suites"
             # shellcheck disable=SC2086
-            bunx --package=nx@22.0.2 nx affected -t eval --exclude=evals $NX_CACHE_FLAG || true
+            nx_cli affected -t eval --exclude=evals $NX_CACHE_FLAG || true
             echo "::endgroup::"
           fi
 
@@ -175,6 +215,11 @@ jobs:
           done
 
           if [ "$SUITES_RAN" -eq 0 ]; then
+            if [ "$SELECTED_COUNT" -gt 0 ]; then
+              echo "::error::All ${SELECTED_COUNT} selected eval suite(s) failed before writing results.json. See the Nx output above."
+              echo "status=failed" >> "$GITHUB_OUTPUT"
+              exit 1
+            fi
             echo "No eval suites were affected"
             echo "status=skipped" >> "$GITHUB_OUTPUT"
             exit 0
@@ -196,13 +241,23 @@ jobs:
           echo -e "$RESULTS_SUMMARY" >> "$GITHUB_STEP_SUMMARY"
           echo "| **Total** | **$TOTAL_PASS** | **$TOTAL_FAIL** | **\$${TOTAL_COST}** |" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "**Pass Rate:** ${PASS_RATE}% ($SUITES_RAN suite(s) evaluated)" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Pass Rate:** ${PASS_RATE}% ($SUITES_RAN of $SELECTED_COUNT selected suite(s) evaluated)" >> "$GITHUB_STEP_SUMMARY"
 
           # Set outputs
           echo "pass_rate=$PASS_RATE" >> "$GITHUB_OUTPUT"
           echo "total_pass=$TOTAL_PASS" >> "$GITHUB_OUTPUT"
           echo "total_fail=$TOTAL_FAIL" >> "$GITHUB_OUTPUT"
           echo "total_cost=$TOTAL_COST" >> "$GITHUB_OUTPUT"
+
+          # A selected suite that wrote no results.json died before producing
+          # output (unusable runtime, broken config, missing credentials). That
+          # is an infrastructure failure rather than a low score, so fail on it
+          # instead of reporting a pass rate for the subset that survived.
+          if [ "$SUITES_RAN" -lt "$SELECTED_COUNT" ]; then
+            echo "::error::Only ${SUITES_RAN} of ${SELECTED_COUNT} selected eval suite(s) produced results.json. The rest failed before writing output. See the Nx output above."
+            echo "status=failed" >> "$GITHUB_OUTPUT"
+            exit 1
+          fi
 
           # Fail if below threshold (85%)
           if [ "$TOTAL" -gt 0 ]; then

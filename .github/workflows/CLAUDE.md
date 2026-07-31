@@ -126,6 +126,22 @@ LLM-based evaluation of AI skills using [Promptfoo](https://github.com/promptfoo
 - Aggregates pass/fail across affected suites; requires ≥85% pass rate
 - Manual trigger supports: specific suite (`nx run eval-suite-<name>:eval`), skip cache, multi-model mode
 
+**Node version:** promptfoo refuses to start on a runtime outside its `engines`
+range (`^20.20.0 || >=22.22.0`), so this workflow pins Node literally rather than
+reading `vars.NODE_VERSION` (see [Repository Variables](#repository-variables)).
+A `Verify promptfoo can run on this Node` preflight step fails the job
+immediately if the runtime ever drifts back below that floor.
+
+**Distinguishing "no suites ran" from "every suite crashed":** the Nx invocation
+is deliberately `|| true`, because promptfoo also exits non-zero for ordinary
+assertion failures, which the ≥85% pass-rate threshold is what gates. That means
+Nx's exit code cannot tell a crash from a low score. So the workflow enumerates
+the suites Nx will select (`nx show projects`) before running them, and fails if
+any selected suite produced no `results.json`. A suite that wrote no output died
+before it could be scored, which is an infrastructure failure rather than a low
+score. Without that comparison, a run where every suite crashed looks exactly
+like a run where no suite was affected, and the job reports success.
+
 ### GitHub Actions Analysis
 
 **File:** `zizmor.yml`
@@ -158,6 +174,12 @@ environment before its first publish.
 | `NODE_VERSION` | Node.js version for CI (22.x)                           |
 | `NPM_VERSION`  | npm version for the publish job (11.7.0+, OIDC support) |
 | `BUN_VERSION`  | Bun version for CI (defaults to 1.3.13)                 |
+
+`NODE_VERSION` is currently `22.21.1`, which is **below** the floor promptfoo
+declares in its `engines` field (`^20.20.0 || >=22.22.0`). `evals.yml` therefore
+pins its own Node version literally instead of reading the variable. Raising the
+variable to match `.nvmrc` (`22.22.2`) would let `evals.yml` read it again.
+Anything else that runs promptfoo must stay at or above that floor.
 
 ## Security
 
