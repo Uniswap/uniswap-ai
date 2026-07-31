@@ -8,6 +8,26 @@ contracts, score elements 4 and 5 and treat 1 to 3 as not applicable; if it is a
 checker, score elements 1 to 3 and treat 4 and 5 as not applicable. Divide by the number of
 applicable elements.
 
+## Grounding Requirement
+
+Every judgment must be grounded in text that is actually present in the response.
+
+- For each applicable element you credit, point to the response's own wording that establishes it —
+  quote the phrase, identifier, or code line, or name the section and paraphrase it closely. If you
+  cannot point to wording in the response, the element is not satisfied, however likely it is that a
+  good answer would have covered it.
+- Do not credit an element from a heading, a code-block caption, an introduction that promises it, or
+  the apparent direction of the answer. A promise to show the install command is not the command.
+- If the response is incomplete — it stops mid-sentence, mid-code-block, or mid-list, or ends without
+  reaching a topic it set up — score every applicable element not established by text actually
+  present as **not satisfied**. Do not assume the missing remainder would have covered it, and do not
+  fill the gap from this rubric or from your own knowledge of the subject.
+- Deciding an element is not applicable is a judgment about the *question*, not about the response.
+  An element the question raises but the response never reaches is applicable and missing, not
+  inapplicable.
+- This rubric describes what a correct answer contains. It is not evidence that the response
+  contains it.
+
 ## Required Elements
 
 1. **Exact identifier casing**

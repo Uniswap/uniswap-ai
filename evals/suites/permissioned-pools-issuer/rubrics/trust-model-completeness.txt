@@ -4,6 +4,34 @@ Evaluate whether the response answers an LP's questions about transferability, e
 powers completely and precisely. The audience is a regulated counterparty, so precision matters
 more than reassurance.
 
+## Grounding Requirement
+
+Every judgment must be grounded in text that is actually present in the response.
+
+- For each element you credit, point to the response's own wording that establishes it — quote the
+  phrase or sentence, or name the section and paraphrase it closely. If you cannot point to wording
+  in the response, the element is not satisfied, however likely it is that a good answer would have
+  covered it.
+- Do not credit an element from a heading, a table caption, an introduction that promises it, or the
+  apparent direction of the answer. A promise to explain something is not the explanation.
+- If the response is incomplete — it stops mid-sentence, mid-list, or mid-table, or ends without
+  reaching a topic it set up — score every element not established by text actually present as
+  **not satisfied**. Do not assume the missing remainder would have covered it, and do not fill the
+  gap from this rubric or from your own knowledge of the subject. A response cut off partway through
+  a table of currencies has not stated the cascade unless the cascade is spelled out in the text
+  that survives.
+- This rubric describes what a correct answer contains. It is not evidence that the response
+  contains it. Naming a section number is not evidence either — "section 4 covers the cascade" is
+  only a claim about the response until you can quote the cascade from it.
+
+The elements below each name the mechanism they are about. Before crediting one, locate the
+response's own account of that mechanism: the three transfer entry points and the revert for
+element 1, the decrease-and-burn path and where the remaining limit sits for element 2, the
+force-exit call and who may make it for element 3, the ordered fallbacks **and** the
+currency-dependent recipient for element 4, and the separate later transaction for element 5. If the
+response never describes a mechanism, that element scores as missing — do not infer it from the
+questions the LP asked or from the topics the response set out to answer.
+
 ## Required Elements
 
 1. **Non-transferability is permanent and unconditional**
@@ -66,3 +94,6 @@ more than reassurance.
 - Two correct: 0.5
 - Transferability or the force-exit power is misstated: 0.3 or below
 - Subtract 0.2 for each penalized item present.
+
+An element you cannot quote from the response counts as absent, not as partially correct. Score the
+answer you were given, not the answer it was on its way to writing.

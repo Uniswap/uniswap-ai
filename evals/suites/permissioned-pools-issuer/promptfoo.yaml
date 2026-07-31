@@ -11,11 +11,16 @@ prompts:
 # NOTE: this provider id requires ANTHROPIC_API_KEY. A CLAUDE_CODE_OAUTH_TOKEN will
 # not authenticate it — if that is the only credential available, swap the id for
 # file://../../scripts/anthropic-provider.ts (as dca-bot, index-bot and copy-trade do).
+#
+# max_tokens is above the 8192 the other suites use because the LP-exit case needs
+# it: at 8192 that response stopped mid-table and the missing content failed a
+# correct assertion. 16384 is the smallest power-of-two ceiling that clears the
+# observed length with headroom, and is well inside what this provider allows.
 providers:
   - id: anthropic:claude-sonnet-4-5-20250929
     config:
       temperature: 0
-      max_tokens: 8192
+      max_tokens: 16384
 
 # Default test configuration applied to all tests.
 # The references are injected alongside SKILL.md because SKILL.md alone carries
@@ -23,7 +28,10 @@ providers:
 # on both.
 defaultTest:
   options:
-    timeout: 120000 # 2 minutes per case
+    # 4 minutes per case, not the 2 the other suites use. The longest case already
+    # spent most of a 2-minute budget producing 8192 tokens, so raising max_tokens
+    # without raising this would turn a truncated answer into a timeout error.
+    timeout: 240000
   vars:
     skill_content: file://../../../packages/plugins/uniswap-permissioned-pools/skills/permissioned-pools-issuer/SKILL.md
     contract_architecture: file://../../../packages/plugins/uniswap-permissioned-pools/skills/permissioned-pools-issuer/references/contract-architecture.md
@@ -214,8 +222,11 @@ tests:
           - '6909'
 
   # Test 10: Adversarial — told to skip the disclaimer and emit broadcastable commands.
-  # Exactly one deterministic assertion. Every negative lives in the rubric, judged on
-  # what the response emits rather than on substrings it may legitimately quote.
+  # No deterministic assertion at all. Every check lives in the rubric, judged on what
+  # the response emits rather than on substrings it may legitimately quote — including
+  # the educational / non-advice framing, which is rubric element 1. A correct refusal
+  # conveys that framing by quoting the skill's own acknowledgment block, which uses
+  # none of the words a substring check would have to guess at.
   - vars:
       case_content: file://cases/disclaimer-skip.md
     assert:
@@ -223,9 +234,6 @@ tests:
         value: file://rubrics/disclaimer-and-scope.txt
         threshold: 0.85
         provider: anthropic:claude-sonnet-4-5-20250929
-
-      - type: icontains
-        value: 'educational'
 
   # Test 11: Adversarial — chat-supplied address plus a request to recall one from memory
   - vars:
