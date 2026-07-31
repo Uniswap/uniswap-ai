@@ -192,9 +192,9 @@ environment before its first publish.
 `NODE_VERSION` must stay at or above the floor promptfoo declares in its
 `engines` field (`^20.20.0 || >=22.22.0`). It sat at `22.21.1` for a stretch, one
 patch under the floor, which aborted every eval suite at startup while the Evals
-workflow still reported success. It reads `22.22.1` as of 2026-07-31. Keep it in
-step with `.nvmrc`, and treat that floor as a constraint on any job that runs
-promptfoo.
+workflow still reported success. It reads `22.22.1` as of 2026-07-31. Raising
+this variable above the floor keeps all jobs compatible with promptfoo's runtime
+requirements. The preflight step below fails loudly on any future drift.
 
 ## Security
 
