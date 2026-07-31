@@ -146,6 +146,17 @@ promptfoo's startup touches both the runtime check and the database, so this one
 cheap command fails the job immediately instead of letting the same abort repeat
 once per suite deep inside the Nx log.
 
+**Errored cases are gated separately from the pass rate.** promptfoo counts a case
+that never produced a verdict (rate limit, provider outage, broken suite config)
+as an `error`, not a `failure`. Errors land in neither side of the
+`successes / (successes + failures)` pass rate, so a suite where every case errors
+contributes `0` to both and drops out of the denominator completely. A full
+15-suite run hit exactly this: 31 rate-limited cases across three suites reported
+an 89.86% pass rate and a green job. The workflow now sums errors, shows them in
+the summary table, and fails on any non-zero count, so an incomplete measurement
+can never read as a good one. Rate-limit errors are the most likely cause when
+running many suites at once; re-run rather than lowering the threshold.
+
 **Distinguishing "no suites ran" from "every suite crashed":** the Nx invocation
 is deliberately `|| true`, because promptfoo also exits non-zero for ordinary
 assertion failures, which the ≥85% pass-rate threshold is what gates. That means

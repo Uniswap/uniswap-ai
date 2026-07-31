@@ -216,6 +216,7 @@ jobs:
           # Aggregate results from suites that produced output
           TOTAL_PASS=0
           TOTAL_FAIL=0
+          TOTAL_ERROR=0
           TOTAL_COST=0
           RESULTS_SUMMARY=""
           SUITES_RAN=0
@@ -226,14 +227,21 @@ jobs:
 
             PASS=$(jq '.results.stats.successes // 0' "$results_file")
             FAIL=$(jq '.results.stats.failures // 0' "$results_file")
+            # promptfoo counts a case that never produced a verdict (rate limit,
+            # provider outage, bad config) as an error, not a failure. Errors are
+            # deliberately excluded from the pass rate below and gated
+            # separately, because a percentage over an incomplete sample reads as
+            # a quality signal when it is really a measurement gap.
+            ERROR=$(jq '.results.stats.errors // 0' "$results_file")
             COST=$(jq '.results.stats.totalCost // 0' "$results_file")
 
             TOTAL_PASS=$((TOTAL_PASS + PASS))
             TOTAL_FAIL=$((TOTAL_FAIL + FAIL))
+            TOTAL_ERROR=$((TOTAL_ERROR + ERROR))
             TOTAL_COST=$(echo "$TOTAL_COST + $COST" | bc -l)
             SUITES_RAN=$((SUITES_RAN + 1))
 
-            RESULTS_SUMMARY="${RESULTS_SUMMARY}| ${suite_name} | ${PASS} | ${FAIL} | \$${COST} |\n"
+            RESULTS_SUMMARY="${RESULTS_SUMMARY}| ${suite_name} | ${PASS} | ${FAIL} | ${ERROR} | \$${COST} |\n"
           done
 
           if [ "$SUITES_RAN" -eq 0 ]; then
@@ -258,17 +266,22 @@ jobs:
           # Output summary
           echo "## Eval Results" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Suite | Passed | Failed | Cost |" >> "$GITHUB_STEP_SUMMARY"
-          echo "|-------|--------|--------|------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Suite | Passed | Failed | Errored | Cost |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|-------|--------|--------|---------|------|" >> "$GITHUB_STEP_SUMMARY"
           echo -e "$RESULTS_SUMMARY" >> "$GITHUB_STEP_SUMMARY"
-          echo "| **Total** | **$TOTAL_PASS** | **$TOTAL_FAIL** | **\$${TOTAL_COST}** |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| **Total** | **$TOTAL_PASS** | **$TOTAL_FAIL** | **$TOTAL_ERROR** | **\$${TOTAL_COST}** |" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "**Pass Rate:** ${PASS_RATE}% ($SUITES_RAN of $SELECTED_COUNT selected suite(s) evaluated)" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$TOTAL_ERROR" -gt 0 ]; then
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "⚠️ ${TOTAL_ERROR} case(s) errored and produced no verdict, so the pass rate above covers an incomplete sample." >> "$GITHUB_STEP_SUMMARY"
+          fi
 
           # Set outputs
           echo "pass_rate=$PASS_RATE" >> "$GITHUB_OUTPUT"
           echo "total_pass=$TOTAL_PASS" >> "$GITHUB_OUTPUT"
           echo "total_fail=$TOTAL_FAIL" >> "$GITHUB_OUTPUT"
+          echo "total_error=$TOTAL_ERROR" >> "$GITHUB_OUTPUT"
           echo "total_cost=$TOTAL_COST" >> "$GITHUB_OUTPUT"
 
           # A selected suite that wrote no results.json died before producing
@@ -277,6 +290,18 @@ jobs:
           # instead of reporting a pass rate for the subset that survived.
           if [ "$SUITES_RAN" -lt "$SELECTED_COUNT" ]; then
             echo "::error::Only ${SUITES_RAN} of ${SELECTED_COUNT} selected eval suite(s) produced results.json. The rest failed before writing output. See the Nx output above."
+            echo "status=failed" >> "$GITHUB_OUTPUT"
+            exit 1
+          fi
+
+          # An errored case produced no verdict, so it lands in neither
+          # TOTAL_PASS nor TOTAL_FAIL and is invisible to the pass rate. A suite
+          # where every case errors contributes 0 to both and disappears from the
+          # denominator entirely, which is how 31 rate-limited cases across three
+          # suites once reported an 89.86% pass and a green job. Gate on errors
+          # separately so an incomplete measurement can never read as a good one.
+          if [ "$TOTAL_ERROR" -gt 0 ]; then
+            echo "::error::${TOTAL_ERROR} eval case(s) errored and produced no verdict, so the ${PASS_RATE}% pass rate covers an incomplete sample. Errors are infrastructure failures (rate limits, provider outages, broken suite config) rather than low scores. See the Nx output above."
             echo "status=failed" >> "$GITHUB_OUTPUT"
             exit 1
           fi
@@ -315,12 +340,14 @@ jobs:
           PASS_RATE: ${{ steps.eval.outputs.pass_rate }}
           TOTAL_PASS: ${{ steps.eval.outputs.total_pass }}
           TOTAL_FAIL: ${{ steps.eval.outputs.total_fail }}
+          TOTAL_ERROR: ${{ steps.eval.outputs.total_error }}
           TOTAL_COST: ${{ steps.eval.outputs.total_cost }}
         with:
           script: |
             const passRate = process.env.PASS_RATE;
             const totalPass = process.env.TOTAL_PASS;
             const totalFail = process.env.TOTAL_FAIL;
+            const totalError = process.env.TOTAL_ERROR;
             const totalCost = process.env.TOTAL_COST;
 
             const body = `## Eval Results
@@ -330,6 +357,7 @@ jobs:
             | Pass Rate | ${passRate}% |
             | Passed | ${totalPass} |
             | Failed | ${totalFail} |
+            | Errored | ${totalError} |
             | Inference Cost | $${totalCost} |
 
             [View full results](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`;
