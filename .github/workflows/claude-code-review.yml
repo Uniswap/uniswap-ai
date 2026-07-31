@@ -22,9 +22,17 @@
 # (comment body, branch name, PR title). The cli reads those values as
 # data from GITHUB_EVENT_PATH, never as shell tokens.
 #
-# The workflow name is unchanged so existing branch-protection checks and
-# the documented `gh workflow run "Claude Code Review"` invocation keep
-# working.
+# The workflow `name:` is unchanged so the documented
+# `gh workflow run "Claude Code Review"` invocation keeps working.
+#
+# That is NOT what makes this safe for branch protection. Required status
+# checks match check-run / job names, not workflow names, and this rewrite
+# renames every job. Verified separately against the live ruleset
+# (`repos/Uniswap/uniswap-ai/rulesets/12307596`): the required contexts are
+# Socket Security, Check Eval Coverage, Run Evaluations, semgrep, docs-check,
+# Vercel, and Security Analysis (zizmor) — none from this workflow. Do not
+# generalize "the workflow name didn't change" into a rule; check the
+# ruleset.
 
 name: Claude Code Review
 
@@ -125,6 +133,7 @@ jobs:
         && github.event.comment.user.type != 'Bot'
         && contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)) ||
       (github.event_name == 'pull_request_review_comment'
+        && !github.event.pull_request.head.repo.fork
         && contains(github.event.comment.body, '@request-claude-review')
         && github.event.comment.user.type != 'Bot'
         && contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)) ||
@@ -198,6 +207,12 @@ jobs:
             fi
             exit 1
           fi
+          # The bunfig holds GITHUB_TOKEN in cleartext and is no longer
+          # needed once the package is resolved. Remove it rather than
+          # leaving it under $RUNNER_TEMP for the rest of the job — in the
+          # review job that means it would otherwise sit on disk while the
+          # untrusted PR tree is being analyzed.
+          rm -f "$install_dir/bunfig.toml" "$RUNNER_TEMP/bun-add.err"
           echo "bin=$install_dir/node_modules/.bin/review-cli" >> "$GITHUB_OUTPUT"
 
       # Gate policy and the automated-PR classifier are read from the
@@ -266,11 +281,18 @@ jobs:
       # `skip.drafts: false` to switch off cli defaults that would
       # otherwise silently drop bot-authored and draft PRs — both of
       # which this repo reviews today. See that file for the reasoning.
+      #
+      # BUN_CONFIG_FILE is pinned here too. Nothing untrusted is on disk in
+      # this job — the sparse checkout is verified above to bring only the
+      # two default-branch paths — but that safety currently rests entirely
+      # on those patterns staying narrow. Pinning it removes the coupling,
+      # matching what the review job does after its PR-head checkout.
       - name: Decide whether to run
         id: gate
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REVIEW_CLI: ${{ steps.install.outputs.bin }}
+          BUN_CONFIG_FILE: /dev/null
         run: '"$REVIEW_CLI" triage --from-github-actions'
 
       - name: Acknowledge comment trigger (👀)
@@ -389,6 +411,12 @@ jobs:
             fi
             exit 1
           fi
+          # The bunfig holds GITHUB_TOKEN in cleartext and is no longer
+          # needed once the package is resolved. Remove it rather than
+          # leaving it under $RUNNER_TEMP for the rest of the job — in the
+          # review job that means it would otherwise sit on disk while the
+          # untrusted PR tree is being analyzed.
+          rm -f "$install_dir/bunfig.toml" "$RUNNER_TEMP/bun-add.err"
           echo "bin=$install_dir/node_modules/.bin/review-cli" >> "$GITHUB_OUTPUT"
 
       # Defense in depth for the `ref:` on the PR-head checkout below.
@@ -407,19 +435,28 @@ jobs:
           esac
           echo "pr_number validated: $PR_NUMBER"
 
-      # Fork guard for the comment-trigger and manual paths. The triage
-      # job's `if:` blocks fork `pull_request` events, but
-      # `issue_comment` / `pull_request_review_comment` payloads carry no
-      # head-repo field and `workflow_dispatch` takes an arbitrary PR
-      # number — and all three run the base-ref workflow *with*
-      # repository secrets. Without this, a MEMBER commenting the trigger
-      # phrase on a fork PR would reach the `refs/pull/N/head` checkout
-      # below in a job holding contents:write and the LLM credential, and
-      # review-cli reads `.claude/` from the checked-out tree as agent
-      # policy. That is the Cantina #655 / #692 shape. Resolve the head
-      # repo over the API and fail closed before any fork content is on
-      # disk. `set -euo pipefail` means an API error or a deleted head
-      # repo (`null`) also exits non-zero.
+      # Authoritative fork guard, for every trigger.
+      #
+      # `issue_comment` payloads have no `pull_request` object at all, so the
+      # triage `if:` cannot express a head-repo check for that event. (The
+      # other two comment-ish events can, and now do — but only this step
+      # covers `issue_comment` and `workflow_dispatch`, which takes an
+      # arbitrary PR number.) All of those run the base-ref workflow *with*
+      # repository secrets, unlike a fork `pull_request`, which gets none.
+      #
+      # Without this, a MEMBER commenting the trigger phrase on a fork PR
+      # would reach the `refs/pull/N/head` checkout below in a job holding
+      # contents:write and the LLM credential, and review-cli reads
+      # `.claude/` from the checked-out tree as agent policy. That is the
+      # Cantina #655 / #692 shape.
+      #
+      # Failure modes, all closed, but by two different mechanisms:
+      #   - API error / rate limit / 404: the command substitution's
+      #     non-zero status propagates and `set -e` aborts.
+      #   - Deleted head repo: `.head.repo` is null. jq would print the
+      #     STRING "null" and exit 0 — `set -e` does NOT fire here. The
+      #     `// ""` plus the emptiness check below is what catches it, not
+      #     the exit status. Keep both; they cover different cases.
       - name: Refuse fork PRs
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -427,7 +464,11 @@ jobs:
           PR_NUMBER: ${{ needs.triage.outputs.pr_number }}
         run: |
           set -euo pipefail
-          HEAD_REPO=$(gh api "repos/$GH_REPO/pulls/$PR_NUMBER" --jq '.head.repo.full_name')
+          HEAD_REPO=$(gh api "repos/$GH_REPO/pulls/$PR_NUMBER" --jq '.head.repo.full_name // ""')
+          if [ -z "$HEAD_REPO" ]; then
+            echo "::error::Could not resolve the head repository for PR #$PR_NUMBER (deleted fork, or unexpected API response). Refusing to proceed."
+            exit 1
+          fi
           if [ "$HEAD_REPO" != "$GH_REPO" ]; then
             echo "::error::Refusing to review a fork PR (head=$HEAD_REPO). Fork code must not run in a job holding repository secrets."
             exit 1
