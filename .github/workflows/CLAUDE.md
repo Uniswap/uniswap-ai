@@ -4,17 +4,17 @@ This directory contains GitHub Actions workflows for the uniswap-ai repository. 
 
 ## Workflow Overview
 
-| Workflow                                                           | Trigger              | Purpose                                      |
-| ------------------------------------------------------------------ | -------------------- | -------------------------------------------- |
-| [PR Checks](#pr-checks)                                            | PR events            | Build, lint, test, validate plugins & skills |
-| [Check PR Title](#check-pr-title)                                  | PR events            | Enforce conventional commit format           |
+| Workflow                                                           | Trigger                     | Purpose                                          |
+| ------------------------------------------------------------------ | --------------------------- | ------------------------------------------------ |
+| [PR Checks](#pr-checks)                                            | PR events                   | Build, lint, test, validate plugins & skills     |
+| [Check PR Title](#check-pr-title)                                  | PR events                   | Enforce conventional commit format               |
 | [Claude Code Review](#claude-code-review)                          | PR events, comments, manual | AI-powered code review via `@uniswap/review-cli` |
-| [Claude Docs Check](#claude-docs-check)                            | PR events            | Validate documentation updates               |
-| [Generate PR Title & Description](#generate-pr-title--description) | PR events            | Auto-generate PR metadata                    |
-| [Generate Documentation](#generate-documentation)                  | Push to main, manual | Auto-generate API documentation              |
-| [Publish Packages](#publish-packages)                              | Push to main, manual | Publish npm packages                         |
-| [Evals](#evals)                                                    | PR events, manual    | LLM evaluation of AI skills                  |
-| [GitHub Actions Analysis](#github-actions-analysis)                | Push to main, PRs    | Security analysis & syntax validation        |
+| [Claude Docs Check](#claude-docs-check)                            | PR events                   | Validate documentation updates                   |
+| [Generate PR Title & Description](#generate-pr-title--description) | PR events                   | Auto-generate PR metadata                        |
+| [Generate Documentation](#generate-documentation)                  | Push to main, manual        | Auto-generate API documentation                  |
+| [Publish Packages](#publish-packages)                              | Push to main, manual        | Publish npm packages                             |
+| [Evals](#evals)                                                    | PR events, manual           | LLM evaluation of AI skills                      |
+| [GitHub Actions Analysis](#github-actions-analysis)                | Push to main, PRs           | Security analysis & syntax validation            |
 
 ## Workflows
 
@@ -66,9 +66,9 @@ influencing either dependency resolution or the gating decision.
 
 **Configuration lives in the repo, as data:**
 
-| File | |
-|---|---|
-| `.claude/review.yml` | policy — model, budgets, skip rules, reviewer staffing |
+| File                        |                                                         |
+| --------------------------- | ------------------------------------------------------- |
+| `.claude/review.yml`        | policy — model, budgets, skip rules, reviewer staffing  |
 | `.claude/review-context.md` | engineering context the reviewers read before reviewing |
 
 Reviewer agents and the review methodology ship inside the CLI and are

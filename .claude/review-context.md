@@ -2,7 +2,7 @@
 
 Read by the triage, reviewer, and synthesis agents before reviewing a PR
 in this repo. Policy (models, budgets, skip rules) lives in
-`.claude/review.yml`; this file is what the repo *is*.
+`.claude/review.yml`; this file is what the repo _is_.
 
 ## The one thing to internalize
 
@@ -36,20 +36,20 @@ broken config entry.
 
 Six plugins, fifteen skills:
 
-| Plugin | Skills | Notes |
-|---|---|---|
-| `uniswap-trading` | `swap-integration`, `lp-integration`, `pay-with-any-token`, `pay-with-app`, `v4-sdk-integration` | largest; has `agents/swap-integration-expert.md` |
-| `uniswap-trading-tools` | `copy-trade`, `dca-bot`, `index-bot` | plugin-level refs: execution model, strategy state |
-| `uniswap-hooks` | `v4-hook-generator`, `v4-security-foundations` | emits Solidity; security skill carries a vulnerability catalog |
-| `uniswap-cca` | `configurator`, `deployer` | Continuous Clearing Auction; only plugin with a Python `mcp-server/` |
-| `uniswap-driver` | `swap-planner`, `liquidity-planner` | planning, not execution |
-| `uniswap-viem` | `viem-integration` | has `agents/viem-integration-expert.md` |
+| Plugin                  | Skills                                                                                           | Notes                                                                |
+| ----------------------- | ------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------- |
+| `uniswap-trading`       | `swap-integration`, `lp-integration`, `pay-with-any-token`, `pay-with-app`, `v4-sdk-integration` | largest; has `agents/swap-integration-expert.md`                     |
+| `uniswap-trading-tools` | `copy-trade`, `dca-bot`, `index-bot`                                                             | plugin-level refs: execution model, strategy state                   |
+| `uniswap-hooks`         | `v4-hook-generator`, `v4-security-foundations`                                                   | emits Solidity; security skill carries a vulnerability catalog       |
+| `uniswap-cca`           | `configurator`, `deployer`                                                                       | Continuous Clearing Auction; only plugin with a Python `mcp-server/` |
+| `uniswap-driver`        | `swap-planner`, `liquidity-planner`                                                              | planning, not execution                                              |
+| `uniswap-viem`          | `viem-integration`                                                                               | has `agents/viem-integration-expert.md`                              |
 
 Shapes:
 
 - **Plugin** = `packages/plugins/<name>/` containing
   `.claude-plugin/plugin.json` (name, version, description, and a
-  `skills` array of `./`-relative *paths*), `project.json` (Nx wiring),
+  `skills` array of `./`-relative _paths_), `project.json` (Nx wiring),
   `package.json`, `CLAUDE.md`, `README.md`.
 - **Skill** = `<plugin>/skills/<skill-name>/SKILL.md` with YAML
   frontmatter, plus an optional `references/` directory of supporting
@@ -103,7 +103,7 @@ These hard-fail a PR. Restating them in a review is pure noise.
   "please add an eval" as a finding — it's already a merge blocker.
 - **`validate-plugins`**: drives `scripts/validate-plugin.cjs` per plugin
   from `marketplace.json`. Note it runs with `fail-on-warning: 'false'`,
-  so that script's *warnings* are advisory.
+  so that script's _warnings_ are advisory.
 - **Build / lint / typecheck / format**: `nx affected` targets plus
   `nx format:check`. Don't report formatting.
 - **`zizmor` + `actionlint`** run on every PR with default rules and no
@@ -117,14 +117,14 @@ Non-blocking, so don't treat CI's silence as approval:
 - A skill dir not listed in its `plugin.json` `skills` array is a
   `validate-skills` **warning** only.
 
-## Gaps CI does *not* cover — this is your job
+## Gaps CI does _not_ cover — this is your job
 
 - **A skill whose recommendation changed but whose eval didn't.**
-  `check-eval-coverage` only checks that a suite *exists*, matched by
+  `check-eval-coverage` only checks that a suite _exists_, matched by
   directory name. It cannot tell that a PR flipped which hook type the
   skill recommends while the rubric still grades against the old answer.
   The suite keeps passing and now tests the wrong thing. Watch for this
-  on any PR that changes what a skill *says to do*.
+  on any PR that changes what a skill _says to do_.
 - **Prose cross-references between skills.** Only an explicit
   `prerequisites:` frontmatter list is validated. Skills reference
   companion skills by name in body text (e.g. `v4-hook-generator` points
@@ -166,7 +166,7 @@ positive.
 - **`.npmrc` retained in a bun-only repo.** `npm publish` is invoked
   directly because `bun publish` doesn't implement npm's OIDC trusted-
   publishing token exchange. Scoped, documented exception.
-- **Toolchain setup steps placed *before* `actions/checkout`.** So a
+- **Toolchain setup steps placed _before_ `actions/checkout`.** So a
   PR-supplied `.npmrc` / `bunfig.toml` cannot influence which toolchain
   gets installed. Intentional ordering.
 - **`bunx --package=nx@22.0.2 nx ...` instead of the local binary.**
