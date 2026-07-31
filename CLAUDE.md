@@ -61,12 +61,13 @@ uniswap-ai/
 │   └── templates/           # Templates for new suites
 ├── packages/
 │   └── plugins/             # Claude Code plugins
-│       ├── uniswap-cca/            # Continuous Clearing Auction (CCA) plugin
-│       ├── uniswap-driver/         # Swap & liquidity deep link planning
-│       ├── uniswap-hooks/          # Uniswap v4 hooks plugin
-│       ├── uniswap-trading/        # Uniswap swap integration
-│       ├── uniswap-trading-tools/  # Automated trading tools (DCA, index, copy-trade)
-│       └── uniswap-viem/           # EVM blockchain integration (viem/wagmi)
+│       ├── uniswap-cca/                 # Continuous Clearing Auction (CCA) plugin
+│       ├── uniswap-driver/              # Swap & liquidity deep link planning
+│       ├── uniswap-hooks/               # Uniswap v4 hooks plugin
+│       ├── uniswap-permissioned-pools/  # Uniswap v4 Permissioned Pools issuer reference
+│       ├── uniswap-trading/             # Uniswap swap integration
+│       ├── uniswap-trading-tools/       # Automated trading tools (DCA, index, copy-trade)
+│       └── uniswap-viem/                # EVM blockchain integration (viem/wagmi)
 ├── scripts/                 # Build/validation scripts
 ├── nx.json
 ├── package.json

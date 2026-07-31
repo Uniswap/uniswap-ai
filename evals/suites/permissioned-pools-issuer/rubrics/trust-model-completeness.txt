@@ -1,0 +1,60 @@
+# Trust Model Completeness Rubric
+
+Evaluate whether the response answers an LP's questions about transferability, exit, and admin
+powers completely and precisely. The audience is a regulated counterparty, so precision matters
+more than reassurance.
+
+## Required Elements
+
+1. **Non-transferability is permanent and unconditional**
+   - All three ERC-721 transfer entry points revert `TransferDisabled()`: `transferFrom` and both
+     `safeTransferFrom` overloads.
+   - It is not a configuration flag and cannot be toggled, per position or otherwise.
+   - Consequences stated: no secondary sale, no transfer to a custodian, no use as collateral in
+     anything that takes custody of the position.
+
+2. **Exit is always available**
+   - Decreasing liquidity and burning are not gated by the allowlist, so a holder removed from the
+     allowlist can still withdraw.
+
+3. **Admin force-exit**
+   - `unwindPosition(tokenId)` can be called by the owner of the adapter behind **either** currency
+     in the pool, burns the position, and needs no involvement from the LP.
+   - Credit an answer that notes the practical shape for this pool: paired with WETH, there is one
+     permissioned side, so a single admin has this power over every position.
+
+4. **The proceeds cascade, with the currency-dependent recipient**
+   - Pay the LP first; if that fails, pay that currency's admin; if that fails, mint an ERC-6909
+     claim.
+   - The claim recipient depends on the currency: for the permissioned currency the claim goes to
+     the **admin**; for an ordinary ERC-20 with no adapter — WETH in this pool — the claim goes to
+     the **LP**.
+   - Proceeds never route to the other currency's admin, and the unwind always completes.
+
+5. **`withdrawClaim` is a separate transaction**
+   - An ERC-6909 claim is not the underlying asset. Whoever holds it converts it by sending
+     `withdrawClaim` later; nothing pushes the asset to them.
+   - Credit an answer that draws the operational consequence: if the claim lands with the LP, the LP
+     has to be told, because an unredeemed claim looks like a missing payout.
+
+## Penalize
+
+- Describing the position as locked, or implying a holder can be prevented from exiting.
+- Stating the cascade with a single claim recipient, or asserting the claim always goes to the
+  admin.
+- Presenting `withdrawClaim` as part of the unwind, or implying the unwind delivers the asset in
+  every case.
+- Saying only one of the two admins can unwind, or that the LP must consent.
+- Attaching a categorical risk label or a safety verdict to the pool, the configuration, or the
+  issuer. Describing the mechanics from both the issuer's and the LP's point of view is correct;
+  grading them is not.
+- Softening the answer to the point where the LP cannot tell what powers exist.
+
+## Scoring Guide
+
+- All five elements correct and precise: 1.0
+- Four correct: 0.85
+- Three correct: 0.7
+- Two correct: 0.5
+- Transferability or the force-exit power is misstated: 0.3 or below
+- Subtract 0.2 for each penalized item present.

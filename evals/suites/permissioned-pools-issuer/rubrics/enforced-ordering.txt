@@ -1,0 +1,66 @@
+# Enforced Ordering Rubric
+
+Evaluate whether the response identifies the right revert for the right call site, states what has
+to be true first, and distinguishes ordering that the contracts enforce from ordering that is only
+convention.
+
+Score only the elements the question raises. Divide by the number of applicable elements.
+
+## Required Elements
+
+1. **The right revert, attributed to the right call site**
+   - Pool initialization with a factory-created but unverified currency reverts
+     `UnverifiedAdapter`; with neither currency created by the factory it reverts
+     `NoVerifiedAdapter` from the hook.
+   - A mint where neither side is a verified adapter reverts `NoVerifiedAdapter` from the position
+     manager.
+   - `setAllowedHook` before verification reverts `NotPermissionsAdapterAdmin`.
+   - A mint whose caller or recipient lacks `LIQUIDITY_ALLOWED` reverts with a bare
+     `Unauthorized()`.
+
+2. **Why, in terms of state rather than sequence**
+   - Verification is the hinge: `_getOwner` resolves a currency through the *verified* adapter
+     mapping and returns `address(0)` for an unverified currency, which is why an owner-authorized
+     call such as `setAllowedHook` reads the caller as not-the-admin.
+   - Verification itself requires the adapter to hold a non-zero balance of the permissioned token,
+     which requires the issuer to have allowlisted the adapter on their own token.
+
+3. **What has to happen instead**
+   - The response states the corrected order concretely, naming the call to make first
+     (`verifyPermissionsAdapter` on the factory, allowlisting the wallet, and so on).
+
+4. **Enforced versus conventional**
+   - The response distinguishes edges the contracts enforce from ordering that is merely the
+     documented sequence. Registering wrappers, enabling swapping, and approving the hook relative
+     to pool creation are owner-only calls with no dependency on pool existence; the published
+     guide's order is one working order among several.
+   - Credit an answer that says plainly "this one is enforced, this one is convention".
+
+5. **For the allowlist case specifically**
+   - Both checks are named: the position manager checks the **recipient** of the position for each
+     currency, and the hook checks the **caller** in `beforeAddLiquidity`.
+   - `SWAP_ALLOWED` does not imply `LIQUIDITY_ALLOWED`.
+   - Being the adapter owner grants nothing on this path.
+
+## Penalize
+
+- Framing the ordering, or any revert, as a vulnerability, exposure, hazard, weakness, or risk.
+  These are enforced behaviours, and the correct register is descriptive.
+- Any reference to a security review or a published finding, open or closed.
+- Claiming that `NoVerifiedAdapter`, `Unauthorized`, or `SwappingDisabled` comes from a single
+  declaration or has a single meaning. Each is declared more than once with the same selector, and
+  the response should say to decode by call site.
+- Confusing `NoVerifiedAdapter` with `UnverifiedAdapter`, or attributing either to the wrong
+  contract.
+- For the seeding-mint case: any answer implying that adapter ownership alone permits the first
+  mint, or that the wallet's swap permission covers liquidity.
+- Inventing a revert name, or inventing an ordering constraint the contracts do not impose.
+
+## Scoring Guide
+
+- All applicable elements correct: 1.0
+- One element incomplete: 0.85
+- One element wrong, or two incomplete: 0.7
+- Two elements wrong: 0.5
+- The revert is named wrongly or attributed to the wrong call site: 0.3 or below
+- Subtract 0.2 for each penalized item present.
