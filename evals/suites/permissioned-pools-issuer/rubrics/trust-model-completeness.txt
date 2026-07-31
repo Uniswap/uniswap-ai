@@ -13,9 +13,15 @@ more than reassurance.
    - Consequences stated: no secondary sale, no transfer to a custodian, no use as collateral in
      anything that takes custody of the position.
 
-2. **Exit is always available**
-   - Decreasing liquidity and burning are not gated by the allowlist, so a holder removed from the
-     allowlist can still withdraw.
+2. **The pool never gates the exit**
+   - Decreasing liquidity and burning are not gated by the allowlist checker, so a holder removed
+     from the allowlist can still decrease and burn.
+   - Precise about where the remaining limit sits: taking the permissioned currency out of the
+     PoolManager unwraps to the **underlying** token, and that transfer is subject to the issuer's
+     own token restriction — so the holder can always close the position, but has to direct the
+     permissioned proceeds to an address the token permits. Credit an answer that draws the
+     distinction between "redeemable" and "redeemable to me", or that cites the source's "if LP is
+     not allowed to receive the currency" fallback branch.
 
 3. **Admin force-exit**
    - `unwindPosition(tokenId)` can be called by the owner of the adapter behind **either** currency
@@ -39,7 +45,9 @@ more than reassurance.
 
 ## Penalize
 
-- Describing the position as locked, or implying a holder can be prevented from exiting.
+- Describing the position as locked, or implying a holder can be prevented from exiting. Stating
+  that the permissioned proceeds land only at an address the issuer's token permits is accurate and
+  must not be penalized — the pool does not gate the exit, the token gates the destination.
 - Stating the cascade with a single claim recipient, or asserting the claim always goes to the
   admin.
 - Presenting `withdrawClaim` as part of the unwind, or implying the unwind delivers the asset in

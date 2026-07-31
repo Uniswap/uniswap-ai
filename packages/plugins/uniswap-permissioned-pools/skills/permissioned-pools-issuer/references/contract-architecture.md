@@ -141,8 +141,9 @@ The adapter _is_ an ERC-20 — the virtual token that appears in the `PoolKey`. 
 3. **Only the PoolManager may hold it.** `_update` (`:100-121`) rejects any other transfer with
    `InvalidTransfer(from, to)`, raised at `:113` and `:116`. This is the enforcement behind the statement
    that the virtual token never circulates.
-4. **Unwrapping is automatic on the way out.** `_unwrap` (`:123-126`) is reached from `_update` (`:118`)
-   when the PoolManager sends adapter tokens to a recipient, releasing the underlying to them.
+4. **Unwrapping is automatic on the way out.** `_unwrap` (`:123-126`) is reached from `_update`
+   (`:100-121`, at the call site `:118`) when the PoolManager sends adapter tokens to a recipient,
+   releasing the underlying to them.
 
 A consequence worth internalizing: the verification deposit described in [Issuer Journey](./issuer-journey.md) Step 3 **is** the headroom at `:47`. It is not consumed by verification and it is not burned; it sits there as balance that an allowed wrapper can convert into adapter tokens for the PoolManager without paying anything new in. There is no withdraw, rescue, or sweep function on the adapter — reading all 164 lines, the only outbound transfer of the underlying is `_unwrap`, and `Ownable2Step` gives the owner no token-moving power — so treat whatever you deposit as permanently committed to the adapter.
 

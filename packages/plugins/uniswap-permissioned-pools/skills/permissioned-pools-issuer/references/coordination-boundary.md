@@ -190,8 +190,10 @@ Use this to sort your own launch tasks into the two columns.
 
 **Communicating with your own LPs and holders**
 
-1. Positions are non-transferable and exit is always available —
-   [Trust Model](./trust-model.md) has the mechanics and the product consequences.
+1. Positions are non-transferable, and the pool never gates the exit — though delivery of the
+   permissioned side lands only at an address your token permits.
+   [The pool never gates the exit](./trust-model.md#the-pool-never-gates-the-exit) has the mechanics
+   and the product consequences.
 2. Either adapter admin can force-exit a position, and where the proceeds go depends on the
    currency.
 3. Which surfaces the asset will and will not appear in at launch, per the table above.

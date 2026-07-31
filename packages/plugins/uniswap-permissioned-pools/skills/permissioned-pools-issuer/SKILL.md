@@ -159,7 +159,7 @@ Both compile. Pick one and stay in it.
 3. `V4Quoter`
 4. `MixedRouteQuoterV2`
 
-**The rule behind the four:** register every contract that will call the PoolManager on this pool. The hook checks `allowedWrappers(sender)` for the calling router or position manager, and `wrapToPoolManager` separately checks `allowedWrappers[msg.sender]`. So a custom router of your own must be registered too, and the four are the production callers rather than a closed set. Registration is enforced against use: the position manager must be registered before your first mint, and each router and quoter before the first swap or quote through it.
+**The rule behind the four:** register every contract that will call the PoolManager on this pool. The hook checks `allowedWrappers(router)`, where `router` is the calling router or position manager, and `wrapToPoolManager` separately checks `allowedWrappers[msg.sender]`. So a custom router of your own must be registered too, and the four are the production callers rather than a closed set. Registration is enforced against use: the position manager must be registered before your first mint, and each router and quoter before the first swap or quote through it.
 
 **Two traps.** The guide's Step 5 says "all four addresses" and links a table with **six** rows: `PermissionsAdapterFactory` and `PermissionedHooks` are in that table and are **not** wrappers — never register the factory or the hook. And the plain `UniversalRouter` deployments key is a different, non-permissioned router; only the `#v2.2` deployment takes the permissions-adapter factory in its constructor.
 

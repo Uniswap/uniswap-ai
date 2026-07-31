@@ -16,7 +16,8 @@ Score only the elements the question raises. Divide by the number of applicable 
      manager.
    - `setAllowedHook` before verification reverts `NotPermissionsAdapterAdmin`.
    - A mint whose caller or recipient lacks `LIQUIDITY_ALLOWED` reverts with a bare
-     `Unauthorized()`.
+     `Unauthorized()`, and so does a mint routed through a position manager that is not a registered
+     allowed wrapper on the adapter — the same selector, from the same expression in the hook.
 
 2. **Why, in terms of state rather than sequence**
    - Verification is the hinge: `_getOwner` resolves a currency through the *verified* adapter
@@ -34,11 +35,20 @@ Score only the elements the question raises. Divide by the number of applicable 
      documented sequence. Registering wrappers, enabling swapping, and approving the hook relative
      to pool creation are owner-only calls with no dependency on pool existence; the published
      guide's order is one working order among several.
+   - Where the response puts wrapper registration on the convention side, it must also say what *is*
+     enforced about it: nothing can be routed through an unregistered contract, so the position
+     manager has to be registered before the first mint and each router or quoter before the first
+     swap or quote. Calling wrapper registration unconstrained with no such qualifier is incomplete.
    - Credit an answer that says plainly "this one is enforced, this one is convention".
 
 5. **For the allowlist case specifically**
-   - Both checks are named: the position manager checks the **recipient** of the position for each
-     currency, and the hook checks the **caller** in `beforeAddLiquidity`.
+   - More than one check produces the identical bare `Unauthorized()`, and the response accounts for
+     that rather than naming a single cause. The position manager checks the **recipient** of the
+     position for each currency and re-checks the **sender** on settlement in `_pay`; the hook checks
+     the **caller** in `beforeAddLiquidity`.
+   - The check that is not about the allowlist at all is also named: in the same hook expression as
+     the caller check, the `PermissionedPositionManager` itself must be a registered allowed wrapper
+     on the adapter. Credit an answer that tells the reader to rule this one out first.
    - `SWAP_ALLOWED` does not imply `LIQUIDITY_ALLOWED`.
    - Being the adapter owner grants nothing on this path.
 

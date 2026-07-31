@@ -81,9 +81,12 @@ Issuers pin `3245c3cb99c48fa1dc2459c3b60abc37d4294aba`.
 
 ## Import paths
 
-These are the paths as `v4-hooks-public` itself writes them
-(`v4-hooks-public/src/permissioned-pools/PermissionedHooks.sol:8`, `:11`, `:24`), and they match the
-paths in the published deploy guide:
+Three of these are the paths as `v4-hooks-public` itself writes them —
+`IPermissionsAdapter` at `v4-hooks-public/src/permissioned-pools/PermissionedHooks.sol:8`,
+`IPermissionsAdapterFactory` at `:11`, `PermissionFlags` at `:24`. The hook does not import
+`IAllowlistChecker` at all; inside `v4-periphery` that interface is reached by relative path
+(`PermissionsAdapter.sol:12`, `BaseAllowListChecker.sol:4`), so the remapped form below is the one
+your own checker writes. All four match the paths in the published deploy guide:
 
 ```solidity
 import {IAllowlistChecker} from
