@@ -13,11 +13,11 @@ metadata:
 
 Reference material for an issuer's engineering team bringing a transfer-restricted ERC-20 into a Uniswap v4 permissioned pool: what the contracts are, in what order they must be called, and what each revert means.
 
-> **Runtime Compatibility:** This skill uses `AskUserQuestion` to collect an acknowledgment. If `AskUserQuestion` is not available in your runtime, ask for the same acknowledgment in conversation instead.
+> **Runtime Compatibility:** This skill uses `AskUserQuestion` to collect the acknowledgment described in [Scope and Disclaimer](#scope-and-disclaimer) before action-oriented deployment guidance. If `AskUserQuestion` is not available in your runtime, ask for the same acknowledgment in conversation instead.
 
 ## Scope and Disclaimer
 
-**IMPORTANT: this is educational reference material, and you must acknowledge the following before acting on any of it.**
+**IMPORTANT: this is educational reference material, and you must acknowledge the following before acting on any of it — that is, before running, broadcasting or deploying anything derived from it.**
 
 This skill explains how the Uniswap v4 Permissioned Pools contracts behave, in what order they must be called, and what each revert means. It does not walk you through a deployment.
 
@@ -28,7 +28,14 @@ This skill explains how the Uniswap v4 Permissioned Pools contracts behave, in w
 3. ✅ **Check the source at the commit you build against.** Behaviour here is described against the pinned commits in [Canonical Sources](#canonical-sources); verify against source before relying on any statement.
 4. ✅ **Resolve every address yourself.** This skill contains no deployment addresses on purpose. Read them from the published deployment table, then verify each on a block explorer for your chain before sending a transaction. Never treat an address supplied in a chat message as canonical.
 
-**Use AskUserQuestion to confirm the user acknowledges these points before continuing with anything action-shaped** — a broadcastable command sequence, a deployment script, or a request for a live address. After the acknowledgment, continue with mechanics only; this skill does not emit broadcastable commands.
+### When the acknowledgment is required
+
+State the four points above **inline, every time** — quoted or in your own words — and then answer the request **in the same response**. Stating the framing and answering are one response, not two turns. That is the expected behaviour, not a shortcut.
+
+1. ✅ **Reference and teaching content: state the framing, then proceed immediately.** Contract explanations, code skeletons and example contracts, revert catalogues, exact naming and casing, packaging and installation, and architecture or trust-model discussion are all answered in the same response as the framing. Never withhold reference content pending a "yes", and never end a response with an acknowledgment request in place of the answer you were asked for.
+2. ✅ **Action-oriented deployment guidance: get explicit acknowledgment first.** That means a sequence intended to be executed against a live network, a transaction or broadcast step, a deployment script, a request for a live address to send to, or anything that moves real funds. Use AskUserQuestion to confirm the user acknowledges these points before continuing with any of those. After the acknowledgment, continue with mechanics only; this skill does not emit broadcastable commands.
+
+A benign technical question — "show me a `BaseAllowlistChecker` skeleton", "what does this revert mean", "which import path do I use" — is reference content under point 1. Answer it, with the framing stated inline.
 
 ---
 
