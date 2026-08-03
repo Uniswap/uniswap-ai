@@ -1,0 +1,154 @@
+# Review policy for @uniswap/review-cli.
+#
+# Read by .github/workflows/claude-code-review.yml. Only the fields that
+# need to differ from the cli defaults are set; everything else is
+# inherited. See packages/review-cli/templates/review.yml in
+# Uniswap/internal-tools for the full schema.
+#
+# Repo engineering context for the reviewers lives in
+# .claude/review-context.md, not here.
+
+# ─── Post policy ───────────────────────────────────────────────────────
+# Who may invoke `review post` for this repo. Without this block, any
+# actor holding a token with `repo` scope can write reviews — including a
+# teammate's local `gh` token. Lock it to the Actions identity.
+post:
+  allowed_actors:
+    - github-actions
+    - github-actions[bot]
+
+# ─── Skip policy ───────────────────────────────────────────────────────
+# ALL THREE fields are set deliberately, and two of them exist to switch
+# OFF a cli default. `skip` merges field-by-field with the defaults, so an
+# omitted field inherits — which for this repo would be a regression:
+#
+#   authors  — the default is ['*[bot]'], which skips every bot-authored
+#              PR. This repo's agent (claude[bot]) opens most PRs, and
+#              Dependabot PRs must be reviewed for the auto-merge job to
+#              have a result to gate on. An empty list reviews them.
+#
+#   drafts   — the default is `true`. The workflow's own `if:` implements
+#              this repo's actual draft rule (skip drafts, EXCEPT the
+#              ready-for-review event, EXCEPT claude[bot] drafts). Setting
+#              false here makes the cli defer to that expression instead
+#              of applying a blanket skip that would drop the claude[bot]
+#              case.
+#
+#   branch_prefixes — empty because automated-PR classification is owned
+#              by .github/actions/check-automated-pr, the same composite
+#              action ci-pr-checks.yml and ci-check-pr-title.yml use. One
+#              definition of "is this an automated PR", not two lists that
+#              can drift. The workflow calls it and gates the review job
+#              on its output, exempting `deps` so dependency bumps are
+#              still reviewed. Note the cli defaults would have skipped
+#              dependabot/ and renovate/ outright.
+skip:
+  branch_prefixes: []
+  authors: []
+  drafts: false
+
+# ─── Model ─────────────────────────────────────────────────────────────
+# The outgoing ai-toolkit caller pinned Sonnet with the comment "Use
+# Sonnet for fast, cost-effective reviews". Keeping that choice: the
+# quality gain in this migration comes from multi-agent fan-out with
+# repo-specific context, not from a bigger model. Raise to opus here if
+# review depth ever needs it — the fallout is cost, not correctness.
+model:
+  default: claude-sonnet-4-5-20250929
+
+# ─── Limits ────────────────────────────────────────────────────────────
+# trivial_threshold: 0 — the outgoing workflow had no size floor, so a
+# one-line change to a skill's recommendation got a review. Keep that. In
+# this repo a single edited line of a SKILL.md can change what the skill
+# tells a user to do with their funds; small diffs are not low-stakes.
+trivial_threshold: 0
+# The outgoing workflow passed max_diff_lines: 5000. Raised to the cli
+# default because real PRs here exceed it: the largest recent feature PR
+# was +4804/-110 across 110 files, and the npm→bun migration was
+# +4186/-29858. `diff.summarize` below is what keeps those tractable.
+max_diff_lines: 6000
+
+# ─── Budget ────────────────────────────────────────────────────────────
+# Above the $5 template default because typical feature PRs here run
+# 200–5000 lines across 3–20 files, well past what that default assumes.
+# Sonnet keeps the per-token cost low enough that this is a ceiling
+# rather than an expected spend.
+max_budget_usd: 12.0
+agent_budget_usd: 5.0
+
+# ─── Investigation gate ────────────────────────────────────────────────
+# An empty-findings APPROVE has to be backed by the reviewers actually
+# opening the changed files. Raised above the defaults (0 / 0.25 / 0.5)
+# because the changed files here ARE the product: a skill's markdown is
+# not scaffolding around the logic, it IS the logic. Approving a
+# SKILL.md change without reading it is approving nothing. Kept short of
+# tjar's 0.5/0.75/0.9 because PRs here touch far more files (up to 110),
+# and a near-total coverage floor would price out the large ones.
+investigation:
+  min_approve_coverage:
+    light: 0.5
+    standard: 0.6
+    thorough: 0.7
+
+# ─── Diff summarization ────────────────────────────────────────────────
+# Generated and mechanical files, summarized rather than read line by
+# line so they don't crowd out the skill content in the prompt.
+#   bun.lock     — the lockfile; the bun migration PR was ~30k lines of it
+#   docs/api/**  — TypeDoc output, committed by generate-docs.yml with
+#                  [skip ci]; never hand-edited, so line-level review is
+#                  wasted budget
+diff:
+  summarize:
+    - 'bun.lock'
+    - 'docs/api/**'
+
+# ─── Triage guidance ───────────────────────────────────────────────────
+# Free-form steer for the triage agent's reviewer selection. The point is
+# that this repo's risk does NOT live where a code reviewer's instincts
+# point: there is almost no application code here. The product is prompt
+# and skill content that tells other agents how to move real money.
+triage:
+  guidance: |
+    This repo ships Claude Code plugins and skills, not an application.
+    Nearly every PR edits markdown under packages/plugins/<plugin>/, and
+    that markdown is the deliverable: it is instructions an autonomous
+    agent will follow against live contracts and real user funds. Treat
+    skill prose with the seriousness normally reserved for executable
+    code — a wrong chain ID, a stale contract address, a mis-ordered
+    approve/swap sequence, or a bad slippage default is a defect that
+    reaches users, even though nothing "compiles".
+
+    Always staff for changes under packages/plugins/**:
+      - defi-risk-reviewer — most skills here instruct an agent to swap,
+        provide liquidity, bridge, DCA, or pay with an arbitrary token.
+        Wrong guidance loses funds. Check slippage and deadline defaults,
+        approve/permit sequencing, fee-on-transfer and rebasing token
+        assumptions, chain/router/token addresses, and whether the skill
+        tells the agent to verify anything before signing.
+      - correctness-reviewer — API shapes, calldata encoding, SDK call
+        sequences, and chain IDs quoted in prose are frequently wrong in
+        ways that only surface at runtime. Verify them against the
+        reference docs in the same directory rather than assuming.
+
+    Additionally staff contract-security-reviewer when the diff touches
+    uniswap-hooks/ or uniswap-cca/: those skills emit Solidity (v4 hooks,
+    CCA auction deployment). The generated-contract guidance is the
+    attack surface, and v4-security-foundations/references/ is a
+    vulnerability catalog whose accuracy is itself security-critical.
+
+    Staff security-reviewer for changes under .github/ or .claude/: the
+    workflows hold ANTHROPIC_API_KEY, CLAUDE_CODE_OAUTH_TOKEN, and
+    WORKFLOW_PAT, and .claude/hooks/ are the guardrails on agent shell
+    access. Also treat skill content as a prompt-injection surface —
+    these files are consumed as instructions by other agents.
+
+    Staff dependency-upgrade-reviewer for chore(deps) PRs; they are
+    frequent and mechanical here, and the useful review is the lockfile
+    delta and the registry/provenance story, not the version number.
+
+    Do NOT spend review budget re-flagging what CI already blocks. See
+    .claude/review-context.md for the exhaustive list — briefly:
+    validate-skills hard-fails on missing SKILL.md frontmatter fields,
+    name/directory mismatches, and dangling skill paths;
+    check-eval-coverage hard-fails when a changed skill has no matching
+    evals/suites/<skill>/promptfoo.yaml. Restating those is noise.
