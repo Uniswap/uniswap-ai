@@ -76,13 +76,30 @@ concurrency:
   # asymmetric on purpose and has one consequence worth naming: a push CAN
   # cancel a review a human just asked for by comment. That is handled
   # rather than ignored, in the finalization steps at the end of the review
-  # job, which report `cancelled` as "superseded" instead of "failed".
+  # job, which report `cancelled` as its own terminal state rather than
+  # folding it into "failed".
   #
   # Deliberately ONE group across all trigger types, not one per type.
   # Splitting the group would stop pushes from cancelling comment runs, but
   # would then let two reviews run concurrently against the same sticky
   # comment. Serialization is worth more than avoiding the cancellation.
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  #
+  # The predicate mirrors the first clause of the triage gate below, so a
+  # cancellation only happens for events that will actually produce a
+  # replacement review. A bare `github.event_name == 'pull_request'` also
+  # fired for pushes this repo refuses to review (a human's draft, a fork),
+  # cancelling a comment-triggered review that nothing then replaced. Note
+  # this repo DOES review claude[bot] drafts, so the draft test cannot be a
+  # bare `draft == false`.
+  #
+  # Folded scalar with continuation lines at matching indent, so YAML
+  # collapses this to one line before Actions parses the expression.
+  cancel-in-progress: >-
+    ${{ github.event_name == 'pull_request'
+    && github.event.pull_request.head.repo.fork == false
+    && (github.event.pull_request.draft == false
+    || github.event.action == 'ready_for_review'
+    || github.event.pull_request.user.login == 'claude[bot]') }}
 
 env:
   # vars.REVIEW_CLI_VERSION is the authoritative pin — set it in repo
@@ -379,8 +396,9 @@ jobs:
           bun-version: ${{ env.BUN_VERSION }}
 
       # Install first — same two reasons as in triage, and here the
-      # second one has teeth: the finalization steps at the bottom of
-      # this job run `if: always()` under `continue-on-error: true`. If
+      # second one has teeth: the finalization steps at the bottom of this
+      # job run on every terminal state (two gated `!cancelled()`, the
+      # third `cancelled()`) under `continue-on-error: true`. If
       # install ran after the guards below and a guard failed, those
       # steps would find `steps.install.outputs.bin` empty, silently
       # no-op, and a rejected trigger comment would keep its 👀 and
@@ -613,17 +631,20 @@ jobs:
           retention-days: 30
           overwrite: true
 
-      # Skipped when the job was CANCELLED. A push to the PR cancels an
-      # in-flight review (see `cancel-in-progress` above), and a cancelled
-      # run is not a failed one — the newer run is already starting. Leaving
-      # the 👀 in place is accurate in that case; overwriting it with ❌
-      # would tell the commenter their request failed when it was merely
-      # superseded.
-      - name: Update reaction (✅ / ❌) on comment trigger
+      # `!cancelled()` runs on success and failure but not cancellation,
+      # which is what we want: a cancelled run is not a failed one, so
+      # leaving the 👀 in place is accurate rather than overwriting it with 👎
+      # and telling the commenter their request broke.
+      #
+      # Gated by the status-check function, NOT by comparing `job.status` in
+      # bash. `job.status` is documented to be one of success / failure /
+      # cancelled, but nothing specifies that it interpolates to `cancelled`
+      # for a step of the job currently being cancelled, so a bash comparison
+      # against it is an unverified assumption.
+      - name: Update reaction (👍 / 👎) on comment trigger
         if: |
-          always() &&
-          needs.triage.outputs.comment_id != '' &&
-          job.status != 'cancelled'
+          !cancelled() &&
+          needs.triage.outputs.comment_id != ''
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -642,9 +663,11 @@ jobs:
             --reaction "$REACTION" \
             --clear-prior-ack
 
+      # Success and failure only. Cancellation is the step after this one,
+      # gated on `cancelled()` — see the note there.
       - name: Update threaded reply with terminal state
         if: |
-          always() &&
+          !cancelled() &&
           needs.triage.outputs.reply_id != ''
         continue-on-error: true
         env:
@@ -657,17 +680,50 @@ jobs:
           REVIEW_CLI: ${{ steps.install.outputs.bin }}
           BUN_CONFIG_FILE: /dev/null
         run: |
-          # Three terminal states, not two. `job.status` is one of success /
-          # failure / cancelled, and conflating cancelled with failure tells
-          # a commenter their request broke when a newer push simply
-          # superseded it.
           if [ "$OUTCOME" = "success" ]; then
             BODY="✅ **Reviewed** · [view run ↗](${RUN_URL}) · scroll up for the full summary."
-          elif [ "$OUTCOME" = "cancelled" ]; then
-            BODY="⏹ **Superseded** · a newer push to this PR started a fresh review, so this one was cancelled · [view run ↗](${RUN_URL})"
           else
             BODY="⚠ **Review failed** · [view run ↗](${RUN_URL}) · scroll up for the partial state, or comment \`@request-claude-review\` to retry."
           fi
+          "$REVIEW_CLI" reply \
+            --repo "$GH_REPO" \
+            --event "$EVENT_NAME" \
+            --edit-reply "$REPLY_ID" \
+            --body "$BODY"
+
+      # Cancellation is a third terminal state, not a kind of failure. It
+      # gets its own step because `cancelled()` is the only documented way to
+      # detect it; the previous version branched on `job.status` inside the
+      # step above, which may never have matched.
+      #
+      # The copy reports the observable fact and hedges the cause. The
+      # earlier wording asserted a supersede, but a manual cancel from the
+      # Actions UI produces the same state with no newer review behind it, so
+      # that stated a cause we cannot know. It also dropped the retry hint,
+      # which matters most on exactly that path, because nothing else is
+      # coming.
+      - name: Update threaded reply when the run is cancelled
+        if: |
+          cancelled() &&
+          needs.triage.outputs.reply_id != ''
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          REPLY_ID: ${{ needs.triage.outputs.reply_id }}
+          EVENT_NAME: ${{ github.event_name }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          REVIEW_CLI: ${{ steps.install.outputs.bin }}
+          BUN_CONFIG_FILE: /dev/null
+        run: |
+          # Cancellation can land before the install step finished, in which
+          # case there is no binary to post with. Exit clean rather than
+          # failing a step whose job is already cancelled.
+          if [ -z "${REVIEW_CLI:-}" ] || [ ! -x "$REVIEW_CLI" ]; then
+            echo "review-cli not installed (cancelled early); leaving the reply as-is"
+            exit 0
+          fi
+          BODY="⏹ **Cancelled** · this run was cancelled before finishing — most often because a newer push to this PR started a fresh review · [view run ↗](${RUN_URL}) · comment \`@request-claude-review\` if you still need one."
           "$REVIEW_CLI" reply \
             --repo "$GH_REPO" \
             --event "$EVENT_NAME" \
