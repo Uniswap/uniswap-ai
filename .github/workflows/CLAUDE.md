@@ -92,6 +92,59 @@ and every Dependabot PR, silently disabling auto-merge.
 - Use workflow_dispatch: `gh workflow run "Claude Code Review" -f pr_number=123`
   (`force_review` defaults true, which skips change detection)
 
+**Cancellation, and the three terminal states.** A push to a PR cancels the
+review already in flight for it, because reviewing code a newer push has
+already replaced spends budget on a stale answer. One concurrency group covers
+every trigger type, so a push can cancel a review a human just asked for by
+comment. That is deliberate: splitting the group per trigger would let two
+reviews run concurrently against the same sticky comment, and serialization is
+worth more.
+
+`cancel-in-progress` only fires for events that will actually produce a
+replacement review, so it mirrors the first clause of the `triage` gate rather
+than testing `github.event_name` alone:
+
+```yaml
+cancel-in-progress: >-
+  ${{ github.event_name == 'pull_request'
+  && github.event.pull_request.head.repo.fork == false
+  && (github.event.pull_request.draft == false
+  || github.event.action == 'ready_for_review'
+  || github.event.pull_request.user.login == 'claude[bot]') }}
+```
+
+Note this is **not** a bare `draft == false`, because this repo does review
+`claude[bot]` drafts. If you change the gate, change this predicate to match, or
+a push will start cancelling reviews that nothing replaces.
+
+A run therefore ends in one of **three** states, not two, and the finalization
+steps report each differently:
+
+| State              | Gate           | Trigger comment | Threaded reply      |
+| ------------------ | -------------- | --------------- | ------------------- |
+| review completed   | `!cancelled()` | 👀 → 👍         | ✅ **Reviewed**     |
+| review job errored | `!cancelled()` | 👀 → 👎         | ⚠ **Review failed** |
+| run cancelled      | `cancelled()`  | 👀 kept         | ⏹ **Cancelled**     |
+
+Cancellation is detected with the `cancelled()` status-check function, not by
+comparing `job.status` in bash. `job.status` is documented to be one of
+`success` / `failure` / `cancelled`, but nothing specifies that it interpolates
+to `cancelled` for a step of the job currently being cancelled, so a bash
+comparison against it would be an unverified assumption.
+
+**If you triggered a review by comment and it was cancelled**, your 👀 stays
+(the request was superseded, not rejected) and the threaded reply says so. On a
+push supersede the newer run picks it up automatically. On a manual cancel from
+the Actions UI, nothing follows, so comment `@request-claude-review` again. Two
+known rough edges on the manual-cancel path:
+
+- The sticky summary comment still shows its "Review running" placeholder. This
+  needs a CLI change and is tracked in
+  [Uniswap/internal-tools#155](https://github.com/Uniswap/internal-tools/issues/155).
+- If the run is cancelled while still **queued**, no job is allocated, so no
+  finalization step runs at all. Harmless, because `triage` never ran either, so
+  there is no 👀 or reply to leave stale.
+
 ### Claude Docs Check
 
 **File:** `claude-docs-check.yml`
