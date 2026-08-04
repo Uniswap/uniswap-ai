@@ -77,12 +77,23 @@ deliberately **not** vendored here.
 **Automated PRs** are classified by the shared
 `.github/actions/check-automated-pr` composite action — the same one
 `ci-pr-checks.yml` and `ci-check-pr-title.yml` use, so there is one
-definition. Automated PRs are skipped except `deps`, which are reviewed so
-`auto-merge-dependabot` has a review result to gate on. Consequently
+definition. Automated PRs are skipped except `deps`.
+
 `.claude/review.yml` sets `skip.branch_prefixes: []`, `skip.authors: []`,
-and `skip.drafts: false`: the CLI's own defaults would otherwise skip
-every bot-authored PR (including `claude[bot]`, which opens most PRs here)
-and every Dependabot PR, silently disabling auto-merge.
+and `skip.drafts: false` because the CLI's own defaults
+(`authors: ['*[bot]']`, `drafts: true`, and the `dependabot/` / `renovate/`
+branch prefixes) would otherwise drop any bot-authored or draft PR outright.
+This repo does get `claude[bot]` PRs and does want its drafts reviewed, so
+those defaults are wrong here — though bot-authored PRs are a minority
+(2 of the last 30 as of 2026-08-03; most are human-authored).
+
+**`auto-merge-dependabot` is currently inert.** There is no
+`.github/dependabot.yml`, `automated-security-fixes` reports
+`enabled: false`, and the repo has never received a Dependabot PR. Before
+trusting that job, note it gates on `needs.review.result == 'success'`,
+which means the review job did not crash — not that the review approved. A
+`REQUEST_CHANGES` verdict still leaves the job result `success`. Fix that
+gate before enabling Dependabot.
 
 **Triggering a new review:**
 
