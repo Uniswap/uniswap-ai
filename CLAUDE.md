@@ -114,8 +114,7 @@ Evals are to AI tools what tests are to traditional code. This project uses [Pro
 ```text
 evals/
 ├── promptfoo.yaml          # Root config with default providers
-├── rubrics/                # Shared evaluation rubrics (.txt files)
-│   └── security-checklist.txt
+├── rubrics/                # Shared evaluation rubrics (.txt files; currently empty)
 ├── scripts/
 │   └── anthropic-provider.ts  # Custom provider for OAuth support
 ├── suites/                 # Per-skill eval suites

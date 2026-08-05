@@ -30,8 +30,7 @@ evals/
 ├── README.md               # This file
 ├── framework/
 │   └── types.ts            # TypeScript types (for programmatic use)
-├── rubrics/                # Shared evaluation rubrics
-│   └── security-checklist.txt
+├── rubrics/                # Shared evaluation rubrics (currently empty; suite rubrics live per-suite)
 ├── scripts/
 │   └── anthropic-provider.ts  # Custom provider for OAuth support
 ├── suites/
@@ -383,6 +382,6 @@ The skill content likely contains `{%` patterns (e.g., URL-encoded JSON `{%22key
 
 ### Cost concerns
 
-- Use `claude-sonnet-4-5-20250929` instead of `claude-opus-4-5-20251101` for routine evals
+- Prefer a Sonnet-class model for routine evals; the Opus premium is roughly 1.7x on the Claude 5 family, so reserve Opus for suites where grading accuracy matters most (verify current pricing at <https://platform.claude.com/docs/en/about-claude/pricing> before changing pins)
 - Use deterministic assertions where possible
 - Run specific suites instead of all suites during development
