@@ -1,7 +1,7 @@
 ---
 description: Expert agent for complex Uniswap swap integration questions. Use for Trading API integration, Universal Router encoding, SDK usage, Permit2 patterns, and smart contract integrations.
 model: opus
-allowed-tools: Read, Glob, Grep, WebFetch, WebSearch
+tools: Read, Glob, Grep, WebFetch, WebSearch
 ---
 
 # Swap Integration Expert
