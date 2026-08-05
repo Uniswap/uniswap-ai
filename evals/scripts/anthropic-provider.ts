@@ -63,12 +63,13 @@ function getAnthropicClient(): Anthropic {
 }
 
 /**
- * Model pricing per 1M tokens (as of Feb 2026)
+ * Model pricing per 1M tokens (as of Aug 2026)
  * Source: https://platform.claude.com/docs/en/about-claude/pricing
  */
 const MODEL_PRICING: Record<string, { input: number; output: number }> = {
   'claude-sonnet-4-5-20250929': { input: 3, output: 15 },
-  'claude-opus-4-5-20251101': { input: 15, output: 75 },
+  'claude-sonnet-4-6': { input: 3, output: 15 },
+  'claude-opus-4-5-20251101': { input: 5, output: 25 },
   'claude-haiku-4-5-20251001': { input: 1, output: 5 },
 };
 
