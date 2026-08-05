@@ -258,6 +258,10 @@ When modifying plugins or skills, update the corresponding VitePress documentati
 
 Run `node scripts/validate-docs.cjs` to verify all documentation pages exist. This check is enforced in CI.
 
+### Deliverable Length
+
+Match the length of written deliverables (docs pages, skill prose, READMEs, reports) to what the task needs: cover the substance, skip filler sections, redundant summaries, and boilerplate padding.
+
 ### CLAUDE.md File Management
 
 After changes to files in this repository, update the relevant CLAUDE.md file to reflect the changes.
