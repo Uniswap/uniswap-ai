@@ -5,8 +5,8 @@
 # template (packages/review-cli/templates/workflows/review.yml in
 # Uniswap/internal-tools) and the shape already running in
 # Uniswap/backend, Uniswap/universe, and Uniswap/tjar, then adapted to
-# preserve this repo's extra behavior: automated-PR classification,
-# the skipped-review notice, and Dependabot auto-merge.
+# preserve this repo's extra behavior: automated-PR classification and
+# the skipped-review notice.
 #
 # Four triggers, three jobs:
 #
