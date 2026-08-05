@@ -10,6 +10,7 @@ This plugin provides comprehensive guidance for integrating Uniswap swaps into f
 
 - **swap-integration**: Comprehensive guide for integrating Uniswap swaps via Trading API, Universal Router SDK, or direct smart contract calls. Covers frontend hooks, backend scripts, Solidity integrations, Permit2 patterns, ERC-4337 smart account integration, L2 WETH handling, rate limiting, and troubleshooting.
 - **pay-with-any-token**: Pay HTTP 402 Payment Required challenges (MPP and x402) by swapping or bridging tokens via the Uniswap Trading API. Supports WWW-Authenticate header-based and JSON body-based MPP challenges, cross-chain bridging to Tempo, and automatic stablecoin swaps.
+- **pay-with-app**: Pay HTTP 402 payment challenges issued by OKX's Agent Payments Protocol (APP) on X Layer using tokens from any chain via the Uniswap Trading API. Covers challenge parsing, funding X Layer, and the APP x402 settlement flow.
 - **v4-sdk-integration**: App-layer SDK guide for building swap and liquidity experiences directly with the Uniswap v4 SDK. Covers V4Planner swap construction, Quoter callStatic, StateView pool reads, PositionManager multicall operations, and Permit2 approval flow.
 - **lp-integration**: Integrate liquidity provisioning via the Uniswap LP API (a transaction-building REST service). Covers the create/create_classic/increase/decrease/claim_fees/check_approval/pool_info endpoints for v2/v3/v4, the approval and EIP-712 permit flow, response-field gotchas, and a viem create-position example.
 
@@ -35,6 +36,11 @@ uniswap-trading/
 │   │   └── references/
 │   │       ├── trading-api-flows.md
 │   │       └── credential-construction.md
+│   ├── pay-with-app/
+│   │   ├── SKILL.md
+│   │   └── references/
+│   │       ├── app-x402-flow.md
+│   │       └── funding-x-layer.md
 │   ├── v4-sdk-integration/
 │   │   └── SKILL.md
 │   └── lp-integration/
