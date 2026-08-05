@@ -8,10 +8,10 @@
 # preserve this repo's extra behavior: automated-PR classification,
 # the skipped-review notice, and Dependabot auto-merge.
 #
-# Four triggers, four jobs:
+# Four triggers, three jobs:
 #
 #   pull_request                ┐
-#   issue_comment               ├──▶ triage (gate) ──▶ review ──▶ auto-merge-dependabot
+#   issue_comment               ├──▶ triage (gate) ──▶ review
 #   pull_request_review_comment │                  └──▶ review-skipped
 #   workflow_dispatch           ┘
 #
@@ -365,11 +365,12 @@ jobs:
   review:
     name: AI review
     needs: triage
-    # Automated PRs are skipped EXCEPT dependency bumps, which are
-    # reviewed so auto-merge-dependabot below has a review result to gate
-    # on. Identical to the outgoing workflow's condition. `is_automated`
-    # is empty for comment and manual triggers (the classifier step is
-    # skipped), so those always proceed.
+    # Automated PRs are skipped EXCEPT dependency bumps. Those are worth
+    # reviewing on their own merits (supply-chain risk, breaking changes in
+    # a transitive major), and `.claude/review.yml` staffs
+    # dependency-upgrade-reviewer for them. `is_automated` is empty for
+    # comment and manual triggers (the classifier step is skipped), so
+    # those always proceed.
     if: |
       needs.triage.outputs.run == 'true' &&
       (needs.triage.outputs.is_automated != 'true' || needs.triage.outputs.category == 'deps')
@@ -751,29 +752,3 @@ jobs:
         run: |
           echo "::notice::Code review skipped for automated PR: $SKIP_REASON"
           echo "✅ Automated PR detected - code review is not required for this PR type."
-
-  # Auto-merge Dependabot security updates once the review passes.
-  # Preserved from the outgoing workflow, including the title filter.
-  # This is why `deps` PRs are exempted from the automated-PR skip above:
-  # without a review result to gate on, this job would never fire.
-  auto-merge-dependabot:
-    name: Auto-merge Dependabot
-    needs: review
-    if: |
-      github.event_name == 'pull_request' &&
-      github.event.pull_request.user.login == 'dependabot[bot]' &&
-      (contains(github.event.pull_request.title, 'security') || contains(github.event.pull_request.title, 'Bump')) &&
-      needs.review.result == 'success'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write # `gh pr merge --auto` queues a merge commit
-      pull-requests: write # sets the auto-merge flag on the PR
-    steps:
-      - uses: bullfrogsec/bullfrog@1831f79cce8ad602eef14d2163873f27081ebfb3 # v0.8.4
-
-      - name: Enable auto-merge for Dependabot updates
-        env:
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_REPO: ${{ github.repository }}
-        run: gh pr merge --auto --squash "$PR_NUMBER"

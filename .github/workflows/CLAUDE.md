@@ -87,13 +87,24 @@ This repo does get `claude[bot]` PRs and does want its drafts reviewed, so
 those defaults are wrong here — though bot-authored PRs are a minority
 (2 of the last 30 as of 2026-08-03; most are human-authored).
 
-**`auto-merge-dependabot` is currently inert.** There is no
-`.github/dependabot.yml`, `automated-security-fixes` reports
-`enabled: false`, and the repo has never received a Dependabot PR. Before
-trusting that job, note it gates on `needs.review.result == 'success'`,
-which means the review job did not crash — not that the review approved. A
-`REQUEST_CHANGES` verdict still leaves the job result `success`. Fix that
-gate before enabling Dependabot.
+**There is no Dependabot auto-merge.** An `auto-merge-dependabot` job used
+to live in `claude-code-review.yml` and was removed, because it could not
+run and its gate was wrong. If you ever want it back, two things have to be
+true that were not:
+
+- **Dependabot has to actually produce PRs here.** This repo has only
+  `bun.lock`, and Dependabot's `bun` ecosystem supports version updates but
+  **not** security updates. Enabling `automated-security-fixes` gains
+  nothing for these dependencies; version updates need a
+  `.github/dependabot.yml` with `package-ecosystem: bun`.
+- **The gate has to test the verdict, not the exit code.** The removed job
+  gated on `needs.review.result == 'success'`, which means the review job
+  did not crash — not that the review approved. A `REQUEST_CHANGES` verdict
+  still leaves the job result `success`, so as written it would have
+  auto-merged a PR the reviewer objected to.
+
+Dependabot alerts are already enabled, so vulnerable dependencies surface
+today; they just get bumped by hand.
 
 **Triggering a new review:**
 
