@@ -27,7 +27,7 @@ This is the **uniswap-ai** monorepo providing Uniswap-specific AI tools (skills,
 
 ### Code Quality Enforcement
 
-After making any code changes, Claude Code MUST:
+Before committing or declaring a change complete, Claude Code MUST:
 
 1. **Format the code**: Run `bunx nx format:write --uncommitted` to format all uncommitted files
 2. **Lint the code**: Run `bunx nx affected --target=lint --base=HEAD~1` to check for linting errors
@@ -240,7 +240,7 @@ Never use `${{ }}` expressions directly in bash scripts. Use environment variabl
 
 ### Bullfrog Security Scanning
 
-Every job running on non-macOS runners MUST have `bullfrogsec/bullfrog` as the FIRST step.
+Every job running on non-macOS runners MUST have `bullfrogsec/bullfrog` as the FIRST step, so its egress policy is active before any other step can make network calls.
 
 ## Documentation Management
 

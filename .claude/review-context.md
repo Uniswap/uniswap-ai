@@ -217,4 +217,5 @@ skill authoring by people closer to the domain than the reviewer. Spend
 the budget on the four things that actually bite: **stale external
 facts, transaction-sequencing and slippage defaults, generated-Solidity
 correctness, and evals that no longer test what the skill now says.**
-Everything mechanical is already covered above.
+These are priorities, not a filter — report any real defect you find,
+wherever it lives. Everything mechanical is already covered above.
