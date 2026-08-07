@@ -373,8 +373,8 @@ the individual transactions inside it.
 >
 > A response that only lists fields without the
 > `AskUserQuestion("Proceed?") + block` step is not a gate, even if it
-> looks comprehensive. The model's natural inclination is to summarize
-> and continue; resist that inclination, name the gate, and stop.
+> looks comprehensive. Name each gate as a discrete step and stop for
+> the user's reply before continuing.
 
 <!-- markdownlint-disable-next-line -->
 
