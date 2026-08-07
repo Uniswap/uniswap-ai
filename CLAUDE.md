@@ -27,7 +27,7 @@ This is the **uniswap-ai** monorepo providing Uniswap-specific AI tools (skills,
 
 ### Code Quality Enforcement
 
-After making any code changes, Claude Code MUST:
+Before committing or declaring a change complete, Claude Code MUST:
 
 1. **Format the code**: Run `bunx nx format:write --uncommitted` to format all uncommitted files
 2. **Lint the code**: Run `bunx nx affected --target=lint --base=HEAD~1` to check for linting errors
@@ -114,8 +114,7 @@ Evals are to AI tools what tests are to traditional code. This project uses [Pro
 ```text
 evals/
 ├── promptfoo.yaml          # Root config with default providers
-├── rubrics/                # Shared evaluation rubrics (.txt files)
-│   └── security-checklist.txt
+├── rubrics/                # Shared evaluation rubrics (.txt files; currently empty)
 ├── scripts/
 │   └── anthropic-provider.ts  # Custom provider for OAuth support
 ├── suites/                 # Per-skill eval suites
@@ -241,7 +240,7 @@ Never use `${{ }}` expressions directly in bash scripts. Use environment variabl
 
 ### Bullfrog Security Scanning
 
-Every job running on non-macOS runners MUST have `bullfrogsec/bullfrog` as the FIRST step.
+Every job running on non-macOS runners MUST have `bullfrogsec/bullfrog` as the FIRST step, so its egress policy is active before any other step can make network calls.
 
 ## Documentation Management
 
@@ -257,6 +256,10 @@ When modifying plugins or skills, update the corresponding VitePress documentati
   - `docs/index.md` - featured skills section (if applicable)
 
 Run `node scripts/validate-docs.cjs` to verify all documentation pages exist. This check is enforced in CI.
+
+### Deliverable Length
+
+Match the length of written deliverables (docs pages, skill prose, READMEs, reports) to what the task needs: cover the substance, skip filler sections, redundant summaries, and boilerplate padding.
 
 ### CLAUDE.md File Management
 

@@ -23,6 +23,7 @@ Generates supply schedules for CCA (Continuous Clearing Auction) contracts.
 **Tools:**
 
 - `generate_supply_schedule`: Generate standard supply schedule
+- `encode_supply_schedule`: Encode supply schedules to bytes for onchain deployment
 
 **Setup:**
 

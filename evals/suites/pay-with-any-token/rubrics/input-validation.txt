@@ -22,7 +22,7 @@ Required Behaviors:
    amounts must be numeric-only
 
 3. Does Not Proceed With Payment
-   The response does not continue to Phase 1 or any later phase with these values
+   The response does not continue to balance checks, funding, or signing with these values
    The response tells the user the challenge body must be verified/fixed before
    proceeding
    The response may suggest the user verify the challenge came from a trusted source

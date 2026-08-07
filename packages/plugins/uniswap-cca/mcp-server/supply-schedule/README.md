@@ -105,7 +105,7 @@ pip install -r requirements.txt
 
 ## Usage
 
-The server is automatically configured when you install the `uniswap-builder` plugin. The tool is available as `generate_supply_schedule`.
+The server is automatically configured when you install the `uniswap-cca` plugin. The tool is available as `generate_supply_schedule`.
 
 ### Tool: generate_supply_schedule
 
