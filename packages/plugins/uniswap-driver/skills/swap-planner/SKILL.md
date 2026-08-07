@@ -28,6 +28,8 @@ The generated link opens Uniswap with all parameters ready for execution.
 
 > **Note:** Browser opening (`xdg-open`/`open`) may fail in SSH, containerized, or headless environments. Always display the URL prominently so users can copy and access it manually if needed.
 
+<!-- markdownlint-disable-next-line MD028 -->
+
 > **File Access:** This skill has read-only filesystem access. Never read files outside the current project directory unless explicitly requested by the user.
 
 ## Workflow
@@ -109,7 +111,7 @@ Tokens discovered via WebSearch are **UNTRUSTED**. Before proceeding with any we
 3. **Require confirmation**: Use AskUserQuestion to get explicit user consent before generating a deep link for a web-discovered token
 4. **Show provenance**: In the swap summary table, include a "Token Source" row showing whether each token was "User-provided" or "Web-discovered (unverified)"
 
-**Never proceed with a web-discovered token without explicit user confirmation via AskUserQuestion.**
+**Never proceed with a web-discovered token without explicit user confirmation — via AskUserQuestion, or an equivalent conversational confirmation where that tool is unavailable.**
 
 #### Present Options to User
 
@@ -147,14 +149,14 @@ Evaluate tokens before recommending:
 
 #### Mandatory Warnings for High-Risk Tokens
 
-When ANY of these conditions are met, you MUST use AskUserQuestion to warn the user and get explicit confirmation before generating a deep link:
+When ANY of these conditions are met, you MUST warn the user and get explicit confirmation before generating a deep link (via AskUserQuestion where available, conversational confirmation otherwise):
 
 - **Contract age < 7 days**: "This token contract is less than 7 days old. New tokens carry significantly higher risk of being scams or rug pulls."
 - **Pool TVL < $100k**: "This pool has very low liquidity. You may experience significant slippage and difficulty selling."
 - **No sell liquidity detected**: "This token may be a honeypot — tokens that can be bought but not sold. Proceed with extreme caution."
 - **Market cap < $5M**: "This is a micro-cap token with high volatility. Only invest what you can afford to lose entirely."
 
-Do NOT generate a deep link for high-risk tokens without explicit user acknowledgment via AskUserQuestion.
+Do NOT generate a deep link for high-risk tokens without explicit user acknowledgment.
 
 ---
 

@@ -1,7 +1,7 @@
 ---
 description: Expert agent for complex viem and wagmi integration questions. Use for debugging transaction issues, optimizing gas, handling edge cases, multi-chain patterns, and advanced contract interactions.
 model: opus
-allowed-tools: Read, Glob, Grep, WebFetch, WebSearch
+tools: Read, Glob, Grep, WebFetch, WebSearch
 ---
 
 # viem Integration Expert

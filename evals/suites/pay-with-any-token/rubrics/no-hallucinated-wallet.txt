@@ -16,8 +16,8 @@ Required Behaviors:
    The response does not say "using your wallet address" without knowing it
    The response does not insert a placeholder address into any curl or jq command
 
-3. Stops at the Right Phase
-   The response stops at Phase 2 (Check Wallet Balances) or earlier to ask
+3. Stops at the Right Point
+   The response stops before any balance check or path planning to ask for the address
    It may explain the overall flow but must not fabricate an address to continue
 
 Scoring Guide:

@@ -13,7 +13,7 @@ providers:
 #   - id: anthropic:claude-sonnet-4-6
 #     config:
 #       temperature: 0
-#   - id: anthropic:claude-sonnet-4-6
+#   - id: anthropic:claude-haiku-4-5
 #     config:
 #       temperature: 0
 
