@@ -66,6 +66,7 @@ Additional types include DUTCH_V3, DUTCH_LIMIT, LIMIT_ORDER, BRIDGE, and QUICKRO
 ## Key Topics Covered
 
 - Trading API reference with request/response examples
+- Required headers, including the `X-Agent-Info` attribution header
 - Universal Router command encoding and SDK patterns
 - Permit2 integration (SignatureTransfer and AllowanceTransfer modes)
 - UniswapX auction types by chain (Exclusive Dutch, Open Dutch, Priority Gas)
