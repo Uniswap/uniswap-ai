@@ -214,6 +214,54 @@ mis-fire there skips a review rather than deadlocking the PR; converting
 it to the numeric id is worthwhile but is not load-bearing the way this
 one is.
 
+**There are two independent bot gates, and only the first is in this
+repo.** Clearing the `if:` above is necessary but not sufficient:
+
+1. **The workflow-level `if:`** decided whether the job ran at all. This is
+   the one that caused the deadlock, and it is fixed here.
+2. **`anthropics/claude-code-action`'s own actor check**, reached only once
+   the job actually starts. It refuses a non-`User` actor unless the actor
+   is listed in the action's `allowed_bots` input, which defaults to `""`
+   (allow no bots). The failure reads:
+
+   ```text
+   Workflow initiated by non-human actor: claude (type: Bot).
+   Add bot to allowed_bots list or use '*' to allow all bots.
+   ```
+
+   **This cannot be set from this repo.** `_claude-docs-check.yml` in
+   `Uniswap/ai-toolkit` declares 14 `workflow_call` inputs, none of them
+   `allowed_bots`, and neither of its two `claude-code-action` steps
+   forwards one — verified against the pinned SHA and against the toolkit's
+   `main` and `next`, which are byte-identical here. There is no input to
+   pass and no newer ref that helps. The fix is to plumb `allowed_bots`
+   through that reusable workflow, after which this caller passes
+   `claude[bot]`. Do not reach for `'*'`: it would admit every bot,
+   including external Apps on a public repo.
+
+Until that lands, a bot-authored PR gets `docs-check / docs-check` →
+`failure` from the actor check rather than a real docs verdict. That is
+still a strict improvement, because the required context reports at all and
+the PR is no longer wedged pending-forever — but treat the red as "the
+check could not run", not "the docs are wrong".
+
+Note the action's `allowed_bots` matches on **name**, not a numeric id:
+it lowercases both sides and strips a trailing `[bot]`, so `claude`,
+`claude[bot]`, and `Claude[bot]` are the same entry. Two properties keep
+that acceptable, and one does not:
+
+- The value compared is `github.actor`, which GitHub populates from the
+  authenticated triggering actor. Nothing in a PR's branch, diff, or title
+  can influence it.
+- The list is consulted **only** for actors GitHub's Users API reports as
+  non-`User`. A human who registers the account `claude` never reaches the
+  allow-list, so the name grants them nothing.
+- Residual, and unfixable within that interface: if the app were renamed,
+  or a different app were named `claude`, the name would match. The
+  action exposes no id-based equivalent.
+
+That is why the gate this repo _does_ control uses the numeric id.
+
 Fork PRs are still skipped (they have no access to secrets) and so are
 still subject to the same never-reporting-context deadlock. No fork PR has
 needed to merge here, but the durable fix is to drop

@@ -69,6 +69,21 @@ jobs:
     # rather than an identity. `user.type` is GitHub's own account-kind
     # field, so other bots keep being skipped without depending on the
     # `[bot]` login suffix either.
+    #
+    # SECOND GATE, NOT FIXABLE HERE: clearing this condition lets the job
+    # start and report the required context, but the job then fails at
+    # `anthropics/claude-code-action`'s own actor check with "Workflow
+    # initiated by non-human actor: claude (type: Bot). Add bot to
+    # allowed_bots list". That action gates on its `allowed_bots` input,
+    # which defaults to "" (allow no bots) — and the reusable workflow
+    # called below neither declares an `allowed_bots` input nor forwards
+    # one to the action, so there is no value this file can pass. Fixing it
+    # requires `Uniswap/ai-toolkit` to plumb `allowed_bots` through
+    # `_claude-docs-check.yml`; then this caller passes `claude[bot]`.
+    # Until that lands, the check reports `failure` on bot PRs rather than
+    # a real docs verdict. That is strictly better than before — the
+    # required context reports at all, so the PR is no longer wedged
+    # pending-forever — but it is not yet a meaningful verdict.
     if: |
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'pull_request' &&
