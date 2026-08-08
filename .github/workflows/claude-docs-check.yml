@@ -94,7 +94,34 @@ jobs:
     with:
       pr_number: ${{ github.event.pull_request.number || github.event.inputs.pr_number }}
       suggestion_mode: ${{ github.event.inputs.suggestion_mode || 'suggest' }}
+      # `auto_commit` stays manual-dispatch-only. On a `pull_request` event
+      # `github.event.inputs` is empty, so this expression is always `false`
+      # there — which is why the docs check has never auto-committed anything
+      # on a PR. Auto-committing is enabled via `auto_fix` below instead, not
+      # by flipping this. The two are different mechanisms and enabling both
+      # is a mistake: `auto_commit` applies the model's structured
+      # `suggestions[]` array by *overwriting whole files* with
+      # `suggested_content` (`post-docs-check.ts`, `autoCommitChanges`), it
+      # has no loop guard, and its commit subject
+      # (`docs: auto-update documentation`) does not match the anchored
+      # `^\w+\(claude\):.*\(auto-fix\)$` regex that `auto_fix`'s loop guard
+      # keys on — so the two would push over each other indefinitely.
       auto_commit: ${{ github.event.inputs.auto_commit == 'true' }}
+      # AUTO-COMMIT DOC FIXES. When the check returns a FAIL verdict (or finds
+      # any suggestions / missing updates), the toolkit runs a second Claude
+      # pass scoped to `Read,Edit,Write,Grep,Glob,Bash(git:*)`, commits the
+      # result as `docs(claude): fix documentation issues (auto-fix)` authored
+      # by `github-actions[bot]`, and pushes it **directly to the PR's head
+      # branch** — not to a fixup branch and not as a follow-up PR. The push
+      # uses `WORKFLOW_PAT` (passed below), which is what lets the resulting
+      # commit re-trigger this workflow so the fixed code gets a fresh verdict;
+      # a `GITHUB_TOKEN` push would not re-trigger, and the toolkit
+      # deliberately fails the job in that case rather than leaving a stale
+      # green. Blast radius: this rewrites contributors' branches, human- and
+      # bot-authored alike. It cannot touch a fork — every auto-fix step is
+      # additionally gated on `head.repo.full_name == github.repository`
+      # inside the reusable workflow, on top of this job's own `if:`.
+      auto_fix: true
       # Use sonnet for faster, cheaper checks
       model: 'claude-sonnet-5'
       # Fail if plugin versions aren't bumped
@@ -106,7 +133,12 @@ jobs:
     secrets:
       # Use OAuth token (Pro/Max) instead of API key
       CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-      # PAT for branch creation
+      # PAT for branch creation and for the `auto_fix` push. Required for
+      # auto-fix to be useful: the toolkit falls back to `GITHUB_TOKEN` when
+      # this is unset, and a `GITHUB_TOKEN` push does not trigger workflows,
+      # so the fix would never be re-validated. The toolkit's `Set Exit Code`
+      # step detects that case and fails the job with an explicit message
+      # rather than reporting a passing check against unverified code.
       WORKFLOW_PAT: ${{ secrets.WORKFLOW_PAT }}
     permissions:
       contents: write
