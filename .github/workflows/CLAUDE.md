@@ -229,26 +229,48 @@ repo.** Clearing the `if:` above is necessary but not sufficient:
    Add bot to allowed_bots list or use '*' to allow all bots.
    ```
 
-   **This cannot be set from this repo.** `_claude-docs-check.yml` in
-   `Uniswap/ai-toolkit` declares 14 `workflow_call` inputs, none of them
-   `allowed_bots`, and neither of its two `claude-code-action` steps
-   forwards one — verified against the pinned SHA and against the toolkit's
-   `main` and `next`, which are byte-identical here. There is no input to
-   pass and no newer ref that helps. The fix is to plumb `allowed_bots`
-   through that reusable workflow, after which this caller passes
-   `claude[bot]`. Do not reach for `'*'`: it would admit every bot,
+   **This cannot be set from this repo, and the value is hardcoded in the
+   toolkit.** Both ai-toolkit reusable workflows this repo calls decide
+   `allowed_bots` themselves and expose no input for it:
+
+   | Reusable workflow           | What it passes                         | Effect on `claude[bot]`    |
+   | --------------------------- | -------------------------------------- | -------------------------- |
+   | `_claude-docs-check.yml`    | nothing (action default `""`)          | rejected — no bots allowed |
+   | `_generate-pr-metadata.yml` | `allowed_bots: dependabot` (hardcoded) | rejected — not in list     |
+
+   `_claude-docs-check.yml` declares 14 `workflow_call` inputs, none of them
+   `allowed_bots`, and neither of its two `claude-code-action` steps forwards
+   one. Verified against the pinned SHA and against the toolkit's `main` and
+   `next`, which are byte-identical here — so there is no input to pass and
+   no newer ref that helps. The fix belongs in ai-toolkit: either add an
+   `allowed_bots` input and forward it, or extend the hardcoded list to
+   `dependabot,claude`. Do not reach for `'*'`: it would admit every bot,
    including external Apps on a public repo.
+
+   This is also why `generate-metadata / generate-metadata` fails on
+   bot-authored PRs — the same actor check, one line of hardcoded config
+   away. It is not a required check, so it does not block merges.
 
 Until that lands, a bot-authored PR gets `docs-check / docs-check` →
 `failure` from the actor check rather than a real docs verdict. That is
 still a strict improvement, because the required context reports at all and
 the PR is no longer wedged pending-forever — but treat the red as "the
-check could not run", not "the docs are wrong".
+check could not run", not "the docs are wrong". The tell is in the job's
+step list: `Run Claude Docs Check` fails and `Process Results` is
+**skipped**, so no verdict was ever produced. (`Set Exit Code` then prints
+"✅ Documentation check passed" against an empty `VERDICT`, which is
+misleading — the job still fails on the earlier step.)
 
-Note the action's `allowed_bots` matches on **name**, not a numeric id:
-it lowercases both sides and strips a trailing `[bot]`, so `claude`,
-`claude[bot]`, and `Claude[bot]` are the same entry. Two properties keep
-that acceptable, and one does not:
+**The `claude` vs `claude[bot]` spelling does not matter.** The action's
+`isAllowedBot` (`src/github/validation/actor.ts`) lowercases and strips a
+trailing `[bot]` from _both_ the configured entries and the actor, so
+`claude`, `claude[bot]`, and `Claude[bot]` are one entry. The error message
+prints the stripped form purely for display; it is not a hint that the
+suffixed form was compared and missed.
+
+Note that `allowed_bots` matches on **name**, with no numeric-id
+equivalent anywhere in the action's interface. Two properties keep that
+acceptable, and one does not:
 
 - The value compared is `github.actor`, which GitHub populates from the
   authenticated triggering actor. Nothing in a PR's branch, diff, or title
