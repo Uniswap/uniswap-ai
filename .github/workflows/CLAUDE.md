@@ -251,6 +251,16 @@ repo.** Clearing the `if:` above is necessary but not sufficient:
    bot-authored PRs — the same actor check, one line of hardcoded config
    away. It is not a required check, so it does not block merges.
 
+   **The `@uniswap/review-cli` path is immune to this gate**, which is a
+   real argument for migrating the docs check to it rather than repairing
+   the toolkit call. `claude-code-review.yml` invokes the CLI directly and
+   references `claude-code-action` nowhere, so there is no actor check to
+   satisfy — and empirically its `Triage` and `AI review` checks both pass
+   on `claude[bot]`-authored PRs (#121, #131) while the two
+   `claude-code-action`-based workflows fail on the same PRs. Any workflow
+   in this repo that wraps `claude-code-action` inherits this gate; the CLI
+   does not.
+
 Until that lands, a bot-authored PR gets `docs-check / docs-check` →
 `failure` from the actor check rather than a real docs verdict. That is
 still a strict improvement, because the required context reports at all and
