@@ -179,6 +179,47 @@ Validates that PR documentation is properly updated:
 
 Uses a shared reusable workflow.
 
+**Skipping this job blocks the PR — it does not just skip a check.**
+`docs-check / docs-check` is a required status check in the `main` ruleset,
+and that two-part context name exists only because this job calls a
+reusable workflow. A job that calls a reusable workflow reports one check
+per job _inside_ that workflow, prefixed by the caller's job id. Skip the
+caller and there are no inner jobs, so GitHub reports a single check named
+`docs-check` — a name nothing requires — and the required
+`docs-check / docs-check` context never reports at all. GitHub treats a
+required context that never reports as still-pending, so
+`mergeable_state` stays `blocked` forever with no failing check to point
+at. This is the opposite of the usual case, where a skipped required job
+reports `skipped` under its own required name and satisfies the rule.
+
+PR [#121](https://github.com/Uniswap/uniswap-ai/pull/121) sat in exactly
+that state: `docs-check` reported `skipped`, `docs-check / docs-check`
+never appeared, and the PR could not be merged.
+
+**Bot gating uses the numeric account id, not the login.** The job's `if:`
+admits same-repo PRs from any human (`user.type != 'Bot'`) plus the one bot
+whose PRs this repo wants documentation-checked, matched as
+`github.event.pull_request.user.id == 209825114` — the `claude[bot]`
+account, from the Claude GitHub App (app id 1236702). Prefer that id over
+`github.actor`, `user.login`, or `contains(login, '[bot]')` in any new
+gate: logins are mutable and describe a naming convention, while the
+numeric id is assigned by GitHub at account creation, survives renames,
+and cannot be chosen by the account holder. `user.type` is GitHub's own
+account-kind field, so Dependabot and Renovate stay skipped without
+matching on the `[bot]` suffix.
+
+Note this differs from `claude-code-review.yml`, which still gates on
+`user.login == 'claude[bot]'`. That workflow is not a required check, so a
+mis-fire there skips a review rather than deadlocking the PR; converting
+it to the numeric id is worthwhile but is not load-bearing the way this
+one is.
+
+Fork PRs are still skipped (they have no access to secrets) and so are
+still subject to the same never-reporting-context deadlock. No fork PR has
+needed to merge here, but the durable fix is to drop
+`docs-check / docs-check` from the ruleset in favour of a context that
+always reports.
+
 ### Generate PR Title & Description
 
 **File:** `generate-pr-title-description.yml`
