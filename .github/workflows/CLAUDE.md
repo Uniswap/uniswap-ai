@@ -179,6 +179,182 @@ Validates that PR documentation is properly updated:
 
 Uses a shared reusable workflow.
 
+**Skipping this job blocks the PR — it does not just skip a check.**
+`docs-check / docs-check` is a required status check in the `main` ruleset,
+and that two-part context name exists only because this job calls a
+reusable workflow. A job that calls a reusable workflow reports one check
+per job _inside_ that workflow, prefixed by the caller's job id. Skip the
+caller and there are no inner jobs, so GitHub reports a single check named
+`docs-check` — a name nothing requires — and the required
+`docs-check / docs-check` context never reports at all. GitHub treats a
+required context that never reports as still-pending, so
+`mergeable_state` stays `blocked` forever with no failing check to point
+at. This is the opposite of the usual case, where a skipped required job
+reports `skipped` under its own required name and satisfies the rule.
+
+PR [#121](https://github.com/Uniswap/uniswap-ai/pull/121) sat in exactly
+that state: `docs-check` reported `skipped`, `docs-check / docs-check`
+never appeared, and the PR could not be merged.
+
+**Bot gating uses the numeric account id, not the login.** The job's `if:`
+admits same-repo PRs from any human (`user.type != 'Bot'`) plus the one bot
+whose PRs this repo wants documentation-checked, matched as
+`github.event.pull_request.user.id == 209825114` — the `claude[bot]`
+account, from the Claude GitHub App (app id 1236702). Prefer that id over
+`github.actor`, `user.login`, or `contains(login, '[bot]')` in any new
+gate: logins are mutable and describe a naming convention, while the
+numeric id is assigned by GitHub at account creation, survives renames,
+and cannot be chosen by the account holder. `user.type` is GitHub's own
+account-kind field, so Dependabot and Renovate stay skipped without
+matching on the `[bot]` suffix.
+
+Note this differs from `claude-code-review.yml`, which still gates on
+`user.login == 'claude[bot]'`. That workflow is not a required check, so a
+mis-fire there skips a review rather than deadlocking the PR; converting
+it to the numeric id is worthwhile but is not load-bearing the way this
+one is.
+
+**There are two independent bot gates, and only the first is in this
+repo.** Clearing the `if:` above is necessary but not sufficient:
+
+1. **The workflow-level `if:`** decided whether the job ran at all. This is
+   the one that caused the deadlock, and it is fixed here.
+2. **`anthropics/claude-code-action`'s own actor check**, reached only once
+   the job actually starts. It refuses a non-`User` actor unless the actor
+   is listed in the action's `allowed_bots` input, which defaults to `""`
+   (allow no bots). The failure reads:
+
+   ```text
+   Workflow initiated by non-human actor: claude (type: Bot).
+   Add bot to allowed_bots list or use '*' to allow all bots.
+   ```
+
+   **This cannot be set from this repo, and the value is hardcoded in the
+   toolkit.** Both ai-toolkit reusable workflows this repo calls decide
+   `allowed_bots` themselves and expose no input for it:
+
+   | Reusable workflow           | What it passes                         | Effect on `claude[bot]`    |
+   | --------------------------- | -------------------------------------- | -------------------------- |
+   | `_claude-docs-check.yml`    | nothing (action default `""`)          | rejected — no bots allowed |
+   | `_generate-pr-metadata.yml` | `allowed_bots: dependabot` (hardcoded) | rejected — not in list     |
+
+   `_claude-docs-check.yml` declares 14 `workflow_call` inputs, none of them
+   `allowed_bots`, and neither of its two `claude-code-action` steps forwards
+   one. Verified against the pinned SHA and against the toolkit's `main` and
+   `next`, which are byte-identical here — so there is no input to pass and
+   no newer ref that helps. The fix belongs in ai-toolkit: either add an
+   `allowed_bots` input and forward it, or extend the hardcoded list to
+   `dependabot,claude`. Do not reach for `'*'`: it would admit every bot,
+   including external Apps on a public repo.
+
+   This is also why `generate-metadata / generate-metadata` fails on
+   bot-authored PRs — the same actor check, one line of hardcoded config
+   away. It is not a required check, so it does not block merges.
+
+   **The `@uniswap/review-cli` path is immune to this gate**, which is a
+   real argument for migrating the docs check to it rather than repairing
+   the toolkit call. `claude-code-review.yml` invokes the CLI directly and
+   references `claude-code-action` nowhere, so there is no actor check to
+   satisfy — and empirically its `Triage` and `AI review` checks both pass
+   on `claude[bot]`-authored PRs (#121, #131) while the two
+   `claude-code-action`-based workflows fail on the same PRs. Any workflow
+   in this repo that wraps `claude-code-action` inherits this gate; the CLI
+   does not.
+
+Until that lands, a bot-authored PR gets `docs-check / docs-check` →
+`failure` from the actor check rather than a real docs verdict. That is
+still a strict improvement, because the required context reports at all and
+the PR is no longer wedged pending-forever — but treat the red as "the
+check could not run", not "the docs are wrong". The tell is in the job's
+step list: `Run Claude Docs Check` fails and `Process Results` is
+**skipped**, so no verdict was ever produced. (`Set Exit Code` then prints
+"✅ Documentation check passed" against an empty `VERDICT`, which is
+misleading — the job still fails on the earlier step.)
+
+**The `claude` vs `claude[bot]` spelling does not matter.** The action's
+`isAllowedBot` (`src/github/validation/actor.ts`) lowercases and strips a
+trailing `[bot]` from _both_ the configured entries and the actor, so
+`claude`, `claude[bot]`, and `Claude[bot]` are one entry. The error message
+prints the stripped form purely for display; it is not a hint that the
+suffixed form was compared and missed.
+
+Note that `allowed_bots` matches on **name**, with no numeric-id
+equivalent anywhere in the action's interface. Two properties keep that
+acceptable, and one does not:
+
+- The value compared is `github.actor`, which GitHub populates from the
+  authenticated triggering actor. Nothing in a PR's branch, diff, or title
+  can influence it.
+- The list is consulted **only** for actors GitHub's Users API reports as
+  non-`User`. A human who registers the account `claude` never reaches the
+  allow-list, so the name grants them nothing.
+- Residual, and unfixable within that interface: if the app were renamed,
+  or a different app were named `claude`, the name would match. The
+  action exposes no id-based equivalent.
+
+That is why the gate this repo _does_ control uses the numeric id.
+
+Fork PRs are still skipped (they have no access to secrets) and so are
+still subject to the same never-reporting-context deadlock. No fork PR has
+needed to merge here, but the durable fix is to drop
+`docs-check / docs-check` from the ruleset in favour of a context that
+always reports.
+
+#### Auto-committing doc fixes (`auto_fix: true`)
+
+**This workflow now pushes commits to PR head branches.** `auto_fix: true`
+is set on the reusable-workflow call. When the check reaches a verdict and
+that verdict is `FAIL` — or it produced any suggestions or missing updates —
+the toolkit runs a **second** Claude pass, scoped to
+`Read,Edit,Write,Grep,Glob,Bash(git:*)`, commits whatever it changed as
+`docs(claude): fix documentation issues (auto-fix)` authored by
+`github-actions[bot]`, and pushes **straight to the PR's head branch**. It
+does not open a fixup branch and it does not open a follow-up PR.
+
+Blast radius, stated plainly:
+
+- The job holds `contents: write` and will rewrite **contributors' branches**,
+  not just its own. It applies to **human-authored PRs as much as bot ones** —
+  nothing in the gate distinguishes them for this purpose.
+- **Fork PRs are unaffected.** Two independent guards: this repo's job-level
+  `if:` still requires
+  `github.event.pull_request.head.repo.full_name == github.repository`, and
+  every auto-fix step inside the reusable workflow separately re-checks
+  `steps.pr-branch.outputs.repo_full_name == github.repository` against the
+  PR's live head repo. Either one alone would be sufficient.
+- **A loop guard exists.** Auto-fix is skipped when the PR head commit is
+  authored by `github-actions[bot]` **and** its subject matches
+  `^\w+\(claude\):.*\(auto-fix\)$`. The author check uses `.author.login`
+  from the API (GitHub-verified) rather than `.commit.author.name`
+  (user-controlled git metadata), and fails open — an unlinked email means
+  auto-fix runs.
+- **It flips the check green when it pushes.** With `WORKFLOW_PAT` set, a
+  `FAIL` verdict that produced a push exits `0` on the theory that the push
+  re-triggers a fresh check. If `WORKFLOW_PAT` is _unset_, the push falls
+  back to `GITHUB_TOKEN`, which does not trigger workflows, and the toolkit
+  fails the job with an explicit message rather than reporting green against
+  unvalidated code. That is the failure mode to look for if auto-fix commits
+  land but no follow-up check appears.
+
+**Not yet effective on bot-authored PRs.** Auto-fix runs off
+`steps.process-results.outputs.verdict`, and on a `claude[bot]` PR the job
+still dies earlier at `claude-code-action`'s `allowed_bots` actor check
+(above), so `Process Results` is skipped and no verdict is ever produced.
+Auto-fix is therefore live for human-authored PRs today and dormant on bot
+PRs until `allowed_bots` is plumbed through `_claude-docs-check.yml` in
+`Uniswap/ai-toolkit`.
+
+**Do not enable `auto_commit` as well.** It is a different mechanism —
+`post-docs-check.ts`'s `autoCommitChanges`, which applies the model's
+structured `suggestions[]` by overwriting whole files with
+`suggested_content`, has no loop guard of its own, and commits as
+`docs: auto-update documentation`. That subject does not match the anchored
+regex `auto_fix`'s loop guard keys on, so with both enabled the two
+mechanisms push over each other indefinitely. `auto_commit` remains wired to
+`github.event.inputs.auto_commit`, which is empty on `pull_request` events
+and so always `false` there — that expression is why the check has never
+auto-committed on a PR, and it is intentionally left alone.
+
 ### Generate PR Title & Description
 
 **File:** `generate-pr-title-description.yml`
