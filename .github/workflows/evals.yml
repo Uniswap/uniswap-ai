@@ -147,6 +147,10 @@ jobs:
           SUITE_INPUT: ${{ github.event.inputs.suite }}
           SKIP_CACHE: ${{ github.event.inputs.skip_cache }}
           EVENT_NAME: ${{ github.event_name }}
+          # Passed through env, never interpolated into the script body. This is
+          # the PR's target branch name (`main`), not the attacker-controlled
+          # `head_ref`, and it is shape-validated below before it reaches git.
+          BASE_REF: ${{ github.base_ref }}
         run: |
           # Verify required dependencies
           command -v jq >/dev/null 2>&1 || { echo "::error::jq is required but not installed"; exit 1; }
@@ -159,8 +163,53 @@ jobs:
             exit 1
           fi
 
+          # Same shape check for the PR's base branch before it reaches git. It
+          # is always a branch in this repo rather than fork-controlled input,
+          # but it is interpolated into a git ref, so constrain it anyway.
+          if [ -n "$BASE_REF" ] && ! echo "$BASE_REF" | grep -qE '^[a-zA-Z0-9._/-]+$'; then
+            echo "::error::Invalid base ref. Only alphanumeric, dot, underscore, slash, and dash allowed"
+            exit 1
+          fi
+
           nx_cli() {
             bunx --package=nx@22.0.2 nx "$@"
+          }
+
+          # Resolve the PR's changed files with lockfiles removed, and hand that
+          # list to Nx via --files instead of letting Nx derive it from base/head.
+          #
+          # Why: Nx treats ANY lockfile edit as a dependency-graph change and
+          # marks every project affected. That is wrong for eval suites. Each
+          # suite's `eval` target declares explicit `inputs` covering only its own
+          # directory, its skill's directory, and the shared eval infra --
+          # `namedInputs.sharedGlobals` is empty and no suite lists a lockfile --
+          # so Nx's own cache already treats a lockfile edit as unable to change
+          # an eval result. Selection and caching were contradicting each other.
+          #
+          # The cost of that contradiction is not theoretical. Adding a workspace
+          # package or bumping a plugin version rewrites bun.lock (the workspace
+          # name and version live in it), which selected all 16 suites: ~111 cases,
+          # ~222 provider calls counting each case's LLM judge. That exhausted the
+          # provider rate limit on PR #121, erroring 31 cases across copy-trade,
+          # dca-bot and index-bot -- suites that PR never touched.
+          #
+          # Trade-off, accepted deliberately: a dependency-only bump (promptfoo
+          # itself, say) no longer triggers evals. Changes under `evals/**` and to
+          # this workflow still do, and `workflow_dispatch` still runs everything.
+          LOCKFILES='^(bun\.lock|bun\.lockb|package-lock\.json|yarn\.lock|pnpm-lock\.yaml)$'
+          changed_files_without_lockfiles() {
+            local base_ref="origin/${BASE_REF:-main}"
+            # The base branch must be resolvable. If it is not, fail loudly rather
+            # than returning an empty list: an empty list is indistinguishable from
+            # "nothing to test" and would silently green the job for every PR.
+            if ! git rev-parse --verify --quiet "${base_ref}^{commit}" >/dev/null; then
+              git fetch --no-tags --quiet origin "${BASE_REF:-main}" 2>/dev/null || true
+              if ! git rev-parse --verify --quiet "${base_ref}^{commit}" >/dev/null; then
+                echo "::error::Cannot resolve base ref '${base_ref}', so the changed-file list cannot be computed. Refusing to select zero suites silently." >&2
+                return 1
+              fi
+            fi
+            git diff --name-only "${base_ref}...HEAD" | grep -vE "$LOCKFILES" || true
           }
 
           # Build skip-cache flag
@@ -179,12 +228,25 @@ jobs:
           # report "nothing affected" and pass. Nx's exit code cannot stand in
           # for this: promptfoo also exits non-zero for ordinary assertion
           # failures, which the pass-rate threshold is what handles.
+          NX_FILES=""
           if [ -n "$SUITE_INPUT" ]; then
             SELECTED="eval-suite-$SUITE_INPUT"
           elif [ "$EVENT_NAME" = "workflow_dispatch" ]; then
             SELECTED=$(nx_cli show projects -t eval --projects='tag:type:eval-suite' 2>/dev/null)
           else
-            SELECTED=$(nx_cli show projects --affected -t eval --exclude=evals 2>/dev/null)
+            # `|| exit 1` matters: changed_files_without_lockfiles returns
+            # non-zero only when the base ref is unresolvable, and swallowing
+            # that would select zero suites and green the job for every PR.
+            CHANGED=$(changed_files_without_lockfiles) || exit 1
+            NX_FILES=$(printf '%s\n' "$CHANGED" | awk 'NF' | paste -sd, -)
+            if [ -z "$NX_FILES" ]; then
+              # A lockfile-only PR. Nothing an eval suite declares as an input
+              # changed, so there is genuinely nothing to run.
+              echo "::notice::Only lockfile changes in this PR; no eval suites are affected"
+              SELECTED=""
+            else
+              SELECTED=$(nx_cli show projects --affected -t eval --exclude=evals --files="$NX_FILES" 2>/dev/null)
+            fi
           fi
           # awk, not `grep -c`: grep exits 1 on no match, which would abort this
           # step under `bash -e` on the legitimate zero-suite path.
@@ -192,8 +254,11 @@ jobs:
           echo "::notice::${SELECTED_COUNT} eval suite(s) selected"
 
           # Run eval suites via Nx
-          # - PR: nx affected uses the project graph to run only suites whose
-          #   plugin or eval dependencies changed (defaultBase: origin/main)
+          # - PR: nx affected over the SAME --files list used for SELECTED above.
+          #   Passing the identical list to both is load-bearing: if selection and
+          #   execution derive their file sets differently they can disagree, and
+          #   the SUITES_RAN < SELECTED_COUNT guard below would then fail the job
+          #   for a suite that was never meant to run.
           # - Manual (specific suite): nx run targets the exact suite
           # - Manual (all): nx run-many runs all eval-suite-* projects
           if [ -n "$SUITE_INPUT" ]; then
@@ -206,10 +271,12 @@ jobs:
             # shellcheck disable=SC2086
             nx_cli run-many -t eval --projects='tag:type:eval-suite' $NX_CACHE_FLAG || true
             echo "::endgroup::"
+          elif [ "$SELECTED_COUNT" -eq 0 ]; then
+            echo "::notice::No eval suites affected; nothing to run"
           else
             echo "::group::Running affected eval suites"
             # shellcheck disable=SC2086
-            nx_cli affected -t eval --exclude=evals $NX_CACHE_FLAG || true
+            nx_cli affected -t eval --exclude=evals --files="$NX_FILES" $NX_CACHE_FLAG || true
             echo "::endgroup::"
           fi
 
