@@ -299,6 +299,7 @@ still subject to the same never-reporting-context deadlock. No fork PR has
 needed to merge here, but the durable fix is to drop
 `docs-check / docs-check` from the ruleset in favour of a context that
 always reports.
+
 ### Generate PR Title & Description
 
 **File:** `generate-pr-title-description.yml`
@@ -480,4 +481,3 @@ the sibling `describe-cli` is a separate change; note `ci-check-pr-title.yml`
 has a `workflow_run` trigger keyed to the exact workflow name
 `Claude: Generate PR Title & Description`, so renaming or removing that
 workflow silently stops the title check's second trigger path from firing.
-

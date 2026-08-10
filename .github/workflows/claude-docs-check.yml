@@ -120,4 +120,3 @@ jobs:
       issues: read
       actions: read
       id-token: write
-
