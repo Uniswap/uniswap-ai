@@ -299,62 +299,6 @@ still subject to the same never-reporting-context deadlock. No fork PR has
 needed to merge here, but the durable fix is to drop
 `docs-check / docs-check` from the ruleset in favour of a context that
 always reports.
-
-#### Auto-committing doc fixes (`auto_fix: true`)
-
-**This workflow now pushes commits to PR head branches.** `auto_fix: true`
-is set on the reusable-workflow call. When the check reaches a verdict and
-that verdict is `FAIL` — or it produced any suggestions or missing updates —
-the toolkit runs a **second** Claude pass, scoped to
-`Read,Edit,Write,Grep,Glob,Bash(git:*)`, commits whatever it changed as
-`docs(claude): fix documentation issues (auto-fix)` authored by
-`github-actions[bot]`, and pushes **straight to the PR's head branch**. It
-does not open a fixup branch and it does not open a follow-up PR.
-
-Blast radius, stated plainly:
-
-- The job holds `contents: write` and will rewrite **contributors' branches**,
-  not just its own. It applies to **human-authored PRs as much as bot ones** —
-  nothing in the gate distinguishes them for this purpose.
-- **Fork PRs are unaffected.** Two independent guards: this repo's job-level
-  `if:` still requires
-  `github.event.pull_request.head.repo.full_name == github.repository`, and
-  every auto-fix step inside the reusable workflow separately re-checks
-  `steps.pr-branch.outputs.repo_full_name == github.repository` against the
-  PR's live head repo. Either one alone would be sufficient.
-- **A loop guard exists.** Auto-fix is skipped when the PR head commit is
-  authored by `github-actions[bot]` **and** its subject matches
-  `^\w+\(claude\):.*\(auto-fix\)$`. The author check uses `.author.login`
-  from the API (GitHub-verified) rather than `.commit.author.name`
-  (user-controlled git metadata), and fails open — an unlinked email means
-  auto-fix runs.
-- **It flips the check green when it pushes.** With `WORKFLOW_PAT` set, a
-  `FAIL` verdict that produced a push exits `0` on the theory that the push
-  re-triggers a fresh check. If `WORKFLOW_PAT` is _unset_, the push falls
-  back to `GITHUB_TOKEN`, which does not trigger workflows, and the toolkit
-  fails the job with an explicit message rather than reporting green against
-  unvalidated code. That is the failure mode to look for if auto-fix commits
-  land but no follow-up check appears.
-
-**Not yet effective on bot-authored PRs.** Auto-fix runs off
-`steps.process-results.outputs.verdict`, and on a `claude[bot]` PR the job
-still dies earlier at `claude-code-action`'s `allowed_bots` actor check
-(above), so `Process Results` is skipped and no verdict is ever produced.
-Auto-fix is therefore live for human-authored PRs today and dormant on bot
-PRs until `allowed_bots` is plumbed through `_claude-docs-check.yml` in
-`Uniswap/ai-toolkit`.
-
-**Do not enable `auto_commit` as well.** It is a different mechanism —
-`post-docs-check.ts`'s `autoCommitChanges`, which applies the model's
-structured `suggestions[]` by overwriting whole files with
-`suggested_content`, has no loop guard of its own, and commits as
-`docs: auto-update documentation`. That subject does not match the anchored
-regex `auto_fix`'s loop guard keys on, so with both enabled the two
-mechanisms push over each other indefinitely. `auto_commit` remains wired to
-`github.event.inputs.auto_commit`, which is empty on `pull_request` events
-and so always `false` there — that expression is why the check has never
-auto-committed on a PR, and it is intentionally left alone.
-
 ### Generate PR Title & Description
 
 **File:** `generate-pr-title-description.yml`
@@ -536,3 +480,4 @@ the sibling `describe-cli` is a separate change; note `ci-check-pr-title.yml`
 has a `workflow_run` trigger keyed to the exact workflow name
 `Claude: Generate PR Title & Description`, so renaming or removing that
 workflow silently stops the title check's second trigger path from firing.
+
