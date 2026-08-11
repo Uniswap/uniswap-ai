@@ -194,22 +194,44 @@ jobs:
           # dca-bot and index-bot -- suites that PR never touched.
           #
           # Trade-off, accepted deliberately: a dependency-only bump (promptfoo
-          # itself, say) no longer triggers evals. Changes under `evals/**` and to
-          # this workflow still do, and `workflow_dispatch` still runs everything.
+          # itself, say) no longer triggers evals. Changes under `evals/**` still
+          # do, and `workflow_dispatch` still runs everything. Note that a change
+          # to THIS workflow file selects no suites, because no suite declares it
+          # as an input -- so a workflow-only PR cannot exercise the logic below.
+          # Verify changes here against a PR that also touches a skill.
           LOCKFILES='^(bun\.lock|bun\.lockb|package-lock\.json|yarn\.lock|pnpm-lock\.yaml)$'
           changed_files_without_lockfiles() {
-            local base_ref="origin/${BASE_REF:-main}"
+            local base_ref="origin/${BASE_REF:-main}" raw
             # The base branch must be resolvable. If it is not, fail loudly rather
             # than returning an empty list: an empty list is indistinguishable from
             # "nothing to test" and would silently green the job for every PR.
             if ! git rev-parse --verify --quiet "${base_ref}^{commit}" >/dev/null; then
-              git fetch --no-tags --quiet origin "${BASE_REF:-main}" 2>/dev/null || true
+              git fetch --no-tags --quiet origin -- "${BASE_REF:-main}" 2>/dev/null || true
               if ! git rev-parse --verify --quiet "${base_ref}^{commit}" >/dev/null; then
                 echo "::error::Cannot resolve base ref '${base_ref}', so the changed-file list cannot be computed. Refusing to select zero suites silently." >&2
                 return 1
               fi
             fi
-            git diff --name-only "${base_ref}...HEAD" | grep -vE "$LOCKFILES" || true
+            # Capture the diff on its own and check its status before filtering.
+            # Piping straight into grep would hide a git failure: a pipeline's
+            # status is its LAST command's, so `git diff ... | grep -v ... || true`
+            # returns 0 even when git exits 128, yielding an empty list and the
+            # silent zero-suite green this function exists to prevent. That is
+            # reachable whenever the base resolves but no merge base does, e.g. a
+            # shallow clone or a depth-1 fetch from the fallback above.
+            if ! raw=$(git diff --name-only "${base_ref}...HEAD"); then
+              echo "::error::'git diff ${base_ref}...HEAD' failed, so the changed-file list cannot be computed. Refusing to select zero suites silently." >&2
+              return 1
+            fi
+            # Nx takes --files as a comma-separated list with no escaping, so a
+            # tracked path containing a comma would split into two bogus entries
+            # and silently under-select. No such path exists today; fail loudly if
+            # one ever lands rather than quietly testing the wrong thing.
+            if printf '%s\n' "$raw" | grep -q ','; then
+              echo "::error::A changed path contains a comma, which Nx's --files list cannot represent unambiguously. Rename the file or switch this step to a different selection mechanism." >&2
+              return 1
+            fi
+            printf '%s\n' "$raw" | grep -vE "$LOCKFILES" || true
           }
 
           # Build skip-cache flag
@@ -245,7 +267,16 @@ jobs:
               echo "::notice::Only lockfile changes in this PR; no eval suites are affected"
               SELECTED=""
             else
-              SELECTED=$(nx_cli show projects --affected -t eval --exclude=evals --files="$NX_FILES" 2>/dev/null)
+              # No `2>/dev/null` here, and the exit status is checked. Previously a
+              # crashing probe produced an empty SELECTED that was harmless, because
+              # the run step below called `nx affected` unconditionally and the
+              # aggregation still saw its results. Now that a zero count
+              # short-circuits the run, swallowing a probe crash would mean no
+              # suites run and the job goes green. Fail instead.
+              if ! SELECTED=$(nx_cli show projects --affected -t eval --exclude=evals --files="$NX_FILES"); then
+                echo "::error::Nx failed to enumerate affected eval suites. Refusing to continue, because a failed probe is indistinguishable from 'nothing affected' and would green this job without running anything." >&2
+                exit 1
+              fi
             fi
           fi
           # awk, not `grep -c`: grep exits 1 on no match, which would abort this
