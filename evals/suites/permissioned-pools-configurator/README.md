@@ -1,8 +1,8 @@
 # Permissioned Pools Configurator Eval Suite
 
 Evaluation suite for the `permissioned-pools-configurator` skill, the interactive
-parameter collector that emits the JSON config a forthcoming `permissioned-pools-deployer`
-skill will consume.
+parameter collector that emits the JSON config the `permissioned-pools-deployer`
+skill consumes.
 
 ## Overview
 

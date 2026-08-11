@@ -13,9 +13,8 @@ metadata:
 
 Interactive bulk-form configurator for a Uniswap v4 Permissioned Pool. Collects every
 parameter the setup journey needs, validates each one, and displays a single JSON
-configuration object that the forthcoming `permissioned-pools-deployer` skill (not yet
-published — it ships in a later PR) will consume to run the on-chain sequence. For the
-contract mechanics behind any of these parameters, see
+configuration object that the `permissioned-pools-deployer` skill consumes to run the
+on-chain sequence. For the contract mechanics behind any of these parameters, see
 [`permissioned-pools-issuer`](../permissioned-pools-issuer/SKILL.md).
 
 > **Runtime Compatibility:** This skill uses `AskUserQuestion` to collect parameters in
@@ -30,9 +29,7 @@ contract mechanics behind any of these parameters, see
 - ✅ It collects and validates the inputs a permissioned-pool setup needs and produces a
   JSON document. It does not call any contract, does not broadcast anything, and holds
   no signing keys.
-- ✅ **Treat this as contract mechanics only.** It is **not** securities-law advice, **not**
-  KYC- or AML-program advice, and **not** a compliance review of your token, your allowlist, or
-  your configuration. It covers what each parameter means and what breaks if it is wrong.
+- ✅ **Treat this as contract mechanics only.** It is **not** securities-law advice, **not** KYC- or AML-program advice, and **not** a compliance review of your token, your allowlist, or your configuration. It covers what each parameter means and what breaks if it is wrong.
 - ✅ It never invents a contract address. Addresses you supply are recorded as given;
   addresses you do not yet have — whether because they still need to be looked up
   against the deploy guide's table or because the issuer has not decided on them yet —
@@ -317,9 +314,14 @@ Immediately after the JSON, show a human-readable summary:
 Ask the user what they want to do:
 
 - "Save to file" — ask for a filepath, default `permissioned-pool-config.json`. Require
-  a relative path ending in `.json`; reject an absolute path (leading `/`) and reject any
-  path containing a `..` segment. Re-prompt once on a rejected path rather than silently
-  substituting the default. Then write exactly the JSON object shown above.
+  a relative path ending in `.json`; reject an absolute path (leading `/`), reject a
+  leading `~` (a runtime that expands it can write outside the working directory —
+  including over Claude Code's own config store), and reject any path containing a `..`
+  segment. Resolve the path and confirm it still stays within the current working
+  directory before writing. If the resolved path already exists, ask for confirmation
+  before overwriting it — including a file that looks unrelated to this skill, such as
+  `package.json` or `tsconfig.json`. Re-prompt once on a rejected path rather than
+  silently substituting the default. Then write exactly the JSON object shown above.
 - "View the setup walkthrough" — point at `permissioned-pools-deployer`.
 - "Modify configuration" — re-run the relevant batch above.
 - "Exit" — end here; the user can copy the JSON from the transcript.

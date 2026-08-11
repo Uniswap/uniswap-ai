@@ -5,7 +5,7 @@ order: 17
 
 # Permissioned Pools Configurator
 
-Interactive bulk-form configurator for a Uniswap v4 Permissioned Pool. Collects every parameter the setup journey needs, validates each one, and displays a single JSON configuration object that the forthcoming `permissioned-pools-deployer` skill consumes to run the on-chain sequence.
+Interactive bulk-form configurator for a Uniswap v4 Permissioned Pool. Collects every parameter the setup journey needs, validates each one, and displays a single JSON configuration object that the `permissioned-pools-deployer` skill consumes to run the on-chain sequence.
 
 ## Invocation
 
