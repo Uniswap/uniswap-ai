@@ -429,6 +429,11 @@ cast send "$PERMIT2_ADDRESS" \
   --rpc-url "$RPC_URL" --account deployer --sender "$DEPLOYER_ADDRESS"
 ```
 
+Both approvals above grant the maximum allowance with no expiry, matching the published issuer
+skill's own example exactly — if your operational risk tolerance calls for it, both can instead
+be scoped to the seeding amount with a short expiry, and revoked (`approve(spender, 0)` on the
+token, `Permit2.approve(..., 0, 0)` on the position-manager spend) once seeding is complete.
+
 **Permit2 itself is never registered as an allowed wrapper.** It never holds the token and never
 calls the PoolManager on this pool's behalf — the position manager pulls through it with
 `permit2.transferFrom(payer, adapter, amount, permissionedToken)`, which is a different

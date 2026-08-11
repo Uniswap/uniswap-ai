@@ -49,9 +49,7 @@ you run every command it shows you, after reviewing it.
    permissioned-pools contracts deployed) before touching mainnet.
 4. ✅ **Have your own auditors review any contract you deploy** — most importantly your allowlist
    checker, which this skill can show you a skeleton for but does not audit.
-5. ✅ **Treat this as contract mechanics only.** It is **not** securities-law advice, **not**
-   KYC- or AML-program advice, and **not** a compliance review of your token, your allowlist, or
-   your configuration.
+5. ✅ **Treat this as contract mechanics only.** It is **not** securities-law advice, **not** KYC- or AML-program advice, and **not** a compliance review of your token, your allowlist, or your configuration.
 
 ### The acknowledgment gate
 

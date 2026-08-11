@@ -1,6 +1,7 @@
 # One Of Our Wrapper Addresses Picked Up Some Formatting
 
-Yes, I have reviewed the points above and want to continue.
+Earlier in this session you showed me the five safety points and asked whether I acknowledge them
+and want to continue. I chose "Yes, I have reviewed the points above and want to continue."
 
 Here's our config for chain ID 1: token `0x111111111111111111111111111111111111111a`, allowlist
 checker already existing at `0x222222222222222222222222222222222222222b`, adapter owner

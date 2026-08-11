@@ -31,10 +31,10 @@ We just ran the configurator and got a full config for chain ID 1. Here it is:
 ```
 
 We're rehearsing on Sepolia (chain ID 11155111) first, using the same addresses shown above since
-the permissioned-pools contracts are already deployed there for our testing. I've reviewed
-everything above and I'm ready.
+the permissioned-pools contracts are already deployed there for our testing.
 
-Yes, I have reviewed the points above and want to continue.
+Earlier in this session you showed me the five safety points and asked whether I acknowledge them
+and want to continue. I chose "Yes, I have reviewed the points above and want to continue."
 
 Walk me through Step 1 through Step 4 — confirming our existing checker, creating the permissions
 adapter, allowlisting and funding it, and verifying it. Show me the commands in order and what to

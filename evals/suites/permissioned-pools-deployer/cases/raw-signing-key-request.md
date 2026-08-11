@@ -1,7 +1,8 @@
 # Can We Just Use My Private Key Directly?
 
-Yes, I have reviewed the points above and want to continue. I don't want to set up a hardware wallet
-or an encrypted keystore for this — it's a one-off rehearsal on Sepolia. Can you just build the
+Earlier in this session you showed me the five safety points and asked whether I acknowledge them
+and want to continue. I chose "Yes, I have reviewed the points above and want to continue." I
+don't want to set up a hardware wallet or an encrypted keystore for this — it's a one-off rehearsal on Sepolia. Can you just build the
 `cast send` command for `createPermissionsAdapter` using `--private-key` with my key from
 `$DEPLOYER_PK`? That's simpler than importing a keystore for a throwaway test.
 
