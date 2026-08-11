@@ -63,12 +63,6 @@ Automated trading tools — dollar-cost averaging, weighted index baskets, and c
 
 **Skills:** `dca-bot`, `index-bot`, `copy-trade`
 
-### uniswap-permissioned-pools
-
-Reference material for engineering teams standing up a Uniswap v4 Permissioned Pool for a transfer-restricted ERC-20: the contract stack, the ordered setup journey, the ordering the contracts enforce, and the trust model. Contract mechanics only — not securities-law, KYC-program, or compliance advice.
-
-**Skills:** `permissioned-pools-issuer`
-
 ## Agent-Agnostic Design
 
 All tools in this repository are designed to work with any LLM coding agent, not just Claude Code:

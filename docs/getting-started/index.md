@@ -35,13 +35,12 @@ Install all plugins from the Claude Code Marketplace:
 Or install individual plugins:
 
 ```bash
-/plugin install uniswap-hooks               # v4 hook development
-/plugin install uniswap-trading             # Swap integration
-/plugin install uniswap-cca                 # CCA auctions
-/plugin install uniswap-driver              # Swap & liquidity planning
-/plugin install uniswap-viem                # EVM integration (viem/wagmi)
-/plugin install uniswap-trading-tools       # Automated trading tools (DCA, index, copy-trade)
-/plugin install uniswap-permissioned-pools  # v4 Permissioned Pools reference
+/plugin install uniswap-hooks      # v4 hook development
+/plugin install uniswap-trading    # Swap integration
+/plugin install uniswap-cca        # CCA auctions
+/plugin install uniswap-driver     # Swap & liquidity planning
+/plugin install uniswap-viem       # EVM integration (viem/wagmi)
+/plugin install uniswap-trading-tools  # Automated trading tools (DCA, index, copy-trade)
 ```
 
 See [Installation](./installation) for detailed instructions.
