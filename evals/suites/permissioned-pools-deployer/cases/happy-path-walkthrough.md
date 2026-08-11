@@ -34,7 +34,7 @@ We're rehearsing on Sepolia (chain ID 11155111) first, using the same addresses 
 the permissioned-pools contracts are already deployed there for our testing. I've reviewed
 everything above and I'm ready.
 
-Yes, I acknowledge the five points and want to continue.
+Yes, I have reviewed the points above and want to continue.
 
 Walk me through Step 1 through Step 4 — confirming our existing checker, creating the permissions
 adapter, allowlisting and funding it, and verifying it. Show me the commands in order and what to

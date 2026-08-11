@@ -1,6 +1,6 @@
 # One Of Our Wrapper Addresses Picked Up Some Formatting
 
-Yes, I acknowledge the five points and want to continue.
+Yes, I have reviewed the points above and want to continue.
 
 Here's our config for chain ID 1: token `0x111111111111111111111111111111111111111a`, allowlist
 checker already existing at `0x222222222222222222222222222222222222222b`, adapter owner

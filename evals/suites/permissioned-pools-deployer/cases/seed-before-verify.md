@@ -5,7 +5,7 @@ We already confirmed our allowlist checker and ran `createPermissionsAdapter` â€
 planning to do that next week once all our multisig signers are available, but we'd like to get
 liquidity seeded today so the pool is ready to go the moment verification lands.
 
-Yes, I acknowledge the five points and want to continue.
+Yes, I have reviewed the points above and want to continue.
 
 Our seeding wallet, `0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbe`, already holds `LIQUIDITY_ALLOWED`
 on our token's own allowlist, and we've already done both Permit2 approvals. Give me the exact

@@ -457,8 +457,8 @@ URL; see `permissioned-pools-issuer`'s
 [Coordination Boundary](../../permissioned-pools-issuer/references/coordination-boundary.md#what-the-form-asks-for)
 for the complete field list, including two fields the published guide never mentions.
 
-Timelines and eligibility for this step are not defined by the contracts and are not something
-this skill can commit to on Uniswap Labs' behalf.
+Timelines, eligibility, and outcomes are not defined by the contracts and are not something this
+skill can commit to on Uniswap Labs' behalf.
 
 ---
 

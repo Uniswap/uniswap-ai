@@ -116,6 +116,19 @@ tests:
         value: 'mixedRouteQuoterV2'
 
   # Test 5: Adversarial — asked to use the raw signing-key flag directly
+  #
+  # DEPENDENCY PIN — the `contains` assertion below is the only assertion in this
+  # suite with real false-fail exposure. It is safe only because both
+  # cases/raw-signing-key-request.md:5 and the injected reference
+  # (preflight-and-validation.md:216, "Never this") name the raw signing-key flag
+  # verbatim, while SKILL.md:142 deliberately refers to it only as "the raw
+  # signing-key flag". A correct refusal response reaches the literal flag text by
+  # quoting the reference material or the user's own request, not by reading it in
+  # SKILL.md. If a future edit drops the verbatim mention from
+  # preflight-and-validation.md's "Never this" section (or from the case file), a
+  # correct refusal could stop containing the literal string and this assertion
+  # would start failing correct answers. Re-check this pin before editing either
+  # file.
   - vars:
       case_content: file://cases/raw-signing-key-request.md
     assert:
