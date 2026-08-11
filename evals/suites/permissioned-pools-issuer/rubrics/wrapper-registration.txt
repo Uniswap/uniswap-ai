@@ -1,0 +1,88 @@
+# Wrapper Registration Rubric
+
+Evaluate whether the response gets the allowed-wrapper set right: the four contracts the published
+guide names, the rule that explains them, what must not be registered, and how to resolve the
+addresses.
+
+## Grounding Requirement
+
+Every judgment must be grounded in text that is actually present in the response.
+
+- For each element you credit, point to the response's own wording that establishes it — quote the
+  contract name, the key, or the sentence, or name the section and paraphrase it closely. If you
+  cannot point to wording in the response, the element is not satisfied, however likely it is that a
+  good answer would have covered it.
+- Do not credit an element from a heading, a table caption, an introduction that promises it, or the
+  apparent direction of the answer. A promise to list the wrappers is not the list.
+- If the response is incomplete — it stops mid-sentence, mid-list, or mid-table, or ends without
+  reaching a topic it set up — score every element not established by text actually present as
+  **not satisfied**. Do not assume the missing remainder would have covered it, and do not fill the
+  gap from this rubric or from your own knowledge of the subject. A response that names two of the
+  four wrappers before stopping has named two.
+- This rubric describes what a correct answer contains. It is not evidence that the response
+  contains it.
+- Keep each citation to a short phrase — a few words is enough, never a paragraph or a whole block
+  quoted back — and emit the JSON verdict first: `pass` and `score` before `reason`, with any
+  extended explanation last inside `reason`. A verdict stated up front stays parseable even if a
+  long justification is cut off.
+
+## Required Elements
+
+1. **The four documented wrappers, named**
+   - `PermissionedPositionManager`
+   - The Universal Router
+   - `V4Quoter`
+   - `MixedRouteQuoterV2`
+
+2. **The rule behind the four**
+   - Register every contract that will call the pool manager on this pool, because the hook checks
+     `allowedWrappers` for the calling contract and `wrapToPoolManager` separately checks
+     `allowedWrappers[msg.sender]`.
+   - Therefore a custom or in-house router the issuer deploys must also be registered. The four are
+     the production callers, not a closed set.
+
+3. **What must not be registered**
+   - `PermissionsAdapterFactory` and `PermissionedHooks` appear in the same deployment-addresses
+     table but are **not** wrappers. The response should say so explicitly, and should reconcile
+     "four addresses" with a table of six rows.
+   - Credit an answer that explains the hook is registered through `setAllowedHook`, not through
+     `updateAllowedWrapper`.
+
+4. **The Universal Router version requirement**
+   - Version 2.2.0 or higher, whose deployments key is `UniversalRouter#v2.2`.
+   - The plain `UniversalRouter` key is a different, non-permissioned router; only the 2.2
+     deployment takes the permissions-adapter factory in its constructor.
+   - The response resolves the colleague's mismatch by pointing at the correct key and source
+     rather than by picking an address.
+
+5. **Where addresses come from**
+   - Routes to the deploy guide's deployment-addresses table, and optionally to the machine-readable
+     deployments JSON in `Uniswap/contracts`.
+   - Says not to source these addresses from the general v4 deployments page, which has no
+     permissioned rows and lists older routers.
+   - Tells the reader to confirm each address on a block explorer before sending a transaction.
+
+6. **Failure modes**
+   - Credit an answer that names what goes wrong: an unregistered router or position manager makes
+     `wrapToPoolManager` revert `UnauthorizedWrapper`, and an unregistered quoter makes quoting
+     revert `Unauthorized()` from the hook.
+
+## Penalize
+
+- Emitting any address as canonical, whether recalled or invented.
+- Presenting the four as a closed set with no rule, so a reader with a custom router is left with a
+  wrong answer.
+- Presenting `PermissionsAdapterFactory` or `PermissionedHooks` as a wrapper to register.
+- Claiming the quoters were deployed for permissioned pools. They are the same generic quoters,
+  which simply have to be registered.
+- Saying "the Universal Router" with no version qualifier at all when the question is specifically
+  about a mismatched address.
+
+## Scoring Guide
+
+- All six elements correct: 1.0
+- Five correct, one incomplete: 0.85
+- Four correct: 0.7
+- Three correct: 0.5
+- Fewer than three, or the response names a wrong wrapper set: 0.3 or below
+- Subtract 0.25 for emitting an address as canonical; 0.2 for each other penalized item.

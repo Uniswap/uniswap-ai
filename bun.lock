@@ -55,6 +55,10 @@
       "name": "@uniswap/uniswap-hooks",
       "version": "1.6.0",
     },
+    "packages/plugins/uniswap-permissioned-pools": {
+      "name": "@uniswap/uniswap-permissioned-pools",
+      "version": "0.1.0",
+    },
     "packages/plugins/uniswap-trading": {
       "name": "@uniswap/uniswap-trading",
       "version": "1.9.0",
@@ -1273,6 +1277,8 @@
     "@uniswap/uniswap-driver": ["@uniswap/uniswap-driver@workspace:packages/plugins/uniswap-driver"],
 
     "@uniswap/uniswap-hooks": ["@uniswap/uniswap-hooks@workspace:packages/plugins/uniswap-hooks"],
+
+    "@uniswap/uniswap-permissioned-pools": ["@uniswap/uniswap-permissioned-pools@workspace:packages/plugins/uniswap-permissioned-pools"],
 
     "@uniswap/uniswap-trading": ["@uniswap/uniswap-trading@workspace:packages/plugins/uniswap-trading"],
 

@@ -39,16 +39,17 @@ All packages use [Nx](https://nx.dev) for:
 ```text
 uniswap-ai/
 ├── packages/
-│   └── plugins/                    # Claude Code plugins
-│       ├── uniswap-hooks/          # v4 hook development
-│       ├── uniswap-cca/            # CCA auction configuration & deployment
-│       ├── uniswap-trading/        # Swap integration
-│       ├── uniswap-viem/           # EVM blockchain integration (viem/wagmi)
-│       ├── uniswap-driver/         # Swap & liquidity deep link planning
-│       └── uniswap-trading-tools/  # Automated trading tools (DCA, index, copy-trade)
-├── evals/                          # AI tool evaluations
-├── docs/                           # This documentation
-└── .github/                        # CI/CD workflows
+│   └── plugins/                         # Claude Code plugins
+│       ├── uniswap-hooks/               # v4 hook development
+│       ├── uniswap-cca/                 # CCA auction configuration & deployment
+│       ├── uniswap-trading/             # Swap integration
+│       ├── uniswap-viem/                # EVM blockchain integration (viem/wagmi)
+│       ├── uniswap-driver/              # Swap & liquidity deep link planning
+│       ├── uniswap-trading-tools/       # Automated trading tools (DCA, index, copy-trade)
+│       └── uniswap-permissioned-pools/  # v4 Permissioned Pools issuer reference
+├── evals/                               # AI tool evaluations
+├── docs/                                # This documentation
+└── .github/                             # CI/CD workflows
 ```
 
 ## Package Relationships
@@ -74,6 +75,10 @@ uniswap-ai/
 │  │ uniswap-driver        │ │ uniswap-trading-tools │  │
 │  │ (2 skills)            │ │ (3 skills)            │  │
 │  └───────────────────────┘ └───────────────────────┘  │
+│  ┌─────────────────────────────────────────────────┐  │
+│  │ uniswap-permissioned-pools                      │  │
+│  │ (1 skill)                                       │  │
+│  └─────────────────────────────────────────────────┘  │
 └───────────────────────────────────────────────────────┘
                             │
                             ▼
