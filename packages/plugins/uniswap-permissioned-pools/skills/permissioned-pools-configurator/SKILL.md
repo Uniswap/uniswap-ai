@@ -79,9 +79,13 @@ supply against `config-schema.md`, apply the literal string `"RESOLVE"` (or `nul
 field left open, and produce that partial configuration in the same response. Fields with
 no `"RESOLVE"` sentinel — the verification deposit amount, pool currency, fee tier, tick
 spacing, starting price, and seeding — have no safe default; flag each one explicitly as
-still needing an answer rather than guessing at it, and ask only about those. Skipping the
-batch-by-batch confirmation step never means skipping validation — every rule above still
-applies to whatever the user did supply.
+still needing an answer rather than guessing at it, and ask only about those. **This
+includes the verification deposit amount even though Batch 2 lists "1 wei" as the
+recommended option:** a menu option a user has not actually picked is not a value the
+skill may silently apply on their behalf — treat an unanswered verification deposit
+amount exactly like the other sentinel-less fields, never as an already-resolved `"1"`.
+Skipping the batch-by-batch confirmation step never means skipping validation — every
+rule above still applies to whatever the user did supply.
 
 ### Batch 1: Network, Token & Ownership (4 questions)
 
@@ -144,6 +148,9 @@ flagging any field still marked `"RESOLVE"`.
   withdraw function, and 1 wei is sufficient — see
   [Parameter Reference](./references/parameter-reference.md#verificationdepositamount)
   before choosing anything larger.
+- "Recommended" describes the value if asked and picked — it is never a license to fill
+  in `"1"` on the user's behalf when this question was skipped. See
+  [Front-loaded or skip-ahead answers](#front-loaded-or-skip-ahead-answers) above.
 - Store: `verificationDepositAmount`
 
 **Question 2 — `PermissionedPositionManager` address**
