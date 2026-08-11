@@ -50,7 +50,10 @@ The output is a **pre-deployment plan**, not a record of what already exists on-
   until the deployer's Step 2 (`createPermissionsAdapter`) creates it. If the issuer
   already has a deployed adapter for this token, that is a re-run/import scenario this
   skill does not currently handle — collect its address as a note and confirm with the
-  deployer skill's preflight checks instead of adding it here.
+  deployer skill's preflight checks instead of adding it here. **This declines only the
+  adapter address itself — it does not block the rest of the request.** Continue
+  validating and including every other field the user supplied (or marked `"RESOLVE"`)
+  in the emitted configuration exactly as the flow below describes.
 - The **underlying permissioned token is the only token address this config records.**
   See the two-addresses distinction in `permissioned-pools-issuer` — the pool currency
   the deployer builds later is the adapter, derived at deploy time, not configured here.
@@ -65,6 +68,20 @@ validate every answer against [`config-schema.md`](./references/config-schema.md
 moving on, and show a running summary of what has been collected and what remains.
 Field-by-field meaning, how to choose each value, and what breaks if it is wrong are all
 in [`parameter-reference.md`](./references/parameter-reference.md).
+
+### Front-loaded or skip-ahead answers
+
+A user may answer several batches' worth of questions in one free-form message, or ask
+to skip the remaining questions and finish immediately. Do not withhold the whole
+configuration while asking whether to proceed. Instead: validate everything the user did
+supply against `config-schema.md`, apply the literal string `"RESOLVE"` (or `null` for
+`allowlistChecker.address` when the checker is `to-be-deployed`) to every address-type
+field left open, and produce that partial configuration in the same response. Fields with
+no `"RESOLVE"` sentinel — the verification deposit amount, pool currency, fee tier, tick
+spacing, starting price, and seeding — have no safe default; flag each one explicitly as
+still needing an answer rather than guessing at it, and ask only about those. Skipping the
+batch-by-batch confirmation step never means skipping validation — every rule above still
+applies to whatever the user did supply.
 
 ### Batch 1: Network, Token & Ownership (4 questions)
 
@@ -190,7 +207,9 @@ literal string `"RESOLVE"` — never a guessed or invented value. Show a summary
 - Options: "Native ETH", custom ERC-20 address (via "Other")
 - Note in the prompt: the permissioned token's side of the pool is always the adapter,
   never the underlying token — this question is only about the _other_ currency.
-- Validation: address form for an ERC-20, or the native-currency sentinel below
+- Validation: address form for an ERC-20, or the literal string `"native"` (the
+  native-currency sentinel; see [Address Validation](./references/config-schema.md#address-validation)
+  for the full semantics)
 - Store: `pool.pairedCurrency`
 
 **Question 4 — Fee tier**
@@ -201,8 +220,8 @@ literal string `"RESOLVE"` — never a guessed or invented value. Show a summary
 - Store: `pool.feeTier`
 
 **Validate:** confirm both remaining wrapper fields are a valid address or the literal
-string `"RESOLVE"`, the paired currency is a valid address or the native-currency
-sentinel, and the fee tier is a positive integer. Show a summary of all four wrappers,
+string `"RESOLVE"`, the paired currency is a valid address or the literal string
+`"native"`, and the fee tier is a positive integer. Show a summary of all four wrappers,
 the hook, and the pool currency collected so far, and flag every field still marked
 `"RESOLVE"`.
 
@@ -322,6 +341,10 @@ Ask the user what they want to do:
   before overwriting it — including a file that looks unrelated to this skill, such as
   `package.json` or `tsconfig.json`. Re-prompt once on a rejected path rather than
   silently substituting the default. Then write exactly the JSON object shown above.
+  (This validation is intentionally stricter than other skills' "save to file" steps in
+  this repo — the `~` and `..` rejections were added in response to a security audit
+  finding that a leading `~` could target `~/.claude.json`, so keep them here rather
+  than trimming to match a lighter-weight equivalent elsewhere.)
 - "View the setup walkthrough" — point at `permissioned-pools-deployer`.
 - "Modify configuration" — re-run the relevant batch above.
 - "Exit" — end here; the user can copy the JSON from the transcript.

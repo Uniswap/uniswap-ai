@@ -200,7 +200,8 @@ Expressed here as a human-readable ratio — paired-currency units per one unit 
 permissioned token — rather than as `sqrtPriceX96`. That conversion is deliberately
 deferred to the deployer skill, because it depends on the decimals of **both**
 currencies, and this configurator does not resolve the paired currency's decimals (it
-only validates the address shape or accepts the native-currency sentinel). Recording a
+only validates the address shape or accepts the literal string `"native"`, the
+native-currency sentinel). Recording a
 ratio here keeps this configuration correct regardless of which decimals value ends up
 resolved later.
 
