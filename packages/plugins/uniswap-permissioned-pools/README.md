@@ -14,6 +14,7 @@ claude plugin add @uniswap/uniswap-permissioned-pools
 | --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `permissioned-pools-issuer`       | Contract architecture, the ordered setup journey, code-enforced ordering and reverts, and the trust model for an issuer team                                                                 |
 | `permissioned-pools-configurator` | Interactive parameter collection for a permissioned-pool setup — chain, token, checker, owner, verification deposit, wrapper/hook registrations, and pool pricing — emitted as a JSON config |
+| `permissioned-pools-deployer`     | Guided execution of the on-chain setup sequence from a configurator JSON config — command sequences, preconditions, reverts, key handling, and the acknowledgment gate                       |
 
 ## Use Cases
 
@@ -26,6 +27,7 @@ This plugin helps an issuer's engineering team:
 - **Get the contracts building** - the pinned commits, the Foundry remapping, and the exact-casing identifier traps
 - **Separate on-chain work from coordinated work** - what is permissionless today and what is requested through Uniswap Labs
 - **Collect and validate setup parameters** - work through the configurator's four validated batches of questions and get back a JSON config for the deployer skill, with every unresolved address marked `"RESOLVE"` instead of guessed
+- **Execute the on-chain setup sequence** - walk the deployer skill through the configurator's JSON config step by step, with an acknowledgment gate before anything action-oriented, validated inputs, and signing steered to a keystore or hardware wallet, never a raw key
 
 ## Quick Start
 
@@ -54,25 +56,42 @@ permissioned pool's parameters:
 It collects the setup parameters in four validated batches of questions and displays the
 resulting JSON config — it does not deploy anything or write a file unless you ask it to.
 
+### Using the deployer skill
+
+The `permissioned-pools-deployer` skill activates when you ask to execute the setup sequence:
+
+```text
+"Deploy a permissioned pool"
+"Walk me through the permissioned pool deployment"
+"Run the permissioned pool setup"
+```
+
+It walks the configurator's JSON config through the published seven-step journey as ordered
+command sequences, gated behind an explicit acknowledgment before anything action-oriented, and
+never emits a command using a raw signing key.
+
 ### Slash commands
 
 ```text
 /permissioned-pools-issuer
 /permissioned-pools-configurator
+/permissioned-pools-deployer
 ```
 
 ## Reference Topics
 
-| Topic                         | Coverage                                                                                           |
-| ----------------------------- | -------------------------------------------------------------------------------------------------- |
-| Contract architecture         | The contract stack, which repo each contract lives in, the two-address model, exact casing         |
-| Issuer journey                | The setup steps in the published order, with the caller, the emitted event, and the checks         |
-| Enforced ordering and reverts | The edges the contracts enforce, the revert catalogue, and worked out-of-order scenarios           |
-| Trust model                   | Position transferability, adapter-admin unwind powers, and the wrapper allowlist boundary          |
-| Packaging and sources         | Pinned commits, Foundry install and remapping, import paths, and where addresses are resolved      |
-| Coordination boundary         | What is permissionless on-chain versus requested through Uniswap Labs                              |
-| Config schema                 | The configurator's JSON shape, field types, validation rules, and the `RESOLVE`/`native` sentinels |
-| Parameter reference           | What each configurator parameter means, how to choose it, and what breaks if it is wrong           |
+| Topic                         | Coverage                                                                                                         |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Contract architecture         | The contract stack, which repo each contract lives in, the two-address model, exact casing                       |
+| Issuer journey                | The setup steps in the published order, with the caller, the emitted event, and the checks                       |
+| Enforced ordering and reverts | The edges the contracts enforce, the revert catalogue, and worked out-of-order scenarios                         |
+| Trust model                   | Position transferability, adapter-admin unwind powers, and the wrapper allowlist boundary                        |
+| Packaging and sources         | Pinned commits, Foundry install and remapping, import paths, and where addresses are resolved                    |
+| Coordination boundary         | What is permissionless on-chain versus requested through Uniswap Labs                                            |
+| Config schema                 | The configurator's JSON shape, field types, validation rules, and the `RESOLVE`/`native` sentinels               |
+| Parameter reference           | What each configurator parameter means, how to choose it, and what breaks if it is wrong                         |
+| Preflight and validation      | Loading and re-validating the config, resolving the `RESOLVE`/`native` sentinels, input validation, key handling |
+| Step walkthrough              | Steps 2 through 7 as ordered command sequences, with preconditions, reverts, and post-step checks                |
 
 ## Scope and Disclaimer
 
