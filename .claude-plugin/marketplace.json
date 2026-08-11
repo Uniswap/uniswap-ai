@@ -43,7 +43,7 @@
     {
       "name": "uniswap-permissioned-pools",
       "source": "./packages/plugins/uniswap-permissioned-pools",
-      "description": "Reference guide for setting up a Uniswap v4 Permissioned Pool for a transfer-restricted ERC-20"
+      "description": "Reference guide and interactive configurator for setting up a Uniswap v4 Permissioned Pool for a transfer-restricted ERC-20"
     }
   ]
 }

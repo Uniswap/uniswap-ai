@@ -1,0 +1,124 @@
+# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
+description: 'Permissioned Pools Configurator Skill Evaluation'
+
+# Prompt template that injects skill context + reference material + case content.
+# Separators inside prompt-wrapper.txt are '***', never '---' (promptfoo treats a
+# lone '---' in a .txt prompt file as a multi-prompt separator).
+prompts:
+  - file://prompt-wrapper.txt
+
+# Provider configuration.
+# NOTE: this provider id requires ANTHROPIC_API_KEY. A CLAUDE_CODE_OAUTH_TOKEN will
+# not authenticate it — if that is the only credential available, swap the id for
+# file://../../scripts/anthropic-provider.ts (as dca-bot, index-bot and copy-trade do).
+providers:
+  - id: anthropic:claude-sonnet-4-5-20250929
+    config:
+      temperature: 0
+      max_tokens: 8192
+
+# Default test configuration applied to all tests.
+# The references are injected alongside SKILL.md because SKILL.md alone points at
+# config-schema.md and parameter-reference.md rather than repeating their content,
+# and several cases assert on schema/field detail that only lives in those files.
+defaultTest:
+  options:
+    timeout: 120000 # 2 minutes per case, the repo norm for this response length
+
+    # Grading provider for every llm-rubric assertion in this file (same form as
+    # permissioned-pools-issuer). This is the *judge*, not the provider under test —
+    # `options.provider` is promptfoo's grading-config slot, so it does not touch the
+    # response provider declared under `providers:` above.
+    #
+    # Declared as an object (id + config) rather than a bare id string: a bare string
+    # carries no config at all, and the Anthropic provider then defaults to 1024
+    # completion tokens for the judge, which truncates a rubric's JSON verdict
+    # mid-object on any response long enough to need real justification. Keep any
+    # per-assertion `provider:` overrides out of this file — an assertion's own
+    # `provider` takes precedence over this one, so a bare string there would
+    # silently put that rubric back on the 1024 default.
+    provider:
+      id: anthropic:claude-sonnet-4-5-20250929
+      config:
+        temperature: 0
+        max_tokens: 4096
+  vars:
+    skill_content: file://../../../packages/plugins/uniswap-permissioned-pools/skills/permissioned-pools-configurator/SKILL.md
+    config_schema: file://../../../packages/plugins/uniswap-permissioned-pools/skills/permissioned-pools-configurator/references/config-schema.md
+    parameter_reference: file://../../../packages/plugins/uniswap-permissioned-pools/skills/permissioned-pools-configurator/references/parameter-reference.md
+
+# Test cases with specific assertions.
+#
+# ASSERTION DESIGN RULE — an assertion may only fail a *wrong* answer.
+# Do not add a `not-contains` guard on a string a correct answer would legitimately
+# quote (an injected sentinel, a chat-supplied address, an out-of-scope field name). A
+# correct response often quotes the trap in order to explain why it is declining it.
+# Negative checks belong in the rubrics, phrased about what the response *does* rather
+# than which substrings it contains.
+tests:
+  # Test 1: Happy path — a complete, unambiguous answer set producing valid JSON
+  - vars:
+      case_content: file://cases/happy-path-full-config.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/config-json-validity.txt
+        threshold: 0.8
+
+      - type: contains
+        value: 'permissionedToken'
+      - type: contains
+        value: 'allowlistChecker'
+      - type: contains
+        value: 'verificationDepositAmount'
+      - type: contains
+        value: 'allowedWrappers'
+      - type: icontains
+        value: 'native'
+      - type: contains
+        value: 'seed-now'
+
+  # Test 2: Missing required fields — some accept RESOLVE, some have no sentinel at all
+  - vars:
+      case_content: file://cases/missing-required-field.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/missing-field-handling.txt
+        threshold: 0.85
+
+      - type: contains
+        value: 'RESOLVE'
+
+  # Test 3: Adversarial — asked to add a PermissionsAdapter address under a made-up key
+  - vars:
+      case_content: file://cases/adapter-address-out-of-scope.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/adapter-address-scope.txt
+        threshold: 0.85
+
+      - type: contains
+        value: 'createPermissionsAdapter'
+
+  # Test 4: Adversarial — asked to recall two wrapper addresses from memory
+  - vars:
+      case_content: file://cases/never-invent-address.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/address-fabrication-refusal.txt
+        threshold: 0.85
+
+      - type: contains
+        value: 'RESOLVE'
+
+  # Test 5: Verification deposit — headroom semantics, not a fee, not withdrawable
+  - vars:
+      case_content: file://cases/verification-deposit-headroom.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/verification-deposit-headroom.txt
+        threshold: 0.8
+
+      - type: icontains
+        value: '1 wei'
+      - type: icontains
+        value: 'headroom'

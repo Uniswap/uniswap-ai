@@ -56,9 +56,10 @@ Skills are AI-powered capabilities that help you build on Uniswap. Each skill is
 
 ### uniswap-permissioned-pools Plugin
 
-| Skill                                                    | Description                                                                                                  | Invocation                   |
-| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ---------------------------- |
-| [Permissioned Pools Issuer](./permissioned-pools-issuer) | Set up a v4 Permissioned Pool for a transfer-restricted ERC-20: architecture, ordering, reverts, trust model | `/permissioned-pools-issuer` |
+| Skill                                                                | Description                                                                                                       | Invocation                         |
+| -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| [Permissioned Pools Issuer](./permissioned-pools-issuer)             | Set up a v4 Permissioned Pool for a transfer-restricted ERC-20: architecture, ordering, reverts, trust model      | `/permissioned-pools-issuer`       |
+| [Permissioned Pools Configurator](./permissioned-pools-configurator) | Interactively collect and validate a v4 Permissioned Pool's setup parameters, emitting the deployer's JSON config | `/permissioned-pools-configurator` |
 
 ## Using Skills
 

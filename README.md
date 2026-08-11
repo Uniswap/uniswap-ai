@@ -18,7 +18,7 @@ npx skills add Uniswap/uniswap-ai
 /plugin install uniswap-driver              # Swap & liquidity planning
 /plugin install uniswap-viem                # EVM integration (viem/wagmi)
 /plugin install uniswap-trading-tools       # Automated trading tools (DCA, index, copy-trade)
-/plugin install uniswap-permissioned-pools  # v4 Permissioned Pools reference
+/plugin install uniswap-permissioned-pools  # v4 Permissioned Pools reference + configurator
 ```
 
 ## Featured Skills
