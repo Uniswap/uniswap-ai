@@ -26,8 +26,9 @@ Every judgment must be grounded in text that is actually present in the response
 
 ## Required Elements
 
-1. **Marks the two unresolved address fields `"RESOLVE"`** (`allowedWrappers.mixedRouteQuoterV2`
-   and `hook`) rather than guessing or leaving them blank.
+1. **Marks all four unresolved address fields `"RESOLVE"`** (`permissionedToken`,
+   `adapterOwner`, `allowedWrappers.mixedRouteQuoterV2`, and `hook`) rather than guessing or
+   leaving them blank.
 
 2. **Handles the to-be-deployed allowlist checker correctly**: `allowlistChecker.mode` is
    `"to-be-deployed"` and `allowlistChecker.address` is the literal `null` — not the string

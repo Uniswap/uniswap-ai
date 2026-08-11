@@ -30,9 +30,9 @@ contract mechanics behind any of these parameters, see
 - ✅ It collects and validates the inputs a permissioned-pool setup needs and produces a
   JSON document. It does not call any contract, does not broadcast anything, and holds
   no signing keys.
-- ✅ It covers contract mechanics only — what each parameter means and what breaks if it
-  is wrong. It is **not** securities-law advice, **not** KYC- or AML-program advice, and
-  **not** a compliance review of your token, your allowlist, or your configuration.
+- ✅ **Treat this as contract mechanics only.** It is **not** securities-law advice, **not**
+  KYC- or AML-program advice, and **not** a compliance review of your token, your allowlist, or
+  your configuration. It covers what each parameter means and what breaks if it is wrong.
 - ✅ It never invents a contract address. Addresses you supply are recorded as given;
   addresses you do not yet have — whether because they still need to be looked up
   against the deploy guide's table or because the issuer has not decided on them yet —
