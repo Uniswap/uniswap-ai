@@ -39,6 +39,11 @@
       "name": "uniswap-trading-tools",
       "source": "./packages/plugins/uniswap-trading-tools",
       "description": "Automated trading tools (DCA, index, copy-trade), asset-agnostic across crypto and tokenized RWAs"
+    },
+    {
+      "name": "uniswap-permissioned-pools",
+      "source": "./packages/plugins/uniswap-permissioned-pools",
+      "description": "Reference guide for setting up a Uniswap v4 Permissioned Pool for a transfer-restricted ERC-20"
     }
   ]
 }
