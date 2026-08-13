@@ -40,7 +40,7 @@ Reference material for engineering teams standing up a Uniswap v4 Permissioned P
 
 ## Scope and Disclaimer
 
-- This plugin is **educational reference material** about contract mechanics. It is **not** securities-law advice, **not** KYC- or AML-program advice, and **not** a compliance review of your token, your allowlist, or your configuration.
+- This plugin is **educational reference material** about contract mechanics. These skills do not constitute legal, financial, investment, or tax advice, and they are **not** a compliance review of your token, your allowlist, your KYC or AML program, or your configuration.
 - AI-generated code and command sequences may contain errors. Review everything, test on a testnet first, and have your own auditors review contracts you deploy.
 - Contract behaviour is described against pinned commits. Verify against the source at the commit you build against before relying on any statement here.
 - The plugin contains no deployment addresses on purpose. Resolve every address from the published deployment table, then verify it on a block explorer for your chain before sending a transaction to it.

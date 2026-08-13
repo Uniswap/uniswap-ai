@@ -55,7 +55,7 @@ The skill includes detailed reference documentation covering:
 
 ## Scope and Disclaimer
 
-- This skill is **educational reference material** about contract mechanics. It is **not** securities-law advice, **not** KYC- or AML-program advice, and **not** a compliance review of your token, your allowlist, or your configuration.
+- This skill is **educational reference material** about contract mechanics. It does not constitute legal, financial, investment, or tax advice, and it is **not** a compliance review of your token, your allowlist, your KYC or AML program, or your configuration.
 - AI-generated code and command sequences may contain errors. Review everything, test on a testnet first, and have your own auditors review contracts you deploy.
 - Contract behaviour is described against pinned commits. Verify against the source at the commit you build against before relying on any statement here.
 - The skill contains no deployment addresses on purpose. Resolve every address from the published deployment table, then verify it on a block explorer for your chain before sending a transaction to it.

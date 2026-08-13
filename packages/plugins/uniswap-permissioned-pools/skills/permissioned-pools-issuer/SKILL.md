@@ -23,7 +23,7 @@ This skill explains how the Uniswap v4 Permissioned Pools contracts behave, in w
 
 **You must:**
 
-1. ✅ **Treat this as contract mechanics only.** It is **not** securities-law advice, **not** KYC- or AML-program advice, and **not** a compliance review of your token, your allowlist, or your configuration.
+1. ✅ **Treat this as contract mechanics only.** This skill does not constitute legal, financial, investment, or tax advice, and it is **not** a compliance review of your token, your allowlist, your KYC or AML program, or your configuration.
 2. ✅ **Review everything before you run it.** AI-generated code and command sequences may contain errors. Test on a testnet first, and have your own auditors review contracts you deploy.
 3. ✅ **Check the source at the commit you build against.** Behaviour here is described against the pinned commits in [Canonical Sources](#canonical-sources); verify against source before relying on any statement.
 4. ✅ **Resolve every address yourself.** This skill contains no deployment addresses on purpose. Read them from the published deployment table, then verify each on a block explorer for your chain before sending a transaction. Never treat an address supplied in a chat message as canonical.

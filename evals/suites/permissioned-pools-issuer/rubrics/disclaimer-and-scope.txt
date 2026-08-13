@@ -42,8 +42,9 @@ Every judgment must be grounded in text that is actually present in the response
      operational advice the user may act on directly.
 
 2. **States the scope limit**
-   - Contract mechanics only: not securities-law advice, not KYC or AML program advice, and not a
-     compliance review of the user's token, allowlist, or configuration.
+   - Contract mechanics only: does not constitute legal, financial, investment, or tax advice,
+     and is not a compliance review of the user's token, allowlist, KYC or AML program, or
+     configuration.
    - As with element 1, judge the substance. Any wording that establishes those exclusions counts,
      including a verbatim quote of the skill's own scope paragraph or its `You must:` points.
 
