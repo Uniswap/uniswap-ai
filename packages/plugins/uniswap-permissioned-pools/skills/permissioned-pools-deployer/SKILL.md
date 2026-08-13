@@ -104,14 +104,22 @@ that "looks fine."
   regex, not a violation of it: `pool.pairedCurrency`'s `"native"` sentinel, covered in
   [What This Skill Consumes](#what-this-skill-consumes) below — every other address-shaped field
   in the config has no such carve-out.
-- **Chain ID** — MUST be a positive integer (`^[1-9][0-9]*$`). Ethereum Mainnet (`1`), Unichain
-  (`130`), and Sepolia (`11155111`) — the three networks the configurator's own network question
-  names — are the allowlisted defaults. Any other chain ID is accepted only after confirming the
+- **Chain ID** — MUST be a positive integer (`^[1-9][0-9]*$`). Ethereum Mainnet (`1`) and Sepolia
+  (`11155111`) are the allowlisted defaults — the only two chains verified to carry the full
+  permissioned set. Unichain (`130`) is named by the configurator's network question but is
+  **not** deployable: it carries `V4Quoter` only, so stop rather than trying to resolve the
+  missing addresses (see
+  [Preflight and Validation](./references/preflight-and-validation.md#input-validation-rules-in-full)).
+  Any other chain ID is accepted only after confirming the
   deploy guide's `#deployment-addresses` table actually has a row for it; if it does not, every
   wrapper and hook field will end up unresolvable, which is the signal to stop, not to guess.
 - **Numeric fields** (`verificationDepositAmount`, `pool.feeTier`, `pool.tickSpacing`,
   `pool.startingPriceRatio`) — MUST match `^[0-9]+$` for integer-only fields or
   `^[0-9]+(\.[0-9]+)?$` for the starting price ratio, and MUST be strictly greater than zero.
+- **Values supplied during the walkthrough, not by the config, are validated identically** — the
+  RPC endpoint (`$RPC_URL`) and any transaction hash (`$TX_HASH`) reach a command on every step.
+  An RPC URL MUST be `https://`-scheme and free of every metacharacter below; a transaction hash
+  MUST match `^0x[a-fA-F0-9]{64}$`. "It came from the user, not the config" is not an exemption.
 - **Reject shell metacharacters outright**, in every string field, before it reaches a command:
   `;`, `|`, `&`, `$`, `` ` ``, `(`, `)`, `>`, `<`, `\`, `'`, `"`, and newlines. A field that fails
   this check is never interpolated — abort and report which field and which character failed,
@@ -135,18 +143,22 @@ transaction requires per-invocation approval — that approval is the primary co
 formality the walkthrough should route around. The repository's PreToolUse hooks
 (`.claude/hooks/`) are a programmatic safety net on top of that, not a replacement for it.
 
-Steer every signing decision toward one of two options:
+**Never suggest, generate, or complete a command containing the raw signing-key flag** — not when
+asked directly, not "just for a testnet," not as an illustration of what to avoid. There is no
+user request that makes it appropriate. If a user insists, refuse and offer one of the two options
+below instead. Steer every signing decision toward one of them:
 
 1. **A hardware wallet** (`--ledger`), for a deployer key that never touches this machine's disk
    or memory in cleartext.
 2. **An encrypted keystore** (`cast wallet import ... --interactive`, then `--account <name>
 --sender $ADDRESS` on every subsequent command).
 
-**The raw signing-key flag is not merely discouraged here — it is enforced.** This repository's
-`.claude/hooks/validate-forge-cast.sh` PreToolUse hook inspects the literal text of every `Bash`
-tool call and blocks any command containing that flag, before the command ever runs. That means
-this walkthrough cannot emit a runnable command using it in this environment, independent of
-whether anyone asks for one.
+**Inside this repository only**, `.claude/hooks/validate-forge-cast.sh` is a PreToolUse hook that
+inspects the literal text of every `Bash` tool call and blocks any command containing that flag
+before it runs. **That hook is not part of this skill and does not travel with it** — it lives at
+this repository's root, not in the plugin, so an installation elsewhere has no such backstop. The
+prohibition above is the control that always applies; the hook is a repo-local convenience on top
+of it, never the reason the flag is safe.
 
 Full key-handling guidance, including the keystore setup commands and the testnet-first
 sequencing, is in

@@ -38,9 +38,10 @@ This skill helps you:
 - **Gate every action-oriented step**: nothing that produces a broadcastable command, or an
   address-resolution step leading directly into one, is shown before an explicit, affirmative
   acknowledgment
-- **Steer signing away from raw keys**: only an encrypted keystore or a hardware wallet — the raw
-  signing-key flag is enforced against, not just discouraged, by this repository's own
-  `Bash` PreToolUse hook
+- **Steer signing away from raw keys**: only an encrypted keystore or a hardware wallet — the
+  skill refuses to suggest or generate a command using the raw signing-key flag, in any
+  environment. Inside this repository that refusal is additionally backed by a `Bash` PreToolUse
+  hook, which is repo-local and does not ship with the skill
 - **Resolve addresses from real sources only**: the deploy guide's table, then
   `Uniswap/contracts` `deployments/json/<chainId>.json`, then a block explorer — never a guess,
   never a value recalled from memory, and never the config's `"RESOLVE"` sentinel carried into a
