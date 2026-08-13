@@ -85,9 +85,9 @@ guide's convention. Every step in the skill names which case it is.
 
 - This is **educational deployment guidance, not a compliance review, and not a substitute for
   your own review of every command before you run it**.
-- It covers contract mechanics only. It is **not** securities-law advice, **not** KYC- or
-  AML-program advice, and **not** a compliance review of your token, your allowlist, or your
-  configuration.
+- It covers contract mechanics only. It does not constitute legal, financial, investment, or
+  tax advice, and it is **not** a compliance review of your token, your allowlist, your KYC
+  or AML program, or your configuration.
 - It ships no deployment addresses. Every address comes from the loaded config, a value you
   supply during the walkthrough, or a read against a contract whose address came from one of
   those two sources.
