@@ -4,13 +4,14 @@
 
 This plugin provides reference material for engineering teams standing up a Uniswap v4 Permissioned Pool for a transfer-restricted ERC-20 (for example a tokenized real-world asset). It explains the contract stack, the order the contracts require, what each revert means, and what issuers and liquidity providers are trusting.
 
-It is reference material only: it describes contract mechanics, it does not walk a team through a deployment, and it emits no broadcastable commands. It covers no securities-law, KYC-program, or compliance questions.
+It combines reference material with an interactive configurator: the issuer skill describes contract mechanics only, and the configurator skill collects and validates setup parameters into a JSON config for a forthcoming deployer skill. Neither skill walks a team through a live deployment or emits broadcastable commands. It covers no securities-law, KYC-program, or compliance questions.
 
 ## Plugin Components
 
 ### Skills (./skills/)
 
 - **permissioned-pools-issuer**: Contract architecture, the ordered setup journey, code-enforced ordering and the revert catalogue, the trust model, contract packaging and citation rules, and the boundary between permissionless on-chain work and work coordinated with Uniswap Labs.
+- **permissioned-pools-configurator**: Interactive, batched `AskUserQuestion` collection and validation of every permissioned-pool setup parameter — chain, underlying token, allowlist checker, adapter owner, verification deposit, the four wrapper registrations, hook, and pool pricing — displayed as a JSON config for the forthcoming deployer skill to consume. Emits no addresses it was not given or told to mark for resolution, and never auto-writes a file.
 
 ### Agents
 
@@ -23,15 +24,20 @@ uniswap-permissioned-pools/
 ├── .claude-plugin/
 │   └── plugin.json
 ├── skills/
-│   └── permissioned-pools-issuer/
+│   ├── permissioned-pools-issuer/
+│   │   ├── SKILL.md
+│   │   └── references/
+│   │       ├── contract-architecture.md
+│   │       ├── issuer-journey.md
+│   │       ├── enforced-ordering-and-reverts.md
+│   │       ├── trust-model.md
+│   │       ├── packaging-and-sources.md
+│   │       └── coordination-boundary.md
+│   └── permissioned-pools-configurator/
 │       ├── SKILL.md
 │       └── references/
-│           ├── contract-architecture.md
-│           ├── issuer-journey.md
-│           ├── enforced-ordering-and-reverts.md
-│           ├── trust-model.md
-│           ├── packaging-and-sources.md
-│           └── coordination-boundary.md
+│           ├── config-schema.md
+│           └── parameter-reference.md
 ├── project.json
 ├── package.json
 ├── CLAUDE.md

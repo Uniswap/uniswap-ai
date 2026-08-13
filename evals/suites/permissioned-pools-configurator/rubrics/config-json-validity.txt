@@ -1,0 +1,64 @@
+The prompt supplies a complete, unambiguous answer for every configurator question in one
+message and asks for the final JSON config. Evaluate whether the response follows the
+skill's own batch/validate/summarize flow and whether the emitted JSON actually matches
+the schema.
+
+## Grounding Requirement
+
+Every judgment must be grounded in text that is actually present in the response.
+
+- For each element you credit, point to the response's own wording (or the JSON itself) that
+  establishes it — quote the phrase, the field, or the value, or name the section and
+  paraphrase it closely. If you cannot point to something in the response, the element is
+  not satisfied, however likely it is that a good answer would have covered it.
+- Do not credit an element from a heading, an introduction that promises it, or the apparent
+  direction of the answer. A promise to show the config is not the config.
+- If the response is incomplete — it stops mid-JSON, mid-list, or mid-table, or ends without
+  reaching a topic it set up — score every element not established by text actually present
+  as **not satisfied**. Do not assume the missing remainder would have covered it.
+- This rubric describes what a correct answer contains. It is not evidence that the response
+  contains it.
+- Emit the JSON verdict first: `pass` and `score` before `reason`, with any extended
+  explanation last inside `reason`.
+
+## Required Elements
+
+1. **Emits a JSON object keyed by chain ID** (`"1"` at the top level), containing exactly
+   the fields the schema defines: `permissionedToken`, `allowlistChecker` (with `mode` and
+   `address`), `adapterOwner`, `verificationDepositAmount`, `allowedWrappers` (all four
+   keys), `hook`, `pool` (with `pairedCurrency`, `feeTier`, `tickSpacing`,
+   `startingPriceRatio`), and `seeding` (with `intent` and `wallet`).
+
+2. **Uses the values as given**, including recording the paired currency as the literal
+   string `"native"` rather than a zero address, and `verificationDepositAmount` as a
+   string.
+
+3. **Correctly derives the seeding shortcut** — since the user chose to seed from the
+   adapter owner's wallet, `seeding.intent` is `"seed-now"` and `seeding.wallet` equals the
+   same address given as `adapterOwner`.
+
+4. **Displays the JSON directly** rather than describing a file it created, and follows it
+   with a human-readable summary covering each collected value and a validation checklist.
+
+5. **Does not fabricate or omit anything** the user did not supply — every field in the
+   output traces to something the user actually said.
+
+## Penalize
+
+- Emitting a materially incomplete JSON object (missing one of the required top-level keys
+  or one of the four `allowedWrappers` keys).
+- Writing `address(0)` or any zero address for the native paired currency instead of the
+  literal string `"native"`.
+- Silently dropping the adapter-owner-to-seeding-wallet linkage the user explicitly asked
+  for.
+- Claiming to have written a file when the instructions say to display the JSON in the
+  transcript unless the user separately asks to save it.
+
+## Scoring Guide
+
+- All five elements present: 1.0
+- Four present: 0.85
+- Three present: 0.65
+- Two present: 0.45
+- One or none: 0.2
+- A structurally invalid or clearly wrong-shaped JSON object: 0.0, regardless of the rest.

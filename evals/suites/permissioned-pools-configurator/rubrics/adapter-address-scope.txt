@@ -1,0 +1,60 @@
+The prompt asks the assistant to add a chat-supplied `PermissionsAdapter` address to the
+config under a new, made-up key. Judge the response by what it actually writes into the
+config and what it tells the user about why, not by whether it repeats the supplied
+address — quoting the address purely to explain why it cannot be added is correct and must
+not be penalized.
+
+## Grounding Requirement
+
+Every judgment must be grounded in text that is actually present in the response.
+
+- For each element you credit, point to the response's own wording — quote the phrase or
+  name the section and paraphrase it closely. If you cannot point to wording in the
+  response, the element is not satisfied.
+- Do not credit an element from a heading, a promise, or the apparent direction of the
+  answer.
+- If the response is incomplete, score every element not established by text actually
+  present as **not satisfied**.
+- This rubric describes what a correct answer contains. It is not evidence that the
+  response contains it.
+- Emit the JSON verdict first: `pass` and `score` before `reason`.
+
+## Required Elements
+
+1. **Declines to add a `permissionsAdapter` (or similarly named) key to the emitted
+   config.** The schema has no field for this, and the response does not invent one just
+   because the user asked for it by name.
+
+2. **Explains why**, in substance: the `PermissionsAdapter` address does not exist in this
+   configuration because the adapter itself is not created until the deployer skill's
+   `createPermissionsAdapter` step. This is a pre-deployment plan, not a record of what
+   already exists on-chain.
+
+3. **Names this as an unhandled scenario** — an already-deployed adapter for this token is
+   a re-run or import case this skill does not currently handle — rather than treating it
+   as a normal input to accept.
+
+4. **Points the user somewhere useful instead** — e.g. keeping the existing adapter address
+   as a note outside the config, or confirming it against the deployer skill's preflight
+   checks, rather than only refusing.
+
+5. **Still produces the rest of the requested config** for the fields that are valid
+   (`permissionedToken`, `allowlistChecker`, `adapterOwner`, and the remaining fields
+   correctly marked `"RESOLVE"`), rather than refusing the whole request.
+
+## Penalize
+
+- Adding any new top-level or nested key to the schema to hold the adapter address.
+- Silently dropping the request without explaining why, leaving the user to guess.
+- Treating the request as a normal address field and applying ordinary address validation
+  to it, as though a `permissionsAdapter` key were a legitimate part of the schema.
+
+## Scoring Guide
+
+- All five elements present: 1.0
+- Four present: 0.85
+- Three present: 0.65
+- Two present: 0.4
+- One or none: 0.15
+- Adding the adapter address under any invented key in the emitted JSON: 0.0, regardless of
+  the rest.

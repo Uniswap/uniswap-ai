@@ -1,7 +1,7 @@
 {
   "name": "uniswap-permissioned-pools",
-  "version": "0.1.0",
-  "description": "Reference guide for setting up a Uniswap v4 Permissioned Pool for a transfer-restricted ERC-20 - contract architecture, the ordered setup journey, code-enforced ordering and reverts, and the trust model",
+  "version": "0.2.0",
+  "description": "Reference guide and interactive configurator for setting up a Uniswap v4 Permissioned Pool for a transfer-restricted ERC-20 - contract architecture, the ordered setup journey, code-enforced ordering and reverts, the trust model, and validated setup-parameter collection",
   "author": {
     "name": "Uniswap Labs",
     "email": "ai-services@uniswap.org"
@@ -18,5 +18,5 @@
     "smart-contracts"
   ],
   "license": "MIT",
-  "skills": ["./skills/permissioned-pools-issuer"]
+  "skills": ["./skills/permissioned-pools-issuer", "./skills/permissioned-pools-configurator"]
 }

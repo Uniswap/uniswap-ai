@@ -65,9 +65,9 @@ Automated trading tools — dollar-cost averaging, weighted index baskets, and c
 
 ### uniswap-permissioned-pools
 
-Reference material for engineering teams standing up a Uniswap v4 Permissioned Pool for a transfer-restricted ERC-20: the contract stack, the ordered setup journey, the ordering the contracts enforce, and the trust model. Contract mechanics only — not securities-law, KYC-program, or compliance advice.
+Reference material for engineering teams standing up a Uniswap v4 Permissioned Pool for a transfer-restricted ERC-20: the contract stack, the ordered setup journey, the ordering the contracts enforce, and the trust model. Also includes an interactive configurator that collects and validates setup parameters into a JSON config for the forthcoming deployer skill. Contract mechanics only — not securities-law, KYC-program, or compliance advice.
 
-**Skills:** `permissioned-pools-issuer`
+**Skills:** `permissioned-pools-issuer`, `permissioned-pools-configurator`
 
 ## Agent-Agnostic Design
 

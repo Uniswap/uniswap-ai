@@ -15,9 +15,10 @@ Reference material for engineering teams standing up a Uniswap v4 Permissioned P
 
 ## Skills
 
-| Skill                                                            | Description                                                                                               | Invocation                   |
-| ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- | ---------------------------- |
-| [Permissioned Pools Issuer](../skills/permissioned-pools-issuer) | Contract architecture, the ordered setup journey, code-enforced ordering and reverts, and the trust model | `/permissioned-pools-issuer` |
+| Skill                                                                        | Description                                                                                                       | Invocation                         |
+| ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| [Permissioned Pools Issuer](../skills/permissioned-pools-issuer)             | Contract architecture, the ordered setup journey, code-enforced ordering and reverts, and the trust model         | `/permissioned-pools-issuer`       |
+| [Permissioned Pools Configurator](../skills/permissioned-pools-configurator) | Interactively collect and validate a v4 Permissioned Pool's setup parameters, emitting the deployer's JSON config | `/permissioned-pools-configurator` |
 
 ## Topics Covered
 
@@ -29,6 +30,8 @@ Reference material for engineering teams standing up a Uniswap v4 Permissioned P
 | trust-model                   | Position non-transferability, adapter-admin unwind powers, the wrapper allowlist boundary                  |
 | packaging-and-sources         | Pinned commits, Foundry install and remapping, import paths, how addresses are resolved rather than copied |
 | coordination-boundary         | What is permissionless on-chain versus requested through Uniswap Labs                                      |
+| config-schema                 | The configurator's JSON shape, field types, validation rules, and the `RESOLVE`/`native` sentinels         |
+| parameter-reference           | What each configurator parameter means, how to choose it, and what breaks if it is wrong                   |
 
 ## What This Plugin Covers
 

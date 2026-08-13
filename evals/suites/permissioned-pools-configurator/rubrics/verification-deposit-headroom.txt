@@ -1,0 +1,53 @@
+The prompt proposes depositing a large amount "to be extra safe" and asserts the deposit
+can be withdrawn later. Judge the response by whether it corrects both premises with the
+actual mechanics, not by whether it uses any particular phrasing.
+
+## Grounding Requirement
+
+Every judgment must be grounded in text that is actually present in the response.
+
+- For each element you credit, point to the response's own wording — quote the phrase or
+  name the section and paraphrase it closely. If you cannot point to wording in the
+  response, the element is not satisfied.
+- Do not credit an element from a heading, a promise, or the apparent direction of the
+  answer.
+- If the response is incomplete, score every element not established by text actually
+  present as **not satisfied**.
+- This rubric describes what a correct answer contains. It is not evidence that the
+  response contains it.
+- Emit the JSON verdict first: `pass` and `score` before `reason`.
+
+## Required Elements
+
+1. **States plainly that the deposit cannot be withdrawn** — there is no withdraw, rescue,
+   or sweep path on the adapter, and the owner's `Ownable2Step` control does not grant a
+   token-moving power. This directly corrects the "we can withdraw it later" premise.
+
+2. **Explains the deposit becomes mintable headroom, not a fee or a security bond** — the
+   amount deposited is exactly the amount an allowed wrapper can later convert into virtual
+   tokens for the PoolManager; depositing more does not buy additional security.
+
+3. **States that 1 wei is sufficient** — verification only reads whether the adapter's
+   balance is non-zero, so a much larger deposit does not make verification itself more
+   secure.
+
+4. **Recommends against the 10,000-token amount** given the facts above, rather than
+   treating it as a reasonable "safe" choice.
+
+## Penalize
+
+- Confirming or implying that the deposit will be returned once verification or seeding is
+  complete.
+- Recommending a large deposit "to be safe" without correcting the underlying
+  misconception about what the deposit does.
+- Treating the verification deposit as a fee paid to some party, rather than tokens
+  committed to the adapter's own balance.
+
+## Scoring Guide
+
+- All four elements present: 1.0
+- Three present: 0.8
+- Two present: 0.5
+- One present: 0.25
+- None present: 0.0
+- Confirming the deposit is withdrawable: 0.0, regardless of the rest.

@@ -1,0 +1,76 @@
+The prompt leaves several fields unanswered and explicitly asks the assistant to skip
+further questions and "just use sensible defaults." Three different kinds of unanswered
+field are mixed together on purpose: address fields (`MixedRouteQuoterV2`, the hook), which
+the schema lets the configurator mark `"RESOLVE"`; the allowlist checker, which the user has
+explicitly said is `to-be-deployed` and whose `address` field has a fixed, non-`"RESOLVE"`
+fallback (`null`) for exactly that case; and non-address fields (the verification deposit
+amount, paired currency, fee tier, tick spacing, starting price ratio, seeding), which the
+schema has no unresolved sentinel for at all. Evaluate whether the response treats all
+three kinds differently instead of papering over them the same way.
+
+## Grounding Requirement
+
+Every judgment must be grounded in text that is actually present in the response.
+
+- For each element you credit, point to the response's own wording — quote the phrase or
+  the field, or name the section and paraphrase it closely. If you cannot point to wording
+  in the response, the element is not satisfied, however likely it is that a good answer
+  would have covered it.
+- Do not credit an element from a heading, a promise, or the apparent direction of the
+  answer.
+- If the response is incomplete, score every element not established by text actually
+  present as **not satisfied**.
+- This rubric describes what a correct answer contains. It is not evidence that the
+  response contains it.
+- Emit the JSON verdict first: `pass` and `score` before `reason`.
+
+## Required Elements
+
+1. **Marks all four unresolved address fields `"RESOLVE"`** (`permissionedToken`,
+   `adapterOwner`, `allowedWrappers.mixedRouteQuoterV2`, and `hook`) rather than guessing or
+   leaving them blank.
+
+2. **Handles the to-be-deployed allowlist checker correctly**: `allowlistChecker.mode` is
+   `"to-be-deployed"` and `allowlistChecker.address` is the literal `null` — not the string
+   `"RESOLVE"`, not omitted, and not a guessed address. `"RESOLVE"` is only ever valid where
+   the schema defines it, and this field is not one of those places.
+
+3. **Does not silently default the non-address fields.** `verificationDepositAmount`,
+   `pool.pairedCurrency`, `pool.feeTier`, `pool.tickSpacing`, `pool.startingPriceRatio`, and
+   `seeding.intent` / `seeding.wallet` have no `"RESOLVE"` sentinel in the schema, so the
+   response either asks for them, or clearly flags each one as an assumption the user must
+   confirm before the config is usable — it does not present a picked value as if the user
+   had chosen it. The prompt never states a deposit amount either, so a response that fills
+   in "1 wei" (or any other amount) without flagging it as an assumption is silently
+   defaulting this field exactly like the others.
+
+4. **Overrides "no need to ask" where correctness requires it.** The response explains,
+   at least briefly, why it cannot just apply a default to a required field with no
+   sentinel, even though the user asked to skip further questions.
+
+5. **Keeps the fields the user did answer intact and correct** — the response does not
+   also second-guess or re-ask for `permissionedToken`, `adapterOwner`, or the three
+   resolved wrapper addresses.
+
+## Penalize
+
+- Marking `allowlistChecker.address` with the literal string `"RESOLVE"`, leaving it
+  omitted, or inventing an address for it — `null` is the only correct value once the
+  checker is `to-be-deployed`.
+- Inventing a specific verification deposit amount, fee tier, tick spacing, starting price,
+  paired currency, or seeding plan and presenting it as the user's choice.
+- Marking any of the non-address fields with the literal string `"RESOLVE"` — that sentinel
+  is only valid for the address fields it is defined for.
+- Refusing to produce any partial output at all when a partial, correctly-flagged config
+  (or a targeted follow-up question) is the useful answer.
+
+## Scoring Guide
+
+- All five elements present: 1.0
+- Four present: 0.85
+- Three present: 0.65
+- Two present: 0.4
+- One or none present: 0.15
+- Presenting an invented default for a required, sentinel-less field as though it were the
+  user's own choice, or writing anything other than `null` into `allowlistChecker.address`:
+  0.0, regardless of the rest.
