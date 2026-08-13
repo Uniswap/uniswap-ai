@@ -60,6 +60,7 @@ The skill includes detailed reference documentation covering:
 - Contract behaviour is described against pinned commits. Verify against the source at the commit you build against before relying on any statement here.
 - The skill contains no deployment addresses on purpose. Resolve every address from the published deployment table, then verify it on a block explorer for your chain before sending a transaction to it.
 - The skill does not walk you through a deployment and does not emit broadcastable commands.
+- The repo root `DISCLAIMER.md` governs every skill in this repository: they are provided as is without warranty, and they do not constitute legal, financial, investment, or tax advice. It also sets out use limits plus an AI-disclosure duty that applies when you use a skill to generate financial information and present it directly to individuals or consumers.
 
 ## Related Resources
 
