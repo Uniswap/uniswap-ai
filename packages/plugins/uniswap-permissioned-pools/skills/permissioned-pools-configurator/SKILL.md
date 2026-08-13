@@ -219,9 +219,10 @@ literal string `"RESOLVE"` — never a guessed or invented value. Show a summary
 - Options: "Native ETH", custom ERC-20 address (via "Other")
 - Note in the prompt: the permissioned token's side of the pool is always the adapter,
   never the underlying token — this question is only about the _other_ currency.
-- Validation: address form for an ERC-20, or the literal string `"native"` (the
-  native-currency sentinel; see [Address Validation](./references/config-schema.md#address-validation)
-  for the full semantics)
+- Validation: address form for an ERC-20 and not the zero address, or the literal string
+  `"native"` (the native-currency sentinel; see [Address Validation](./references/config-schema.md#address-validation)
+  for the full semantics). A user who supplies the zero address here means `"native"` —
+  record `"native"`, never the zero address.
 - Store: `pool.pairedCurrency`
 
 **Question 4 — Fee tier**
@@ -232,8 +233,13 @@ literal string `"RESOLVE"` — never a guessed or invented value. Show a summary
 - Store: `pool.feeTier`
 
 **Validate:** confirm both remaining wrapper fields are a valid address or the literal
-string `"RESOLVE"`, the paired currency is a valid address or the literal string
-`"native"`, and the fee tier is a positive integer. Show a summary of all four wrappers,
+string `"RESOLVE"`, the paired currency is a valid non-zero address or the literal string
+`"native"`, and the fee tier is a positive integer. When the paired currency is a resolved
+address and `permissionedToken` is also a resolved address, confirm the two differ —
+pairing the permissioned token against itself builds a `PoolKey` that either fails at the
+PoolManager level or creates a pool nobody intended (see
+[Parameter Reference](./references/parameter-reference.md#poolpairedcurrency)). Show a
+summary of all four wrappers,
 the hook, and the pool currency collected so far, and flag every field still marked
 `"RESOLVE"`.
 

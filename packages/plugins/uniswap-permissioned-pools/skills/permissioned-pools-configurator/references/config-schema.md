@@ -97,6 +97,11 @@ Every address field validates against:
 ^0x[a-fA-F0-9]{40}$
 ```
 
+The zero address never satisfies this check in practice: no address field in this schema
+has meaningful zero-address semantics, so reject it everywhere. (`pool.pairedCurrency` is
+the near-miss — the native currency is expressed as the `"native"` sentinel here and only
+becomes `address(0)` when the deployer builds the `PoolKey`.)
+
 Two exceptions, both intentional:
 
 1. **`pool.pairedCurrency` also accepts the literal string `"native"`.** This is a
