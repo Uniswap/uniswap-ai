@@ -1,6 +1,6 @@
 ---
 name: permissioned-pools-configurator
-description: Interactively collect and validate the parameters for a Uniswap v4 Permissioned Pool setup - chain, underlying token, allowlist checker, adapter owner, verification deposit, the four wrapper registrations, hook, and pool pricing - and emit the JSON config the deployer skill consumes. Use when the user says "configure a permissioned pool", "permissioned pool config", "adapter parameters", "permissioned pool setup parameters", "PermissionsAdapter configuration", or asks to set up parameters for a permissioned pool before deploying. Covers contract mechanics only - not securities-law, KYC-program, or compliance advice.
+description: Interactively collect and validate the parameters for a Uniswap v4 Permissioned Pool setup - chain, underlying token, allowlist checker, adapter owner, verification deposit, the four wrapper registrations, hook, and pool pricing - and emit the JSON config the deployer skill consumes. Use when the user says "configure a permissioned pool", "permissioned pool config", "adapter parameters", "permissioned pool setup parameters", "PermissionsAdapter configuration", or asks to set up parameters for a permissioned pool before deploying. Covers contract mechanics only - does not constitute legal, financial, investment, tax, or compliance advice, and is not a compliance review.
 allowed-tools: Read, Write, Edit, Glob, Grep, AskUserQuestion
 model: opus
 license: MIT
@@ -36,6 +36,11 @@ on-chain sequence. For the contract mechanics behind any of these parameters, se
   are stored as the literal string `"RESOLVE"`, never guessed or recalled from memory.
 - ✅ Review the emitted configuration yourself, and re-resolve every address it marks for
   resolution, before handing it to a deployment flow.
+- ✅ **Read the repo's usage guidelines.** The repo root `DISCLAIMER.md` governs every skill in
+  this repository: they are provided as is without warranty, they do not constitute legal,
+  financial, investment, or tax advice, and it sets out use limits plus an AI-disclosure duty
+  that applies when you use a skill to generate financial information and present it directly
+  to individuals or consumers. Point the user to it.
 
 State this framing inline (quoted or in your own words) and continue with the
 configuration flow in the same response — this is reference and data-collection

@@ -60,6 +60,7 @@ Parameters are collected in four batches of at most four questions each, validat
 - It covers contract mechanics only — what each parameter means and what breaks if it is wrong. It does not constitute legal, financial, investment, or tax advice, and it is **not** a compliance review of your token, your allowlist, your KYC or AML program, or your configuration.
 - It never invents a contract address. Addresses you do not yet have are stored as the literal string `"RESOLVE"`, never guessed or recalled from memory.
 - Review the emitted configuration yourself, and re-resolve every address it marks for resolution, before handing it to a deployment flow.
+- The repo root `DISCLAIMER.md` governs every skill in this repository: they are provided as is without warranty, and they do not constitute legal, financial, investment, or tax advice. It also sets out use limits plus an AI-disclosure duty that applies when you use a skill to generate financial information and present it directly to individuals or consumers.
 
 ## Related Resources
 
