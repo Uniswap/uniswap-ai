@@ -94,6 +94,7 @@ guide's convention. Every step in the skill names which case it is.
 - Run the entire sequence on a testnet before touching mainnet. Have your own auditors review
   any contract you deploy, most importantly your allowlist checker.
 - Nothing here is shown before an explicit, affirmative acknowledgment of the risks above.
+- The repo root `DISCLAIMER.md` governs every skill in this repository: they are provided as is without warranty, and they do not constitute legal, financial, investment, or tax advice. It also sets out use limits plus an AI-disclosure duty that applies when you use a skill to generate financial information and present it directly to individuals or consumers.
 
 ## Related Resources
 

@@ -4,7 +4,7 @@
 
 This plugin provides reference material for engineering teams standing up a Uniswap v4 Permissioned Pool for a transfer-restricted ERC-20 (for example a tokenized real-world asset). It explains the contract stack, the order the contracts require, what each revert means, and what issuers and liquidity providers are trusting.
 
-It combines reference material with an interactive configurator and a guided deployer: the issuer skill describes contract mechanics only, the configurator skill collects and validates setup parameters into a JSON config, and the deployer skill walks that config through the on-chain setup sequence as ordered command sequences, gated behind an explicit acknowledgment. It covers no securities-law, KYC-program, or compliance questions.
+It combines reference material with an interactive configurator and a guided deployer: the issuer skill describes contract mechanics only, the configurator skill collects and validates setup parameters into a JSON config, and the deployer skill walks that config through the on-chain setup sequence as ordered command sequences, gated behind an explicit acknowledgment. It does not constitute legal, financial, investment, tax, or compliance advice, and is not a compliance review.
 
 ## Plugin Components
 

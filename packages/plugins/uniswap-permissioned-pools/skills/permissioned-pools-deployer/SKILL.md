@@ -1,6 +1,6 @@
 ---
 name: permissioned-pools-deployer
-description: Guided walkthrough for executing the on-chain setup sequence for a Uniswap v4 Permissioned Pool from a permissioned-pools-configurator JSON config - allowlist checker deployment, createPermissionsAdapter, allowlisting and funding the adapter, verification, wrapper and hook registration, pool initialization, swap enablement, liquidity seeding, and the routing-allowlist request. Use when the user says "deploy a permissioned pool", "run the permissioned pool setup", "execute the permissioned pools journey", "createPermissionsAdapter", "verify my permissions adapter", "walk me through the permissioned pool deployment", or asks to execute the on-chain steps after generating a permissioned-pools-configurator config. Covers contract mechanics only - not securities-law, KYC-program, or compliance advice - and never emits a broadcastable command before an explicit acknowledgment.
+description: Guided walkthrough for executing the on-chain setup sequence for a Uniswap v4 Permissioned Pool from a permissioned-pools-configurator JSON config - allowlist checker deployment, createPermissionsAdapter, allowlisting and funding the adapter, verification, wrapper and hook registration, pool initialization, swap enablement, liquidity seeding, and the routing-allowlist request. Use when the user says "deploy a permissioned pool", "run the permissioned pool setup", "execute the permissioned pools journey", "createPermissionsAdapter", "verify my permissions adapter", "walk me through the permissioned pool deployment", or asks to execute the on-chain steps after generating a permissioned-pools-configurator config. Covers contract mechanics only - does not constitute legal, financial, investment, tax, or compliance advice, and is not a compliance review - and never emits a broadcastable command before an explicit acknowledgment.
 allowed-tools: Read, Glob, Grep, Bash(forge:*), Bash(cast:*), AskUserQuestion
 model: opus
 license: MIT
@@ -50,6 +50,11 @@ you run every command it shows you, after reviewing it.
 4. ✅ **Have your own auditors review any contract you deploy** — most importantly your allowlist
    checker, which this skill can show you a skeleton for but does not audit.
 5. ✅ **Treat this as contract mechanics only.** This skill does not constitute legal, financial, investment, or tax advice, and it is **not** a compliance review of your token, your allowlist, your KYC or AML program, or your configuration.
+6. ✅ **Read the repo's usage guidelines.** The repo root `DISCLAIMER.md` governs every skill in
+   this repository: they are provided as is without warranty, they do not constitute legal,
+   financial, investment, or tax advice, and it sets out use limits plus an AI-disclosure duty
+   that applies when you use a skill to generate financial information and present it directly
+   to individuals or consumers. Point the user to it.
 
 ### The acknowledgment gate
 
@@ -62,7 +67,7 @@ Use `AskUserQuestion` with a single question and exactly two options, and do not
 this gate until the first option is chosen:
 
 - **Question:** "This walkthrough produces commands that spend gas and permanently change
-  on-chain state for your token once you run them. Do you acknowledge the five points above and
+  on-chain state for your token once you run them. Do you acknowledge the six points above and
   want to continue?"
 - **Option A — "Yes, I have reviewed the points above and want to continue."** → proceed to the
   preflight checks.
