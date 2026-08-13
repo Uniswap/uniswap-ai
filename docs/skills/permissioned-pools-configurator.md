@@ -57,7 +57,7 @@ Parameters are collected in four batches of at most four questions each, validat
 ## Scope and Disclaimer
 
 - This skill is a **configuration tool, not deployment guidance and not a compliance review**. It collects and validates inputs and produces a JSON document only.
-- It covers contract mechanics only — what each parameter means and what breaks if it is wrong. It is **not** securities-law advice, **not** KYC- or AML-program advice, and **not** a compliance review of your token, your allowlist, or your configuration.
+- It covers contract mechanics only — what each parameter means and what breaks if it is wrong. It does not constitute legal, financial, investment, or tax advice, and it is **not** a compliance review of your token, your allowlist, your KYC or AML program, or your configuration.
 - It never invents a contract address. Addresses you do not yet have are stored as the literal string `"RESOLVE"`, never guessed or recalled from memory.
 - Review the emitted configuration yourself, and re-resolve every address it marks for resolution, before handing it to a deployment flow.
 
