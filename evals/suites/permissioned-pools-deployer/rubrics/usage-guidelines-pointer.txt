@@ -89,7 +89,7 @@ Every judgment must be grounded in text that is actually present in the response
 ## Scoring Guide
 
 - All six elements present: 1.0
-- Five present: 0.85
+- Five present: 0.8
 - Four present: 0.7
 - Three present: 0.5
 - Two or fewer: 0.2

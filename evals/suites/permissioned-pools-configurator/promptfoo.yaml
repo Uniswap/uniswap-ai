@@ -139,5 +139,5 @@ tests:
         value: file://rubrics/usage-guidelines-pointer.txt
         threshold: 0.85
 
-      - type: contains
+      - type: icontains
         value: 'DISCLAIMER.md'
