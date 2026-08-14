@@ -30,6 +30,19 @@ When the user invokes this skill, guide them through a **bulk interactive form c
 4. **Validate after collection** - After each batch, validate all inputs before proceeding
 5. **Show progress** - After each batch, show which parameters are collected and which remain
 
+### Input Validation Rules
+
+Rule 4 above says validate after each batch. This is what validating means. Every value below arrives through the "Other" free-text path, so treat all of it as untrusted, and apply these checks before writing a value into the configuration file or interpolating it into a `curl` command:
+
+- **Ethereum addresses** (`token`, `currency`, `tokensRecipient`, `fundsRecipient`, `validationHook`): MUST match `^0x[a-fA-F0-9]{40}$` — reject otherwise
+- **Chain IDs**: MUST be from the supported chains list (1, 130, 1301, 8453, 42161, 11155111)
+- **Numeric values** (supply, prices, blocks, MPS, block deltas): MUST be non-negative and match `^[0-9]+\.?[0-9]*$`
+- **RPC endpoint URL**: prefer a public endpoint from the [Available Public RPCs](#available-public-rpcs) table. A custom endpoint supplied through "Other" MUST be `https://`-scheme and MUST NOT contain any metacharacter or whitespace from the rule below before it reaches the `curl` command in [Fetch Block Number](#fetch-block-number). "It came from the user, not the table" is not an exemption.
+- **REJECT** any input containing shell metacharacters or whitespace: `;`, `|`, `&`, `$`, `` ` ``, `(`, `)`, `>`, `<`, `\`, `'`, `"`, spaces, tabs, newlines. `$(...)` and backticks execute even inside double quotes, and a space splits one value into extra `curl` flags, so neither is ever safe to interpolate. Abort and report which value and which character failed rather than stripping the offending characters and continuing.
+- **Never** pass raw user input directly to a shell command without validation, and always double-quote the interpolation in any command shown to the user.
+
+A value that fails any check is never written to the configuration file either. The `deployer` skill reads that file and interpolates its fields into `forge` and `cast` commands, so an unvalidated value stored here becomes an injected command there.
+
 ### Configuration Flow
 
 Collect parameters in these batches:

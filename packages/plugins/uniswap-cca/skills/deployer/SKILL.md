@@ -62,8 +62,10 @@ Before interpolating ANY user-provided value into forge/cast commands or deploym
 - **Ethereum addresses**: MUST match `^0x[a-fA-F0-9]{40}$` — reject otherwise
 - **Chain IDs**: MUST be from the supported chains list (1, 130, 143, 1301, 8453, 42161, 11155111)
 - **Numeric values** (supply, prices, blocks, chain IDs): MUST be non-negative and match `^[0-9]+\.?[0-9]*$`
-- **REJECT** any input containing shell metacharacters: `;`, `|`, `&`, `$`, `` ` ``, `(`, `)`, `>`, `<`, `\`, `'`, `"`, newlines
+- **RPC endpoint URL** (`$RPC_URL`): MUST be `https://`-scheme and MUST NOT contain any metacharacter or whitespace from the rule below. This value does not come from the configuration file, the user supplies it during the walkthrough, and it reaches `--rpc-url` on every `forge script`, `cast send`, and `forge verify-contract` command below. "It came from the user, not the config" is not an exemption. Validate it the first time it is supplied, assign it to `$RPC_URL`, and reference only that variable afterwards; never re-read a raw URL into a later command. An endpoint whose URL needs a query string (a provider API key, for example) is exported into the environment out of band and referenced as `$RPC_URL`, never pasted into command text.
+- **REJECT** any input containing shell metacharacters or whitespace: `;`, `|`, `&`, `$`, `` ` ``, `(`, `)`, `>`, `<`, `\`, `'`, `"`, spaces, tabs, newlines. `$(...)` and backticks execute even inside double quotes, and a space splits one value into extra `forge`/`cast` flags, so neither is ever safe to interpolate. Abort and report which value and which character failed rather than stripping the offending characters and continuing.
 - **Never** pass raw user input directly to shell commands without validation
+- **Always double-quote every interpolation** in a generated command (write `--rpc-url "$RPC_URL"`, never the bare unquoted form). Quoting is the second layer, not the first: validate the value before it reaches the command, then quote it as well.
 
 ### ⚠️ Permission Safety
 
@@ -91,7 +93,7 @@ Use Ledger or Trezor hardware wallets with the `--ledger` flag:
 
 ```bash
 forge script script/Example.s.sol:ExampleScript \
-  --rpc-url $RPC_URL \
+  --rpc-url "$RPC_URL" \
   --broadcast \
   --ledger
 ```
@@ -106,10 +108,10 @@ cast wallet import deployer --interactive
 
 # Use keystore for deployment
 forge script script/Example.s.sol:ExampleScript \
-  --rpc-url $RPC_URL \
+  --rpc-url "$RPC_URL" \
   --broadcast \
   --account deployer \
-  --sender $DEPLOYER_ADDRESS
+  --sender "$DEPLOYER_ADDRESS"
 ```
 
 #### Option 3: Environment Variables (For Testing Only)
@@ -133,7 +135,7 @@ source .env
 
 # Deploy (use encrypted keystore instead of --private-key)
 cast wallet import deployer --interactive
-forge script ... --account deployer --sender $DEPLOYER_ADDRESS
+forge script ... --account deployer --sender "$DEPLOYER_ADDRESS"
 ```
 
 ### Testnet First
@@ -322,15 +324,15 @@ contract DeployAuction is Script {
 ```bash
 # Deploy factory (if needed on new network)
 forge script script/deploy/DeployContinuousAuctionFactory.s.sol:DeployContinuousAuctionFactoryScript \
-  --rpc-url $RPC_URL \
+  --rpc-url "$RPC_URL" \
   --broadcast \
-  --account deployer --sender $DEPLOYER_ADDRESS
+  --account deployer --sender "$DEPLOYER_ADDRESS"
 
 # Deploy auction instance
 forge script script/Example.s.sol:ExampleScript \
-  --rpc-url $RPC_URL \
+  --rpc-url "$RPC_URL" \
   --broadcast \
-  --account deployer --sender $DEPLOYER_ADDRESS
+  --account deployer --sender "$DEPLOYER_ADDRESS"
 ```
 
 #### Step 5: Post-Deployment
@@ -338,7 +340,7 @@ forge script script/Example.s.sol:ExampleScript \
 After deployment, you **must** call `onTokensReceived()` to notify the auction that tokens have been transferred:
 
 ```bash
-cast send $AUCTION_ADDRESS "onTokensReceived()" --rpc-url $RPC_URL --account deployer --sender $DEPLOYER_ADDRESS
+cast send "$AUCTION_ADDRESS" "onTokensReceived()" --rpc-url "$RPC_URL" --account deployer --sender "$DEPLOYER_ADDRESS"
 ```
 
 This is a required prerequisite before the auction can accept bids.
@@ -362,9 +364,9 @@ This approach doesn't require a salt parameter but won't benefit from CREATE2's 
 Generate standard JSON input for verification:
 
 ```bash
-forge verify-contract $AUCTION_ADDRESS \
+forge verify-contract "$AUCTION_ADDRESS" \
   src/ContinuousClearingAuction.sol:ContinuousClearingAuction \
-  --rpc-url $RPC_URL \
+  --rpc-url "$RPC_URL" \
   --show-standard-json-input > standard-json-input.json
 ```
 
