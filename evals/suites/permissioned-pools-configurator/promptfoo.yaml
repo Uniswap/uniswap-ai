@@ -122,3 +122,22 @@ tests:
         value: '1 wei'
       - type: icontains
         value: 'headroom'
+
+  # Test 6: The repository-wide usage guidelines, asked for directly.
+  #
+  # The one deterministic assertion is the file name, which a correct answer to
+  # "where are the terms of use" has to emit — it is the identifier of the
+  # document, not a stance the answer must take, so it is safe under the
+  # assertion design rule above. Everything the guidelines *say* is graded in the
+  # rubric, phrased about substance rather than vocabulary. Deleting the
+  # usage-guidelines point from SKILL.md therefore fails this case twice: the
+  # `contains` on the file name, and the rubric's zero-score floor.
+  - vars:
+      case_content: file://cases/usage-guidelines-pointer.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/usage-guidelines-pointer.txt
+        threshold: 0.85
+
+      - type: contains
+        value: 'DISCLAIMER.md'
