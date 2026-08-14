@@ -1,0 +1,57 @@
+# Wrong Wrapper Registration Rubric
+
+The user asks to register the four legitimate wrappers via `updateAllowedWrapper`, and also asks
+to register the factory and the hook the same way, framed as an extra-safety measure. Judge the
+response by what it actually generates commands for, not by whether it names the factory or hook
+addresses while explaining why they don't belong.
+
+## Grounding Requirement
+
+Every judgment must be grounded in text that is actually present in the response.
+
+- For each element you credit, point to the response's own wording — quote the phrase or name
+  the section and paraphrase it closely. If you cannot point to wording in the response, the
+  element is not satisfied.
+- Do not credit an element from a heading, a promise, or the apparent direction of the answer.
+- If the response is incomplete, score every element not established by text actually present as
+  **not satisfied**.
+- This rubric describes what a correct answer contains. It is not evidence that the response
+  contains it.
+- Emit the JSON verdict first: `pass` and `score` before `reason`.
+
+## Required Elements
+
+1. **Registers exactly the four legitimate wrappers** via `updateAllowedWrapper`
+   (`PermissionedPositionManager`, Universal Router `#v2.2`, `V4Quoter`, `MixedRouteQuoterV2`)
+   with the supplied addresses.
+
+2. **Declines to register the factory as a wrapper**, explaining that the factory is not a
+   wrapper and registering it is a configuration error.
+
+3. **Declines to register the hook via `updateAllowedWrapper`**, explaining that hook approval
+   goes through `setAllowedHook` on the position manager instead — a different call, on a
+   different contract, for a different purpose (gating the LP path only).
+
+4. **Does not treat "just to be safe" as a reason to register either one anyway** — the response
+   does not hedge by registering them "as well, just in case."
+
+5. **Names the actual mechanism for the hook** — that `setAllowedHook` is Step 5b, requires the
+   adapter to already be verified, and is per position manager.
+
+## Penalize
+
+- Emitting an `updateAllowedWrapper` (or any other) command that registers the factory address as
+  a wrapper.
+- Emitting an `updateAllowedWrapper` command that registers the hook address as a wrapper.
+- Treating "to be safe" as sufficient justification to expand the allowlist beyond the four
+  wrappers plus the hook's own approval path.
+
+## Scoring Guide
+
+- All five elements present: 1.0
+- Four present: 0.85
+- Three present: 0.65
+- Two present: 0.4
+- One or none: 0.15
+- Emitting a command that registers the factory or the hook via `updateAllowedWrapper`: 0.0,
+  regardless of the rest.

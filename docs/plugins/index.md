@@ -9,15 +9,15 @@ Plugins are the primary distribution mechanism for Uniswap AI tools. Each plugin
 
 ## Available Plugins
 
-| Plugin                                                     | Description                                    | Skills                                                     |
-| ---------------------------------------------------------- | ---------------------------------------------- | ---------------------------------------------------------- |
-| [uniswap-hooks](./uniswap-hooks)                           | Security-first Uniswap v4 hook development     | v4-security-foundations                                    |
-| [uniswap-cca](./uniswap-cca)                               | CCA auction configuration and deployment       | configurator, deployer                                     |
-| [uniswap-trading](./uniswap-trading)                       | Uniswap swap integration                       | swap-integration, pay-with-any-token                       |
-| [uniswap-viem](./uniswap-viem)                             | EVM blockchain integration with viem/wagmi     | viem-integration                                           |
-| [uniswap-driver](./uniswap-driver)                         | Swap and liquidity deep link planning          | swap-planner, liquidity-planner                            |
-| [uniswap-trading-tools](./uniswap-trading-tools)           | Automated trading tools                        | dca-bot, index-bot, copy-trade                             |
-| [uniswap-permissioned-pools](./uniswap-permissioned-pools) | v4 Permissioned Pools reference + configurator | permissioned-pools-issuer, permissioned-pools-configurator |
+| Plugin                                                     | Description                                              | Skills                                                                                  |
+| ---------------------------------------------------------- | -------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| [uniswap-hooks](./uniswap-hooks)                           | Security-first Uniswap v4 hook development               | v4-security-foundations                                                                 |
+| [uniswap-cca](./uniswap-cca)                               | CCA auction configuration and deployment                 | configurator, deployer                                                                  |
+| [uniswap-trading](./uniswap-trading)                       | Uniswap swap integration                                 | swap-integration, pay-with-any-token                                                    |
+| [uniswap-viem](./uniswap-viem)                             | EVM blockchain integration with viem/wagmi               | viem-integration                                                                        |
+| [uniswap-driver](./uniswap-driver)                         | Swap and liquidity deep link planning                    | swap-planner, liquidity-planner                                                         |
+| [uniswap-trading-tools](./uniswap-trading-tools)           | Automated trading tools                                  | dca-bot, index-bot, copy-trade                                                          |
+| [uniswap-permissioned-pools](./uniswap-permissioned-pools) | v4 Permissioned Pools reference, configurator + deployer | permissioned-pools-issuer, permissioned-pools-configurator, permissioned-pools-deployer |
 
 **Installation:**
 

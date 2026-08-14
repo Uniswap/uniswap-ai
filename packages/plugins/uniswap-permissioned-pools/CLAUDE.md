@@ -4,14 +4,15 @@
 
 This plugin provides reference material for engineering teams standing up a Uniswap v4 Permissioned Pool for a transfer-restricted ERC-20 (for example a tokenized real-world asset). It explains the contract stack, the order the contracts require, what each revert means, and what issuers and liquidity providers are trusting.
 
-It combines reference material with an interactive configurator: the issuer skill describes contract mechanics only, and the configurator skill collects and validates setup parameters into a JSON config for a forthcoming deployer skill. Neither skill walks a team through a live deployment or emits broadcastable commands. It covers no securities-law, KYC-program, or compliance questions.
+It combines reference material with an interactive configurator and a guided deployer: the issuer skill describes contract mechanics only, the configurator skill collects and validates setup parameters into a JSON config, and the deployer skill walks that config through the on-chain setup sequence as ordered command sequences, gated behind an explicit acknowledgment. It does not constitute legal, financial, investment, tax, or compliance advice, and is not a compliance review.
 
 ## Plugin Components
 
 ### Skills (./skills/)
 
 - **permissioned-pools-issuer**: Contract architecture, the ordered setup journey, code-enforced ordering and the revert catalogue, the trust model, contract packaging and citation rules, and the boundary between permissionless on-chain work and work coordinated with Uniswap Labs.
-- **permissioned-pools-configurator**: Interactive, batched `AskUserQuestion` collection and validation of every permissioned-pool setup parameter — chain, underlying token, allowlist checker, adapter owner, verification deposit, the four wrapper registrations, hook, and pool pricing — displayed as a JSON config for the forthcoming deployer skill to consume. Emits no addresses it was not given or told to mark for resolution, and never auto-writes a file.
+- **permissioned-pools-configurator**: Interactive, batched `AskUserQuestion` collection and validation of every permissioned-pool setup parameter — chain, underlying token, allowlist checker, adapter owner, verification deposit, the four wrapper registrations, hook, and pool pricing — displayed as a JSON config for the deployer skill to consume. Emits no addresses it was not given or told to mark for resolution, and never auto-writes a file.
+- **permissioned-pools-deployer**: Guided execution of the on-chain setup sequence from the configurator's JSON config, as ordered command sequences with preconditions and revert selectors. Validates every value before interpolation, gates every action-oriented step behind an explicit acknowledgment, and steers signing to an encrypted keystore or a hardware wallet — the raw signing-key flag is enforced against, not just discouraged, by this repository's own `Bash` PreToolUse hook.
 
 ### Agents
 
@@ -33,11 +34,16 @@ uniswap-permissioned-pools/
 │   │       ├── trust-model.md
 │   │       ├── packaging-and-sources.md
 │   │       └── coordination-boundary.md
-│   └── permissioned-pools-configurator/
+│   ├── permissioned-pools-configurator/
+│   │   ├── SKILL.md
+│   │   └── references/
+│   │       ├── config-schema.md
+│   │       └── parameter-reference.md
+│   └── permissioned-pools-deployer/
 │       ├── SKILL.md
 │       └── references/
-│           ├── config-schema.md
-│           └── parameter-reference.md
+│           ├── preflight-and-validation.md
+│           └── step-walkthrough.md
 ├── project.json
 ├── package.json
 ├── CLAUDE.md

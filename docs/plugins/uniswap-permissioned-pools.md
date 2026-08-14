@@ -19,19 +19,22 @@ Reference material for engineering teams standing up a Uniswap v4 Permissioned P
 | ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
 | [Permissioned Pools Issuer](../skills/permissioned-pools-issuer)             | Contract architecture, the ordered setup journey, code-enforced ordering and reverts, and the trust model         | `/permissioned-pools-issuer`       |
 | [Permissioned Pools Configurator](../skills/permissioned-pools-configurator) | Interactively collect and validate a v4 Permissioned Pool's setup parameters, emitting the deployer's JSON config | `/permissioned-pools-configurator` |
+| [Permissioned Pools Deployer](../skills/permissioned-pools-deployer)         | Guided execution of the on-chain setup sequence from a configurator JSON config, as ordered command sequences     | `/permissioned-pools-deployer`     |
 
 ## Topics Covered
 
-| Reference                     | Topics                                                                                                     |
-| ----------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| contract-architecture         | The contract stack, the underlying-token and adapter-token pair, exact-casing inventory, permission flags  |
-| issuer-journey                | Setup steps in the published order, with the caller, the emitted event, and what to check afterwards       |
-| enforced-ordering-and-reverts | Enforced edges versus conventional ordering, the revert catalogue, and worked out-of-order scenarios       |
-| trust-model                   | Position non-transferability, adapter-admin unwind powers, the wrapper allowlist boundary                  |
-| packaging-and-sources         | Pinned commits, Foundry install and remapping, import paths, how addresses are resolved rather than copied |
-| coordination-boundary         | What is permissionless on-chain versus requested through Uniswap Labs                                      |
-| config-schema                 | The configurator's JSON shape, field types, validation rules, and the `RESOLVE`/`native` sentinels         |
-| parameter-reference           | What each configurator parameter means, how to choose it, and what breaks if it is wrong                   |
+| Reference                     | Topics                                                                                                           |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| contract-architecture         | The contract stack, the underlying-token and adapter-token pair, exact-casing inventory, permission flags        |
+| issuer-journey                | Setup steps in the published order, with the caller, the emitted event, and what to check afterwards             |
+| enforced-ordering-and-reverts | Enforced edges versus conventional ordering, the revert catalogue, and worked out-of-order scenarios             |
+| trust-model                   | Position non-transferability, adapter-admin unwind powers, the wrapper allowlist boundary                        |
+| packaging-and-sources         | Pinned commits, Foundry install and remapping, import paths, how addresses are resolved rather than copied       |
+| coordination-boundary         | What is permissionless on-chain versus requested through Uniswap Labs                                            |
+| config-schema                 | The configurator's JSON shape, field types, validation rules, and the `RESOLVE`/`native` sentinels               |
+| parameter-reference           | What each configurator parameter means, how to choose it, and what breaks if it is wrong                         |
+| preflight-and-validation      | Loading and re-validating the config, resolving the `RESOLVE`/`native` sentinels, input validation, key handling |
+| step-walkthrough              | Steps 2 through 7 as ordered command sequences, with preconditions, reverts, and post-step checks                |
 
 ## What This Plugin Covers
 
