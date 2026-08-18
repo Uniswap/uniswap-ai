@@ -35,9 +35,9 @@
  *
  * Version parity:
  *   .claude-plugin/plugin.json is the authoritative version for a plugin. It is
- *   what Claude Code reads, what the marketplace resolves, and what CLAUDE.md
- *   tells contributors to bump. package.json must be kept equal to it so the two
- *   never disagree about which release a plugin is on.
+ *   what Claude Code reads and what CLAUDE.md tells contributors to bump.
+ *   package.json must be kept equal to it so the two never disagree about which
+ *   release a plugin is on.
  */
 
 const fs = require('fs');
