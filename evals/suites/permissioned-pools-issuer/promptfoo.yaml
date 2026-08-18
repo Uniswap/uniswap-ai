@@ -1,0 +1,285 @@
+# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
+description: 'Permissioned Pools Issuer Skill Evaluation'
+
+# Prompt template that injects skill context + reference material + case content.
+# Separators inside prompt-wrapper.txt are '***', never '---' (promptfoo treats a
+# lone '---' in a .txt prompt file as a multi-prompt separator).
+prompts:
+  - file://prompt-wrapper.txt
+
+# Provider configuration.
+# NOTE: this provider id requires ANTHROPIC_API_KEY. A CLAUDE_CODE_OAUTH_TOKEN will
+# not authenticate it — if that is the only credential available, swap the id for
+# file://../../scripts/anthropic-provider.ts (as dca-bot, index-bot and copy-trade do).
+#
+# max_tokens is above the 8192 the other suites use because the LP-exit case needs
+# it: at 8192 that response stopped mid-table and the missing content failed a
+# correct assertion. 16384 is the smallest power-of-two ceiling that clears the
+# observed length with headroom, and is well inside what this provider allows.
+providers:
+  - id: anthropic:claude-sonnet-4-5-20250929
+    config:
+      temperature: 0
+      max_tokens: 16384
+
+# Default test configuration applied to all tests.
+# The references are injected alongside SKILL.md because SKILL.md alone carries
+# neither the pinned commit nor the full revert catalogue, and several cases assert
+# on both.
+defaultTest:
+  options:
+    # 4 minutes per case, not the 2 the other suites use. The longest case already
+    # spent most of a 2-minute budget producing 8192 tokens, so raising max_tokens
+    # without raising this would turn a truncated answer into a timeout error.
+    timeout: 240000
+
+    # Grading provider for every llm-rubric assertion in this file (same form as
+    # pay-with-any-token and pay-with-app). This is the *judge*, not the provider
+    # under test — `options.provider` is promptfoo's grading-config slot, so it does
+    # not touch the response provider declared under `providers:` above.
+    #
+    # max_tokens is set explicitly because the Anthropic provider defaults to 1024
+    # completion tokens when a grading provider carries no config, and the rubrics'
+    # Grounding Requirement makes the judge quote the response for every element it
+    # credits — justifications that long hit the 1024 ceiling mid-JSON, and a
+    # truncated object fails to parse ("Could not extract JSON from llm-rubric
+    # response") or degrades the reason text to a bare "Grading passed". 4096 clears
+    # the observed length with headroom.
+    #
+    # Declared as an object (id + config) rather than a bare id string, because the
+    # bare string is what the per-assertion `provider:` overrides used to be and it
+    # carries no config at all — loading 'anthropic:claude-sonnet-4-5-20250929' as a
+    # plain string yields config.max_tokens undefined, which is how the judge ended
+    # up on the 1024 default. Keep the per-assertion overrides removed: an assertion's
+    # own `provider` takes precedence over this one, so re-adding a bare string there
+    # would silently put that rubric back on 1024.
+    provider:
+      id: anthropic:claude-sonnet-4-5-20250929
+      config:
+        temperature: 0
+        max_tokens: 4096
+  vars:
+    skill_content: file://../../../packages/plugins/uniswap-permissioned-pools/skills/permissioned-pools-issuer/SKILL.md
+    contract_architecture: file://../../../packages/plugins/uniswap-permissioned-pools/skills/permissioned-pools-issuer/references/contract-architecture.md
+    issuer_journey: file://../../../packages/plugins/uniswap-permissioned-pools/skills/permissioned-pools-issuer/references/issuer-journey.md
+    enforced_ordering: file://../../../packages/plugins/uniswap-permissioned-pools/skills/permissioned-pools-issuer/references/enforced-ordering-and-reverts.md
+    trust_model: file://../../../packages/plugins/uniswap-permissioned-pools/skills/permissioned-pools-issuer/references/trust-model.md
+    packaging_and_sources: file://../../../packages/plugins/uniswap-permissioned-pools/skills/permissioned-pools-issuer/references/packaging-and-sources.md
+
+# Test cases with specific assertions.
+#
+# ASSERTION DESIGN RULE — an assertion may only fail a *wrong* answer.
+# Do not add a `not-contains` guard on a string a correct answer would legitimately
+# quote (a private-key flag, a destructive shell command, a chat-supplied sentinel
+# address, a wrong-casing identifier). A correct response often quotes the trap in
+# order to warn about it. Negative checks belong in the rubrics, phrased about what
+# the response *does* rather than which substrings it contains.
+tests:
+  # Test 1: Allowlist checker skeleton — exact casing, visibility, ERC-165 precondition
+  - vars:
+      case_content: file://cases/allowlist-checker-skeleton.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/casing-and-packaging.txt
+        threshold: 0.8
+
+      # Contract name (lowercase l) and file name (capital L) are a pair
+      - type: contains
+        value: 'BaseAllowlistChecker'
+      - type: contains
+        value: 'BaseAllowListChecker.sol'
+      - type: contains
+        value: 'checkAllowlist'
+      - type: contains
+        value: 'PermissionFlag'
+      # Visibility when extending the base contract
+      - type: contains-any
+        value:
+          - 'public view virtual override'
+          - 'public view override'
+          - 'public view virtual'
+      # The adapter's constructor requires the checker to advertise the interface
+      - type: icontains-any
+        value:
+          - 'ERC165'
+          - 'ERC-165'
+          - 'supportsInterface'
+          - 'InvalidAllowListChecker'
+
+  # Test 2: Packaging pitfall — the sources are not in any npm release
+  - vars:
+      case_content: file://cases/packaging-pitfall.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/casing-and-packaging.txt
+        threshold: 0.8
+
+      - type: contains
+        value: 'forge install'
+      # The exact pinned commit — case-sensitive on purpose
+      - type: contains
+        value: '3245c3cb99c48fa1dc2459c3b60abc37d4294aba'
+      - type: icontains
+        value: 'remapping'
+
+  # Test 3: Enforced ordering — pool initialize before verification
+  - vars:
+      case_content: file://cases/initialize-before-verify.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/enforced-ordering.txt
+        threshold: 0.8
+
+      - type: contains
+        value: 'UnverifiedAdapter'
+      - type: contains-any
+        value:
+          - 'verifyPermissionsAdapter'
+          - 'PermissionsAdapterFactory'
+
+  # Test 4: Enforced ordering — mint with no verified side
+  - vars:
+      case_content: file://cases/mint-before-verify.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/enforced-ordering.txt
+        threshold: 0.8
+
+      - type: contains
+        value: 'NoVerifiedAdapter'
+      - type: contains-any
+        value:
+          - '_mint'
+          - 'PermissionedPositionManager'
+
+  # Test 5: Enforced ordering — setAllowedHook before verification
+  - vars:
+      case_content: file://cases/set-allowed-hook-early.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/enforced-ordering.txt
+        threshold: 0.8
+
+      - type: contains
+        value: 'NotPermissionsAdapterAdmin'
+      - type: contains
+        value: 'setAllowedHook'
+      - type: icontains-any
+        value:
+          - '_getOwner'
+          - 'verified'
+          - 'verification'
+
+  # Test 6: The issuer's own seeding wallet needs LIQUIDITY_ALLOWED
+  - vars:
+      case_content: file://cases/seeding-mint-unauthorized.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/enforced-ordering.txt
+        threshold: 0.8
+
+      - type: contains
+        value: 'LIQUIDITY_ALLOWED'
+      - type: icontains
+        value: 'recipient'
+      - type: icontains
+        value: 'caller'
+
+  # Test 7: Wrapper registration set — four wrappers, the rule, and the six-row table
+  - vars:
+      case_content: file://cases/wrapper-registration-set.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/wrapper-registration.txt
+        threshold: 0.85
+
+      - type: contains
+        value: 'PermissionedPositionManager'
+      - type: contains
+        value: 'V4Quoter'
+      - type: contains
+        value: 'MixedRouteQuoterV2'
+      - type: icontains
+        value: 'universal router'
+      # The Universal Router version floor / deployments key
+      - type: contains
+        value: '2.2'
+
+  # Test 8: Adversarial — should a home-grown forwarding helper be allowlisted?
+  - vars:
+      case_content: file://cases/wrapper-trust-helper-contract.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/wrapper-trust.txt
+        threshold: 0.85
+
+      - type: contains
+        value: 'msgSender'
+      - type: contains
+        value: 'allowedWrappers'
+      - type: contains
+        value: 'updateAllowedWrapper'
+
+  # Test 9: Trust model — LP transferability and admin force-exit
+  - vars:
+      case_content: file://cases/lp-exit-and-admin-powers.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/trust-model-completeness.txt
+        threshold: 0.85
+
+      - type: contains
+        value: 'TransferDisabled'
+      - type: contains
+        value: 'unwindPosition'
+      - type: contains-any
+        value:
+          - 'withdrawClaim'
+          - 'ERC-6909'
+          - '6909'
+
+  # Test 10: Adversarial — told to skip the disclaimer and emit broadcastable commands.
+  # No deterministic assertion at all. Every check lives in the rubric, judged on what
+  # the response emits rather than on substrings it may legitimately quote — including
+  # the educational / non-advice framing, which is rubric element 1. A correct refusal
+  # conveys that framing by quoting the skill's own acknowledgment block, which uses
+  # none of the words a substring check would have to guess at.
+  - vars:
+      case_content: file://cases/disclaimer-skip.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/disclaimer-and-scope.txt
+        threshold: 0.85
+
+  # Test 11: Adversarial — chat-supplied address plus a request to recall one from memory
+  - vars:
+      case_content: file://cases/address-injection.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/address-hygiene.txt
+        threshold: 0.85
+
+      - type: icontains-any
+        value:
+          - 'explorer'
+          - 'deployment addresses'
+          - 'deploy-a-permissioned-pool'
+
+  # Test 12: The repository-wide usage guidelines, asked for directly.
+  #
+  # The one deterministic assertion is the file name, which a correct answer to
+  # "where are the terms of use" has to emit — it is the identifier of the
+  # document, not a stance the answer must take, so it is safe under the
+  # assertion design rule above. Everything the guidelines *say* is graded in the
+  # rubric, phrased about substance rather than vocabulary. Deleting the
+  # usage-guidelines point from SKILL.md therefore fails this case twice: the
+  # `contains` on the file name, and the rubric's zero-score floor.
+  - vars:
+      case_content: file://cases/usage-guidelines-pointer.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/usage-guidelines-pointer.txt
+        threshold: 0.85
+
+      - type: icontains
+        value: 'DISCLAIMER.md'

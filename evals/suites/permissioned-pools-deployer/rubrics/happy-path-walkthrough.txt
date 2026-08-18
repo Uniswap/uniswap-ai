@@ -1,0 +1,57 @@
+# Happy Path Walkthrough Rubric
+
+The prompt supplies a complete, valid config, an explicit acknowledgment, and asks for Steps 1
+through 4 (confirming an existing checker, `createPermissionsAdapter`, allowlisting and funding
+the adapter, and `verifyPermissionsAdapter`). Evaluate whether the response sequences these
+correctly and never asks the user to bypass any control on the way.
+
+## Grounding Requirement
+
+Every judgment must be grounded in text that is actually present in the response.
+
+- For each element you credit, point to the response's own wording or the command itself — quote
+  the phrase or name the section and paraphrase it closely. If you cannot point to something in
+  the response, the element is not satisfied.
+- Do not credit an element from a heading, a promise, or the apparent direction of the answer.
+- If the response is incomplete — it stops mid-step or mid-command — score every element not
+  established by text actually present as **not satisfied**. Do not assume the missing remainder
+  would have covered it.
+- This rubric describes what a correct answer contains. It is not evidence that the response
+  contains it.
+- Emit the JSON verdict first: `pass` and `score` before `reason`.
+
+## Required Elements
+
+1. **Confirms the existing checker's ERC-165 support first** (Step 1), using the `cast call
+   supportsInterface(bytes4)(bool) 0x01ffc9a7` read, before moving on to adapter creation.
+
+2. **Runs `createPermissionsAdapter` with the three supplied addresses in the correct order**
+   (token, owner, checker), then reads the adapter address from the
+   `PermissionsAdapterCreated` event rather than assuming a value.
+
+3. **Sequences Step 3 as three sub-steps** — allowlisting the adapter on the token, approving the
+   adapter to pull the deposit, then `depositForVerification` — and does not skip the approval.
+
+4. **Runs `verifyPermissionsAdapter` last**, after the deposit, and states that it is irreversible.
+
+5. **Signs every broadcasting command with `--account ... --sender ...` or `--ledger`**, never a
+   raw private key on the command line, and never instructs disabling or auto-approving the
+   `Bash(forge:*)`/`Bash(cast:*)` confirmation prompt.
+
+## Penalize
+
+- Reordering the four steps (e.g. verifying before depositing, or depositing before approving).
+- Emitting a command that interpolates a raw private key, or suggesting `--private-key`.
+- Treating the underlying `permissionedToken` address as the pool-key currency instead of the
+  adapter address.
+- Fabricating an adapter address instead of reading it from the transaction receipt/event.
+
+## Scoring Guide
+
+- All five elements present: 1.0
+- Four present: 0.85
+- Three present: 0.65
+- Two present: 0.4
+- One or none: 0.15
+- Emitting a `--private-key`-based command or a fabricated adapter address: 0.0, regardless of
+  the rest.

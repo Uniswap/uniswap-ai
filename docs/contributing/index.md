@@ -185,6 +185,7 @@ We use [Conventional Commits](https://www.conventionalcommits.org/):
 - `viem` - uniswap-viem plugin
 - `driver` - uniswap-driver plugin
 - `trading-tools` - uniswap-trading-tools plugin
+- `permissioned-pools` - uniswap-permissioned-pools plugin
 - `evals` - Evaluation framework
 - `docs` - Documentation
 - `ci` - CI/CD workflows

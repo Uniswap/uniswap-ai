@@ -54,6 +54,14 @@ Skills are AI-powered capabilities that help you build on Uniswap. Each skill is
 | [Index Bot](./index-bot)   | Build and rebalance a weighted basket of assets                  | `/index-bot`  |
 | [Copy Trade](./copy-trade) | Mirror a target wallet's trades within guardrails                | `/copy-trade` |
 
+### uniswap-permissioned-pools Plugin
+
+| Skill                                                                | Description                                                                                                       | Invocation                         |
+| -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| [Permissioned Pools Issuer](./permissioned-pools-issuer)             | Set up a v4 Permissioned Pool for a transfer-restricted ERC-20: architecture, ordering, reverts, trust model      | `/permissioned-pools-issuer`       |
+| [Permissioned Pools Configurator](./permissioned-pools-configurator) | Interactively collect and validate a v4 Permissioned Pool's setup parameters, emitting the deployer's JSON config | `/permissioned-pools-configurator` |
+| [Permissioned Pools Deployer](./permissioned-pools-deployer)         | Guided execution of the on-chain setup sequence from a configurator JSON config, as ordered command sequences     | `/permissioned-pools-deployer`     |
+
 ## Using Skills
 
 ### Direct Invocation

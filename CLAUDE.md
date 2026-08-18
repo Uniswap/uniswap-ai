@@ -61,12 +61,13 @@ uniswap-ai/
 │   └── templates/           # Templates for new suites
 ├── packages/
 │   └── plugins/             # Claude Code plugins
-│       ├── uniswap-cca/            # Continuous Clearing Auction (CCA) plugin
-│       ├── uniswap-driver/         # Swap & liquidity deep link planning
-│       ├── uniswap-hooks/          # Uniswap v4 hooks plugin
-│       ├── uniswap-trading/        # Uniswap swap integration
-│       ├── uniswap-trading-tools/  # Automated trading tools (DCA, index, copy-trade)
-│       └── uniswap-viem/           # EVM blockchain integration (viem/wagmi)
+│       ├── uniswap-cca/                 # Continuous Clearing Auction (CCA) plugin
+│       ├── uniswap-driver/              # Swap & liquidity deep link planning
+│       ├── uniswap-hooks/               # Uniswap v4 hooks plugin
+│       ├── uniswap-permissioned-pools/  # Uniswap v4 Permissioned Pools issuer + configurator + deployer
+│       ├── uniswap-trading/             # Uniswap swap integration
+│       ├── uniswap-trading-tools/       # Automated trading tools (DCA, index, copy-trade)
+│       └── uniswap-viem/                # EVM blockchain integration (viem/wagmi)
 ├── scripts/                 # Build/validation scripts
 ├── nx.json
 ├── package.json
@@ -94,6 +95,14 @@ All plugins follow semantic versioning (semver):
 - **Major (X.0.0)**: Breaking changes, significant restructuring
 
 After making any changes to `packages/plugins/`, bump the plugin version in `.claude-plugin/plugin.json`.
+
+`.claude-plugin/plugin.json` is the authoritative version for a plugin. It is what
+Claude Code reads. Each plugin's `package.json` also carries a `version` field, and
+it must be kept equal to the `plugin.json` value.
+
+Bump `plugin.json` first, then set `package.json` to the same value.
+`scripts/validate-plugin.cjs` fails when the two disagree, and CI runs it on every
+plugin, so a mismatch blocks the PR.
 
 ## Agent-Agnostic Design
 

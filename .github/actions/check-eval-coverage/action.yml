@@ -37,8 +37,20 @@ runs:
         echo "=== Checking Eval Coverage ==="
         echo ""
 
-        # Get list of changed files compared to base
-        CHANGED_FILES=$(git diff --name-only "$BASE_REF"...HEAD 2>/dev/null || git diff --name-only "$BASE_REF" HEAD)
+        # Get list of changed files compared to base.
+        #
+        # --diff-filter=ACMRT deliberately EXCLUDES deletions (D). A skill this
+        # PR deletes has nothing left to cover, and its eval suite is normally
+        # deleted in the same commit — so counting it as a "changed skill" makes
+        # the existence probe below look for a promptfoo.yaml that the PR
+        # correctly removed, and the check fails on a correct deletion.
+        # Modifying a skill still registers it (surviving files are M) and a
+        # rename still registers it (R), so only whole-skill removals drop out.
+        # Do not drop this filter: a bare `git diff --name-only` makes every
+        # skill deletion unmergeable. Observed on PR #136, which reverted the
+        # permissioned-pools plugin and failed this check for exactly that
+        # reason.
+        CHANGED_FILES=$(git diff --name-only --diff-filter=ACMRT "$BASE_REF"...HEAD 2>/dev/null || git diff --name-only --diff-filter=ACMRT "$BASE_REF" HEAD)
 
         # Extract unique skill names from changed paths
         # Pattern: packages/plugins/<plugin>/skills/<skill>/...
