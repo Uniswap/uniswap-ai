@@ -170,3 +170,24 @@ tests:
 
       - type: icontains
         value: 'DISCLAIMER.md'
+
+  # Test 8: the same guidelines, against a fact pattern that does NOT trigger
+  # the AI-disclosure duty.
+  #
+  # The case above hands the model both of the duty's conditions, so a model that
+  # wrongly believes the duty is unconditional still answers it correctly and
+  # passes. This one satisfies only the first condition — an assistant does
+  # generate financial information, but its output never leaves the user's own
+  # organization — so the correct answer is that the duty does not attach. A
+  # response that asserts it anyway hits the rubric's zero-score floor. Read
+  # DISCLAIMER.md before editing either case; the duty's two conditions are what
+  # both of them turn on.
+  - vars:
+      case_content: file://cases/usage-guidelines-internal-only.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/usage-guidelines-internal-only.txt
+        threshold: 0.85
+
+      - type: icontains
+        value: 'DISCLAIMER.md'
