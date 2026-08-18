@@ -17,10 +17,13 @@ Score based on how many of these are correctly implemented:
    - Verification: roundedFloorPrice % tickSpacing == 0
 
 3. **Supply Schedule**
-   - Schedule sums to exactly 10,000,000 MPS total
    - Block durations decrease over time (convex curve property)
    - Final block contains approximately 30% of supply
    - Each step releases approximately equal token amounts
+   - Do NOT score whether the schedule totals exactly 10,000,000 MPS. That total is
+     exact arithmetic, and it is checked deterministically by a separate assertion
+     that parses the emitted steps and sums mps * blockDelta. Judge only the shape
+     of the curve here, and treat the total as out of scope even if it is wrong.
 
 4. **Block Configuration**
    - Correct block time for network (2s for Base)

@@ -42,8 +42,11 @@ Score based on how many of these are present:
 Deduct points for:
 - Exposing or requesting private keys directly (-0.15)
 - Incorrect decimal adjustment for currency (-0.15)
-- Supply schedule not summing to 10,000,000 MPS (-0.15)
 - Missing floor price divisibility verification (-0.1)
+
+Do NOT apply a penalty for the supply schedule failing to total 10,000,000 MPS.
+That total is exact arithmetic and is checked deterministically by a separate
+assertion, so scoring it here only adds noise.
 
 ## Scoring Guide
 

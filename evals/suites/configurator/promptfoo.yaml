@@ -78,6 +78,28 @@ tests:
           - 'supply_schedule'
           - 'supply schedule'
 
+      # Deterministic arithmetic check on the supply total.
+      #
+      # Both rubrics used to grade this property, and an LLM judge deciding exact
+      # arithmetic is what made this required check nondeterministic: two runs of
+      # identical content on PR #140 disagreed, run 31846203576 scoring the case 1.0
+      # and run 31848655116 failing it over a schedule that summed to 9,999,996 MPS.
+      # The judge was right that time; the gate flipping on a sampled judgment is
+      # the problem. This assertion decides the same property by parsing the emitted
+      # steps and summing mps * blockDelta, so it returns the same verdict on the
+      # same response every time. Both rubrics now say explicitly not to score the
+      # total, which is a handoff rather than a relaxation: an off-by-four schedule
+      # that the judge might or might not catch is now caught every time, and caught
+      # exactly.
+      #
+      # It cannot fail a correct answer that words things differently: it matches
+      # no prose, reads { mps, blockDelta } pairs in JSON, JS and Python shapes with
+      # either casing, and passes outright when it can parse no schedule at all. See
+      # the header comment in the assertion file for the full reasoning.
+      - type: javascript
+        value: file://assertions/supply-schedule-total.js
+        metric: supply-schedule-totals-10m
+
       # Should not contain dangerous patterns
       - type: not-contains
         value: 'private key'
