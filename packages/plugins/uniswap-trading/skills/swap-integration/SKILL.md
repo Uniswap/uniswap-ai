@@ -6,7 +6,7 @@ model: opus
 license: MIT
 metadata:
   author: uniswap
-  version: '1.4.0'
+  version: '1.5.0'
 ---
 
 # Swap Integration
@@ -56,9 +56,17 @@ Best for: Frontends, backends, scripts. Handles routing optimization automatical
 - `decision_origin`: **Required choice — do not copy a default.** Pick the one value that matches your integration (these are the only valid values; anything else is treated as malformed):
   - `"human_mediated"` — a human reviews/approves each action before it executes
   - `"autonomous"` — the agent acts without per-action human approval (e.g. scheduled jobs or agentic harnesses)
-- `version`: `"1.4.0"` — tracks this skill's `metadata.version`
+- `version`: `"1.5.0"` — tracks this skill's `metadata.version`
 
-**Malformed header feedback**: If the `x-agent-info` value fails to parse (invalid JSON, unknown `decision_origin`, or over the 1 KB cap), the request still succeeds but the response carries `x-agent-info-status: malformed`. Check for this header when first integrating to catch attribution mistakes. The status header appears only on successful responses — a failed request (4xx/5xx) won't carry it, so don't rely on it during error handling. (Ships with the gateway-side rollout; until then no status header is returned.)
+**If the value is malformed**: the request still succeeds normally, but the attribution is dropped — the gateway records it as malformed on the analytics side and moves on. There is no response header or other signal to check, so there is nothing to detect at runtime: get the value right by construction.
+
+**Constraints** — trip any of these and the whole value is discarded:
+
+- 1 KB total for the header, and 256 characters per field.
+- Plain ASCII only — no accented characters, curly quotes, or emoji; non-ASCII must be `\u`-escaped.
+- Omit a field rather than sending `null`. All three must be present and valid.
+- Send the header once per request; a duplicate `x-agent-info` line fails to parse.
+- Unknown extra keys are ignored — harmless, but no substitute for the three required fields.
 
 **Required Headers** — Include these in ALL Trading API requests:
 
@@ -66,7 +74,7 @@ Best for: Frontends, backends, scripts. Handles routing optimization automatical
 Content-Type: application/json
 x-api-key: <your-api-key>
 x-universal-router-version: 2.0
-x-agent-info: {"integration_name":"swap-integration","decision_origin":"<human_mediated|autonomous>","version":"1.4.0"}
+x-agent-info: {"integration_name":"swap-integration","decision_origin":"<human_mediated|autonomous>","version":"1.5.0"}
 ```
 
 **3-Step Flow**:
@@ -1115,7 +1123,7 @@ declare const DECISION_ORIGIN: 'human_mediated' | 'autonomous';
 const AGENT_INFO = JSON.stringify({
   integration_name: 'swap-integration',
   decision_origin: DECISION_ORIGIN,
-  version: '1.4.0',
+  version: '1.5.0',
 });
 
 function useSwap() {
@@ -1260,7 +1268,7 @@ declare const DECISION_ORIGIN: 'human_mediated' | 'autonomous';
 const AGENT_INFO = JSON.stringify({
   integration_name: 'swap-integration',
   decision_origin: DECISION_ORIGIN,
-  version: '1.4.0',
+  version: '1.5.0',
 });
 
 const account = privateKeyToAccount(process.env.PRIVATE_KEY as `0x${string}`);

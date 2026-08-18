@@ -33,7 +33,7 @@ declare const DECISION_ORIGIN: 'human_mediated' | 'autonomous';
 const AGENT_INFO = JSON.stringify({
   integration_name: 'swap-integration',
   decision_origin: DECISION_ORIGIN,
-  version: '1.4.0',
+  version: '1.5.0',
 });
 
 // Types for smart account integration
@@ -332,7 +332,7 @@ declare const DECISION_ORIGIN: 'human_mediated' | 'autonomous';
 const AGENT_INFO = JSON.stringify({
   integration_name: 'swap-integration',
   decision_origin: DECISION_ORIGIN,
-  version: '1.4.0',
+  version: '1.5.0',
 });
 
 async function batchQuotes(
