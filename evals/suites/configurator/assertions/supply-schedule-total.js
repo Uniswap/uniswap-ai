@@ -11,11 +11,17 @@
  * the gate flips on chance and "just re-run it" becomes the reflex.
  *
  * THE TOTAL IS NOT THE SUM OF THE `mps` FIELDS. `mps` is a release rate, tokens
- * per block, and `blockDelta` is how many blocks that rate runs for. The total is
- * therefore the sum of `mps * blockDelta` over the steps. The skill's own worked
- * example (SKILL.md, "Example: 2-day auction on Base") has `mps` fields summing to
- * 2,989,006 while `mps * blockDelta` sums to exactly 10,000,000. A check on the
- * bare `mps` column would fail every correct answer.
+ * per block, and `blockDelta` is how many blocks that rate runs for. The formula
+ * here is the plugin's own, copied from the generator that produces these
+ * schedules, `mcp-server/supply-schedule/server.py`:
+ *
+ *     total_mps = sum(item["mps"] * item["blockDelta"] for item in schedule)
+ *
+ * The skill's worked example agrees: its `mps` fields sum to 2,989,006 while the
+ * products sum to exactly 10,000,000. A check on the bare `mps` column would fail
+ * every correct answer, and a response built on that reading oversubscribes the
+ * auction by a factor of thousands while looking tidy, which is a failure both
+ * rubrics scored 1.0 on before this assertion existed.
  *
  * THE SUITE'S STANDING RULE: an assertion may only fail a WRONG answer. Two prior
  * checks in this suite broke that rule by matching on wording (`AuctionParameters`,
