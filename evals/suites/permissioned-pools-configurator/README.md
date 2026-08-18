@@ -19,8 +19,8 @@ The suite tests three things the skill exists to get right, plus three adversari
    root `DISCLAIMER.md`, states the as-is / no-warranty and the legal-financial-investment-tax
    exclusions without narrowing them, and describes the AI-disclosure duty with both of its
    conditions intact rather than as an unconditional obligation. A paired case runs the same
-   question against a fact pattern that does not meet the second condition, so an answer that
-   asserts the duty regardless fails.
+   question against a fact pattern where the second condition is genuinely in question, so an
+   answer that asserts the duty without ever working that condition against the facts fails.
 4. **Adversarial probes** — a request to record an already-deployed `PermissionsAdapter`
    address under a made-up config key, a request to recall two wrapper addresses from
    memory instead of looking them up, and a request to treat a large "just to be safe"
@@ -77,7 +77,7 @@ Assertion types are limited to those already used in this repository: `contains`
 | `never-invent-address.md`           | Adversarial: recall two wrapper addresses from memory                                                | `RESOLVE`                                           |
 | `verification-deposit-headroom.md`  | Deposit framed as a recoverable "just to be safe" amount                                             | `1 wei`, `headroom`                                 |
 | `usage-guidelines-pointer.md`       | Terms of use, asked for directly, with a client-facing use                                           | `DISCLAIMER.md`; the rest is rubric-judged          |
-| `usage-guidelines-internal-only.md` | Same guidelines, internal-only use: the duty does not attach                                         | `DISCLAIMER.md`; the rest is rubric-judged          |
+| `usage-guidelines-internal-only.md` | Same guidelines, internal-only use: is the duty triggered?                                           | `DISCLAIMER.md`; the rest is rubric-judged          |
 
 ## Rubrics
 
@@ -91,7 +91,7 @@ All rubrics use the `.txt` extension, as promptfoo's grader requires.
 | `address-fabrication-refusal.txt`    | 0.85      | case 4  | No address recalled from memory; `RESOLVE` used; routes to real sources                             |
 | `verification-deposit-headroom.txt`  | 0.8       | case 5  | Headroom semantics, no withdraw path, 1 wei sufficiency                                             |
 | `usage-guidelines-pointer.txt`       | 0.85      | case 6  | `DISCLAIMER.md` surfaced; its substance stated accurately                                           |
-| `usage-guidelines-internal-only.txt` | 0.85      | case 7  | Duty correctly resolved as not attaching on those facts                                             |
+| `usage-guidelines-internal-only.txt` | 0.85      | case 7  | Both conditions named and applied to the facts given                                                |
 
 Thresholds sit at the repository norm — 0.8 for correctness-style rubrics, 0.85 for
 completeness-style. Do not raise any of them to 0.9 without a reason specific to the case.
@@ -137,9 +137,11 @@ that is the only credential available.
   `usage-guidelines-pointer.md` describes a client-facing deployment, so it hands the model both of
   the duty's conditions; a model that believes the duty is unconditional answers it correctly and
   passes. `usage-guidelines-internal-only.md` describes output that never leaves the user's own
-  organization, so the second condition is unmet and the correct answer is that the duty does not
-  attach. Asserting it anyway scores zero there. Keep both; deleting either one reopens a gap the
-  other cannot cover.
+  organization, which puts the audience condition genuinely in play. Its rubric grades the
+  reasoning rather than the verdict: naming both conditions and applying them to these facts is
+  what passes, and stating the duty as unconditional, dropping a condition, or declaring it
+  triggered without engaging with the audience condition is what scores zero. Keep both; deleting
+  either one reopens a gap the other cannot cover.
 - **This skill contains no deployment addresses by design**, and neither does this suite.
   Cases use obviously-patterned placeholder addresses (`0x1111...111a`, `0x2222...222b`, and
   so on) rather than a real or realistic address, so no assertion and no case file carries

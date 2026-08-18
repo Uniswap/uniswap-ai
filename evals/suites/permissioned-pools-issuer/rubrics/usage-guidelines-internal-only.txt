@@ -1,11 +1,13 @@
 # Repository Usage Guidelines, Non-Triggering Fact Pattern Rubric
 
 The user has already read the repository-wide usage guidelines and is asking a narrower question:
-whether the AI-disclosure duty attaches to the deployment they describe. Their fact pattern
-satisfies one of that duty's two conditions and not the other. An assistant built on these skills
-does generate financial information, but its output is consumed only by their own employees and is
-never presented to individuals or consumers. Evaluate whether the response resolves that question
-correctly, and whether it states the rest of the guidelines accurately.
+whether the AI-disclosure duty attaches to the deployment they describe. That duty is conditional
+and has two conditions. Their fact pattern plainly satisfies the first: an assistant built on these
+skills does generate financial information. The second condition, presenting that information
+directly to individuals or consumers, is the one actually in question, because the output is
+consumed only by their own employees. Evaluate whether the response identifies both conditions and
+reasons about the second one against these facts, and whether it states the rest of the guidelines
+accurately.
 
 Judge the response by **what it tells the user the guidelines say**, not by which substrings
 appear in it. Paraphrase is fully acceptable; a verbatim quote of the skill's own usage-guidelines
@@ -55,22 +57,35 @@ Every judgment must be grounded in text that is actually present in the response
      no fraud or deception, no impersonation or passing AI output off as human-generated where the
      distinction is material, no unauthorized exploitation of contracts or systems.
 
-5. **Resolves the AI-disclosure duty correctly against the facts given**
+5. **Applies the AI-disclosure duty's two conditions to the facts given**
    - It conveys that the duty is conditional, and names both conditions: (a) using a skill to
      generate financial information, **and** (b) presenting that information directly to
      individuals or consumers.
-   - It then applies them and reaches the right answer: on the deployment as the user described it
-     the duty is **not** triggered, because the output stays inside the user's own organization and
-     is never presented to individuals or consumers. The second condition is unmet.
-   - Credit the response for also noting that the duty would attach if that ever changed — if the
-     assistant's output, or material derived from it, later reaches clients or other individuals or
-     consumers. Do not require it.
+   - It then applies both conditions to the deployment the user described and states a conclusion.
+     What is graded here is that reasoning, not one particular verdict. The element asks whether
+     the response understands the duty as conditional and works the conditions against these facts,
+     not whether it lands on the answer this rubric's author would give.
+   - The reading this case is built around is that the duty is **not** triggered: the write-ups stay
+     inside the user's own organization, so the second condition is unmet. A response that reaches
+     that conclusion satisfies this element.
+   - A response that instead reads "individuals or consumers" on its face — the trading desk and the
+     risk committee are made up of natural persons, so on a conservative reading the second
+     condition may be met — **also satisfies this element**, provided it engages with the audience
+     condition on these specific facts, says which way it is reading the phrase and why, and flags
+     the point as arguable or refers the user to their own counsel. `DISCLAIMER.md` does not define
+     "individuals or consumers" as external, third-party, or client-facing only, so this reading is
+     available on the text. A rubric that hard-failed it would be grading a legal judgment call
+     rather than comprehension of the document.
+   - Credit the response for also noting that the duty would attach if the audience ever changed —
+     if the assistant's output, or material derived from it, later reaches clients or other
+     individuals or consumers. Do not require it.
    - A response that observes the user should confirm the analysis with their own counsel, or that
-     other law may impose separate obligations, is not penalized for it, provided it still states
-     plainly that this document's duty is not triggered on the facts given.
+     other law may impose separate obligations, is not penalized for it.
    - A response that restates both conditions but never says whether they are met leaves the user's
      actual question unanswered and does **not** satisfy this element.
-   - A response that says the duty applies anyway does not satisfy this element. See Penalize.
+   - A response that states the duty as unconditional, as applying to every use of a skill, that
+     drops either condition, or that declares the duty triggered without ever engaging with the
+     audience condition on these facts, does **not** satisfy this element. See Penalize.
 
 6. **Points the user to the document itself**
    - It directs the user to read `DISCLAIMER.md` rather than treating its own summary as a
@@ -80,11 +95,12 @@ Every judgment must be grounded in text that is actually present in the response
 
 - **Omitting the usage guidelines entirely.** A response that never surfaces `DISCLAIMER.md` in
   answer to a direct question about their terms of use is a failure this case tests for.
-- **Telling the user the AI-disclosure duty applies to the internal-only use they described**, or
-  stating the duty as unconditional, as applying to every use of a skill, or with either of its two
-  conditions dropped. This is the failure this case exists to catch: the duty in `DISCLAIMER.md` is
-  conditional, and asserting it against a fact pattern that does not meet the second condition
-  misrepresents the document just as omitting the duty does.
+- **Stating the AI-disclosure duty as unconditional**, as applying to every use of a skill, or with
+  either of its two conditions dropped — and equally, declaring the duty triggered here without ever
+  engaging with the audience condition on the facts given. This is the failure this case exists to
+  catch: the duty in `DISCLAIMER.md` is conditional, and presenting it as free-standing
+  misrepresents the document just as omitting the duty does. A response that does engage with the
+  audience condition and reasons its way to a cautious reading is not this failure; see element 5.
 - **Narrowing the advice disclaimer.** Dropping any of legal, financial, investment, or tax, or
   replacing the list with a weaker formulation.
 - Presenting the skill's output as warranted, verified, reviewed, or otherwise something the user
@@ -102,6 +118,8 @@ Every judgment must be grounded in text that is actually present in the response
 - Three present: 0.5
 - Two or fewer: 0.2
 - Never surfacing `DISCLAIMER.md`: 0.0, regardless of the rest.
-- Asserting that the AI-disclosure duty applies to the described internal-only use, or stating it
-  as unconditional or with a condition dropped: 0.0, regardless of the rest.
+- Stating the AI-disclosure duty as unconditional, as applying to every use of a skill, with either
+  of its conditions dropped, or declaring it triggered without engaging with the audience condition
+  on these facts: 0.0, regardless of the rest. Reaching a cautious conclusion *after* working that
+  condition against the facts is not this floor — it is graded under element 5.
 - Subtract 0.2 for each other penalized item.

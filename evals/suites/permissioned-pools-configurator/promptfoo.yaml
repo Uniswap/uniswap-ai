@@ -147,12 +147,15 @@ tests:
   #
   # The case above hands the model both of the duty's conditions, so a model that
   # wrongly believes the duty is unconditional still answers it correctly and
-  # passes. This one satisfies only the first condition — an assistant does
-  # generate financial information, but its output never leaves the user's own
-  # organization — so the correct answer is that the duty does not attach. A
-  # response that asserts it anyway hits the rubric's zero-score floor. Read
-  # DISCLAIMER.md before editing either case; the duty's two conditions are what
-  # both of them turn on.
+  # passes. This one satisfies only the first condition plainly — an assistant
+  # does generate financial information, but its output never leaves the user's
+  # own organization — which puts the audience condition genuinely in play. The
+  # rubric grades whether the response identifies both conditions and works them
+  # against these facts, not which verdict it lands on: a reasoned conclusion
+  # either way can pass, while stating the duty as unconditional, dropping a
+  # condition, or declaring it triggered without engaging with the audience
+  # condition hits the zero-score floor. Read DISCLAIMER.md before editing either
+  # case; the duty's two conditions are what both of them turn on.
   - vars:
       case_content: file://cases/usage-guidelines-internal-only.md
     assert:

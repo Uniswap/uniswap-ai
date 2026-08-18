@@ -15,14 +15,26 @@
  * paragraph holds its docs page to the full paragraph; a skill that only says "surface the
  * disclaimers in DISCLAIMER.md" holds its docs page to that much and no more.
  *
- * Elements are graded on substance, not on one blessed phrasing. Each accepts a small family of
- * wordings, so a copy edit that keeps the meaning passes and a deletion fails. The substance comes
- * from DISCLAIMER.md; read that file before changing anything here.
+ * Elements are graded on substance, not on one blessed phrasing. Each accepts a family of wordings,
+ * so a copy edit that keeps the meaning passes and a deletion fails. The substance comes from
+ * DISCLAIMER.md; read that file before changing anything here.
+ *
+ * Two guards sit on top of that comparison, because the comparison alone can quietly weaken:
+ *
+ *   - Coherence. A pointer may name the AI-disclosure duty without restating it, but a pointer that
+ *     restates any part of that duty must restate all of it. A restatement missing its conditional
+ *     framing, or one of its two conditions, is a failure in its own right on either side.
+ *   - Coverage. A pointer that restates the guidelines while stating fewer elements than the
+ *     fullest pointer in the repository draws a warning, so an element silently disappearing from a
+ *     SKILL.md is visible rather than just lowering that page's bar. It is a warning and not a
+ *     failure: a skill is allowed to say less on purpose, and only a human can tell that apart from
+ *     an accidental deletion. Pointers that merely name the document are outside the comparison.
  *
  * Usage:
  *   node scripts/check-docs-disclaimer.cjs
  *
- * Exits 1 if any docs page states less than its SKILL.md does.
+ * Exits 1 if any docs page states less than its SKILL.md does, or if any pointer restates the
+ * AI-disclosure duty only in part.
  */
 
 const fs = require('fs');
@@ -33,62 +45,144 @@ const PLUGINS_DIR = path.join(ROOT, 'packages', 'plugins');
 const DOCS_SKILLS_DIR = path.join(ROOT, 'docs', 'skills');
 
 /**
- * The elements a pointer can state. Each `test` runs against the whitespace-normalized text, so an
- * element survives being re-wrapped across lines.
+ * The elements a pointer can state. Each element's patterns run against the whitespace-normalized
+ * text, so an element survives being re-wrapped across lines.
  *
  * The AI-disclosure duty is split into four separate elements on purpose. It is conditional in
  * DISCLAIMER.md — it applies when you generate financial information AND present it directly to
  * individuals or consumers — and each half of that condition is independently deletable. Checking
  * the duty as one blob would let a page keep the word "AI-disclosure" while dropping the audience
  * condition, which is the drift that turns a conditional duty into an unconditional-looking one.
+ *
+ * Patterns match meaning, not one blessed phrasing. Each is deliberately loose about connectives,
+ * verb inflection, and word order, and tight about the words that carry the substance. "a duty that
+ * applies when", "a duty which attaches only if", and "a duty that is triggered when" all state the
+ * same conditional and all match; "a duty that applies to every use of a Skill" states a different
+ * thing and does not. A pattern that only accepted the current wording would fail a legitimate copy
+ * edit and then report it as a deletion, which is a worse failure than missing one.
+ *
+ * `any` passes when at least one pattern matches; `all` passes only when every pattern matches.
  */
 const ELEMENTS = [
   {
     id: 'names-the-document',
     describe: 'names the repo root DISCLAIMER.md',
-    test: /DISCLAIMER\.md/,
+    any: [/DISCLAIMER\.md/],
   },
   {
     id: 'as-is',
     describe: 'says the skills are provided as is',
-    test: /\bas[- ]is\b/i,
+    any: [/\bas[- ]is\b/i],
   },
   {
     id: 'no-warranty',
     describe: 'says they carry no warranty',
-    test: /\b(without|no)\s+warrant(y|ies)\b/i,
+    any: [
+      /\b(?:without|with no|no|lacking any)\s+warrant(?:y|ies)\b/i,
+      /\bdisclaims?\b[^.;]{0,30}?\bwarrant(?:y|ies)\b/i,
+      /\bwarrant(?:y|ies)\b[^.;]{0,20}?\b(?:of any kind\s+)?(?:is|are)?\s*(?:expressly\s+)?disclaimed\b/i,
+    ],
   },
   {
+    // Order-independent on purpose: "tax, legal, financial, or investment advice" is the same
+    // disclaimer as the current wording, while dropping any one category narrows it. The old
+    // pattern hard-coded the sequence, so a reorder read as a deletion.
     id: 'advice-categories',
     describe: 'keeps all four advice categories (legal, financial, investment, tax)',
-    test: /\blegal,\s*financial,\s*investment,\s*(or|and)\s*tax\b/i,
+    all: [/\blegal\b/i, /\bfinancial\b/i, /\binvestment\b/i, /\btax\b/i, /\badvice\b/i],
   },
   {
     id: 'use-limits',
     describe: 'says the guidelines place limits on use',
-    test: /\b(use limits|limits on (the )?use|intended use|use restrictions|restrictions on (the )?use)\b/i,
+    any: [
+      /\b(?:use limits|intended use|use restrictions)\b/i,
+      /\b(?:limits?|limitations?|restrictions?)\b[^.;]{0,30}?\b(?:on|to|what|how|upon)\b[^.;]{0,30}?\buse[ds]?\b/i,
+      /\b(?:not intended to be used|may not be used|must not be used)\b/i,
+    ],
   },
   {
     id: 'ai-disclosure-duty',
     describe: 'names the AI-disclosure duty',
-    test: /\bAI[-\s]disclosure\b/i,
+    any: [/\bAI[-\s]disclosure\b/i],
   },
   {
+    // The conditional framing, not the connective. Requires a duty word, a word for the duty taking
+    // effect, and a conditional connective, in that order and close together. An unconditional
+    // rewrite ("a duty that applies to every use") has no connective in range and fails.
     id: 'ai-disclosure-conditional',
     describe: 'frames the duty as conditional rather than unconditional',
-    test: /\bAI[-\s]disclosure duty that (applies|attaches)\s+(when|if)\b/i,
+    any: [
+      /\b(?:duty|obligation|requirement)\b[^.;]{0,40}?\b(?:applies|apply|attaches|attach|arises|arise|triggered|triggers)\b[^.;]{0,25}?\b(?:when|if|where|whenever|upon)\b/i,
+      /\bconditional\b[^.;]{0,40}?\b(?:duty|obligation|requirement)\b/i,
+      /\b(?:duty|obligation|requirement)\b[^.;]{0,40}?\bis conditional\b/i,
+    ],
   },
   {
     id: 'ai-disclosure-condition-generate',
     describe: 'keeps the first condition (generating financial information)',
-    test: /\bgenerate financial information\b/i,
+    any: [/\bgenerat(?:e|es|ed|ing|ion of)\b[^.;]{0,25}?\bfinancial information\b/i],
   },
   {
     id: 'ai-disclosure-condition-audience',
     describe: 'keeps the second condition (presenting it to individuals or consumers)',
-    test: /\bpresent(ing|s)? (it|that information|them)? ?directly to individuals or consumers\b/i,
+    any: [
+      /\bpresent(?:s|ed|ing)?\b[^.;]{0,45}?\bindividuals\s+(?:or|and)\s+consumers\b/i,
+      /\b(?:shown|show|disclose[ds]?|disclosing|provide[ds]?|providing)\b[^.;]{0,45}?\bindividuals\s+(?:or|and)\s+consumers\b/i,
+    ],
   },
 ];
+
+/**
+ * The three elements that restate the AI-disclosure duty's substance, as opposed to merely naming
+ * it. A pointer is free to say only "surface the AI-disclosure duty in DISCLAIMER.md" and stop; the
+ * short pointers in this repository do exactly that. But a pointer that restates any part of the
+ * duty's substance has to restate all of it, because a conditional duty missing one of its
+ * conditions reads as a broader duty than the document imposes.
+ *
+ * This is what catches silent erosion. Changing one word in a SKILL.md — "a duty that applies" to
+ * "a duty which applies" — used to drop `ai-disclosure-conditional` from the required set with no
+ * output at all, lowering the bar for that skill's docs page by one element. Loosening the patterns
+ * above makes that particular edit a non-event, but the erosion path stays open for any future
+ * rewrite the patterns do not anticipate, so the coherence rule closes it independently.
+ */
+const DUTY_SUBSTANCE_IDS = [
+  'ai-disclosure-conditional',
+  'ai-disclosure-condition-generate',
+  'ai-disclosure-condition-audience',
+];
+const DUTY_COHERENCE_IDS = ['ai-disclosure-duty', ...DUTY_SUBSTANCE_IDS];
+
+/** True when `element`'s patterns are satisfied by `text`. */
+function matches(element, text) {
+  if (element.all) {
+    return element.all.every((pattern) => pattern.test(text));
+  }
+  return element.any.some((pattern) => pattern.test(text));
+}
+
+/**
+ * The duty elements a pointer states but should not state alone. Empty when the pointer is
+ * coherent: either it restates the whole duty, or it restates none of it.
+ */
+function dutyIncoherence(pointer) {
+  const present = new Set(
+    DUTY_COHERENCE_IDS.filter((id) =>
+      matches(
+        ELEMENTS.find((e) => e.id === id),
+        pointer
+      )
+    )
+  );
+
+  const restatesSubstance = DUTY_SUBSTANCE_IDS.some((id) => present.has(id));
+  if (!restatesSubstance) {
+    return [];
+  }
+
+  return DUTY_COHERENCE_IDS.filter((id) => !present.has(id)).map((id) =>
+    ELEMENTS.find((e) => e.id === id)
+  );
+}
 
 /** Collapse every whitespace run to a single space so line wrapping cannot break a match. */
 function normalize(text) {
@@ -161,14 +255,22 @@ function findSkills() {
   return skills.sort((a, b) => a.skillName.localeCompare(b.skillName));
 }
 
+/** One line per pattern an element accepts, for a failure report that says what it looked for. */
+function patternsOf(element) {
+  return (element.all || element.any).map((pattern) => String(pattern));
+}
+
 function checkDocsDisclaimer() {
   console.log('\n=== Checking DISCLAIMER.md Pointer On Docs Pages ===\n');
 
   const skills = findSkills();
   const failures = [];
+  const incoherent = [];
+  const coverage = [];
   let enrolled = 0;
 
   for (const { skillName, skillMdPath } of skills) {
+    const relSkillMdPath = path.relative(ROOT, skillMdPath);
     const skillPointer = pointerBlocks(fs.readFileSync(skillMdPath, 'utf8')).join(' ');
 
     // A skill that does not point at DISCLAIMER.md imposes nothing on its docs page.
@@ -179,7 +281,14 @@ function checkDocsDisclaimer() {
     enrolled += 1;
 
     // The bar for this page is whatever its own SKILL.md states, not a repo-wide maximum.
-    const required = ELEMENTS.filter((element) => element.test.test(skillPointer));
+    const required = ELEMENTS.filter((element) => matches(element, skillPointer));
+    coverage.push({ skillName, source: relSkillMdPath, count: required.length });
+
+    const skillGaps = dutyIncoherence(skillPointer);
+    if (skillGaps.length > 0) {
+      incoherent.push({ source: relSkillMdPath, gaps: skillGaps });
+      console.log(`  ✗ ${relSkillMdPath} (partial AI-disclosure duty)`);
+    }
 
     const docPath = path.join(DOCS_SKILLS_DIR, `${skillName}.md`);
     const relDocPath = path.relative(ROOT, docPath);
@@ -193,23 +302,51 @@ function checkDocsDisclaimer() {
     }
 
     const docPointer = pointerBlocks(fs.readFileSync(docPath, 'utf8')).join(' ');
-    const missing = required.filter((element) => !element.test.test(docPointer));
+    const missing = required.filter((element) => !matches(element, docPointer));
+
+    const docGaps = dutyIncoherence(docPointer);
+    if (docGaps.length > 0) {
+      incoherent.push({ source: relDocPath, gaps: docGaps });
+      console.log(`  ✗ ${relDocPath} (partial AI-disclosure duty)`);
+    }
 
     if (missing.length === 0) {
       console.log(`  ✓ ${relDocPath} (${required.length}/${required.length} elements)`);
     } else {
       failures.push({ page: relDocPath, missingPage: false, missing });
-      console.log(`  ✗ ${relDocPath} (${missing.length} of ${required.length} elements missing)`);
+      console.log(`  ✗ ${relDocPath} (${missing.length} of ${required.length} not detected)`);
       for (const element of missing) {
         console.log(`      - ${element.id}: ${element.describe}`);
       }
     }
   }
 
+  // Coverage erosion: a pointer that restates the guidelines but states less than the fullest
+  // pointer in the repository. Compared only against pointers that restate something, so the
+  // deliberately short "surface the disclaimers in DISCLAIMER.md" pointers are not dragged into
+  // a comparison they were never meant to meet, and the warning stays quiet until it means
+  // something. A warning, not a failure: a skill is allowed to say less than its neighbours on
+  // purpose, and only a human can tell that apart from an accidental deletion.
+  const restating = coverage.filter((entry) => entry.count > 1);
+  const maxElements = restating.reduce((max, entry) => Math.max(max, entry.count), 0);
+  const eroded = restating.filter((entry) => entry.count < maxElements);
+
   console.log('\n--- Docs Disclaimer Check Results ---\n');
   console.log(`Skills pointing at DISCLAIMER.md: ${enrolled}`);
   console.log(`Docs pages checked:               ${enrolled}`);
-  console.log(`Pages failing:                    ${failures.length}\n`);
+  console.log(`Fullest pointer states:           ${maxElements} of ${ELEMENTS.length} elements`);
+  console.log(`Pages failing:                    ${failures.length}`);
+  console.log(`Partial AI-disclosure pointers:   ${incoherent.length}\n`);
+
+  if (eroded.length > 0) {
+    console.log(`⚠ ${eroded.length} pointer(s) state less than the fullest pointer in the repo.`);
+    console.log('  Intentional if that skill was always shorter; a regression if an element was');
+    console.log('  dropped by a rewrite. Check the diff on these files:\n');
+    for (const entry of eroded) {
+      console.log(`      - ${entry.source} (${entry.count} of ${maxElements})`);
+    }
+    console.log('');
+  }
 
   if (enrolled === 0) {
     console.log('No skill points at DISCLAIMER.md. If that is a surprise, the pointer was removed');
@@ -218,10 +355,32 @@ function checkDocsDisclaimer() {
     return false;
   }
 
+  if (incoherent.length > 0) {
+    console.log('These pointers restate part of the AI-disclosure duty and not the rest. The duty');
+    console.log('in DISCLAIMER.md is conditional; a restatement missing its framing or one of its');
+    console.log(
+      'two conditions reads as a broader duty than the document imposes. State the whole'
+    );
+    console.log('duty, or name it without restating it:\n');
+    for (const entry of incoherent) {
+      console.log(`  ✗ ${entry.source}`);
+      for (const element of entry.gaps) {
+        console.log(`      - not detected: ${element.describe}`);
+        for (const pattern of patternsOf(element)) {
+          console.log(`          looked for ${pattern}`);
+        }
+      }
+    }
+    console.log('');
+  }
+
   if (failures.length > 0) {
     console.log('These docs pages state less about the repo root DISCLAIMER.md than their own');
-    console.log('SKILL.md does. Read DISCLAIMER.md and the matching SKILL.md, then restore the');
-    console.log('missing elements on the docs page:\n');
+    console.log('SKILL.md does. Each element below was not detected on the docs page, either');
+    console.log('because it was removed or because it was reworded past what the check accepts.');
+    console.log('Read DISCLAIMER.md and the matching SKILL.md. If the wording is still correct,');
+    console.log('widen the pattern in scripts/check-docs-disclaimer.cjs rather than reverting the');
+    console.log('copy edit:\n');
     for (const failure of failures) {
       if (failure.missingPage) {
         console.log(`  ✗ ${failure.page} — page does not exist`);
@@ -229,11 +388,19 @@ function checkDocsDisclaimer() {
       }
       console.log(`  ✗ ${failure.page}`);
       for (const element of failure.missing) {
-        console.log(`      - ${element.describe}`);
+        console.log(`      - not detected: ${element.describe}`);
+        for (const pattern of patternsOf(element)) {
+          console.log(`          looked for ${pattern}`);
+        }
       }
     }
     console.log('');
-    console.log(`Check FAILED with ${failures.length} failing page(s)\n`);
+  }
+
+  const failed = failures.length + incoherent.length;
+  if (failed > 0) {
+    console.log(`Check FAILED with ${failures.length} failing page(s) and`);
+    console.log(`${incoherent.length} partial AI-disclosure pointer(s)\n`);
     return false;
   }
 
