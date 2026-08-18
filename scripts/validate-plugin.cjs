@@ -31,6 +31,13 @@
  *   - project.json has 'type:plugin' tag
  *   - Referenced component directories exist
  *   - JSON files are valid
+ *   - plugin.json and package.json declare the same version
+ *
+ * Version parity:
+ *   .claude-plugin/plugin.json is the authoritative version for a plugin. It is
+ *   what Claude Code reads, what the marketplace resolves, and what CLAUDE.md
+ *   tells contributors to bump. package.json must be kept equal to it so the two
+ *   never disagree about which release a plugin is on.
  */
 
 const fs = require('fs');
@@ -83,6 +90,8 @@ function checkEvalCoverage(pluginPath) {
 function validatePlugin(pluginPath) {
   const errors = [];
   const warnings = [];
+  let pluginVersion;
+  let packageVersion;
 
   console.log(`\nValidating plugin: ${pluginPath}\n`);
 
@@ -123,6 +132,8 @@ function validatePlugin(pluginPath) {
         }
       }
 
+      pluginVersion = pluginJson.version;
+
       console.log(`  ✓ plugin.json: ${pluginJson.name} v${pluginJson.version}`);
     } catch {
       errors.push(`Invalid JSON in plugin.json`);
@@ -142,9 +153,23 @@ function validatePlugin(pluginPath) {
         errors.push(`package.json missing version field`);
       }
 
-      console.log(`  ✓ package.json: ${packageJson.name}`);
+      packageVersion = packageJson.version;
+
+      console.log(`  ✓ package.json: ${packageJson.name} v${packageJson.version}`);
     } catch {
       errors.push(`Invalid JSON in package.json`);
+    }
+  }
+
+  // Version parity: plugin.json is authoritative, package.json must match it.
+  if (pluginVersion && packageVersion) {
+    if (pluginVersion === packageVersion) {
+      console.log(`  ✓ version parity: ${pluginVersion}`);
+    } else {
+      errors.push(
+        `Version mismatch: .claude-plugin/plugin.json is ${pluginVersion} but package.json is ${packageVersion}. ` +
+          `plugin.json is authoritative, so set package.json "version" to ${pluginVersion}.`
+      );
     }
   }
 

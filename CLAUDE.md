@@ -96,6 +96,15 @@ All plugins follow semantic versioning (semver):
 
 After making any changes to `packages/plugins/`, bump the plugin version in `.claude-plugin/plugin.json`.
 
+`.claude-plugin/plugin.json` is the authoritative version for a plugin. It is what
+Claude Code reads, what `.claude-plugin/marketplace.json` resolves, and what the
+skill validation in CI checks against. Each plugin's `package.json` also carries a
+`version` field, and it must be kept equal to the `plugin.json` value.
+
+Bump `plugin.json` first, then set `package.json` to the same value.
+`scripts/validate-plugin.cjs` fails when the two disagree, and CI runs it on every
+plugin, so a mismatch blocks the PR.
+
 ## Agent-Agnostic Design
 
 All AI tools in this repo should be usable by ANY LLM coding agent, not just Claude Code:
