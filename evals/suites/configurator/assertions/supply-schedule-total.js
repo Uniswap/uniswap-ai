@@ -2,8 +2,9 @@
  * Deterministic check on the one property of a CCA supply schedule that is pure
  * arithmetic: its released supply must total exactly 10,000,000 MPS.
  *
- * WHY THIS IS NOT A RUBRIC. The correctness rubric grades this today, and an LLM
- * judge grading exact arithmetic makes a required status check nondeterministic.
+ * WHY THIS IS NOT A RUBRIC. Both rubrics graded this before this file existed, and
+ * an LLM judge grading exact arithmetic makes a required status check
+ * nondeterministic.
  * Two runs of identical content on PR #140 disagreed: run 31846203576 scored the
  * case 1.0, and run 31848655116 failed it because the model's own schedule summed
  * to 9,999,996 MPS, four short. The judge was right that time. The problem is that
