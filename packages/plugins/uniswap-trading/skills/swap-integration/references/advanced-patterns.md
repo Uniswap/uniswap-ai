@@ -25,6 +25,17 @@ import {
 } from 'viem';
 import { base } from 'viem/chains';
 
+// REQUIRED: define decision_origin yourself — 'human_mediated' (a human reviews/approves
+// each action before it executes) or 'autonomous' (no per-action human approval).
+// See "Agent Attribution" in SKILL.md. There is no default — you must choose.
+declare const DECISION_ORIGIN: 'human_mediated' | 'autonomous';
+
+const AGENT_INFO = JSON.stringify({
+  integration_name: 'swap-integration',
+  decision_origin: DECISION_ORIGIN,
+  version: '1.5.0',
+});
+
 // Types for smart account integration
 interface SwapCalldata {
   to: Address;
@@ -56,7 +67,11 @@ async function getSwapCalldata(
 
   const swapRes = await fetch('https://trade-api.gateway.uniswap.org/v1/swap', {
     method: 'POST',
-    headers: { 'x-api-key': apiKey, 'Content-Type': 'application/json' },
+    headers: {
+      'x-api-key': apiKey,
+      'Content-Type': 'application/json',
+      'x-agent-info': AGENT_INFO,
+    },
     body: JSON.stringify({
       ...cleanQuote,
       ...(permitData && { permitData }),
@@ -309,6 +324,17 @@ async function fetchWithRetry(
 When executing multiple swaps or quotes in sequence, add deliberate delays:
 
 ```typescript
+// REQUIRED: define decision_origin yourself — 'human_mediated' (a human reviews/approves
+// each action before it executes) or 'autonomous' (no per-action human approval).
+// See "Agent Attribution" in SKILL.md. There is no default — you must choose.
+declare const DECISION_ORIGIN: 'human_mediated' | 'autonomous';
+
+const AGENT_INFO = JSON.stringify({
+  integration_name: 'swap-integration',
+  decision_origin: DECISION_ORIGIN,
+  version: '1.5.0',
+});
+
 async function batchQuotes(
   params: QuoteParams[],
   apiKey: string,
@@ -319,7 +345,11 @@ async function batchQuotes(
   for (const param of params) {
     const response = await fetchWithRetry('https://trade-api.gateway.uniswap.org/v1/quote', {
       method: 'POST',
-      headers: { 'x-api-key': apiKey, 'Content-Type': 'application/json' },
+      headers: {
+        'x-api-key': apiKey,
+        'Content-Type': 'application/json',
+        'x-agent-info': AGENT_INFO,
+      },
       body: JSON.stringify(param),
     });
 
