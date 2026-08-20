@@ -21,7 +21,8 @@ Configure a Continuous Clearing Auction for a new token launch on Base.
 ## Constraints
 
 - Floor price must be divisible by tick spacing (roundedFloorPrice % tickSpacing == 0)
-- Supply schedule must sum to exactly 10,000,000 MPS
+- Supply schedule must release exactly 10,000,000 MPS in total, computed as
+  `sum(mps * blockDelta)` over all steps (`mps` is a per-block rate, not a per-step amount)
 - Block durations should decrease over time (convex curve property)
 - USDC has 6 decimals on all networks - must divide by 10^12 for 18-decimal tokens
 - Auction duration: 2 days (86,400 blocks on Base)

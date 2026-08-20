@@ -538,7 +538,9 @@ The plugin includes an MCP server that generates supply schedules using a **norm
 - **Equal token amounts** per step (5.8333% for 70% gradual release)
 - **Decreasing block durations** (convex curve property)
 - **Large final block** receives remaining tokens (~30%, configurable 20-40%)
-- **Total**: Always exactly 10,000,000 MPS
+- **Total**: the released supply is always exactly 10,000,000 MPS, computed as
+  `sum(mps * blockDelta)` across every step. `mps` is a per-block release rate, not a
+  per-step amount, so the `mps` column by itself does not sum to 10,000,000.
 
 Use the MCP tool `generate_supply_schedule` to generate this standard distribution:
 
@@ -556,7 +558,7 @@ The algorithm automatically calculates:
 1. Equal token amounts per step (e.g., 5.8333% for 12 steps with 70% gradual)
 2. Time boundaries from normalized curve C(t) = t^α (default α = 1.2)
 3. Block durations that DECREASE over time (convex curve property)
-4. Final block adjustment to hit exactly 10,000,000 MPS total
+4. Final block adjustment so that `sum(mps * blockDelta)` is exactly 10,000,000 MPS
 
 ### Example: 2-day auction on Base
 
@@ -611,7 +613,7 @@ Call `generate_supply_schedule` with:
 - Block durations DECREASE: 10894 → 8517 → 7803 → ... → 6043
 - Token amounts per step are approximately equal (~5.8333% each)
 - Final block contains 29.88% of all tokens
-- Total is exactly 10,000,000 MPS
+- `sum(mps * blockDelta)` is exactly 10,000,000 MPS (the `mps` column alone sums to far less)
 
 ### Example: With prebid period
 

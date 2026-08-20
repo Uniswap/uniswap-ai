@@ -124,7 +124,8 @@ Generates supply schedules using a normalized convex curve.
 - **Distribution**: Equal token amounts per step (~5.8333% for 12 steps)
 - **Time Intervals**: Decrease over time (convex curve property)
 - **Final Block**: ~30% of tokens (configurable 20-40%)
-- **Total**: Always exactly 10,000,000 MPS
+- **Total**: always exactly 10,000,000 MPS, computed as `sum(mps * blockDelta)`.
+  `mps` is a per-block release rate, so the `mps` column alone sums to far less.
 
 **Tool:** `cca-supply-schedule__generate_supply_schedule`
 

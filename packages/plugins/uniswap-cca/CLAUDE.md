@@ -102,7 +102,7 @@ Generates supply schedules using the normalized convex curve algorithm.
 - 12 steps (default) with equal token amounts (~5.8333% each)
 - Decreasing block durations (convex curve property)
 - ~30% in final block
-- Always exactly 10,000,000 MPS total
+- Always exactly 10,000,000 MPS total, computed as `sum(mps * blockDelta)`
 
 #### 2. encode_supply_schedule
 
@@ -183,7 +183,8 @@ Generates supply schedules using a **normalized convex curve**:
 - **Distribution**: Equal token amounts per step
 - **Time Intervals**: Decrease over time (convex curve property)
 - **Final Block**: ~30% of tokens (configurable 20-40%)
-- **Total**: Always exactly 10,000,000 MPS
+- **Total**: always exactly 10,000,000 MPS, computed as `sum(mps * blockDelta)`.
+  `mps` is a per-block release rate, so the `mps` column alone sums to far less.
 
 **Input Parameters:**
 
@@ -260,7 +261,7 @@ floorPrice = Q96 * ratio / (10 ** (18 - 6))
 Supply schedules use MPS = 1e7 (10 million):
 
 - Each MPS unit = one thousandth of a basis point
-- Target total: Always 10,000,000 MPS
+- Target total: always 10,000,000 MPS, computed as `sum(mps * blockDelta)`
 - Each schedule step: `{mps: N, blockDelta: N}`
 
 ### Supply Schedule Properties
@@ -270,7 +271,7 @@ Supply schedules use MPS = 1e7 (10 million):
 - Block durations DECREASE: 10894 → 8517 → 7803 → ... → 6043
 - Token amounts EQUAL: ~5.8333% per step
 - Final block: ~30% of total supply
-- Total: Exactly 10,000,000 MPS
+- Total: exactly 10,000,000 MPS, computed as `sum(mps * blockDelta)`
 
 ## Important Notes
 
