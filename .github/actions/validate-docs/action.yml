@@ -17,3 +17,11 @@ runs:
       run: |
         echo "=== Validating Documentation Pages ==="
         node scripts/validate-docs.cjs
+
+    # The eval suites inject SKILL.md and its references only, so a docs page whose
+    # DISCLAIMER.md pointer was deleted or hollowed out would leave every eval green.
+    - name: Check the DISCLAIMER.md pointer on docs pages
+      shell: bash
+      run: |
+        echo "=== Checking DISCLAIMER.md Pointer On Docs Pages ==="
+        node scripts/check-docs-disclaimer.cjs

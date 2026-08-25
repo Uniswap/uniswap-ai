@@ -63,7 +63,7 @@ CCA uses Q96 fixed-point arithmetic for precise pricing:
 
 ### MPS (Milli-Basis Points)
 
-Supply schedules use MPS = 1e7 (10 million). Each MPS unit represents one thousandth of a basis point. Schedule steps are defined as `{mps, blockDelta}` pairs that always total exactly 10,000,000 MPS.
+Supply schedules use MPS = 1e7 (10 million). Each MPS unit represents one thousandth of a basis point. Schedule steps are defined as `{mps, blockDelta}` pairs, and the released supply always totals exactly 10,000,000 MPS, computed as `sum(mps * blockDelta)`. `mps` is a per-block release rate, not a per-step amount, so the `mps` values alone do not sum to 10,000,000.
 
 ### Factory Deployment
 
