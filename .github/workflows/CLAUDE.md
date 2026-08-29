@@ -201,11 +201,8 @@ dependency is gone.
 
 **Descriptions only — titles are no longer generated.** That is a
 describe-cli design decision, not a configuration gap. `ci-check-pr-title.yml`
-still enforces conventional-commit titles on `pull_request_target`, so the
-format is still checked; it is now the author who writes the title. Its
-second, `workflow_run` trigger keyed to the old workflow name
-`Claude: Generate PR Title & Description` is inert now that nothing rewrites
-titles, and should be removed in a follow-up.
+enforces conventional-commit titles on `pull_request_target`, so the format
+is still checked; it is now the author who writes the title.
 
 ### Generate Documentation
 
