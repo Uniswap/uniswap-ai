@@ -87,11 +87,10 @@ above.
   false and is corrected here.
 
 So the reason to ship no table is not that the addresses are unavailable. It is that **they
-move**: mainnet `PermissionedHooks` was redeployed on 2026-06-29, and every permissioned-pools
-contract on mainnet and Sepolia was redeployed again on 2026-08-24 as part of ECO-692's
-full-stack redeploy, changing every one of these addresses a second time. A table pasted into
-this file would be silently wrong from the next redeploy onward, while both hops stay current by
-construction. Resolve, never recall.
+move**: mainnet `PermissionedHooks` was redeployed on 2026-06-29, and the contracts were
+redeployed again as part of ECO-692's full-stack redeploy (completed 2026-08-24), changing these
+addresses again. A table pasted into this file would be silently wrong from the next redeploy
+onward, while both hops stay current by construction. Resolve, never recall.
 
 This order applies to every **Uniswap-deployed** contract address the config needs — the four
 `allowedWrappers` keys and `hook` — whether the field starts as `"RESOLVE"` or was typed in during
