@@ -1,0 +1,211 @@
+name: '[claude] PR description'
+
+# AI PR descriptions using @uniswap/describe-cli (private GitHub Packages).
+#
+# Replaces the previous call into the Uniswap/ai-toolkit reusable workflow
+# (`_generate-pr-metadata.yml`). Derived from the upstream template
+# (packages/describe-cli/templates/workflows/describe.yml in
+# Uniswap/internal-tools) with the same pinned-install discipline as the
+# review-cli workflow in this repo: the CLI is installed from GitHub
+# Packages at a pinned version, from a scratch directory with its own
+# bunfig, BEFORE the PR's code is checked out — so nothing
+# PR-author-controlled can influence dependency resolution.
+#
+# describe-cli classifies the description lifecycle before the model runs
+# (cold / diff-changed / human-edited / stale) and writes additively inside
+# the `<!-- claude-pr-description-start -->...end -->` markers. It never
+# overwrites human-authored prose. Behavior change from the old workflow:
+# describe-cli generates DESCRIPTIONS only — the old title-generation mode
+# is gone by design.
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review]
+
+concurrency:
+  group: describe-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+# NOTE: the old reusable workflow needed `id-token: write` for its OIDC
+# auth-validation action. describe-cli authenticates with the secrets
+# passed below, so that grant is deliberately absent here.
+
+# Single source for every pin, inherited by all steps.
+# vars.DESCRIBE_CLI_VERSION / vars.CLAUDE_CODE_VERSION are the
+# authoritative overrides — set them in repo settings to roll forward
+# without a commit.
+env:
+  DESCRIBE_CLI_VERSION: ${{ vars.DESCRIBE_CLI_VERSION || '0.2.17' }}
+  # ── Pinned Claude Code version — BUMP IT HERE, nowhere else ─────────
+  # The install step runs the official installer with this exact version
+  # and verifies the binary's SHA256 against the release's GPG-signed
+  # manifest before anything executes it. Released versions:
+  # https://www.npmjs.com/package/@anthropic-ai/claude-code?activeTab=versions
+  CLAUDE_CODE_VERSION: ${{ vars.CLAUDE_CODE_VERSION || '2.1.222' }}
+  # Fingerprint of the Anthropic Claude Code release signing key. Fixed
+  # across releases; published at
+  # https://code.claude.com/docs/en/setup#binary-integrity-and-code-signing
+  CLAUDE_CODE_GPG_FINGERPRINT: '31DDDE24DDFAB679F42D7BD2BAA929FF1A7ECACE'
+  # Native installs auto-update in the background. A pin that silently
+  # updates itself mid-job is not a pin.
+  DISABLE_AUTOUPDATER: '1'
+
+jobs:
+  describe:
+    if: |
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.actor != 'cursor[bot]' &&
+      !contains(github.head_ref, 'gh-readonly-queue/') &&
+      !contains(github.head_ref, 'gtmq') &&
+      !contains(github.head_ref, 'dependabot/') &&
+      !contains(github.head_ref, 'release/') &&
+      !startsWith(github.head_ref, 'cherry-pick/') &&
+      !startsWith(github.event.pull_request.title, 'chore(release):')
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read # checkout for the diff
+      packages: read # pull @uniswap/describe-cli from GitHub Packages
+      pull-requests: write # write the description
+
+    steps:
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: '1.3.13'
+
+      # Install the CLI with NO repo content on disk (the checkout comes
+      # after). describe-cli is published only to GitHub Packages, so the
+      # @uniswap scope must be routed there. Bun supports per-scope but not
+      # per-package registry overrides, so the install runs from a scratch
+      # directory with its own bunfig rather than adding one to this repo.
+      # BUN_CONFIG_FILE is set explicitly so the install cannot be steered
+      # by a bunfig.toml anywhere else on disk.
+      - name: Install describe-cli
+        id: install
+        env:
+          GH_PACKAGES_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          install_dir="$RUNNER_TEMP/describe-cli-install"
+          mkdir -p "$install_dir"
+          cat > "$install_dir/bunfig.toml" <<EOF
+          [install.scopes]
+          "@uniswap" = { url = "https://npm.pkg.github.com", token = "$GH_PACKAGES_TOKEN" }
+          EOF
+          cd "$install_dir"
+          export BUN_CONFIG_FILE="$install_dir/bunfig.toml"
+          bun init -y > /dev/null
+          if ! bun add "@uniswap/describe-cli@${DESCRIBE_CLI_VERSION}" 2> "$RUNNER_TEMP/bun-add.err"; then
+            cat "$RUNNER_TEMP/bun-add.err" >&2
+            if grep -q ' 403 ' "$RUNNER_TEMP/bun-add.err"; then
+              echo "::error::403 from GitHub Packages. $GITHUB_REPOSITORY has no read access to @uniswap/describe-cli. Fix: Uniswap/internal-tools -> Packages -> describe-cli -> Package settings -> Manage Actions access -> add this repository. This is a per-repo grant; no workflow change can confer it."
+            fi
+            exit 1
+          fi
+          echo "bin=$install_dir/node_modules/.bin/describe-cli" >> "$GITHUB_OUTPUT"
+
+      # Everything from here runs with untrusted PR files in the working
+      # directory, so every subsequent bun invocation sets
+      # BUN_CONFIG_FILE=/dev/null: bun auto-loads ./bunfig.toml from CWD
+      # and executes its `preload` array in-process. The install above
+      # already completed against its own pinned bunfig.
+      - name: Checkout PR head
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify an LLM credential is present
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -z "$CLAUDE_CODE_OAUTH_TOKEN" ] && [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "::error::No LLM credential. Set CLAUDE_CODE_OAUTH_TOKEN (preferred) or ANTHROPIC_API_KEY as a repo secret."
+            exit 1
+          fi
+
+      - name: Install Claude Code binary
+        run: |
+          set -euo pipefail
+
+          # `bash -s <version>` is the installer's documented version argument
+          # (it also accepts the channel names `latest` / `stable`, which are
+          # moving targets — don't use those here).
+          curl -fsSL https://claude.ai/install.sh | bash -s "$CLAUDE_CODE_VERSION"
+
+          for candidate in "$HOME/.local/bin/claude" "$HOME/.claude/bin/claude" "$HOME/.npm-global/bin/claude"; do
+            [ -x "$candidate" ] && { CLAUDE_BIN="$candidate"; break; }
+          done
+          [ -z "${CLAUDE_BIN:-}" ] && CLAUDE_BIN="$(command -v claude || true)"
+          [ -z "$CLAUDE_BIN" ] && { echo "::error::claude binary not found"; exit 1; }
+
+          # The launcher at ~/.local/bin/claude is a symlink into the versioned
+          # install dir. Verify the real binary, not the launcher, and do it
+          # BEFORE running it — hashing something you have already executed
+          # proves nothing.
+          CLAUDE_REAL="$HOME/.local/share/claude/versions/$CLAUDE_CODE_VERSION"
+          [ -f "$CLAUDE_REAL" ] || CLAUDE_REAL="$(readlink -f "$CLAUDE_BIN")"
+
+          case "$(uname -s)/$(uname -m)" in
+            Linux/x86_64) PLATFORM='linux-x64' ;;
+            Linux/aarch64 | Linux/arm64) PLATFORM='linux-arm64' ;;
+            *)
+              echo "::error::No release-manifest platform key for $(uname -s)/$(uname -m). This template assumes a Linux runner; add a case here if you changed runs-on."
+              exit 1
+              ;;
+          esac
+
+          RELEASES='https://downloads.claude.ai/claude-code-releases'
+          WORK="$(mktemp -d)"
+          curl -fsSL "$RELEASES/$CLAUDE_CODE_VERSION/manifest.json" -o "$WORK/manifest.json"
+          curl -fsSL "$RELEASES/$CLAUDE_CODE_VERSION/manifest.json.sig" -o "$WORK/manifest.json.sig"
+
+          # The manifest lists a SHA256 for every platform binary and is itself
+          # GPG-signed, so a good signature on the manifest transitively covers
+          # the binary. Assert the KEY FINGERPRINT before trusting the
+          # signature — a valid signature from an attacker's key proves nothing.
+          curl -fsSL https://downloads.claude.ai/keys/claude-code.asc | gpg --batch --quiet --import
+          if ! gpg --batch --with-colons --fingerprint security@anthropic.com \
+            | grep -q "^fpr:.*:${CLAUDE_CODE_GPG_FINGERPRINT}:"; then
+            echo "::error::Claude Code release signing key does not match the pinned fingerprint $CLAUDE_CODE_GPG_FINGERPRINT"
+            exit 1
+          fi
+          gpg --batch --verify "$WORK/manifest.json.sig" "$WORK/manifest.json"
+
+          EXPECTED="$(jq -r --arg p "$PLATFORM" '.platforms[$p].checksum // empty' "$WORK/manifest.json")"
+          if [ -z "$EXPECTED" ]; then
+            echo "::error::manifest.json for $CLAUDE_CODE_VERSION lists no checksum for $PLATFORM"
+            exit 1
+          fi
+          ACTUAL="$(sha256sum "$CLAUDE_REAL" | cut -d' ' -f1)"
+          if [ "$EXPECTED" != "$ACTUAL" ]; then
+            echo "::error::Claude Code $CLAUDE_CODE_VERSION checksum mismatch for $PLATFORM at $CLAUDE_REAL (expected $EXPECTED, got $ACTUAL)"
+            exit 1
+          fi
+          echo "Verified Claude Code $CLAUDE_CODE_VERSION ($PLATFORM) against the signed release manifest."
+
+          # Point the SDK at the binary we actually verified.
+          echo "CLAUDE_CODE_EXECUTABLE_PATH=$CLAUDE_REAL" >> "$GITHUB_ENV"
+          echo "$(dirname "$CLAUDE_BIN")" >> "$GITHUB_PATH"
+
+      - name: Describe + post
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Either credential works: the Claude Code runtime that
+          # describe-cli drives honors CLAUDE_CODE_OAUTH_TOKEN when set and
+          # falls back to ANTHROPIC_API_KEY (the credential the upstream
+          # template documents).
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          DESCRIBE_CLI: ${{ steps.install.outputs.bin }}
+          BUN_CONFIG_FILE: /dev/null
+        run: |
+          "$DESCRIBE_CLI" describe "$PR_NUMBER" \
+            --repo "$GH_REPO" \
+            --post \
+            --yes \
+            --debug

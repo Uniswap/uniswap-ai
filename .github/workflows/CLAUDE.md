@@ -4,17 +4,17 @@ This directory contains GitHub Actions workflows for the uniswap-ai repository. 
 
 ## Workflow Overview
 
-| Workflow                                                           | Trigger                     | Purpose                                          |
-| ------------------------------------------------------------------ | --------------------------- | ------------------------------------------------ |
-| [PR Checks](#pr-checks)                                            | PR events                   | Build, lint, test, validate plugins & skills     |
-| [Check PR Title](#check-pr-title)                                  | PR events                   | Enforce conventional commit format               |
-| [Claude Code Review](#claude-code-review)                          | PR events, comments, manual | AI-powered code review via `@uniswap/review-cli` |
-| [Claude Docs Check](#claude-docs-check)                            | PR events                   | Validate documentation updates                   |
-| [Generate PR Title & Description](#generate-pr-title--description) | PR events                   | Auto-generate PR metadata                        |
-| [Generate Documentation](#generate-documentation)                  | Push to main, manual        | Auto-generate API documentation                  |
-| [Publish Packages](#publish-packages)                              | Push to main, manual        | Publish npm packages                             |
-| [Evals](#evals)                                                    | PR events, manual           | LLM evaluation of AI skills                      |
-| [GitHub Actions Analysis](#github-actions-analysis)                | Push to main, PRs           | Security analysis & syntax validation            |
+| Workflow                                            | Trigger                     | Purpose                                          |
+| --------------------------------------------------- | --------------------------- | ------------------------------------------------ |
+| [PR Checks](#pr-checks)                             | PR events                   | Build, lint, test, validate plugins & skills     |
+| [Check PR Title](#check-pr-title)                   | PR events                   | Enforce conventional commit format               |
+| [Claude Code Review](#claude-code-review)           | PR events, comments, manual | AI-powered code review via `@uniswap/review-cli` |
+| [Claude Docs Check](#claude-docs-check)             | PR events                   | Validate documentation updates                   |
+| [PR Description](#pr-description)                   | PR events                   | Auto-generate PR descriptions via `describe-cli` |
+| [Generate Documentation](#generate-documentation)   | Push to main, manual        | Auto-generate API documentation                  |
+| [Publish Packages](#publish-packages)               | Push to main, manual        | Publish npm packages                             |
+| [Evals](#evals)                                     | PR events, manual           | LLM evaluation of AI skills                      |
+| [GitHub Actions Analysis](#github-actions-analysis) | Push to main, PRs           | Security analysis & syntax validation            |
 
 ## Workflows
 
@@ -179,15 +179,30 @@ Validates that PR documentation is properly updated:
 
 Uses a shared reusable workflow.
 
-### Generate PR Title & Description
+### PR Description
 
-**File:** `generate-pr-title-description.yml`
+**File:** `describe.yml`
 
-Auto-generates PR titles and descriptions using Claude:
+Auto-generates PR descriptions using
+[`@uniswap/describe-cli`](https://github.com/Uniswap/internal-tools/tree/main/packages/describe-cli).
+Replaces `generate-pr-title-description.yml`, which called the
+`Uniswap/ai-toolkit` reusable workflow `_generate-pr-metadata.yml`; that
+dependency is gone.
 
-- Creates conventional commit-style titles based on repository patterns
-- Generates comprehensive descriptions from merged PR templates
-- Skips rebases using patch-ID detection
+- Classifies the description lifecycle before the model runs (cold /
+  diff-changed / human-edited / stale) and writes additively inside the
+  `<!-- claude-pr-description-start -->` markers, so human-authored prose is
+  never overwritten
+- Installs the CLI pinned from GitHub Packages **before** the PR's code is
+  checked out, and verifies the pinned Claude Code binary against the
+  GPG-signed release manifest — the same discipline as Code Review
+- Needs neither `WORKFLOW_PAT` nor `id-token: write`: it pushes nothing and
+  authenticates with `GITHUB_TOKEN` plus an LLM credential
+
+**Descriptions only — titles are no longer generated.** That is a
+describe-cli design decision, not a configuration gap. `ci-check-pr-title.yml`
+enforces conventional-commit titles on `pull_request_target`, so the format
+is still checked; it is now the author who writes the title.
 
 ### Generate Documentation
 
@@ -295,24 +310,25 @@ Validates GitHub Actions workflows for security and syntax correctness:
 
 ## Required Secrets
 
-| Secret                            | Purpose                            | Required By                                 |
-| --------------------------------- | ---------------------------------- | ------------------------------------------- |
-| `ANTHROPIC_API_KEY`               | Anthropic API authentication       | Evals                                       |
-| `CLAUDE_CODE_OAUTH_TOKEN`         | Claude AI authentication           | Code Review, Docs Check, PR Metadata, Evals |
-| `WORKFLOW_PAT`                    | Push commits/tags, branch creation | Docs Check, PR Metadata, Publish            |
-| `SERVICE_ACCOUNT_GPG_PRIVATE_KEY` | Signing commits/tags               | Publish                                     |
+| Secret                            | Purpose                            | Required By                                    |
+| --------------------------------- | ---------------------------------- | ---------------------------------------------- |
+| `ANTHROPIC_API_KEY`               | Anthropic API authentication       | Evals, PR Description                          |
+| `CLAUDE_CODE_OAUTH_TOKEN`         | Claude AI authentication           | Code Review, Docs Check, PR Description, Evals |
+| `WORKFLOW_PAT`                    | Push commits/tags, branch creation | Docs Check, Publish                            |
+| `SERVICE_ACCOUNT_GPG_PRIVATE_KEY` | Signing commits/tags               | Publish                                        |
 
-Code Review no longer needs `WORKFLOW_PAT`: it pushes nothing, and the
-built-in `GITHUB_TOKEN` covers both posting the review and pulling
-`@uniswap/review-cli` from GitHub Packages. It accepts either
-`CLAUDE_CODE_OAUTH_TOKEN` (preferred) or `ANTHROPIC_API_KEY` and fails with
+Neither Code Review nor PR Description needs `WORKFLOW_PAT`: they push
+nothing, and the built-in `GITHUB_TOKEN` covers both posting to the PR and
+pulling the CLI from GitHub Packages. Both accept either
+`CLAUDE_CODE_OAUTH_TOKEN` (preferred) or `ANTHROPIC_API_KEY` and fail with
 an explicit error if neither is set.
 
-`@uniswap/review-cli` is published **only** to GitHub Packages, so this
-repo needs read access granted on the package itself: `Uniswap/internal-tools`
-→ Packages → `review-cli` → Package settings → Manage Actions access → add
-`Uniswap/uniswap-ai`. Without that grant the install step 403s. This is a
-per-repo grant and is not something a workflow file can confer.
+`@uniswap/review-cli` and `@uniswap/describe-cli` are published **only** to
+GitHub Packages, so this repo needs read access granted on each package
+itself: `Uniswap/internal-tools` → Packages → the package → Package settings
+→ Manage Actions access → add `Uniswap/uniswap-ai`. Without that grant the
+install step 403s. This is a per-repo grant and is not something a workflow
+file can confer.
 
 npm publish authentication uses **Trusted Publishing (OIDC)** via `id-token: write` —
 no `NPM_TOKEN` / `NODE_AUTH_TOKEN` secret is required. Configure a Trusted Publisher
@@ -321,19 +337,22 @@ environment before its first publish.
 
 ## Repository Variables
 
-| Variable              | Purpose                                                        |
-| --------------------- | -------------------------------------------------------------- |
-| `NODE_VERSION`        | Node.js version for CI (22.x)                                  |
-| `NPM_VERSION`         | npm version for the publish job (11.7.0+, OIDC support)        |
-| `BUN_VERSION`         | Bun version for CI (defaults to 1.3.13)                        |
-| `REVIEW_CLI_VERSION`  | `@uniswap/review-cli` pin for Code Review (defaults to 1.10.1) |
-| `CLAUDE_CODE_VERSION` | Claude Code binary pin for Code Review (defaults to 2.1.212)   |
+| Variable               | Purpose                                                              |
+| ---------------------- | -------------------------------------------------------------------- |
+| `NODE_VERSION`         | Node.js version for CI (22.x)                                        |
+| `NPM_VERSION`          | npm version for the publish job (11.7.0+, OIDC support)              |
+| `BUN_VERSION`          | Bun version for CI (defaults to 1.3.13)                              |
+| `REVIEW_CLI_VERSION`   | `@uniswap/review-cli` pin for Code Review (defaults to 1.10.1)       |
+| `DESCRIBE_CLI_VERSION` | `@uniswap/describe-cli` pin for PR Description (defaults to 0.2.17)  |
+| `CLAUDE_CODE_VERSION`  | Claude Code binary pin (Code Review 2.1.212, PR Description 2.1.222) |
 
 Only `NODE_VERSION` and `NPM_VERSION` are actually **set** on the repo today
-(`22.22.2` and `11.7.0`). The other three fall through to the in-file
+(`22.22.2` and `11.7.0`). The other four fall through to the in-file
 defaults, which are therefore load-bearing rather than decorative. Setting
-`REVIEW_CLI_VERSION` is the way to roll the reviewer forward without a
-commit.
+`REVIEW_CLI_VERSION` / `DESCRIBE_CLI_VERSION` is the way to roll those CLIs
+forward without a commit. Note that `CLAUDE_CODE_VERSION` is a single repo
+variable read by both workflows, whose in-file defaults currently differ —
+setting it pins both to the same version.
 
 `NODE_VERSION` must stay at or above the floor promptfoo declares in its
 `engines` field (`^20.20.0 || >=22.22.0`). It sat at `22.21.1` for a stretch, one
@@ -347,21 +366,20 @@ requirements. The preflight step below fails loudly on any future drift.
 All workflows follow security best practices:
 
 - External actions are pinned to specific commit SHAs
-- [Bullfrog](https://github.com/bullfrogsec/bullfrog) security scanning on all jobs
+- [Bullfrog](https://github.com/bullfrogsec/bullfrog) egress scanning on all jobs, with one
+  exception: `describe.yml` is kept byte-identical to the shared describe-cli template used
+  across Uniswap repos, and that template carries no Bullfrog step. Adding one here would fork
+  the template; the follow-up belongs upstream in `Uniswap/internal-tools`.
 - Concurrency groups prevent duplicate runs
 - Minimal required permissions per job
 
 ## Shared Workflows
 
-Two workflows still call reusable workflows from `Uniswap/ai-toolkit`:
+One workflow still calls a reusable workflow from `Uniswap/ai-toolkit`:
 
 - `_claude-docs-check.yml` - Documentation validation
-- `_generate-pr-metadata.yml` - PR title/description generation
 
-Code Review no longer does. It runs `@uniswap/review-cli` directly, so the
-review logic is a versioned package pin (`REVIEW_CLI_VERSION`) rather than a
-reusable-workflow SHA that has to be bumped by PR. Migrating PR metadata to
-the sibling `describe-cli` is a separate change; note `ci-check-pr-title.yml`
-has a `workflow_run` trigger keyed to the exact workflow name
-`Claude: Generate PR Title & Description`, so renaming or removing that
-workflow silently stops the title check's second trigger path from firing.
+Code Review and PR Description no longer do. They run `@uniswap/review-cli`
+and `@uniswap/describe-cli` directly, so that logic is a versioned package
+pin (`REVIEW_CLI_VERSION` / `DESCRIBE_CLI_VERSION`) rather than a
+reusable-workflow SHA that has to be bumped by PR.
