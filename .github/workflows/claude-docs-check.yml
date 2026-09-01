@@ -48,16 +48,58 @@ permissions: {}
 
 jobs:
   docs-check:
-    # Skip if PR is from a bot (e.g., dependabot) or a fork (no secrets available)
+    # Skip if the PR is from a fork (no secrets available) or from an
+    # unrelated bot such as Dependabot or Renovate.
+    #
+    # `docs-check / docs-check` is a REQUIRED status check in this repo's
+    # `main` ruleset. Because this job calls a reusable workflow, the
+    # required context only exists while the job runs: a skipped job
+    # reports under the bare name `docs-check` instead, so
+    # `docs-check / docs-check` never reports and the PR stays
+    # `mergeable_state: blocked` permanently. Any condition here that can
+    # skip the job on a same-repo PR is therefore a merge deadlock, not
+    # just a skipped check.
+    #
+    # Bot identity is matched on the immutable numeric account id, never on
+    # the login. `209825114` is the `claude[bot]` account — the Claude
+    # GitHub App (app id 1236702) that opens this repo's agent PRs, whose
+    # documentation this check is meant to validate. GitHub assigns that id
+    # at account creation and it survives renames, whereas a login is
+    # mutable and `contains(login, '[bot]')` tests a naming convention
+    # rather than an identity. `user.type` is GitHub's own account-kind
+    # field, so other bots keep being skipped without depending on the
+    # `[bot]` login suffix either.
+    #
+    # SECOND GATE, NOT FIXABLE HERE: clearing this condition lets the job
+    # start and report the required context, but the job then fails at
+    # `anthropics/claude-code-action`'s own actor check with "Workflow
+    # initiated by non-human actor: claude (type: Bot). Add bot to
+    # allowed_bots list". That action gates on its `allowed_bots` input,
+    # which defaults to "" (allow no bots) — and the reusable workflow
+    # called below neither declares an `allowed_bots` input nor forwards
+    # one to the action, so there is no value this file can pass. Fixing it
+    # requires `Uniswap/ai-toolkit` to plumb `allowed_bots` through
+    # `_claude-docs-check.yml`; then this caller passes `claude[bot]`.
+    # Until that lands, the check reports `failure` on bot PRs rather than
+    # a real docs verdict. That is strictly better than before — the
+    # required context reports at all, so the PR is no longer wedged
+    # pending-forever — but it is not yet a meaningful verdict.
     if: |
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'pull_request' &&
-       !contains(github.event.pull_request.user.login, '[bot]') &&
-       github.event.pull_request.head.repo.full_name == github.repository)
+       github.event.pull_request.head.repo.full_name == github.repository &&
+       (github.event.pull_request.user.type != 'Bot' ||
+        github.event.pull_request.user.id == 209825114))
     uses: Uniswap/ai-toolkit/.github/workflows/_claude-docs-check.yml@c4820d6e62a9488c831e722aac202733fafab5dd # main
     with:
       pr_number: ${{ github.event.pull_request.number || github.event.inputs.pr_number }}
       suggestion_mode: ${{ github.event.inputs.suggestion_mode || 'suggest' }}
+      # `auto_commit` stays manual-dispatch-only. On a `pull_request` event
+      # `github.event.inputs` is empty, so this expression is always `false`
+      # there — which is why the docs check has never auto-committed anything
+      # on a PR. This workflow deliberately does NOT enable `auto_fix`: the
+      # check reports a verdict and leaves suggestions, and never writes to a
+      # contributor's branch.
       auto_commit: ${{ github.event.inputs.auto_commit == 'true' }}
       # Use sonnet for faster, cheaper checks
       model: 'claude-sonnet-5'
