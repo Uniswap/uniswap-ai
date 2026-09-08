@@ -23,7 +23,9 @@ Score based on how many of these are correctly implemented:
      spelling for the library the answer actually uses.
    - Calls appropriate quote method (quoteExactInputSingle, quoteExactInput, etc.)
    - Does NOT attempt to call Quoter as a state-mutating transaction
-   - Penalize `callStatic` used against ethers v6, where it was removed
+   - This element is NOT satisfied if `callStatic` is used with ethers v6, where it was removed
+   - This element is NOT satisfied if the two return values are conflated: `quoteExactInputSingle`
+     returns `(amountOut, gasEstimate)`, and only `amountOut` may feed `amountOutMinimum`
 
 4. **Permit2 Two-Step Approval for ERC20**
    - Approves the token to the Permit2 contract address (not directly to router)

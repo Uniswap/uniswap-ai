@@ -136,10 +136,15 @@ transaction both wastes gas and cannot hand the value back to your code.
 transaction.** Each library spells that simulation differently — pick the one matching your stack,
 not the one you saw in a guide.
 
+`quoteExactInputSingle` returns **two** values — `(uint256 amountOut, uint256 gasEstimate)` — so
+destructure it. Only `amountOut` feeds `amountOutMinimum`; passing the whole tuple is a bug.
+
 ```typescript
 // viem — the stack the rest of this skill assumes.
 // simulateContract, not readContract: the quote method is nonpayable, not view.
-const { result: quote } = await publicClient.simulateContract({
+const {
+  result: [amountOut, gasEstimate],
+} = await publicClient.simulateContract({
   address: QUOTER_ADDRESS,
   abi: quoterAbi,
   functionName: 'quoteExactInputSingle',
@@ -147,7 +152,7 @@ const { result: quote } = await publicClient.simulateContract({
 });
 
 // ethers v6 — `.staticCall` hangs off the method itself
-const quote = await quoterContract.quoteExactInputSingle.staticCall({
+const [amountOut, gasEstimate] = await quoterContract.quoteExactInputSingle.staticCall({
   poolKey,
   zeroForOne,
   exactAmount: amountIn,
@@ -155,7 +160,7 @@ const quote = await quoterContract.quoteExactInputSingle.staticCall({
 });
 
 // ethers v5 only — `callStatic` was removed in v6
-const quote = await quoterContract.callStatic.quoteExactInputSingle({
+const [amountOut, gasEstimate] = await quoterContract.callStatic.quoteExactInputSingle({
   poolKey,
   zeroForOne,
   exactAmount: amountIn,
