@@ -326,7 +326,7 @@ environment before its first publish.
 | `NODE_VERSION`        | Node.js version for CI (22.x)                                  |
 | `NPM_VERSION`         | npm version for the publish job (11.7.0+, OIDC support)        |
 | `BUN_VERSION`         | Bun version for CI (defaults to 1.3.13)                        |
-| `REVIEW_CLI_VERSION`  | `@uniswap/review-cli` pin for Code Review (defaults to 1.10.1) |
+| `REVIEW_CLI_VERSION`  | `@uniswap/review-cli` pin for Code Review (defaults to 1.10.6) |
 | `CLAUDE_CODE_VERSION` | Claude Code binary pin for Code Review (defaults to 2.1.212)   |
 
 Only `NODE_VERSION` and `NPM_VERSION` are actually **set** on the repo today
