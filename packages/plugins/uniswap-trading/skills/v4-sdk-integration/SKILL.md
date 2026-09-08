@@ -10,7 +10,7 @@ model: opus
 license: MIT
 metadata:
   author: uniswap
-  version: '1.0.0'
+  version: '1.0.1'
 ---
 
 # Uniswap v4 SDK Integration
@@ -57,7 +57,7 @@ Look up addresses at <https://docs.uniswap.org/contracts/v4/deployments> — the
 | ---------------- | --------------------------------------------------------------------------------------- |
 | PoolManager      | Singleton pool state                                                                    |
 | Universal Router | Swap execution entry point                                                              |
-| Quoter           | Offchain quote simulation (callStatic)                                                  |
+| Quoter           | Offchain quote simulation (`eth_call`, never a transaction)                             |
 | StateView        | Pool state reads (getSlot0, getLiquidity)                                               |
 | PositionManager  | LP position lifecycle                                                                   |
 | Permit2          | Token approval layer (same across chains: `0x000000000022D473030F116dDEE9F6B43aC78BA3`) |
@@ -127,10 +127,34 @@ const swapConfig = {
 
 ## Quoting Pattern
 
-Use the Quoter contract with `callStatic` — this simulates the swap offchain without executing it
-or spending gas.
+The Quoter is **not** a `view` function. Uniswap's own guide explains why: the v4 Quoter contracts
+"rely on state-changing calls designed to be reverted to return the desired data"
+(<https://developers.uniswap.org/docs/sdks/v4/guides/swapping/quoting>). Sending it as a real
+transaction both wastes gas and cannot hand the value back to your code.
+
+**The rule, independent of library: simulate the quote through `eth_call`. Never send it as a
+transaction.** Each library spells that simulation differently — pick the one matching your stack,
+not the one you saw in a guide.
 
 ```typescript
+// viem — the stack the rest of this skill assumes.
+// simulateContract, not readContract: the quote method is nonpayable, not view.
+const { result: quote } = await publicClient.simulateContract({
+  address: QUOTER_ADDRESS,
+  abi: quoterAbi,
+  functionName: 'quoteExactInputSingle',
+  args: [{ poolKey, zeroForOne, exactAmount: amountIn, hookData: '0x00' }],
+});
+
+// ethers v6 — `.staticCall` hangs off the method itself
+const quote = await quoterContract.quoteExactInputSingle.staticCall({
+  poolKey,
+  zeroForOne,
+  exactAmount: amountIn,
+  hookData: '0x00',
+});
+
+// ethers v5 only — `callStatic` was removed in v6
 const quote = await quoterContract.callStatic.quoteExactInputSingle({
   poolKey,
   zeroForOne,
@@ -215,7 +239,9 @@ await walletClient.writeContract({
 
 - NEVER call PoolManager directly for swaps — ALWAYS route through Universal Router.
 - NEVER assume contract addresses are the same across chains — look up from the deployments page.
-- NEVER call Quoter onchain (gas expensive) — ALWAYS use `callStatic` for offchain simulation.
+- NEVER send the Quoter as a transaction (gas expensive, and it cannot return the value) — ALWAYS
+  simulate it through `eth_call`: viem `simulateContract`, ethers v6 `.staticCall`, ethers v5
+  `callStatic`.
 - NEVER skip Permit2 for ERC20 swaps — direct `approve` to Universal Router will not work.
 - ALWAYS set a deadline on swaps and LP operations.
 - ALWAYS handle native ETH with `Ether.onChain(chainId)`, not WETH, in v4 pool contexts.
