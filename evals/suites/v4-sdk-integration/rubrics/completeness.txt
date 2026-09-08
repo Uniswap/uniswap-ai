@@ -28,7 +28,7 @@ Score based on how many of these are present:
 
 5. **Error Handling**
    - Includes try/catch or error handling for async operations
-   - Handles potential failures from Quoter callStatic calls
+   - Handles potential failures from simulated Quoter calls
    - Provides meaningful error context rather than swallowing errors silently
 
 ## Penalties (Should Not Include)
