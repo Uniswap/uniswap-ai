@@ -1,0 +1,85 @@
+# Permissioned-Token Delta Rubric
+
+Evaluate whether the response recognizes a permissioned pool from a description that never uses the
+word, and returns only what changes for that case. The asker already has a working
+`check_approval` -> `quote` -> `swap` integration and asked to be told only the difference, so a
+full re-derivation of that flow is a failure to answer, not extra credit. Grade the delta.
+
+## Grounding Requirement
+
+Every judgment must be grounded in text that is actually present in the response.
+
+- For each element you credit, quote the response's own wording, or name the section and paraphrase
+  it closely. If you cannot point to wording in the response, the element is not satisfied, however
+  likely a good answer would have covered it.
+- Do not credit an element from a heading or an introduction that promises it. A promise to explain
+  something is not the explanation.
+- If the response stops mid-sentence, mid-list, or mid-block, score every element not established by
+  surviving text as **not satisfied**. Do not fill the gap from this rubric or from your own
+  knowledge.
+- This rubric describes what a correct answer contains. It is not evidence that the response
+  contains it.
+- Emit the JSON verdict first: `pass` and `score` before `reason`, with any extended explanation
+  last inside `reason`.
+
+## Required Elements
+
+1. **The restriction is identified, and the pre-check named**
+   - Reads "has an allowlist" as a token that trades through a permissioned pool, and names
+     `POST /permissions` as the call that answers question 1.
+   - States that the call happens before quoting, so the answer arrives as a price-time signal
+     instead of a reverted transaction.
+   - An answer that only inspects the token contract, reads an allowlist on chain, or waits for a
+     swap to fail does not satisfy this element.
+
+2. **The two response fields the decision turns on**
+   - Names `isPermissioned` and `isAllowlisted`, and distinguishes them: the first says the token is
+     gated, the second says this wallet may trade it.
+   - Accounts for all three outcomes, including the ordinary case where `isPermissioned` is false.
+
+3. **Question 2 is answered, and the designer is overruled**
+   - States that hiding the token is wrong, and that the price should be shown.
+   - Quote the token, then block submission, and surface `kycUrl` as the action the user takes next.
+   - Credit requires a definite recommendation. Presenting both options as reasonable does not
+     satisfy this element; the case asks which is right.
+
+4. **A working request carrying the required header**
+   - TypeScript using `fetch`, with `x-api-key` present.
+   - `chainId` sent as a number on this endpoint, not a string. The `/quote` endpoint's
+     `tokenInChainId` and `tokenOutChainId` are strings, and an answer that carries that shape over
+     to `/permissions` has the type wrong.
+   - `walletAddress` and `tokens` present, with `tokens` understood to take at most two addresses.
+
+5. **What differs on the quote and swap calls**
+   - `x-universal-router-version` must be `2.2.0` or higher for these tokens, above the `2.0` the
+     ordinary flow sends.
+   - Credit an answer that says the rest of the quote and swap shape is unchanged. That is the
+     correct answer to question 4 and should not be read as a thin response.
+
+## Penalize
+
+- Re-deriving the `check_approval` -> `quote` -> `swap` integration, restating Permit2 handling, or
+  walking the full swap lifecycle. The case says "Tell us only what changes". Volume here is a
+  defect, and it is the single most likely way for a response to go wrong.
+- Recommending that the token be hidden, or leaving the choice to the reader.
+- Omitting `x-api-key`, or stating that the endpoint needs no authentication.
+- Inventing endpoint paths, request fields, or response fields that the skill does not document.
+- Stating a turnaround time, business-day window, or service-level promise for the identity check.
+  No such figure is published, so any of these is invented.
+- Treating the identity check as something the integration performs itself, instead of a link the
+  user follows.
+
+## Scoring Guide
+
+- All five elements correct and precise: 1.0
+- Four correct: 0.85
+- Three correct: 0.7
+- Two correct: 0.5
+- One or none correct: 0.2 or below
+- **Element 1 absent or misstated: 0.3 or below**, whatever else is right. Recognizing the case is
+  the whole point of the case, and the description deliberately never says "permissioned".
+- **Element 3 absent, or answered without a recommendation: 0.3 or below.** It is the one question
+  with a product consequence, and four-of-five would otherwise pass with it missing.
+- Subtract 0.2 for each penalized item present.
+
+An element you cannot quote from the response counts as absent, not as partially correct.

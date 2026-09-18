@@ -79,7 +79,7 @@ x-agent-info: {"integration_name":"swap-integration","decision_origin":"<human_m
 
 **Raise the router version for permissioned tokens.** The header block above sends `2.0`. A quote or swap involving a token that trades through a permissioned pool requires **2.2.0 or higher**. Send `x-universal-router-version: 2.2.0` for those tokens. [Step 0: Permission Pre-Check](#step-0-permission-pre-check-permissioned-pools-only) shows how to find out which they are.
 
-**3-Step Flow**:
+**Request Flow**:
 
 ```text
 0. POST /permissions     -> Permissioned pools only: may this wallet trade this token?
@@ -184,7 +184,7 @@ POST /permissions
 | `isPermissioned: true`, `isAllowlisted: true`  | Quote and swap normally                                                                            |
 | `isPermissioned: true`, `isAllowlisted: false` | Quote so the user can see prices, then **block submission** and render the `kycUrl` call to action |
 
-**This endpoint needs `x-api-key` like every other Trading API call.** The published example for it omits the header. Without one the endpoint returns `401` and `{"errorCode":"Unauthorized","detail":"Unauthenticated api key or session"}`, so an integration copied from that example fails before it reaches the permission logic.
+**This endpoint needs `x-api-key` like every other Trading API call.** The [published example](https://developers.uniswap.org/docs/trading/swapping-api/swapping-permissioned-pools) for it omits the header. Without one the endpoint returns `401` and `{"errorCode":"Unauthorized","detail":"Unauthenticated api key or session"}`, so an integration copied from that example fails before it reaches the permission logic.
 
 **Universal Router 2.2.0 or higher is required** for quotes and swaps involving a permissioned token. Send `x-universal-router-version: 2.2.0` on the `/quote` and `/swap` calls for these tokens. The plain `UniversalRouter` deployment is a different, non-permissioned router. Only the `#v2.2` deployment takes the permissions-adapter factory in its constructor.
 
