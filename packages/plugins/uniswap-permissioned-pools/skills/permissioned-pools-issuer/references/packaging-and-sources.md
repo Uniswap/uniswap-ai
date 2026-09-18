@@ -228,10 +228,10 @@ explorer.
 
 Published issuer documentation — four pages, in the order the documentation lists them:
 
-- <https://developers.uniswap.org/docs/protocols/v4/permissioned-pools/overview>
-- <https://developers.uniswap.org/docs/protocols/v4/permissioned-pools/architecture>
-- <https://developers.uniswap.org/docs/protocols/v4/permissioned-pools/deploy-a-permissioned-pool>
-- <https://developers.uniswap.org/docs/protocols/v4/permissioned-pools/provide-liquidity>
+- <https://developers.uniswap.org/docs/protocols/uniswap-labs-hooks/permissioned-pools/overview>
+- <https://developers.uniswap.org/docs/protocols/uniswap-labs-hooks/permissioned-pools/architecture>
+- <https://developers.uniswap.org/docs/protocols/uniswap-labs-hooks/permissioned-pools/deploy-a-permissioned-pool>
+- <https://developers.uniswap.org/docs/protocols/uniswap-labs-hooks/permissioned-pools/provide-liquidity>
 
 Contract sources:
 
