@@ -1,9 +1,6 @@
-# Vale accepts these words in docs prose.
-#
-# Entries are case-insensitive, and possessives are derived automatically:
-# `deployer` also accepts `Deployer`, `DEPLOYER`, and `deployer's`. Plurals are
-# NOT derived, so a plural used in the docs needs its own entry (`keystore` and
-# `keystores` are two lines). Verified against vale 3.14.2.
+# Words Vale accepts in docs prose. One entry covers any casing and the
+# possessive, but not the plural, so `keystore` and `keystores` both need a
+# line. Measured on vale 3.14.2.
 
 # Uniswap terminology
 Uniswap

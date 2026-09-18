@@ -33,7 +33,7 @@ Before committing or declaring a change complete, Claude Code MUST:
 2. **Lint the code**: Run `bunx nx affected --target=lint --base=HEAD~1` to check for linting errors
 3. **Typecheck the code**: Run `bunx nx affected --target=typecheck --base=HEAD~1` to typecheck affected projects
 4. **Lint markdown files**: Run `bunx markdownlint-cli2 --fix "**/*.md"`
-5. **Lint documentation prose**: Run `bun run docs:lint` to check documentation quality with Vale. This check blocks CI. Vale checks spelling only; to accept a term it does not know, add it to `.github/vale/styles/config/vocabularies/Uniswap/accept.txt`
+5. **Lint documentation prose**: Run `bun run docs:lint` to check documentation quality with Vale. This check blocks CI. Vale flags unknown words, repeated words, and the terms listed in `reject.txt`; to accept a term it does not know, add it to `.github/vale/styles/config/vocabularies/Uniswap/accept.txt`
 
 ## Package Scopes
 

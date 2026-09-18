@@ -127,11 +127,14 @@ jobs:
           VALE_SHA256: 469cf88ec58a374dca14b2564c4391d2c9a1c632210aa0b642758b794082e05f
         run: |
           echo "Installing Vale $VALE_VERSION..."
-          TARBALL="vale_${VALE_VERSION}_Linux_64-bit.tar.gz"
-          wget -q "https://github.com/errata-ai/vale/releases/download/v${VALE_VERSION}/${TARBALL}"
+          # Unpack in RUNNER_TEMP and take only the binary. The tarball also
+          # ships LICENSE and README.md with no directory prefix, which would
+          # overwrite the repo's own copies in the checkout.
+          TARBALL="$RUNNER_TEMP/vale_${VALE_VERSION}_Linux_64-bit.tar.gz"
+          wget -q -O "$TARBALL" "https://github.com/errata-ai/vale/releases/download/v${VALE_VERSION}/vale_${VALE_VERSION}_Linux_64-bit.tar.gz"
           echo "$VALE_SHA256  $TARBALL" | sha256sum --check --strict
-          tar -xzf "$TARBALL"
-          sudo mv vale /usr/local/bin/
+          tar -xzf "$TARBALL" -C "$RUNNER_TEMP" vale
+          sudo mv "$RUNNER_TEMP/vale" /usr/local/bin/
           vale --version
 
       - name: Lint documentation prose (Vale)
