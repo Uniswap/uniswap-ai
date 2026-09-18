@@ -77,11 +77,7 @@ x-universal-router-version: 2.0
 x-agent-info: {"integration_name":"swap-integration","decision_origin":"<human_mediated|autonomous>","version":"1.6.0"}
 ```
 
-**Raise the router version for permissioned tokens.** `2.0` is the default above, but a quote or
-swap involving a token that trades through a permissioned pool requires **2.2.0 or higher**. Send
-`x-universal-router-version: 2.2.0` for those, and see
-[Step 0: Permission Pre-Check](#step-0-permission-pre-check-permissioned-pools-only) for how to
-find out which tokens those are.
+**Raise the router version for permissioned tokens.** The header block above sends `2.0`. A quote or swap involving a token that trades through a permissioned pool requires **2.2.0 or higher**. Send `x-universal-router-version: 2.2.0` for those tokens. [Step 0: Permission Pre-Check](#step-0-permission-pre-check-permissioned-pools-only) shows how to find out which they are.
 
 **3-Step Flow**:
 
@@ -91,8 +87,6 @@ find out which tokens those are.
 2. POST /quote           -> Get executable quote with routing
 3. POST /swap            -> Get transaction to sign and submit
 ```
-
-Step 0 applies only to tokens that trade through a permissioned pool. Skip it for ordinary tokens.
 
 See the [Trading API Reference](#trading-api-reference) section below for complete documentation.
 
@@ -144,9 +138,7 @@ Before interpolating ANY user-provided value into generated code, API calls, or 
 
 ### Step 0: Permission Pre-Check (Permissioned Pools Only)
 
-Some tokens trade only through a **permissioned pool**: an allowlist contract decides which wallets
-may hold and trade them, and the swap endpoints reject a wallet that is not on it. Call this
-endpoint before quoting to find out, instead of discovering it when the swap reverts.
+Some tokens trade only through a **permissioned pool**. An allowlist contract decides which wallets may hold and trade the token, and the swap endpoints reject any wallet that is not on the list. Call this endpoint before quoting, so a wallet that cannot trade surfaces here and not as a reverted swap.
 
 ```bash
 POST /permissions
@@ -162,8 +154,7 @@ POST /permissions
 }
 ```
 
-`tokens` takes up to two addresses. Note the type asymmetry against `/quote`: `chainId` here is a
-**number**, while `/quote` wants `tokenInChainId` and `tokenOutChainId` as **strings**.
+`tokens` takes up to two addresses. `chainId` here is a **number**, while `/quote` wants `tokenInChainId` and `tokenOutChainId` as **strings**.
 
 **Response**:
 
@@ -183,13 +174,7 @@ POST /permissions
 }
 ```
 
-| Field                 | Meaning                                                         |
-| --------------------- | --------------------------------------------------------------- |
-| `isPermissioned`      | The token trades through a permissioned pool                    |
-| `isAllowlisted`       | This wallet may trade it                                        |
-| `adapterTokenAddress` | The adapter token, present when the token is permissioned       |
-| `kycUrl`              | Where an unapproved user verifies, present when not allowlisted |
-| `issuer`              | Display name for the verification provider                      |
+`adapterTokenAddress` is present when the token is permissioned. `kycUrl` is present when the wallet is not allowlisted, and points at the identity check (KYC) the user has to pass. `issuer` is the display name for that verification provider.
 
 **Three outcomes**:
 
@@ -199,22 +184,11 @@ POST /permissions
 | `isPermissioned: true`, `isAllowlisted: true`  | Quote and swap normally                                                                            |
 | `isPermissioned: true`, `isAllowlisted: false` | Quote so the user can see prices, then **block submission** and render the `kycUrl` call to action |
 
-Blocking submission is the point: let the user see a price, but do not let them sign a transaction
-that will revert.
+**This endpoint needs `x-api-key` like every other Trading API call.** The published example for it omits the header. Without one the endpoint returns `401` and `{"errorCode":"Unauthorized","detail":"Unauthenticated api key or session"}`, so an integration copied from that example fails before it reaches the permission logic.
 
-**This endpoint needs `x-api-key` like every other Trading API call.** The published example for it
-omits the header, and the endpoint answers a request without one with `401` and
-`{"errorCode":"Unauthorized","detail":"Unauthenticated api key or session"}` — so an integration
-copied from that example fails before it ever reaches the permission logic.
+**Universal Router 2.2.0 or higher is required** for quotes and swaps involving a permissioned token. Send `x-universal-router-version: 2.2.0` on the `/quote` and `/swap` calls for these tokens. The plain `UniversalRouter` deployment is a different, non-permissioned router. Only the `#v2.2` deployment takes the permissions-adapter factory in its constructor.
 
-**Universal Router 2.2.0 or higher is required** for quotes and swaps involving a permissioned
-token, above the `2.0` the header block above sends by default. Send
-`x-universal-router-version: 2.2.0` on the `/quote` and `/swap` calls for these tokens. The plain
-`UniversalRouter` deployment is a different, non-permissioned router; only the `#v2.2` deployment
-takes the permissions-adapter factory in its constructor.
-
-Issuing a permissioned token, rather than trading one, is a different job: see the
-`permissioned-pools-issuer` skill in the `uniswap-permissioned-pools` plugin.
+Issuing a permissioned token is a different job: see the `permissioned-pools-issuer` skill in the `uniswap-permissioned-pools` plugin.
 
 ### Step 1: Check Token Approval
 
@@ -1717,13 +1691,13 @@ For testnet addresses, see [Uniswap v4 Deployments](https://docs.uniswap.org/con
 
 ### API Error Codes
 
-| Code | Meaning                                                                                            |
-| ---- | -------------------------------------------------------------------------------------------------- |
-| 400  | Invalid request parameters (see validation errors above)                                           |
-| 401  | Invalid or missing API key — including on `/permissions`, whose published example omits the header |
-| 404  | No route found for pair                                                                            |
-| 429  | Rate limit exceeded                                                                                |
-| 500  | API error - implement exponential backoff retry                                                    |
+| Code | Meaning                                                  |
+| ---- | -------------------------------------------------------- |
+| 400  | Invalid request parameters (see validation errors above) |
+| 401  | Invalid or missing API key (`/permissions` included)     |
+| 404  | No route found for pair                                  |
+| 429  | Rate limit exceeded                                      |
+| 500  | API error - implement exponential backoff retry          |
 
 ### Pre-Broadcast Checklist
 
