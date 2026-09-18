@@ -110,10 +110,13 @@ These hard-fail a PR. Restating them in a review is pure noise.
   repo-level config file. Workflow security and syntax are covered
   mechanically; a workflow finding is only worth filing if it's something
   those two don't model (logic, trust boundaries, secret scope).
+- **Vale** prose lint over `docs/`. Spelling only (`Vale.Terms = NO`), with
+  an accept list at
+  `.github/vale/styles/config/vocabularies/Uniswap/accept.txt`. Don't file
+  spelling findings in `docs/`; a term Vale rejects fails the build.
 
 Non-blocking, so don't treat CI's silence as approval:
 
-- **Vale** prose lint runs `continue-on-error: true`.
 - A skill dir not listed in its `plugin.json` `skills` array is a
   `validate-skills` **warning** only.
 
