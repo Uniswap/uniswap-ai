@@ -215,6 +215,7 @@ Full catalogue and worked out-of-order scenarios: [Enforced Ordering and Reverts
 
 - **LP positions are permanently non-transferable.** All three ERC-721 transfer entry points revert `TransferDisabled`. It is not a configuration flag. Decrease and burn are never gated by the allowlist checker, so the pool never blocks an exit — though delivery of the permissioned side unwraps to the underlying token, so the recipient still has to clear your token's own transfer restriction.
 - **Either adapter admin can force-exit any LP** with `unwindPosition`, and proceeds cascade to the LP first, then to an admin, then as an ERC-6909 claim whose recipient depends on the currency.
+- **Three public security reviews cover the Uniswap-side contracts** — Cantina, OpenZeppelin, and an OpenZeppelin fix review, in `v4-periphery` under `audits/permissionedPools/`. They are not listed in the `v4-hooks-public` audits table, which omits permissioned pools despite holding the hook, so that table's silence proves nothing. None of the three covers the allowlist checker you write.
 - **The real enforcement boundary is the adapter's `allowedWrappers` list.** Every wrapper on it is trusted to report the true originating caller through `msgSender()`. `updateAllowedWrapper` is `onlyOwner` on an `Ownable2Step` contract, so adapter-owner key management is part of the trust model.
 
 Full treatment: [Trust Model](./references/trust-model.md).
@@ -268,6 +269,13 @@ Contract sources, pinned:
 - `Uniswap/v4-hooks-public` at `7da5210f2c81a700820a6b4f585264233d91f349` —
   `src/permissioned-pools/PermissionedHooks.sol` (<https://github.com/Uniswap/v4-hooks-public>)
 - `Uniswap/mixed-quoter` — `src/MixedRouteQuoterV2.sol` (<https://github.com/Uniswap/mixed-quoter>)
+
+Security reviews:
+
+- `Uniswap/v4-periphery`, `audits/permissionedPools/` — Cantina, OpenZeppelin, and an OpenZeppelin
+  fix review, added 2026-08-20
+  (<https://github.com/Uniswap/v4-periphery/tree/main/audits/permissionedPools>). They postdate the
+  pinned commits above, so read each report's own scope section.
 
 Addresses:
 

@@ -1,0 +1,79 @@
+# Audit Status and Due Diligence Rubric
+
+Evaluate whether the response corrects a wrong conclusion about audit coverage, points at the
+published reports, and is honest about the limits of what it can tell the user. The audience is a
+risk committee, so a confident claim the response cannot source is worse than an acknowledged gap.
+
+## Grounding Requirement
+
+Every judgment must be grounded in text that is actually present in the response.
+
+- For each element you credit, point to the response's own wording that establishes it — quote the
+  phrase or sentence, or name the section and paraphrase it closely. If you cannot point to wording
+  in the response, the element is not satisfied, however likely it is that a good answer would have
+  covered it.
+- Do not credit an element from a heading, a table caption, or an introduction that promises it. A
+  promise to explain something is not the explanation.
+- If the response is incomplete — it stops mid-sentence, mid-list, or mid-table — score every
+  element not established by surviving text as **not satisfied**. Do not fill the gap from this
+  rubric or from your own knowledge of the subject.
+- This rubric describes what a correct answer contains. It is not evidence that the response
+  contains it.
+- Keep each citation to a short phrase, and emit the JSON verdict first: `pass` and `score` before
+  `reason`, with any extended explanation last inside `reason`.
+
+## Required Elements
+
+1. **The security team's conclusion is corrected**
+   - States plainly that published reviews of these contracts do exist, so "never audited" is wrong.
+   - Credit only an unambiguous correction. Hedging that leaves the committee unable to tell whether
+     reports exist does not satisfy this element.
+
+2. **Location and authorship**
+   - Names `Uniswap/v4-periphery` and the `audits/permissionedPools/` directory as where the reports
+     live.
+   - Names the authors: Cantina and OpenZeppelin, with the third report identified as an
+     OpenZeppelin fix review. Crediting this element needs all three reports accounted for, not just
+     the count.
+
+3. **Why checking the hook repository missed them**
+   - Explains the split: the hook contract `PermissionedHooks.sol` lives in `v4-hooks-public`, while
+     the reports sit in `v4-periphery`, and the `v4-hooks-public` audits table carries no
+     permissioned-pools row.
+   - Draws the inference rule: absence from that table is not evidence that no review happened.
+
+4. **Scope is not asserted, it is delegated to the reports**
+   - Answers question 3 by declining to confirm whole-setup coverage from the skill alone, and
+     directs the user to each report's own scope section for the contracts and the commit covered.
+   - Credit an answer that notes the reports were added after the commits the skill pins, and that
+     the user should compare the report's scope commit against what they build.
+   - A response that states specific findings, severity counts, issue totals, or audit dates is
+     fabricating them — see Penalize.
+
+5. **The uncovered part of the setup is named**
+   - The issuer's own allowlist checker is not covered by any of the three: the issuer writes it, it
+     is in neither Uniswap repository, and its logic is theirs.
+   - Restates the standing duty to have their own auditors review what they deploy.
+
+## Penalize
+
+- Stating any specific finding, severity, issue count, remediation status, or report date. The
+  reference material carries the publication date of the directory only; anything about report
+  contents is invented.
+- Confirming or leaving standing the claim that the contracts were never audited.
+- Telling the committee the whole setup is covered, or that the reports clear the issuer's checker.
+- Attaching a safety verdict or a risk label to the contracts, the pool, or the issuer. Describing
+  what the reports are and where they live is correct; grading the security of the system is not.
+- Presenting the response itself as a compliance review, a security assessment, or advice.
+- Softening the answer so far that the user cannot tell what to bring to the committee.
+
+## Scoring Guide
+
+- All five elements correct and precise: 1.0
+- Four correct: 0.85
+- Three correct: 0.7
+- Two correct: 0.5
+- Element 1 or element 4 misstated: 0.3 or below
+- Subtract 0.2 for each penalized item present.
+
+An element you cannot quote from the response counts as absent, not as partially correct.

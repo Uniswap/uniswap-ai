@@ -298,6 +298,36 @@ tests:
   # condition, or declaring it triggered without engaging with the audience
   # condition hits the zero-score floor. Read DISCLAIMER.md before editing either
   # case; the duty's two conditions are what both of them turn on.
+  # Test 14: Security due diligence — a wrong "never audited" conclusion, reached by
+  # checking the audits table of the repository that holds the hook.
+  #
+  # The deterministic assertions are identifiers a correct answer has to emit to
+  # answer "where is it and who wrote it" — the directory path and the two firms —
+  # not stances the answer must take, so they are safe under the assertion design
+  # rule above. Everything judgement-shaped is in the rubric: correcting the
+  # conclusion, explaining the two-repository split, declining to assert a scope it
+  # cannot source, and naming the issuer's own checker as uncovered. The rubric
+  # penalizes invented findings, severities and report dates, because the reference
+  # material carries the directory's publication date and nothing about contents.
+  - vars:
+      case_content: file://cases/audit-status-due-diligence.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/audit-status.txt
+        threshold: 0.85
+
+      - type: contains
+        value: 'audits/permissionedPools'
+      - type: icontains
+        value: 'Cantina'
+      - type: icontains
+        value: 'OpenZeppelin'
+      - type: icontains-any
+        value:
+          - 'allowlist checker'
+          - 'allowListChecker'
+          - 'BaseAllowlistChecker'
+
   - vars:
       case_content: file://cases/usage-guidelines-internal-only.md
     assert:

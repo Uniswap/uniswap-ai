@@ -49,7 +49,7 @@ The skill includes detailed reference documentation covering:
 - **Contract Architecture** -- the stack, the two-address model, virtual-token naming, the exact-casing inventory, permission flags
 - **Issuer Journey** -- the setup steps in the published order, each with its caller, event, and post-checks
 - **Enforced Ordering and Reverts** -- the enforced edges, the revert catalogue, and worked out-of-order scenarios
-- **Trust Model** -- position non-transferability, adapter-admin unwind and the proceeds cascade, the wrapper allowlist boundary
+- **Trust Model** -- position non-transferability, adapter-admin unwind and the proceeds cascade, the wrapper allowlist boundary, and where the published security reviews of the Uniswap-side contracts live
 - **Packaging and Sources** -- pinned commits, Foundry install and remapping, import paths, address resolution
 - **Coordination Boundary** -- permissionless on-chain work versus work requested through Uniswap Labs
 
@@ -57,6 +57,7 @@ The skill includes detailed reference documentation covering:
 
 - This skill is **educational reference material** about contract mechanics. It does not constitute legal, financial, investment, or tax advice, and it is **not** a compliance review of your token, your allowlist, your KYC or AML program, or your configuration.
 - AI-generated code and command sequences may contain errors. Review everything, test on a testnet first, and have your own auditors review contracts you deploy.
+- Three security reviews of the Uniswap-side contracts are published in `Uniswap/v4-periphery` under `audits/permissionedPools/` -- Cantina, OpenZeppelin, and an OpenZeppelin fix review. The skill points at them and does not restate their findings: read each report's own scope section for the contracts and the commit it covered. None of them covers the allowlist checker you write.
 - Contract behaviour is described against pinned commits. Verify against the source at the commit you build against before relying on any statement here.
 - The skill contains no deployment addresses on purpose. Resolve every address from the published deployment table, then verify it on a block explorer for your chain before sending a transaction to it.
 - The skill does not walk you through a deployment and does not emit broadcastable commands.
@@ -67,3 +68,4 @@ The skill includes detailed reference documentation covering:
 - [Uniswap Permissioned Pools](/plugins/uniswap-permissioned-pools) - Parent plugin
 - [Permissioned Pools documentation](https://developers.uniswap.org/docs/protocols/v4/permissioned-pools/overview) - Published protocol guide
 - [Deploy a permissioned pool](https://developers.uniswap.org/docs/protocols/v4/permissioned-pools/deploy-a-permissioned-pool) - Step-by-step protocol documentation
+- [Permissioned pools security reviews](https://github.com/Uniswap/v4-periphery/tree/main/audits/permissionedPools) - Published Cantina and OpenZeppelin reports
