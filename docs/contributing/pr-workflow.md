@@ -60,7 +60,7 @@ Every PR runs through these checks:
 | Eval Coverage     | Ensures new skills have evals        | ✅       |
 | PR Title          | Validates conventional commit format | ✅       |
 | Docs Check        | Validates documentation updates      | ⚠️       |
-| Vale              | Checks prose quality                 | ⚠️       |
+| Vale              | Checks prose quality                 | ✅       |
 
 ✅ = Required to pass
 ⚠️ = Advisory (non-blocking)

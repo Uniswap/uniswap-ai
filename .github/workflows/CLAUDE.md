@@ -27,7 +27,7 @@ Core CI validation workflow that runs on all PRs:
 - Validates `bun.lock` is in sync via `bun install --frozen-lockfile`
 - Builds affected packages with Nx
 - Runs linting and formatting checks
-- Lints documentation prose with Vale (non-blocking)
+- Lints documentation prose in `docs/` with Vale
 - Executes test suites with coverage
 - Validates plugin configurations
 - Validates skills (frontmatter, consistency with plugin.json)
