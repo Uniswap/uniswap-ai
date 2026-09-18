@@ -80,6 +80,13 @@ Every judgment must be grounded in text that is actually present in the response
   the whole point of the case, and the description deliberately never says "permissioned".
 - **Element 3 absent, or answered without a recommendation: 0.3 or below.** It is the one question
   with a product consequence, and four-of-five would otherwise pass with it missing.
-- Subtract 0.2 for each penalized item present.
+- **Element 4 with `chainId` sent as a string: 0.3 or below.** Elements 2 and 5 are each backstopped
+  by a deterministic `contains` assertion in the suite config; element 4 is not. Without this floor,
+  a response carrying the exact number-vs-string error this case exists to catch misses one element,
+  scores 0.85, and passes.
+- Subtract 0.2 for each penalized item present, and **0.3 for re-deriving the full flow**. A pass is
+  a score at or above the threshold, so a 0.2 deduction from a five-of-five answer lands exactly on
+  0.8 and is absorbed. That penalty has to bite the complete-looking response, because that is the
+  one most likely to earn it.
 
 An element you cannot quote from the response counts as absent, not as partially correct.
