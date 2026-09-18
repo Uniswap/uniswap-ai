@@ -119,12 +119,9 @@ jobs:
           echo "✅ Formatting check passed"
 
       - name: Install Vale
-        # Pinned to the version developers run locally. Vale's bundled spelling
-        # dictionary changes between minor releases, so a version gap makes CI
-        # and local runs disagree: 3.0.7 accepted "Ethereum", "APIs", and six
-        # other terms that 3.14.2 flags. Keeping the pin equal to the local
-        # version means a clean `bun run docs:lint` predicts a clean CI run.
-        # Bump deliberately, and re-run `bun run docs:lint` when you do.
+        # Keep this pin equal to the version developers run locally. Vale's
+        # bundled dictionary drifts between minors, so a gap makes a clean
+        # `bun run docs:lint` stop predicting a clean CI run.
         env:
           VALE_VERSION: 3.14.2
           VALE_SHA256: 469cf88ec58a374dca14b2564c4391d2c9a1c632210aa0b642758b794082e05f
@@ -138,13 +135,9 @@ jobs:
           vale --version
 
       - name: Lint documentation prose (Vale)
-        # Blocking, not advisory. This step was `continue-on-error: true` while
-        # a misplaced vocabulary directory made Vale exit 1 before linting
-        # anything, so the check reported success for its whole life without
-        # reading a single file. The vocabulary now sits where Vale 3.x reads
-        # it and `docs/` is clean, so a failure here is a real finding.
-        #
-        # To accept a term Vale does not know, add it to
+        # Deliberately blocking. This was `continue-on-error: true` while a
+        # misplaced vocabulary made Vale exit before reading any file, so it
+        # passed for its whole life. Accept an unknown term by adding it to
         # .github/vale/styles/config/vocabularies/Uniswap/accept.txt.
         run: |
           echo "Checking documentation prose quality..."
