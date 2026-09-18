@@ -51,9 +51,9 @@ Nothing here involves Uniswap contracts. It is the state you need before Step 1.
   install step, and the sources are not in any published npm release of `@uniswap/v4-periphery`.
 - **The published security reviews, read by whoever signs the risk off.** Three reports on the
   Uniswap-side contracts are public in `Uniswap/v4-periphery` under `audits/permissionedPools/`. Read
-  each report's own scope section for the commit and the contracts it covered, rather than assuming
-  coverage — and note that none of them covers the checker you write in Step 1. Where they live, and
-  why checking the hook repository's audits table misses them: [Trust Model](./trust-model.md).
+  each report's own scope section for the commit and the contracts it covered; do not assume
+  coverage. None of them covers the checker you write in Step 1. Why checking the hook repository's
+  audits table misses them: [Trust Model](./trust-model.md).
 
 **Ordering:** not applicable. **Check before moving on:** your token's allowlist can be updated by a key you control, because Step 3a depends on it.
 

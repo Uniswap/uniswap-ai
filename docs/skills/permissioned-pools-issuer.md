@@ -57,7 +57,7 @@ The skill includes detailed reference documentation covering:
 
 - This skill is **educational reference material** about contract mechanics. It does not constitute legal, financial, investment, or tax advice, and it is **not** a compliance review of your token, your allowlist, your KYC or AML program, or your configuration.
 - AI-generated code and command sequences may contain errors. Review everything, test on a testnet first, and have your own auditors review contracts you deploy.
-- Three security reviews of the Uniswap-side contracts are published in `Uniswap/v4-periphery` under `audits/permissionedPools/` -- Cantina, OpenZeppelin, and an OpenZeppelin fix review. The skill points at them and does not restate their findings: read each report's own scope section for the contracts and the commit it covered. None of them covers the allowlist checker you write.
+- Three security reviews of the Uniswap-side contracts are published in `Uniswap/v4-periphery` under `audits/permissionedPools/` -- Cantina, OpenZeppelin, and an OpenZeppelin fix review. The skill points at them without restating their findings, so read each report's own scope section for the contracts and the commit it covered. None of them covers the allowlist checker you write.
 - Contract behaviour is described against pinned commits. Verify against the source at the commit you build against before relying on any statement here.
 - The skill contains no deployment addresses on purpose. Resolve every address from the published deployment table, then verify it on a block explorer for your chain before sending a transaction to it.
 - The skill does not walk you through a deployment and does not emit broadcastable commands.

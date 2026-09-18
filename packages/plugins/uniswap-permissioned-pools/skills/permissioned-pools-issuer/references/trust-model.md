@@ -12,8 +12,8 @@ Three facts drive most product decisions downstream of a permissioned pool:
    is trusted to report the true originating caller.
 
 This file works through each fact, gives a checklist for evaluating a contract you are considering
-adding to `allowedWrappers`, points at the published security reviews an issuer's own due diligence
-will want to cite, and closes with what is _not_ part of the trust model.
+adding to `allowedWrappers`, points at the published security reviews, and closes with what is
+_not_ part of the trust model.
 
 File and line references are read at the pinned commits recorded in
 [Packaging and Sources](./packaging-and-sources.md). Line numbers move; confirm each one against
@@ -300,20 +300,18 @@ Three reports covering the Uniswap-side contracts are public, in `Uniswap/v4-per
 
 They were added to that repository on 2026-08-20, which is after the commits this skill pins. Read
 each report's own scope section for the contracts and the commit it covered, then compare that
-against what you build. This file does not restate their findings, their severity counts, or their
-dates; the reports are the source for all three.
+against what you build. This file does not restate their findings, severity counts, or dates; the
+reports are the source for all three.
 
 **Absence from the `v4-hooks-public` audits table is not evidence that no review happened.** The
 hook contract `PermissionedHooks.sol` lives in `Uniswap/v4-hooks-public`, whose README publishes an
-audits table — and that table lists `WETHHook`, `WstETHHook`, `StablePairHook` and `DualPoolHook`,
-with no permissioned-pools row. The three reports sit in the other repository. So a reviewer who
-checks only the audits table of the repository holding the hook finds nothing for these contracts
-and can reach the wrong conclusion.
+audits table. That table lists `WETHHook`, `WstETHHook`, `StablePairHook` and `DualPoolHook`, with
+no permissioned-pools row. The three reports sit in the other repository. So a reviewer who checks
+only that table finds nothing and can reach the wrong conclusion.
 
 A review is also not a warranty, and none of these three covers your allowlist checker. You write
-that contract, it lives in neither repository, and its logic is the one part of the setup that is
-entirely yours. Point 2 of the skill's acknowledgment stands: have your own auditors review the
-contracts you deploy.
+that contract, and it lives in neither repository. Point 2 of the skill's acknowledgment stands:
+have your own auditors review the contracts you deploy.
 
 ---
 

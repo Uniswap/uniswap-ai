@@ -258,8 +258,8 @@ This skill:
 
 That list is exhaustive on purpose. Resolve facts about these contracts from the two pinned
 repositories, facts about the intended setup sequence from the four documentation pages, and
-addresses from the deploy guide's table plus `Uniswap/contracts`, and facts about what has been
-reviewed, in what scope, at which commit from the reports themselves. Aggregators, token lists,
+addresses from the deploy guide's table plus `Uniswap/contracts`. What was reviewed, in what scope,
+and at which commit comes from the reports themselves. Aggregators, token lists,
 third-party analytics, and explorer search results are not sources for any of it — an explorer is
 for confirming an address you already resolved.
 
