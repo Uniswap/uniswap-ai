@@ -12,7 +12,7 @@ Thank you for your interest in contributing to Uniswap AI! This guide will help 
 - Node.js 22.x or later
 - [Bun](https://bun.sh) 1.3.13 or later (package manager)
 - Git
-- [Vale](https://vale.sh) 3.14.2, for `bun run docs:lint`. CI pins this version, so a different one may disagree on findings. Install with `brew install vale` on macOS, or download the pinned release from [the Vale releases page](https://github.com/errata-ai/vale/releases/tag/v3.14.2)
+- [Vale](https://vale.sh) 3.14.2, for `bun run docs:lint`. Install [the pinned release](https://github.com/errata-ai/vale/releases/tag/v3.14.2); CI pins this version and Vale's dictionary drifts between minor releases, so `brew install vale` can report findings CI does not
 - Familiarity with TypeScript and Nx
 
 ## Getting Started
