@@ -57,9 +57,12 @@ Every judgment must be grounded in text that is actually present in the response
 
 ## Penalize
 
-- Stating any specific finding, severity, issue count, remediation status, or report date. The
-  reference material carries the publication date of the directory only; anything about report
-  contents is invented.
+- Stating any specific finding, severity, issue count, or remediation status. The reference material
+  carries nothing about report contents, so any of these is invented.
+- Presenting an audit date, review period, or scope commit as the reports' own. **2026-08-20 is not
+  such a date** — it is when the directory was added, the reference material states it, and an
+  answer may cite it. Element 4 credits exactly that comparison against the pinned commits, so do
+  not penalize an answer for making it.
 - Confirming or leaving standing the claim that the contracts were never audited.
 - Telling the committee the whole setup is covered, or that the reports clear the issuer's checker.
 - Attaching a safety verdict or a risk label to the contracts, the pool, or the issuer. Describing
@@ -73,7 +76,11 @@ Every judgment must be grounded in text that is actually present in the response
 - Four correct: 0.85
 - Three correct: 0.7
 - Two correct: 0.5
+- One or none correct: 0.2 or below
 - Element 1 or element 4 misstated: 0.3 or below
+- **Element 5 absent or misstated: 0.3 or below**, whatever else is right. It carries the one thing
+  no report can tell the user — that their own checker is covered by none of them — and four-of-five
+  would otherwise land exactly on the pass threshold with element 5 missing.
 - Subtract 0.2 for each penalized item present.
 
 An element you cannot quote from the response counts as absent, not as partially correct.

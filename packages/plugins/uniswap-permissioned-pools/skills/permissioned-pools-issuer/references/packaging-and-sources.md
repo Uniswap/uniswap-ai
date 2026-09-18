@@ -241,7 +241,7 @@ Contract sources:
   <https://github.com/Uniswap/v4-hooks-public>
 - `Uniswap/mixed-quoter` — <https://github.com/Uniswap/mixed-quoter>
 
-Security reviews:
+Published reports on these contracts:
 
 - `Uniswap/v4-periphery`, `audits/permissionedPools/` — Cantina, OpenZeppelin, and an OpenZeppelin
   fix review, added 2026-08-20 —

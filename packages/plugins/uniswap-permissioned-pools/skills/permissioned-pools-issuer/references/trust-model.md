@@ -288,7 +288,7 @@ own reviewers.
 
 ## Published Security Reviews
 
-Three reports covering the Uniswap-side contracts are public, in `Uniswap/v4-periphery` under
+Three reports on these contracts are public, in `Uniswap/v4-periphery` under
 `audits/permissionedPools/`
 (<https://github.com/Uniswap/v4-periphery/tree/main/audits/permissionedPools>):
 
@@ -302,6 +302,11 @@ They were added to that repository on 2026-08-20, which is after the commits thi
 each report's own scope section for the contracts and the commit it covered, then compare that
 against what you build. This file does not restate their findings, severity counts, or dates; the
 reports are the source for all three.
+
+Do not read the directory as a coverage claim. The setup spans two repositories — the adapter,
+factory, position manager, router and base checker in `v4-periphery`, the hook in
+`v4-hooks-public` — and only each report says which of those it looked at. So a committee asking
+"is the whole thing covered" gets its answer from the reports, never from this file.
 
 **Absence from the `v4-hooks-public` audits table is not evidence that no review happened.** The
 hook contract `PermissionedHooks.sol` lives in `Uniswap/v4-hooks-public`, whose README publishes an

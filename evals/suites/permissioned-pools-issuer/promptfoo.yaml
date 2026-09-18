@@ -327,11 +327,14 @@ tests:
         value: file://rubrics/audit-status.txt
         threshold: 0.85
 
-      # icontains, not contains: the directory path is the identifier of the
-      # location, and its casing is not the thing under test here — a correct
-      # answer that writes the path in other casing is still a correct answer.
-      - type: icontains
-        value: 'audits/permissionedPools'
+      # icontains-any, not contains: the directory names the location, but its
+      # casing is not under test, and a correct answer may split the path ("the
+      # permissionedPools directory under audits/"). Both forms are the same
+      # identifier, so accepting either cannot pass a wrong answer.
+      - type: icontains-any
+        value:
+          - 'audits/permissionedPools'
+          - 'permissionedPools'
       - type: icontains
         value: 'Cantina'
       - type: icontains

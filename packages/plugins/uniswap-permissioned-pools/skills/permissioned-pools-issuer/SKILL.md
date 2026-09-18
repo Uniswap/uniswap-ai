@@ -215,7 +215,7 @@ Full catalogue and worked out-of-order scenarios: [Enforced Ordering and Reverts
 
 - **LP positions are permanently non-transferable.** All three ERC-721 transfer entry points revert `TransferDisabled`. It is not a configuration flag. Decrease and burn are never gated by the allowlist checker, so the pool never blocks an exit — though delivery of the permissioned side unwraps to the underlying token, so the recipient still has to clear your token's own transfer restriction.
 - **Either adapter admin can force-exit any LP** with `unwindPosition`, and proceeds cascade to the LP first, then to an admin, then as an ERC-6909 claim whose recipient depends on the currency.
-- **Three public security reviews cover the Uniswap-side contracts** — Cantina, OpenZeppelin, and an OpenZeppelin fix review, in `v4-periphery` under `audits/permissionedPools/`. The `v4-hooks-public` repository holds the hook, but its audits table has no permissioned-pools row, so that silence proves nothing. None of the three covers the allowlist checker you write.
+- **Three reports on these contracts are published** — Cantina, OpenZeppelin, and an OpenZeppelin fix review, in `v4-periphery` under `audits/permissionedPools/`. Which contracts each one covered is for that report to state, so read its scope section rather than inferring coverage from the directory. The `v4-hooks-public` repository holds the hook, but its audits table has no permissioned-pools row, so that silence proves nothing either. None of the three covers the allowlist checker you write.
 - **The real enforcement boundary is the adapter's `allowedWrappers` list.** Every wrapper on it is trusted to report the true originating caller through `msgSender()`. `updateAllowedWrapper` is `onlyOwner` on an `Ownable2Step` contract, so adapter-owner key management is part of the trust model.
 
 Full treatment: [Trust Model](./references/trust-model.md).
@@ -270,7 +270,7 @@ Contract sources, pinned:
   `src/permissioned-pools/PermissionedHooks.sol` (<https://github.com/Uniswap/v4-hooks-public>)
 - `Uniswap/mixed-quoter` — `src/MixedRouteQuoterV2.sol` (<https://github.com/Uniswap/mixed-quoter>)
 
-Security reviews:
+Published reports on these contracts:
 
 - `Uniswap/v4-periphery`, `audits/permissionedPools/` — Cantina, OpenZeppelin, and an OpenZeppelin
   fix review, added 2026-08-20
