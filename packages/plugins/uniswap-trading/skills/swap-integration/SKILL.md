@@ -6,7 +6,7 @@ model: opus
 license: MIT
 metadata:
   author: uniswap
-  version: '1.5.0'
+  version: '1.6.0'
 ---
 
 # Swap Integration
@@ -56,7 +56,7 @@ Best for: Frontends, backends, scripts. Handles routing optimization automatical
 - `decision_origin`: **Required choice — do not copy a default.** Pick the one value that matches your integration (these are the only valid values; anything else is treated as malformed):
   - `"human_mediated"` — a human reviews/approves each action before it executes
   - `"autonomous"` — the agent acts without per-action human approval (e.g. scheduled jobs or agentic harnesses)
-- `version`: `"1.5.0"` — tracks this skill's `metadata.version`
+- `version`: `"1.6.0"` — tracks this skill's `metadata.version`
 
 **If the value is malformed**: the request still succeeds normally, but the attribution is dropped — the gateway records it as malformed on the analytics side and moves on. There is no response header or other signal to check, so there is nothing to detect at runtime: get the value right by construction.
 
@@ -74,16 +74,25 @@ Best for: Frontends, backends, scripts. Handles routing optimization automatical
 Content-Type: application/json
 x-api-key: <your-api-key>
 x-universal-router-version: 2.0
-x-agent-info: {"integration_name":"swap-integration","decision_origin":"<human_mediated|autonomous>","version":"1.5.0"}
+x-agent-info: {"integration_name":"swap-integration","decision_origin":"<human_mediated|autonomous>","version":"1.6.0"}
 ```
+
+**Raise the router version for permissioned tokens.** `2.0` is the default above, but a quote or
+swap involving a token that trades through a permissioned pool requires **2.2.0 or higher**. Send
+`x-universal-router-version: 2.2.0` for those, and see
+[Step 0: Permission Pre-Check](#step-0-permission-pre-check-permissioned-pools-only) for how to
+find out which tokens those are.
 
 **3-Step Flow**:
 
 ```text
+0. POST /permissions     -> Permissioned pools only: may this wallet trade this token?
 1. POST /check_approval  -> Check if token is approved
 2. POST /quote           -> Get executable quote with routing
 3. POST /swap            -> Get transaction to sign and submit
 ```
+
+Step 0 applies only to tokens that trade through a permissioned pool. Skip it for ordinary tokens.
 
 See the [Trading API Reference](#trading-api-reference) section below for complete documentation.
 
@@ -132,6 +141,80 @@ Before interpolating ANY user-provided value into generated code, API calls, or 
 ---
 
 ## Trading API Reference
+
+### Step 0: Permission Pre-Check (Permissioned Pools Only)
+
+Some tokens trade only through a **permissioned pool**: an allowlist contract decides which wallets
+may hold and trade them, and the swap endpoints reject a wallet that is not on it. Call this
+endpoint before quoting to find out, instead of discovering it when the swap reverts.
+
+```bash
+POST /permissions
+```
+
+**Request**:
+
+```json
+{
+  "walletAddress": "0x...",
+  "tokens": ["0x..."],
+  "chainId": 1
+}
+```
+
+`tokens` takes up to two addresses. Note the type asymmetry against `/quote`: `chainId` here is a
+**number**, while `/quote` wants `tokenInChainId` and `tokenOutChainId` as **strings**.
+
+**Response**:
+
+```json
+{
+  "requestId": "e63f1e1e-b9e9-411a-bcc8-ff18ce4e77cf",
+  "results": [
+    {
+      "token": "0x...",
+      "isPermissioned": true,
+      "isAllowlisted": false,
+      "adapterTokenAddress": "0x...",
+      "kycUrl": "https://your-kyc-provider.example/verify",
+      "issuer": "Your Issuer Name"
+    }
+  ]
+}
+```
+
+| Field                 | Meaning                                                         |
+| --------------------- | --------------------------------------------------------------- |
+| `isPermissioned`      | The token trades through a permissioned pool                    |
+| `isAllowlisted`       | This wallet may trade it                                        |
+| `adapterTokenAddress` | The adapter token, present when the token is permissioned       |
+| `kycUrl`              | Where an unapproved user verifies, present when not allowlisted |
+| `issuer`              | Display name for the verification provider                      |
+
+**Three outcomes**:
+
+| Result                                         | What to do                                                                                         |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `isPermissioned: false`                        | Nothing special — quote and swap normally                                                          |
+| `isPermissioned: true`, `isAllowlisted: true`  | Quote and swap normally                                                                            |
+| `isPermissioned: true`, `isAllowlisted: false` | Quote so the user can see prices, then **block submission** and render the `kycUrl` call to action |
+
+Blocking submission is the point: let the user see a price, but do not let them sign a transaction
+that will revert.
+
+**This endpoint needs `x-api-key` like every other Trading API call.** The published example for it
+omits the header, and the endpoint answers a request without one with `401` and
+`{"errorCode":"Unauthorized","detail":"Unauthenticated api key or session"}` — so an integration
+copied from that example fails before it ever reaches the permission logic.
+
+**Universal Router 2.2.0 or higher is required** for quotes and swaps involving a permissioned
+token, above the `2.0` the header block above sends by default. Send
+`x-universal-router-version: 2.2.0` on the `/quote` and `/swap` calls for these tokens. The plain
+`UniversalRouter` deployment is a different, non-permissioned router; only the `#v2.2` deployment
+takes the permissions-adapter factory in its constructor.
+
+Issuing a permissioned token, rather than trading one, is a different job: see the
+`permissioned-pools-issuer` skill in the `uniswap-permissioned-pools` plugin.
 
 ### Step 1: Check Token Approval
 
@@ -1123,7 +1206,7 @@ declare const DECISION_ORIGIN: 'human_mediated' | 'autonomous';
 const AGENT_INFO = JSON.stringify({
   integration_name: 'swap-integration',
   decision_origin: DECISION_ORIGIN,
-  version: '1.5.0',
+  version: '1.6.0',
 });
 
 function useSwap() {
@@ -1268,7 +1351,7 @@ declare const DECISION_ORIGIN: 'human_mediated' | 'autonomous';
 const AGENT_INFO = JSON.stringify({
   integration_name: 'swap-integration',
   decision_origin: DECISION_ORIGIN,
-  version: '1.5.0',
+  version: '1.6.0',
 });
 
 const account = privateKeyToAccount(process.env.PRIVATE_KEY as `0x${string}`);
@@ -1634,13 +1717,13 @@ For testnet addresses, see [Uniswap v4 Deployments](https://docs.uniswap.org/con
 
 ### API Error Codes
 
-| Code | Meaning                                                  |
-| ---- | -------------------------------------------------------- |
-| 400  | Invalid request parameters (see validation errors above) |
-| 401  | Invalid or missing API key                               |
-| 404  | No route found for pair                                  |
-| 429  | Rate limit exceeded                                      |
-| 500  | API error - implement exponential backoff retry          |
+| Code | Meaning                                                                                            |
+| ---- | -------------------------------------------------------------------------------------------------- |
+| 400  | Invalid request parameters (see validation errors above)                                           |
+| 401  | Invalid or missing API key — including on `/permissions`, whose published example omits the header |
+| 404  | No route found for pair                                                                            |
+| 429  | Rate limit exceeded                                                                                |
+| 500  | API error - implement exponential backoff retry                                                    |
 
 ### Pre-Broadcast Checklist
 

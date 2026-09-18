@@ -66,6 +66,6 @@ The skill includes detailed reference documentation covering:
 ## Related Resources
 
 - [Uniswap Permissioned Pools](/plugins/uniswap-permissioned-pools) - Parent plugin
-- [Permissioned Pools documentation](https://developers.uniswap.org/docs/protocols/v4/permissioned-pools/overview) - Published protocol guide
-- [Deploy a permissioned pool](https://developers.uniswap.org/docs/protocols/v4/permissioned-pools/deploy-a-permissioned-pool) - Step-by-step protocol documentation
+- [Permissioned Pools documentation](https://developers.uniswap.org/docs/protocols/uniswap-labs-hooks/permissioned-pools/overview) - Published protocol guide
+- [Deploy a permissioned pool](https://developers.uniswap.org/docs/protocols/uniswap-labs-hooks/permissioned-pools/deploy-a-permissioned-pool) - Step-by-step protocol documentation
 - [Permissioned pools audit reports](https://github.com/Uniswap/v4-periphery/tree/main/audits/permissionedPools) - Published Cantina and OpenZeppelin reports

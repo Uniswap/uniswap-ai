@@ -104,4 +104,4 @@ guide's convention. Every step in the skill names which case it is.
 - [Permissioned Pools Configurator](/skills/permissioned-pools-configurator) - Produces the JSON
   config this skill consumes
 - [Uniswap Permissioned Pools](/plugins/uniswap-permissioned-pools) - Parent plugin
-- [Deploy a permissioned pool](https://developers.uniswap.org/docs/protocols/v4/permissioned-pools/deploy-a-permissioned-pool) - Step-by-step protocol documentation
+- [Deploy a permissioned pool](https://developers.uniswap.org/docs/protocols/uniswap-labs-hooks/permissioned-pools/deploy-a-permissioned-pool) - Step-by-step protocol documentation
