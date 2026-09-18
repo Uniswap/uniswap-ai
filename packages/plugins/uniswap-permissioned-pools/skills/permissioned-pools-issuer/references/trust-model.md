@@ -12,7 +12,8 @@ Three facts drive most product decisions downstream of a permissioned pool:
    is trusted to report the true originating caller.
 
 This file works through each fact, gives a checklist for evaluating a contract you are considering
-adding to `allowedWrappers`, and closes with what is _not_ part of the trust model.
+adding to `allowedWrappers`, points at the published security reviews, and closes with what is
+_not_ part of the trust model.
 
 File and line references are read at the pinned commits recorded in
 [Packaging and Sources](./packaging-and-sources.md). Line numbers move; confirm each one against
@@ -282,6 +283,40 @@ necessarily what stays registered; a contract with a generic settlement entry po
 caller can drive through it. Describe those implications to whoever owns the decision. Do not
 attach a verdict or a label to someone's contract — the decision belongs to the issuer and their
 own reviewers.
+
+---
+
+## Published Security Reviews
+
+Three reports on these contracts are public, in `Uniswap/v4-periphery` under
+`audits/permissionedPools/`
+(<https://github.com/Uniswap/v4-periphery/tree/main/audits/permissionedPools>):
+
+| Report                   | File                                                    |
+| ------------------------ | ------------------------------------------------------- |
+| Cantina                  | `Cantina_report_permissioned_pools.pdf`                 |
+| OpenZeppelin             | `OpenZeppelin_permissioned_pools_report.pdf`            |
+| OpenZeppelin, fix review | `OpenZeppelin_permissioned_pools_fix_review_report.pdf` |
+
+They were added to that repository on 2026-08-20, which is after the commits this skill pins. Read
+each report's own scope section for the contracts and the commit it covered, then compare that
+against what you build. This file does not restate their findings, severity counts, or dates; the
+reports are the source for all three.
+
+Do not read the directory as a coverage claim. The setup spans two repositories — the adapter,
+factory, position manager, router and base checker in `v4-periphery`, the hook in
+`v4-hooks-public` — and only each report says which of those it looked at. So a committee asking
+"is the whole thing covered" gets its answer from the reports, never from this file.
+
+**Absence from the `v4-hooks-public` audits table is not evidence that no review happened.** The
+hook contract `PermissionedHooks.sol` lives in `Uniswap/v4-hooks-public`, whose README publishes an
+audits table. That table lists `WETHHook`, `WstETHHook`, `StablePairHook` and `DualPoolHook`, with
+no permissioned-pools row. The three reports sit in the other repository. So a reviewer who checks
+only that table finds nothing and can reach the wrong conclusion.
+
+A review is also not a warranty, and none of these three covers your allowlist checker. You write
+that contract, and it lives in neither repository. Point 2 of the skill's acknowledgment stands:
+have your own auditors review the contracts you deploy.
 
 ---
 
