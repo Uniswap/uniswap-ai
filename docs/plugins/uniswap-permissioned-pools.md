@@ -55,10 +55,10 @@ The repository-wide usage guidelines are in [DISCLAIMER.md](https://github.com/U
 
 ## Key References
 
-- [Permissioned Pools overview](https://developers.uniswap.org/docs/protocols/v4/permissioned-pools/overview)
-- [Architecture](https://developers.uniswap.org/docs/protocols/v4/permissioned-pools/architecture)
-- [Deploy a permissioned pool](https://developers.uniswap.org/docs/protocols/v4/permissioned-pools/deploy-a-permissioned-pool)
-- [Provide liquidity](https://developers.uniswap.org/docs/protocols/v4/permissioned-pools/provide-liquidity)
+- [Permissioned Pools overview](https://developers.uniswap.org/docs/protocols/uniswap-labs-hooks/permissioned-pools/overview)
+- [Architecture](https://developers.uniswap.org/docs/protocols/uniswap-labs-hooks/permissioned-pools/architecture)
+- [Deploy a permissioned pool](https://developers.uniswap.org/docs/protocols/uniswap-labs-hooks/permissioned-pools/deploy-a-permissioned-pool)
+- [Provide liquidity](https://developers.uniswap.org/docs/protocols/uniswap-labs-hooks/permissioned-pools/provide-liquidity)
 - **Contract sources**: [v4-periphery](https://github.com/Uniswap/v4-periphery), [v4-hooks-public](https://github.com/Uniswap/v4-hooks-public)
 
 ## Related

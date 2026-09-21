@@ -139,3 +139,36 @@ tests:
       # Must use viem
       - type: contains
         value: 'viem'
+
+  - vars:
+      case_content: file://cases/permissioned-token-swap.md
+    assert:
+      # This case asks for the delta only, so the suite's shared correctness and
+      # completeness rubrics do not apply to it. Both score a full greenfield
+      # integration -- "Implements 3-step flow", "Covers the full swap
+      # lifecycle", "Handles both Permit2 and non-Permit2 flows" -- and a
+      # correct delta answer omits all of that by design. Graded against a
+      # rubric written for this case instead.
+      - type: llm-rubric
+        value: file://rubrics/permissioned-token-delta.txt
+        threshold: 0.8
+        provider: anthropic:claude-sonnet-4-5-20250929
+
+      # The pre-check endpoint and the two response fields the answer turns on
+      - type: contains
+        value: '/permissions'
+      - type: contains
+        value: 'isAllowlisted'
+      - type: contains
+        value: 'kycUrl'
+
+      # The published example for this endpoint omits auth and the endpoint 401s
+      # without it, so a correct integration has to send the key. Case-insensitive
+      # because HTTP header names are, and generated code varies on the casing.
+      - type: icontains
+        value: 'x-api-key'
+
+      # Permissioned tokens need Universal Router 2.2.0 or higher, above the 2.0
+      # the skill's default header block sends.
+      - type: contains
+        value: '2.2'

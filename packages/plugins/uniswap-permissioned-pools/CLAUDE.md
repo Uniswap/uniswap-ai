@@ -91,9 +91,9 @@ See <https://github.com/Uniswap/uniswap-ai/blob/main/DISCLAIMER.md> for the repo
 
 ## Key References
 
-- Permissioned Pools overview: <https://developers.uniswap.org/docs/protocols/v4/permissioned-pools/overview>
-- Architecture: <https://developers.uniswap.org/docs/protocols/v4/permissioned-pools/architecture>
-- Deploy a permissioned pool: <https://developers.uniswap.org/docs/protocols/v4/permissioned-pools/deploy-a-permissioned-pool>
-- Provide liquidity: <https://developers.uniswap.org/docs/protocols/v4/permissioned-pools/provide-liquidity>
+- Permissioned Pools overview: <https://developers.uniswap.org/docs/protocols/uniswap-labs-hooks/permissioned-pools/overview>
+- Architecture: <https://developers.uniswap.org/docs/protocols/uniswap-labs-hooks/permissioned-pools/architecture>
+- Deploy a permissioned pool: <https://developers.uniswap.org/docs/protocols/uniswap-labs-hooks/permissioned-pools/deploy-a-permissioned-pool>
+- Provide liquidity: <https://developers.uniswap.org/docs/protocols/uniswap-labs-hooks/permissioned-pools/provide-liquidity>
 - Machine-readable deployments: <https://github.com/Uniswap/contracts>
 - Mixed-route quoter source: <https://github.com/Uniswap/mixed-quoter>

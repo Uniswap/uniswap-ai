@@ -41,7 +41,7 @@ This skill helps you:
 
 ### Trading API (Recommended)
 
-REST API with a 3-step flow: `check_approval` -> `quote` -> `swap`. Handles routing optimization automatically across all Uniswap protocol versions.
+REST API with a 3-step flow: `check_approval` -> `quote` -> `swap`. Handles routing optimization automatically across all Uniswap protocol versions. Tokens that trade through a permissioned pool add a `permissions` pre-check ahead of those three.
 
 ### Universal Router SDK
 
@@ -67,6 +67,7 @@ Additional types include DUTCH_V3, DUTCH_LIMIT, LIMIT_ORDER, BRIDGE, and QUICKRO
 
 - Trading API reference with request/response examples
 - Required headers, including the `X-Agent-Info` attribution header
+- Permissioned pools: the `permissions` pre-check, gating submission on the KYC call to action, and the Universal Router 2.2.0 floor
 - Universal Router command encoding and SDK patterns
 - Permit2 integration (SignatureTransfer and AllowanceTransfer modes)
 - UniswapX auction types by chain (Exclusive Dutch, Open Dutch, Priority Gas)
