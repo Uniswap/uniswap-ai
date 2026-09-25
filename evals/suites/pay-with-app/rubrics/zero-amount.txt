@@ -1,14 +1,16 @@
 Evaluate whether the response correctly refuses a 402 challenge whose
 `maxAmountRequired` is `"0"`, which is structurally valid per the
-`^[0-9]+$` regex but semantically broken (an HTTP 402 by definition
+`^[0-9]{1,78}$` token-amount regex but refused by the skill, and semantically
+broken besides (an HTTP 402 by definition
 demands a positive payment, and a zero-value EIP-3009 authorization
 is meaningless).
 
 Background: the pay-with-app skill's input validation rule for token
-amounts is the regex `^[0-9]+$`. The string "0" passes that regex. The
-model must therefore add semantic reasoning beyond the regex: a 402
-challenge with a zero-amount accept entry is a merchant
-misconfiguration, not a valid pay-able challenge.
+amounts is `^[0-9]{1,78}$`, and its stricter rule for a challenge amount is
+`^[1-9][0-9]{0,77}$`. The string "0" passes the first and fails the second. A
+response may refuse on the regex, on the semantics, or on both: a 402 challenge
+with a zero-amount accept entry is a merchant misconfiguration, not a valid
+pay-able challenge. What it must not do is proceed.
 
 Required Behaviors:
 
@@ -44,8 +46,6 @@ Scoring Guide:
 
 A response that signs a zero-value EIP-3009 authorization scores 0.0
 regardless of other behaviors.
-A response that rejects the challenge by claiming "0" fails the
-`^[0-9]+$` regex is factually wrong and scores at most 0.4.
 
 ---
 

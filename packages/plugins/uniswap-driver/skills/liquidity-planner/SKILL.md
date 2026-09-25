@@ -1,7 +1,7 @@
 ---
 name: liquidity-planner
 description: This skill should be used when the user asks to "provide liquidity", "create LP position", "add liquidity to pool", "become a liquidity provider", "create v3 position", "create v4 position", "concentrated liquidity", "set price range", or mentions providing liquidity, LP positions, or liquidity pools on Uniswap. Generates deep links to create positions in the Uniswap interface.
-allowed-tools: Read, Glob, Grep, Bash(curl:*), Bash(jq:*), Bash(cast:*), Bash(xdg-open:*), Bash(open:*), WebFetch, WebSearch, Task(subagent_type:Explore), AskUserQuestion
+allowed-tools: Read, Glob, Grep, Bash(curl:*), Bash(jq:*), Bash(python3:*), Bash(xdg-open:*), Bash(open:*), WebFetch, WebSearch, Task(subagent_type:Explore), AskUserQuestion
 model: sonnet
 license: MIT
 metadata:
@@ -109,14 +109,18 @@ Tokens discovered via WebSearch are **UNTRUSTED**. Before proceeding with any we
 
 **Never proceed with a web-discovered token without explicit user confirmation — via AskUserQuestion, or an equivalent conversational confirmation where that tool is unavailable.**
 
-### Input Validation (Required Before Any Shell Command)
+### Input Validation Rules
 
-Before interpolating user-provided values into any shell command, validate all inputs:
+Validate every value before using it, whether it came from the user, a web search, or an API response. DexScreener and DefiLlama are third parties, so treat every field they return as untrusted.
 
-- **Token addresses** MUST match: `^0x[a-fA-F0-9]{40}$`
-- **Chain/network names** MUST be from the allowed list in `../../references/chains.md`
-- **Amounts** MUST be valid decimal numbers (match: `^[0-9]+\.?[0-9]*$`)
-- **Reject** any input containing shell metacharacters (`;`, `|`, `$`, `` ` ``, `&`, `(`, `)`, `>`, `<`, `\`, `'`, `"`, newlines)
+- **Ethereum address fields** (token addresses, `pairAddress`, `baseToken.address`): MUST match the regex `^0x[a-fA-F0-9]{40}$`. Reject the value if it fails. An address that passes is safe to interpolate, so the metacharacter rule below does not apply to it.
+- **Chain IDs**: MUST be a positive integer from the supported list in `../../references/chains.md`.
+- **Chain and network names**: MUST be from the allowed list in `../../references/chains.md`.
+- **Token amounts and integer quantities** (`feeAmount`, `tickSpacing`): MUST match `^[0-9]+$`.
+- **Decimal numeric fields from a price or market-data API** (`priceUsd`, `baseToken.priceUsd`, `quoteToken.priceUsd`, `liquidity.usd`, `volume.h24`, `tvlUsd`, `apy`): MUST be a canonical decimal matching `^[0-9]+(\.[0-9]+)?$`. Reject exponent notation, leading or trailing whitespace, a leading `+` or `-`, and more than one decimal point. Reject zero, and reject any value at or above 1e12, which is far outside any real price or pool size.
+- **Free-text fields shown to the user or used to build a command** (token names, token symbols, search terms): REJECT any value containing shell metacharacters: `;`, `|`, `&`, `$`, `` ` ``, `(`, `)`, `>`, `<`, `\`, `'`, `"`, newlines.
+
+**An externally sourced value never goes into a context that re-evaluates it.** That means no `$(( ))`, no `let`, no array subscript, no `bc`, no `python3 -c` program text, and no `eval`. Validate the value first, then pass it as an argument. `references/data-providers.md` shows the argument-passing shape.
 
 ### Step 3: Discover Available Pools
 

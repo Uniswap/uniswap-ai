@@ -62,13 +62,271 @@ Path priority for landing **USDT0** on X Layer:
 6. Wallet only holds non-USDT0 tokens on X Layer, same-chain swap
    (Phase A).
 
+## Bind the Approved Quote Terms
+
+A quote expires in about 60 seconds, so a leg often re-fetches one after the
+user has already approved it. The refreshed quote comes from the API and nothing
+forces it to describe the same trade. Capture what the user was shown at the
+confirmation gate, then compare the refreshed quote against it before
+broadcasting.
+
+Every recorded value is read from the quote or swap object about to be
+submitted, never from a shell literal that would compare a constant to itself.
+The quote object is stored key-sorted and compared byte for byte, so the
+recipient, the destination token and the destination chain are all covered
+without naming a field. The broadcast target and the calldata are bound exactly
+on top of it.
+
+A gate that skips its comparison when a value is empty is not a gate. Every field
+is required and shape-checked at bind and again at assert, so an unset variable
+refuses the broadcast instead of waving it through.
+
+The record is keyed to `PAYMENT_ID`, one stable identifier per payment. That
+stops a leftover record from a crashed earlier payment, or a second payment
+running in the same directory, from satisfying this payment's gate.
+
+```bash
+set -euo pipefail
+
+# One stable identifier per payment. The agent sets it once, before the first
+# gate, and passes the same value to every later block.
+: "${PAYMENT_ID:?missing: set one stable id per payment before the first gate}"
+[[ "$PAYMENT_ID" =~ ^[A-Za-z0-9_-]{8,128}$ ]] || {
+  echo "ERROR: PAYMENT_ID must be 8-128 characters of [A-Za-z0-9_-]" >&2
+  exit 1
+}
+APPROVED_QUOTE_DIR="$PWD/.approved-quote-$PAYMENT_ID"
+# Set only by bind_broadcast_tx, and cleared by the assert that reads it. It is
+# wiped here so an inherited value cannot stand down the gate.
+_BINDING_BROADCAST=
+
+uint_lt() {
+  [[ "$1" =~ ^[0-9]{1,78}$ ]] && [[ "$2" =~ ^[0-9]{1,78}$ ]] || {
+    echo "ERROR: uint_lt needs two uint256 decimal strings, got '$1' and '$2'" >&2
+    exit 1
+  }
+  local out
+  # A guard whose helper can fail must halt, never read as "not less than".
+  out=$(python3 -c 'import sys; print("lt" if int(sys.argv[1]) < int(sys.argv[2]) else "ge")' "$1" "$2") || {
+    echo "ERROR: uint_lt could not compare '$1' and '$2'; python3 is missing or failed." >&2
+    exit 1
+  }
+  case "$out" in
+    lt) return 0 ;;
+    ge) return 1 ;;
+    *)  echo "ERROR: uint_lt got an unusable answer for '$1' and '$2': '$out'" >&2; exit 1 ;;
+  esac
+}
+
+_require_quote_var() {
+  local name="$1" value="$2" pattern="$3"
+  [ -n "$value" ] || { echo "ERROR: $name is empty; refusing to gate on a blank value." >&2; return 1; }
+  [[ "$value" =~ $pattern ]] || { echo "ERROR: $name has the wrong shape: $value" >&2; return 1; }
+}
+
+# Every field is read from the quote or swap object about to be submitted, never
+# from a shell literal that would compare a constant to itself.
+_validate_quote_vars() {
+  local kind="$1"
+  _require_quote_var QUOTE_BODY "${QUOTE_BODY:-}" '^\{.*\}$' || return 1
+  if [ "$kind" = broadcast ]; then
+    _require_quote_var QUOTE_AMOUNT_IN  "${QUOTE_AMOUNT_IN:-}"  '^[0-9]{1,78}$'       || return 1
+    _require_quote_var QUOTE_SWAP_TO    "${QUOTE_SWAP_TO:-}"    '^0x[a-fA-F0-9]{40}$' || return 1
+    _require_quote_var QUOTE_SWAP_DATA  "${QUOTE_SWAP_DATA:-}"  '^0x[a-fA-F0-9]{8,}$' || return 1
+    # swap.value becomes msg.value, so it decides how much native currency
+    # leaves the wallet. It is bound with the target and the calldata.
+    _require_quote_var QUOTE_SWAP_VALUE "${QUOTE_SWAP_VALUE:-}" '^0[xX][0-9a-fA-F]{1,64}$' || return 1
+  else
+    _require_quote_var QUOTE_ID "${QUOTE_ID:-}" '^[A-Za-z0-9._:-]{1,128}$' || return 1
+    # jq -r prints the four letters "null" for an absent field, and that string
+    # would bind and then compare equal to itself on every later read.
+    [ "$QUOTE_ID" != null ] || {
+      echo "ERROR: quoteId is the literal string 'null'; the quote carries no id to bind." >&2
+      return 1
+    }
+  fi
+}
+
+_write_quote_record() {
+  local kind="$1"
+  [ -e "$APPROVED_QUOTE_DIR" ] && {
+    echo "ERROR: a record already exists for PAYMENT_ID=$PAYMENT_ID." >&2
+    echo "A retry must be measured against it, not rebound. Release it first if this is a new payment." >&2
+    return 1
+  }
+  mkdir -p "$APPROVED_QUOTE_DIR"
+  printf '%s' "$kind"       > "$APPROVED_QUOTE_DIR/kind"
+  printf '%s' "$QUOTE_BODY" > "$APPROVED_QUOTE_DIR/quoteBody"
+  if [ "$kind" = broadcast ]; then
+    printf '%s' "$QUOTE_AMOUNT_IN"  > "$APPROVED_QUOTE_DIR/amountIn"
+    printf '%s' "$QUOTE_SWAP_TO"    > "$APPROVED_QUOTE_DIR/swapTo"
+    printf '%s' "$QUOTE_SWAP_DATA"  > "$APPROVED_QUOTE_DIR/calldata"
+    printf '%s' "$QUOTE_SWAP_VALUE" > "$APPROVED_QUOTE_DIR/value"
+  else
+    printf '%s' "$QUOTE_ID" > "$APPROVED_QUOTE_DIR/quoteId"
+  fi
+}
+
+bind_approved_quote()        { _validate_quote_vars broadcast && _write_quote_record broadcast; }
+bind_approved_quote_preswap() { _validate_quote_vars preswap  && _write_quote_record preswap; }
+
+# A preswap record binds the quote before any calldata exists. The broadcast
+# triple is added to that same record once /swap returns it, behind its own
+# confirmation gate, so nothing reaches `cast send` unbound.
+bind_broadcast_tx() {
+  [ -d "$APPROVED_QUOTE_DIR" ] || {
+    echo "ERROR: no approved quote on record for PAYMENT_ID=$PAYMENT_ID." >&2; return 1
+  }
+  [ "$(_approved_quote_field kind)" = preswap ] || {
+    echo "ERROR: bind_broadcast_tx upgrades a preswap record only." >&2; return 1
+  }
+  [ -e "$APPROVED_QUOTE_DIR/swapTo" ] && {
+    echo "ERROR: a broadcast target is already on record; a retry is measured against it." >&2; return 1
+  }
+  # The broadcast triple is not on record yet, which is the one moment the
+  # missing-record refusal below must not fire.
+  # `|| rc=$?` and not a bare call: under `set -e` a bare non-zero assert ends
+  # the shell before the status can be read or the flag cleared.
+  _BINDING_BROADCAST=1
+  local rc=0
+  assert_quote_terms_unchanged || rc=$?
+  _BINDING_BROADCAST=
+  [ "$rc" = 0 ] || return "$rc"
+  _require_quote_var QUOTE_SWAP_TO    "${QUOTE_SWAP_TO:-}"    '^0x[a-fA-F0-9]{40}$'      || return 1
+  _require_quote_var QUOTE_SWAP_DATA  "${QUOTE_SWAP_DATA:-}"  '^0x[a-fA-F0-9]{8,}$'      || return 1
+  _require_quote_var QUOTE_SWAP_VALUE "${QUOTE_SWAP_VALUE:-}" '^0[xX][0-9a-fA-F]{1,64}$' || return 1
+  printf '%s' "$QUOTE_SWAP_TO"    > "$APPROVED_QUOTE_DIR/swapTo"
+  printf '%s' "$QUOTE_SWAP_DATA"  > "$APPROVED_QUOTE_DIR/calldata"
+  printf '%s' "$QUOTE_SWAP_VALUE" > "$APPROVED_QUOTE_DIR/value"
+}
+
+_approved_quote_field() { cat "$APPROVED_QUOTE_DIR/$1" 2>/dev/null || true; }
+
+_quote_field_or_fail() {
+  local name="$1" a
+  a=$(_approved_quote_field "$name")
+  [ -n "$a" ] || { echo "ERROR: approved record has a blank $name." >&2; return 1; }
+  printf '%s' "$a"
+}
+
+# 0 unchanged, 2 the refreshed quote moved something, 1 unusable.
+assert_quote_terms_unchanged() {
+  local changed="" a kind binding="${_BINDING_BROADCAST:-}"
+  _BINDING_BROADCAST=
+  [ -d "$APPROVED_QUOTE_DIR" ] || {
+    echo "ERROR: no approved quote on record for PAYMENT_ID=$PAYMENT_ID." >&2
+    return 1
+  }
+  kind=$(_approved_quote_field kind)
+  [ "$kind" = broadcast ] || [ "$kind" = preswap ] || {
+    echo "ERROR: approved record has no usable kind marker; refusing to broadcast." >&2
+    return 1
+  }
+  _validate_quote_vars "$kind" || return 1
+  a=$(_quote_field_or_fail quoteBody) || return 1
+  [ "$QUOTE_BODY" = "$a" ] || changed="$changed
+  quote: the quote is not the one the user approved"
+  if [ "$kind" = preswap ]; then
+    a=$(_quote_field_or_fail quoteId) || return 1
+    [ "$QUOTE_ID" = "$a" ] || changed="$changed
+  quoteId: approved '$a', now '$QUOTE_ID'"
+    # Once bind_broadcast_tx has upgraded the record, the broadcast triple is
+    # compared too, so the target, the calldata and msg.value are all covered.
+    if [ -e "$APPROVED_QUOTE_DIR/swapTo" ]; then
+      _require_quote_var QUOTE_SWAP_TO    "${QUOTE_SWAP_TO:-}"    '^0x[a-fA-F0-9]{40}$'      || return 1
+      _require_quote_var QUOTE_SWAP_DATA  "${QUOTE_SWAP_DATA:-}"  '^0x[a-fA-F0-9]{8,}$'      || return 1
+      _require_quote_var QUOTE_SWAP_VALUE "${QUOTE_SWAP_VALUE:-}" '^0[xX][0-9a-fA-F]{1,64}$' || return 1
+      a=$(_quote_field_or_fail swapTo) || return 1
+      [ "$QUOTE_SWAP_TO" = "$a" ] || changed="$changed
+  swapTo: approved '$a', now '$QUOTE_SWAP_TO'"
+      a=$(_quote_field_or_fail calldata) || return 1
+      [ "$QUOTE_SWAP_DATA" = "$a" ] || changed="$changed
+  calldata: the transaction is not the one the user approved"
+      a=$(_quote_field_or_fail value) || return 1
+      [ "$QUOTE_SWAP_VALUE" = "$a" ] || changed="$changed
+  value: approved '$a', now '$QUOTE_SWAP_VALUE'"
+    elif [ -z "$binding" ] && [ -n "${QUOTE_SWAP_TO:-}${QUOTE_SWAP_DATA:-}${QUOTE_SWAP_VALUE:-}" ]; then
+      # Missing recorded state is never "nothing to compare".
+      echo "ERROR: a broadcast target, calldata or value is set, but none is on record." >&2
+      echo "Call bind_broadcast_tx behind its own confirmation gate before broadcasting." >&2
+      return 1
+    fi
+  else
+    a=$(_quote_field_or_fail swapTo) || return 1
+    [ "$QUOTE_SWAP_TO" = "$a" ] || changed="$changed
+  swapTo: approved '$a', now '$QUOTE_SWAP_TO'"
+    a=$(_quote_field_or_fail calldata) || return 1
+    [ "$QUOTE_SWAP_DATA" = "$a" ] || changed="$changed
+  calldata: the transaction is not the one the user approved"
+    a=$(_quote_field_or_fail value) || return 1
+    [ "$QUOTE_SWAP_VALUE" = "$a" ] || changed="$changed
+  value: approved '$a', now '$QUOTE_SWAP_VALUE'"
+    a=$(_quote_field_or_fail amountIn) || return 1
+    [ "$QUOTE_AMOUNT_IN" = "$a" ] || changed="$changed
+  amountIn: approved '$a', now '$QUOTE_AMOUNT_IN'"
+  fi
+  [ -z "$changed" ] && return 0
+  echo "ERROR: the refreshed quote changed these approved terms:$changed" >&2
+  echo "Refusing to broadcast. Show the user that list and stop." >&2
+  return 2
+}
+
+release_approved_quote() {
+  [[ "${PAYMENT_ID:-}" =~ ^[A-Za-z0-9_-]{8,128}$ ]] || return 1
+  rm -rf "$PWD/.approved-quote-$PAYMENT_ID"
+}
+```
+
+`bind_approved_quote_preswap` and `bind_broadcast_tx` are defined here but not
+called by either phase below, which both bind in one step. They are kept so this
+file and
+[`trading-api-flows.md`](../../pay-with-any-token/references/trading-api-flows.md)
+carry the same helper text, and so a future two-step leg on X Layer has them
+ready.
+
+Paste these definitions into every block that calls them, and export
+`PAYMENT_ID` to every one of them. The approved values live in
+`$APPROVED_QUOTE_DIR` on disk, which is what carries them across the shell
+boundary.
+
+Bind after the values exist, never before. A fenced block is a fresh shell, so a
+`bind_approved_quote` call that reads a variable the next block assigns records
+an empty string, which the shape checks now refuse outright.
+
+A refreshed quote carries different calldata and a different quote object, so it
+will not satisfy a record bound to the old one. That is deliberate: a refresh is
+a new trade with new numbers. Show the user the new quote, get a fresh yes, call
+`release_approved_quote`, and bind again. Never broadcast a refreshed quote
+against an older record.
+
+Release the record when the flow ends, whichever way it ends. Call
+`release_approved_quote` after a successful payment, and again after any refusal
+or abort, so a dead record does not accumulate in the working directory:
+
+```bash
+set -euo pipefail
+: "${PAYMENT_ID:?missing}"
+[[ "$PAYMENT_ID" =~ ^[A-Za-z0-9_-]{8,128}$ ]] || exit 1
+rm -rf "$PWD/.approved-quote-$PAYMENT_ID"
+```
+
+**Recovering a half-written record.** If `bind_broadcast_tx` is interrupted after
+it writes `swapTo` but before it writes `calldata` and `value`, the payment
+wedges: the assert refuses on the blank field, and a retry refuses because a
+target is already on record. That is the right way to fail, and the way out is to
+start the approval over. Call `release_approved_quote`, tell the user the record
+was incomplete and nothing was broadcast, then take them back through the
+confirmation gate and bind the quote again.
+
 ## Phase A: Same-Chain Swap on X Layer
 
 Use this when the wallet already holds a token on X Layer (e.g. WOKB or
 USDG) and needs to convert it to the asset required by the 402
 challenge. Skip if the wallet has no relevant tokens on X Layer.
 
-> **Confirmation gate** before approval and before broadcast.
+> **Confirmation gate** before approval and before broadcast. The broadcast
+> gate needs the target and calldata, so it runs after the `/swap` extraction
+> block below, not here.
 >
 > **Pre-flight: OKB balance check.** Same-chain X Layer swap requires
 > OKB for gas. Confirm the wallet has OKB before proceeding:
@@ -113,25 +371,125 @@ QUOTE=$(curl -fsS -X POST https://trade-api.gateway.uniswap.org/v1/quote \
       swapper:          $swapper,
       urgency:          "normal"
     }')") || { echo "Trading API quote failed" >&2; exit 1; }
+
+# The EXACT_OUTPUT quote decides the input amount. Read it here; nothing
+# upstream of this block knows it.
+REQUIRED_AMOUNT_IN=$(printf '%s' "$QUOTE" | jq -r '.quote.amountIn')
+[[ "$REQUIRED_AMOUNT_IN" =~ ^[0-9]{1,78}$ ]] || {
+  echo "ERROR: quote returned a non-integer amountIn: $REQUIRED_AMOUNT_IN" >&2
+  exit 1
+}
 ```
 
 Then `check_approval` (only if `tokenIn` is not native), build the
-permit signature when required, and broadcast via `/swap`. Detailed
+permit signature when required, and call `/swap`. Detailed
 `check_approval` + permit + `/swap` flow is identical to the
 [`pay-with-any-token`](../../pay-with-any-token/references/trading-api-flows.md)
 flow. See that reference and substitute the X Layer chain ID and
 addresses.
 
-Before broadcasting via `/swap`, gate on quote freshness:
+Store the `/swap` response as `SWAP_RESPONSE`, then extract and validate the
+transaction fields, so the summary you show the user names the contract the
+transaction will call:
 
 ```bash
 set -euo pipefail
 
+SWAP_TO=$(printf '%s' "$SWAP_RESPONSE" | jq -r '.swap.to')
+SWAP_DATA=$(printf '%s' "$SWAP_RESPONSE" | jq -r '.swap.data')
+SWAP_VALUE=$(printf '%s' "$SWAP_RESPONSE" | jq -r '.swap.value // "0x0"')
+
+[[ "$SWAP_TO" =~ ^0x[a-fA-F0-9]{40}$ ]] || {
+  echo "ERROR: swap.to is not an address: $SWAP_TO" >&2; exit 1
+}
+[[ "$SWAP_DATA" =~ ^0x[a-fA-F0-9]{8,}$ ]] || {
+  echo "ERROR: swap.data is empty or malformed: $SWAP_DATA" >&2; exit 1
+}
+[[ "$SWAP_VALUE" =~ ^0[xX][0-9a-fA-F]{1,64}$ ]] || {
+  echo "ERROR: swap.value is not a 0x hex value: $SWAP_VALUE" >&2; exit 1
+}
+```
+
+Show the user the summary, including `$SWAP_TO` as the contract this
+transaction will call. On their yes, run the block below. It re-derives every
+recorded value from `$QUOTE` and `$SWAP_RESPONSE`, so it needs nothing carried
+over from the extraction block above:
+
+```bash
+set -euo pipefail
+
+declare -F bind_approved_quote >/dev/null || { echo "ERROR: bind_approved_quote is not defined; paste the helper block above into this block first." >&2; exit 1; }
+
+QUOTE_BODY=$(printf '%s' "$QUOTE" | jq -Sc '.quote')
+QUOTE_AMOUNT_IN=$(printf '%s' "$QUOTE" | jq -r '.quote.amountIn')
+QUOTE_SWAP_TO=$(printf '%s' "$SWAP_RESPONSE" | jq -r '.swap.to')
+QUOTE_SWAP_DATA=$(printf '%s' "$SWAP_RESPONSE" | jq -r '.swap.data')
+QUOTE_SWAP_VALUE=$(printf '%s' "$SWAP_RESPONSE" | jq -r '.swap.value // "0x0"')
+bind_approved_quote
+```
+
+`QUOTE_BODY` is the whole quote, key-sorted so the comparison is stable. The
+swapper, the destination token and the destination chain all live inside it, so
+they are covered without naming a field. `swap.value` is not in the quote, so it
+is bound on its own alongside the target and the calldata.
+
+Gate on quote freshness and on the approved terms, then broadcast in the same
+block. `cast send` takes every argument from the values the gate just compared;
+reading `.swap.to` again would hand it a target the gate never saw.
+
+```bash
+set -euo pipefail
+
+declare -F assert_quote_terms_unchanged >/dev/null || { echo "ERROR: assert_quote_terms_unchanged is not defined; paste the helper block above into this block first." >&2; exit 1; }
+
+# The gate must precede the comparison and any `$(( ))`. Bash reads a
+# leading-zero value as octal, and accepts a leading `+` and surrounding
+# whitespace inside `$(( ))`; the ten-digit ceiling keeps a far-future value out.
+[[ "${QUOTE_FETCHED_AT:-}" =~ ^(0|[1-9][0-9]{0,9})$ ]] || { echo "ERROR: QUOTE_FETCHED_AT is not a canonical integer: ${QUOTE_FETCHED_AT:-}" >&2; exit 1; }
 ELAPSED=$(($(date +%s) - QUOTE_FETCHED_AT))
+# A clock that reads backwards is a reason to refetch, not a reason to proceed:
+# a future timestamp makes ELAPSED negative, and a negative is always < 45.
+[ "$ELAPSED" -ge 0 ] || {
+  echo "QUOTE_FETCHED_AT is in the future; refetch before broadcasting." >&2
+  exit 1
+}
 [ "$ELAPSED" -lt 45 ] || {
   echo "Quote is $ELAPSED seconds old; refetch before broadcasting." >&2
   exit 1
 }
+
+# Re-read from the objects about to be broadcast, then compare.
+QUOTE_BODY=$(printf '%s' "$QUOTE" | jq -Sc '.quote')
+QUOTE_AMOUNT_IN=$(printf '%s' "$QUOTE" | jq -r '.quote.amountIn')
+QUOTE_SWAP_TO=$(printf '%s' "$SWAP_RESPONSE" | jq -r '.swap.to')
+QUOTE_SWAP_DATA=$(printf '%s' "$SWAP_RESPONSE" | jq -r '.swap.data')
+QUOTE_SWAP_VALUE=$(printf '%s' "$SWAP_RESPONSE" | jq -r '.swap.value // "0x0"')
+assert_quote_terms_unchanged || exit 1
+
+# cast send --value takes decimal; the API returns hex. The value is passed as
+# argv, never interpolated into the program text.
+hex_to_dec() {
+  [[ "$1" =~ ^0[xX][0-9a-fA-F]{1,64}$ ]] || { echo "ERROR: not a 0x hex value: $1" >&2; return 1; }
+  local out
+  out=$(python3 -c 'import sys; print(int(sys.argv[1], 16))' "$1") || {
+    echo "ERROR: hex_to_dec could not run python3 for '$1'" >&2; return 1
+  }
+  [[ "$out" =~ ^[0-9]{1,78}$ ]] || { echo "ERROR: hex_to_dec produced '$out'" >&2; return 1; }
+  printf '%s\n' "$out"
+}
+
+SWAP_VALUE_DEC=$(hex_to_dec "$QUOTE_SWAP_VALUE") || exit 1
+
+SWAP_TX=$(cast send "$QUOTE_SWAP_TO" "$QUOTE_SWAP_DATA" \
+  --value "$SWAP_VALUE_DEC" \
+  --account "$CAST_ACCOUNT" --password "$CAST_PASSWORD" \
+  --rpc-url "${X_LAYER_RPC_URL:-https://rpc.xlayer.tech}" \
+  --json | jq -r '.transactionHash')
+
+SWAP_STATUS=$(cast receipt "$SWAP_TX" \
+  --rpc-url "${X_LAYER_RPC_URL:-https://rpc.xlayer.tech}" --json | jq -r '.status')
+[ "$SWAP_STATUS" = "0x1" ] || { echo "ERROR: X Layer swap reverted: $SWAP_TX" >&2; exit 1; }
+echo "X Layer swap confirmed: $SWAP_TX"
 ```
 
 ## Phase B: Cross-Chain Bridge into X Layer
@@ -178,7 +536,9 @@ set -euo pipefail
 # stablecoin path (USDC -> USDT0, USDG -> USDT0, etc.). For different
 # decimals or non-stable source tokens, fetch a price quote first and
 # use the input-amount it returns to gate this check.
-SOURCE_REQUIRED_BASE_UNITS=$(python3 -c "print(($X402_AMOUNT * 1005) // 1000)")
+# Values are passed as argv, never interpolated into the program text.
+[[ "$X402_AMOUNT" =~ ^[0-9]{1,78}$ ]] || { echo "bad amount" >&2; exit 1; }
+SOURCE_REQUIRED_BASE_UNITS=$(python3 -c 'import sys; print((int(sys.argv[1]) * 1005) // 1000)' "$X402_AMOUNT")
 
 SOURCE_BALANCE=$(cast call "$SOURCE_TOKEN_ADDRESS" \
   "balanceOf(address)(uint256)" "$WALLET_ADDRESS" \
@@ -186,7 +546,9 @@ SOURCE_BALANCE=$(cast call "$SOURCE_TOKEN_ADDRESS" \
 
 # Strip cast's "(uint256)" suffix if present and compare via python (uint256-safe).
 SOURCE_BALANCE_RAW=$(echo "$SOURCE_BALANCE" | awk '{print $1}')
-if ! python3 -c "import sys; sys.exit(0 if int('$SOURCE_BALANCE_RAW') >= int('$SOURCE_REQUIRED_BASE_UNITS') else 1)"; then
+[[ "$SOURCE_BALANCE_RAW" =~ ^[0-9]{1,78}$ ]] || { echo "ERROR: balanceOf returned a non-integer: $SOURCE_BALANCE_RAW" >&2; exit 1; }
+if ! python3 -c 'import sys; sys.exit(0 if int(sys.argv[1]) >= int(sys.argv[2]) else 1)' \
+  "$SOURCE_BALANCE_RAW" "$SOURCE_REQUIRED_BASE_UNITS"; then
   echo "ERROR: source-chain shortfall on $SOURCE_CHAIN_NAME." >&2
   echo "  needed (base units): $SOURCE_REQUIRED_BASE_UNITS" >&2
   echo "  have   (base units): $SOURCE_BALANCE_RAW"          >&2
@@ -219,8 +581,10 @@ top up to $5 to amortize source chain gas.
 ```bash
 set -euo pipefail
 
-# Apply 0.5% buffer (uint256-safe integer math via python)
-X402_AMOUNT_WITH_BUFFER=$(python3 -c "print(($X402_AMOUNT * 1005) // 1000)")
+# Apply 0.5% buffer (uint256-safe integer math via python).
+# The amount is passed as argv, never interpolated into the program text.
+[[ "$X402_AMOUNT" =~ ^[0-9]{1,78}$ ]] || { echo "bad amount" >&2; exit 1; }
+X402_AMOUNT_WITH_BUFFER=$(python3 -c 'import sys; print((int(sys.argv[1]) * 1005) // 1000)' "$X402_AMOUNT")
 [[ "$X402_AMOUNT_WITH_BUFFER" =~ ^[0-9]+$ ]] || { echo "buffer math failed" >&2; exit 1; }
 
 QUOTE_FETCHED_AT=$(date +%s)
@@ -234,11 +598,11 @@ QUOTE_FETCHED_AT=$(date +%s)
 # exit would terminate the script before we read $? into QUOTE_HTTP_STATUS,
 # making the deferred-bridge branch unreachable on the exact failure
 # path it is designed to handle. We capture status with `-w` instead.
-QUOTE_BODY_FILE=$(mktemp)
-trap 'rm -f "$QUOTE_BODY_FILE"' EXIT
+QUOTE_RESPONSE_FILE=$(mktemp)
+trap 'rm -f "$QUOTE_RESPONSE_FILE"' EXIT
 
 QUOTE_HTTP_STATUS=$(curl -sS -X POST https://trade-api.gateway.uniswap.org/v1/quote \
-  -o "$QUOTE_BODY_FILE" \
+  -o "$QUOTE_RESPONSE_FILE" \
   -w '%{http_code}' \
   -H "Content-Type: application/json" \
   -H "x-api-key: $UNISWAP_API_KEY" \
@@ -268,8 +632,8 @@ QUOTE_HTTP_STATUS=$(curl -sS -X POST https://trade-api.gateway.uniswap.org/v1/qu
   exit 1
 }
 
-QUOTE=$(cat "$QUOTE_BODY_FILE")
-QUOTE_ERROR_CODE=$(echo "$QUOTE" | jq -r '.errorCode // empty' 2>/dev/null || echo "")
+QUOTE=$(cat "$QUOTE_RESPONSE_FILE")
+QUOTE_ERROR_CODE=$(printf '%s' "$QUOTE" | jq -r '.errorCode // empty' 2>/dev/null || echo "")
 ```
 
 Branch on the result:
@@ -317,27 +681,105 @@ quote response contains `permitData` (sign with EIP-712), the `/swap`
 endpoint returns the calldata to broadcast on the source chain, and
 Across handles the X Layer arrival.
 
-Before broadcasting via `/swap`, gate on quote freshness:
+Call `/swap`, store the response as `SWAP_RESPONSE`, then extract and validate
+the transaction fields, so the summary you show the user names the contract the
+transaction will call:
 
 ```bash
 set -euo pipefail
 
+SWAP_TO=$(printf '%s' "$SWAP_RESPONSE" | jq -r '.swap.to')
+SWAP_DATA=$(printf '%s' "$SWAP_RESPONSE" | jq -r '.swap.data')
+SWAP_VALUE=$(printf '%s' "$SWAP_RESPONSE" | jq -r '.swap.value // "0x0"')
+
+[[ "$SWAP_TO" =~ ^0x[a-fA-F0-9]{40}$ ]] || {
+  echo "ERROR: swap.to is not an address: $SWAP_TO" >&2; exit 1
+}
+[[ "$SWAP_DATA" =~ ^0x[a-fA-F0-9]{8,}$ ]] || {
+  echo "ERROR: swap.data is empty or malformed: $SWAP_DATA" >&2; exit 1
+}
+[[ "$SWAP_VALUE" =~ ^0[xX][0-9a-fA-F]{1,64}$ ]] || {
+  echo "ERROR: swap.value is not a 0x hex value: $SWAP_VALUE" >&2; exit 1
+}
+```
+
+Confirm the bridge with the user, showing `$SWAP_TO` as the contract this
+transaction will call. On their yes, run the block below. It re-derives every
+recorded value from `$QUOTE` and `$SWAP_RESPONSE`:
+
+```bash
+set -euo pipefail
+
+declare -F bind_approved_quote >/dev/null || { echo "ERROR: bind_approved_quote is not defined; paste the helper block above into this block first." >&2; exit 1; }
+
+QUOTE_BODY=$(printf '%s' "$QUOTE" | jq -Sc '.quote')
+QUOTE_AMOUNT_IN=$(printf '%s' "$QUOTE" | jq -r '.quote.amountIn')
+QUOTE_SWAP_TO=$(printf '%s' "$SWAP_RESPONSE" | jq -r '.swap.to')
+QUOTE_SWAP_DATA=$(printf '%s' "$SWAP_RESPONSE" | jq -r '.swap.data')
+QUOTE_SWAP_VALUE=$(printf '%s' "$SWAP_RESPONSE" | jq -r '.swap.value // "0x0"')
+bind_approved_quote
+```
+
+Gate on quote freshness and on the approved terms, then broadcast in the same
+block. `cast send` takes every argument from the values the gate just compared;
+reading `.swap.to` again would hand it a target the gate never saw.
+
+```bash
+set -euo pipefail
+
+declare -F assert_quote_terms_unchanged >/dev/null || { echo "ERROR: assert_quote_terms_unchanged is not defined; paste the helper block above into this block first." >&2; exit 1; }
+
+# The gate must precede the comparison and any `$(( ))`. Bash reads a
+# leading-zero value as octal, and accepts a leading `+` and surrounding
+# whitespace inside `$(( ))`; the ten-digit ceiling keeps a far-future value out.
+[[ "${QUOTE_FETCHED_AT:-}" =~ ^(0|[1-9][0-9]{0,9})$ ]] || { echo "ERROR: QUOTE_FETCHED_AT is not a canonical integer: ${QUOTE_FETCHED_AT:-}" >&2; exit 1; }
 ELAPSED=$(($(date +%s) - QUOTE_FETCHED_AT))
+# A clock that reads backwards is a reason to refetch, not a reason to proceed:
+# a future timestamp makes ELAPSED negative, and a negative is always < 45.
+[ "$ELAPSED" -ge 0 ] || {
+  echo "QUOTE_FETCHED_AT is in the future; refetch before broadcasting." >&2
+  exit 1
+}
 [ "$ELAPSED" -lt 45 ] || {
   echo "Quote is $ELAPSED seconds old; refetch before broadcasting." >&2
   exit 1
 }
-```
 
-When you broadcast the source-chain transaction, capture the resulting
-hash into `SOURCE_TX_HASH` (used in the bridge timeout message below):
+# Re-read from the objects about to be broadcast, then compare.
+QUOTE_BODY=$(printf '%s' "$QUOTE" | jq -Sc '.quote')
+QUOTE_AMOUNT_IN=$(printf '%s' "$QUOTE" | jq -r '.quote.amountIn')
+QUOTE_SWAP_TO=$(printf '%s' "$SWAP_RESPONSE" | jq -r '.swap.to')
+QUOTE_SWAP_DATA=$(printf '%s' "$SWAP_RESPONSE" | jq -r '.swap.data')
+QUOTE_SWAP_VALUE=$(printf '%s' "$SWAP_RESPONSE" | jq -r '.swap.value // "0x0"')
+assert_quote_terms_unchanged || exit 1
 
-```bash
-SOURCE_TX_HASH=$(echo "$SWAP_RESPONSE" | jq -r '.transactionHash // empty')
+# cast send --value takes decimal; the API returns hex. The value is passed as
+# argv, never interpolated into the program text.
+hex_to_dec() {
+  [[ "$1" =~ ^0[xX][0-9a-fA-F]{1,64}$ ]] || { echo "ERROR: not a 0x hex value: $1" >&2; return 1; }
+  local out
+  out=$(python3 -c 'import sys; print(int(sys.argv[1], 16))' "$1") || {
+    echo "ERROR: hex_to_dec could not run python3 for '$1'" >&2; return 1
+  }
+  [[ "$out" =~ ^[0-9]{1,78}$ ]] || { echo "ERROR: hex_to_dec produced '$out'" >&2; return 1; }
+  printf '%s\n' "$out"
+}
+
+BRIDGE_VALUE_DEC=$(hex_to_dec "$QUOTE_SWAP_VALUE") || exit 1
+
+SOURCE_TX_HASH=$(cast send "$QUOTE_SWAP_TO" "$QUOTE_SWAP_DATA" \
+  --value "$BRIDGE_VALUE_DEC" \
+  --account "$CAST_ACCOUNT" --password "$CAST_PASSWORD" \
+  --rpc-url "$SOURCE_CHAIN_RPC_URL" \
+  --json | jq -r '.transactionHash')
+
 [[ "$SOURCE_TX_HASH" =~ ^0x[a-fA-F0-9]{64}$ ]] || {
-  echo "no tx hash from /swap response" >&2
+  echo "ERROR: no tx hash from the source-chain broadcast" >&2
   exit 1
 }
+SOURCE_TX_STATUS=$(cast receipt "$SOURCE_TX_HASH" --rpc-url "$SOURCE_CHAIN_RPC_URL" --json | jq -r '.status')
+[ "$SOURCE_TX_STATUS" = "0x1" ] || { echo "ERROR: bridge tx reverted: $SOURCE_TX_HASH" >&2; exit 1; }
+echo "Bridge submitted: $SOURCE_TX_HASH"
 ```
 
 > **Bridge recipient.** The Trading API delivers funds to the same
@@ -354,6 +796,14 @@ SOURCE_TX_HASH=$(echo "$SWAP_RESPONSE" | jq -r '.transactionHash // empty')
 > `X402_AMOUNT_WITH_BUFFER` (the buffered output amount) from the new
 > quote. Reusing stale values from an earlier attempt will either trip
 > the freshness gate or quote against an outdated buffer.
+>
+> Do not call `bind_approved_quote` again on a retry. The recorded directory
+> holds what the user agreed to, and a retry must be measured against it. Set the
+> `QUOTE_*` variables from the new quote, run `assert_quote_terms_unchanged`
+> before broadcasting, and refuse the retry if it reports a change. A genuinely
+> refreshed quote will report a change, because it carries new calldata. Take the
+> user back through the confirmation gate with the new numbers, call
+> `release_approved_quote`, and bind the new quote.
 
 ## Verify the Destination Balance
 
@@ -372,6 +822,8 @@ does not auto-detect alternate-token arrival on X Layer.
 ```bash
 set -euo pipefail
 
+declare -F uint_lt >/dev/null || { echo "ERROR: uint_lt is not defined; paste the helper block above into this block first." >&2; exit 1; }
+
 # Assert prerequisites are set. SOURCE_TX_HASH must have been captured
 # from the /swap response before entering the polling loop.
 : "${SOURCE_TX_HASH:?missing, capture from /swap response before polling}"
@@ -384,20 +836,21 @@ set -euo pipefail
 RPC_SUCCESS_COUNT=0
 
 for i in {1..20}; do
+  # cast call returns "123456 [1.234e5]"; strip the suffix before the gate reads it.
   XLAYER_BAL=$(cast call "$X402_ASSET" \
     "balanceOf(address)(uint256)" "$WALLET_ADDRESS" \
-    --rpc-url "${X_LAYER_RPC_URL:-https://rpc.xlayer.tech}") || {
+    --rpc-url "${X_LAYER_RPC_URL:-https://rpc.xlayer.tech}" | awk '{print $1}') || {
     echo "RPC failure on attempt $i, retrying..." >&2
     sleep 5
     continue
   }
-  [[ "$XLAYER_BAL" =~ ^[0-9]+$ ]] || {
+  [[ "$XLAYER_BAL" =~ ^[0-9]{1,78}$ ]] || {
     echo "Non-integer balance: $XLAYER_BAL" >&2
     sleep 5
     continue
   }
   RPC_SUCCESS_COUNT=$((RPC_SUCCESS_COUNT + 1))
-  if [ "$XLAYER_BAL" -ge "$X402_AMOUNT" ]; then
+  if ! uint_lt "$XLAYER_BAL" "$X402_AMOUNT"; then
     echo "Funded. Balance: $XLAYER_BAL"
     break
   fi
@@ -417,20 +870,20 @@ done
 # Assert we have a usable balance reading. No `:-0` defaults here, those
 # would defeat `set -u` and silently coerce a missing read into "below
 # target".
-[[ -n "${XLAYER_BAL:-}" && "$XLAYER_BAL" =~ ^[0-9]+$ ]] || {
+[[ -n "${XLAYER_BAL:-}" && "$XLAYER_BAL" =~ ^[0-9]{1,78}$ ]] || {
   echo "ERROR: bridge polling completed without a successful RPC read." >&2
   echo "20 RPC failures or non-integer responses; cannot determine arrival state." >&2
   echo "Source tx: $SOURCE_TX_HASH. Check https://app.across.to/transactions before re-submitting." >&2
   exit 1
 }
 
-[ "$XLAYER_BAL" -ge "$X402_AMOUNT" ] || {
+if uint_lt "$XLAYER_BAL" "$X402_AMOUNT"; then
   echo "Bridge not confirmed after 10 minutes. Wallet still holds $XLAYER_BAL of $X402_ASSET on X Layer (need $X402_AMOUNT)." >&2
   echo "Source tx: $SOURCE_TX_HASH." >&2
   echo "The funds may have arrived at a different token address (rare for current Across paths to X Layer) or the bridge may have failed." >&2
   echo "Verify on-chain via https://app.across.to/transactions and https://www.oklink.com/x-layer/address/$WALLET_ADDRESS before re-submitting." >&2
   exit 1
-}
+fi
 ```
 
 Once funded, return to

@@ -31,8 +31,16 @@ This skill helps you:
   tokens from any EVM chain to the Tempo wallet using the Uniswap Trading API
 - **Handle x402 payments**: Sign EIP-3009 authorizations for x402 protocol
   challenges (separate from the Tempo CLI flow)
-- **Validate inputs**: Reject malicious 402 challenges with shell injection
-  patterns before processing
+- **Validate inputs**: Reject malformed 402 challenges before processing. Every
+  address, amount, bounded integer, and URL is checked against its own class,
+  and a value from the challenge never reaches a context that would evaluate it
+  as an expression
+- **Hold the merchant to the approved terms**: The recipient, amount, token,
+  network, and resource the user approved are recorded at the confirmation
+  gate, keyed to one payment id so a retry still reaches them. Every later read
+  of the challenge is compared against that record. Identical terms proceed on
+  the consent already given; changed terms stop, name each field with its old
+  and new value, and need explicit consent to the change itself
 
 ## When to Use This Skill
 

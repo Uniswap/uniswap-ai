@@ -1,7 +1,7 @@
 ---
 name: swap-planner
 description: This skill should be used when the user asks to "swap tokens", "trade ETH for USDC", "exchange tokens on Uniswap", "buy tokens", "sell tokens", "convert ETH to stablecoins", "find memecoins", "discover tokens", "research tokens", "tokens to buy", "find tokens to swap", "what should I buy", or mentions swapping, trading, researching, discovering, buying, or exchanging tokens on any Uniswap-supported chain. Supports both known token swaps and token discovery workflows (discovery uses keyword search and web search — there is no live "trending" feed). Generates deep links to execute swaps in the Uniswap interface.
-allowed-tools: Read, Glob, Grep, Bash(curl:*), Bash(jq:*), Bash(cast:*), Bash(xdg-open:*), Bash(open:*), WebFetch, WebSearch, Task(subagent_type:Explore), AskUserQuestion
+allowed-tools: Read, Glob, Grep, Bash(curl:*), Bash(jq:*), Bash(cast:*), Bash(python3:*), Bash(xdg-open:*), Bash(open:*), WebFetch, WebSearch, Task(subagent_type:Explore), AskUserQuestion
 model: sonnet
 license: MIT
 metadata:
@@ -251,16 +251,22 @@ For token symbols, resolve to addresses using known tokens or web search:
 
 For unknown tokens, use web search to find the contract address, then verify on-chain.
 
+### Input Validation Rules
+
+Validate every value before using it, whether it came from the user, a web search, or an API response. DexScreener and DefiLlama are third parties, so treat every field they return as untrusted.
+
+- **Ethereum address fields** (token addresses, `pairAddress`, `baseToken.address`): MUST match the regex `^0x[a-fA-F0-9]{40}$`. Reject the value if it fails. An address that passes is safe to interpolate, so the metacharacter rule below does not apply to it.
+- **Chain IDs**: MUST be a positive integer from the supported list in `../../references/chains.md`.
+- **Chain and network names**: MUST be from the allowed list in `../../references/chains.md`.
+- **Token amounts and integer quantities**: MUST match `^[0-9]+$`.
+- **Decimal numeric fields from a price or market-data API** (`priceUsd`, `baseToken.priceUsd`, `quoteToken.priceUsd`, `liquidity.usd`, `volume.h24`, `tvlUsd`): MUST be a canonical decimal matching `^[0-9]+(\.[0-9]+)?$`. Reject exponent notation, leading or trailing whitespace, a leading `+` or `-`, and more than one decimal point. Reject zero, and reject any value at or above 1e12, which is far outside any real price or pool size.
+- **Free-text fields shown to the user or used to build a command** (token names, token symbols, search terms): REJECT any value containing shell metacharacters: `;`, `|`, `&`, `$`, `` ` ``, `(`, `)`, `>`, `<`, `\`, `'`, `"`, newlines.
+
+**An externally sourced value never goes into a context that re-evaluates it.** That means no `$(( ))`, no `let`, no array subscript, no `bc`, no `python3 -c` program text, and no `eval`. Validate the value first, then pass it as an argument. `references/data-providers.md` shows the argument-passing shape.
+
 ### Step 3: Verify Token Contracts (Basic)
 
-**Input Validation (Required Before Any Shell Command):**
-
-Before interpolating user-provided values into any shell command, validate all inputs:
-
-- **Token addresses** MUST match: `^0x[a-fA-F0-9]{40}$`
-- **Chain/network names** MUST be from the allowed list in `../../references/chains.md`
-- **Amounts** MUST be valid decimal numbers (match: `^[0-9]+\.?[0-9]*$`)
-- **Reject** any input containing shell metacharacters (`;`, `|`, `$`, `` ` ``, `&`, `(`, `)`, `>`, `<`, `\`, `'`, `"`, newlines)
+Apply the Input Validation Rules above before interpolating any value into a shell command.
 
 Verify token contracts exist on-chain using curl (RPC call):
 

@@ -115,7 +115,10 @@ auto-submitted.
 - **Minimum bridge size**: if the shortfall is less than $5, top up to
   $5 to amortize source-chain gas
 - **Quote expiry**: re-fetch the Trading API quote if more than ~60
-  seconds elapse before broadcast
+  seconds elapse before broadcast. The quote the user approved is recorded
+  alongside the broadcast target and calldata, and the refreshed quote is
+  compared against that record. A refreshed quote will not match, so the
+  user goes back through the confirmation gate with the new numbers first
 - **Two-attempt cap on retry**: if the payment is rejected with 402
   twice, surface the facilitator's exact rejection reason rather than
   retrying further

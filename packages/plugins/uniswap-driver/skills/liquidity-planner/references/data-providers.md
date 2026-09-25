@@ -157,19 +157,34 @@ If results empty, proceed without APY data.
 
 Use DexScreener prices to calculate range bounds:
 
+Prices come from a third-party API, so treat them as untrusted. Check the shape of each price before it is used, and pass it to `python3` as an argument. Never paste an API value into the program text.
+
 ```bash
+# A price that is not a plain decimal never reaches the interpreter.
+require_decimal() {
+  case "$1" in
+    ''|.|*[!0-9.]*|*.*.*)
+      echo "Rejected non-decimal price from API: $1" >&2
+      return 1 ;;
+  esac
+}
+
 # Get current price ratio
 BASE_PRICE=$(curl -s "..." | jq -r '.pairs[0].baseToken.priceUsd')
 QUOTE_PRICE=$(curl -s "..." | jq -r '.pairs[0].quoteToken.priceUsd')
 
+require_decimal "$BASE_PRICE" || exit 1
+require_decimal "$QUOTE_PRICE" || exit 1
+
 # Calculate ratio and ±20% bounds with python
-python3 -c "
-base, quote = $BASE_PRICE, $QUOTE_PRICE
+python3 -c 'import sys
+base, quote = float(sys.argv[1]), float(sys.argv[2])
+if not (0 < base < 1e12) or not (0 < quote < 1e12):
+    sys.exit("Rejected out-of-range price from API")
 ratio = quote / base
-print(f'Current: {ratio:.2f}')
-print(f'Min (−20%): {ratio * 0.8:.2f}')
-print(f'Max (+20%): {ratio * 1.2:.2f}')
-"
+print(f"Current: {ratio:.2f}")
+print(f"Min (−20%): {ratio * 0.8:.2f}")
+print(f"Max (+20%): {ratio * 1.2:.2f}")' "$BASE_PRICE" "$QUOTE_PRICE"
 ```
 
 ## Example: Complete Pool Research

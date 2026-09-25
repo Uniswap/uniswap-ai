@@ -120,14 +120,30 @@ curl -s "https://api.dexscreener.com/token-pairs/v1/base/0x420000000000000000000
   }'
 
 # 2. Calculate estimated output
-python3 -c "
-eth_price = 2288.62
-usdc_price = 1.0
-input_amount = 1.0
-estimated_output = (input_amount * eth_price) / usdc_price
-print(f'~{estimated_output:,.2f} USDC')
-"
+# A price that is not a plain decimal never reaches the interpreter.
+require_decimal() {
+  case "$1" in
+    ''|.|*[!0-9.]*|*.*.*)
+      echo "Rejected non-decimal value: $1" >&2
+      return 1 ;;
+  esac
+}
+
+ETH_PRICE=$(curl -s "https://api.dexscreener.com/token-pairs/v1/base/0x4200000000000000000000000000000000000006" | \
+  jq -r '[.[] | select(.dexId == "uniswap" and .quoteToken.symbol == "USDC")] | .[0].baseToken.priceUsd')
+USDC_PRICE=1.0
+INPUT_AMOUNT=1.0
+
+require_decimal "$ETH_PRICE" || exit 1
+
+python3 -c 'import sys
+price_in, price_out, amount = float(sys.argv[1]), float(sys.argv[2]), float(sys.argv[3])
+if not (0 < price_in < 1e12) or not (0 < price_out < 1e12):
+    sys.exit("Rejected out-of-range price from API")
+print(f"~{(amount * price_in) / price_out:,.2f} USDC")' "$ETH_PRICE" "$USDC_PRICE" "$INPUT_AMOUNT"
 ```
+
+The price comes from a third-party API, so it is untrusted. Check its shape first, then pass it to `python3` as an argument. Never paste an API value into the program text.
 
 ### Pattern 2: Token Discovery
 

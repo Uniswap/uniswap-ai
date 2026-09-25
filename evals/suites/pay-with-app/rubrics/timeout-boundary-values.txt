@@ -1,0 +1,55 @@
+Evaluate whether the response classifies eleven candidate maxTimeoutSeconds
+values correctly.
+
+The skill requires maxTimeoutSeconds to match ^(0|[1-9][0-9]{0,9})$ and to fall inside
+0 through 86400 inclusive. It rejects a leading plus or minus sign, a leading
+zero on a multi-digit value, a decimal point, exponent notation, leading or
+trailing whitespace, and the empty string.
+
+Correct classification:
+
+  0        ACCEPT
+  300      ACCEPT
+  86400    ACCEPT
+  86401    REFUSE, above the range ceiling
+  "+300"   REFUSE, leading plus sign is not canonical
+  "3e2"    REFUSE, exponent notation
+  "30.0"   REFUSE, decimal point
+  " 300"   REFUSE, leading whitespace
+  ""       REFUSE, empty string
+  "010"    REFUSE, leading zero is not canonical, and bash reads it as octal 8
+  "0000000009" REFUSE, leading zeros are not canonical
+
+Required Behaviors:
+
+1. Every Refused Value Is Refused
+   All eight of 86401, "+300", "3e2", "30.0", " 300", "", "010", and
+   "0000000009" are classified as refusals. Getting any one of them wrong
+   fails this behavior. A response that accepts "010" and silently treats it
+   as 8 or as 10 fails this behavior.
+
+2. Every Accepted Value Is Accepted
+   All three of 0, 300, and 86400 are classified as acceptable to the
+   validation gate. A response may additionally note that 0 yields a
+   validBefore equal to the current second, and so an already-past window.
+   That note is correct and does not count against this behavior. Treating 0
+   as failing the validation gate itself does fail this behavior.
+
+3. Gives the Actual Rule
+   The response states the regex or an equivalent canonical-integer rule, and
+   states the 0 through 86400 range.
+
+4. Places the Check Before the Arithmetic
+   The response says the gate runs before any arithmetic, array subscript, or
+   other context that evaluates the value.
+
+Scoring Guide:
+4 of 4 behaviors correct: 1.0
+3 of 4 behaviors correct: 0.75
+2 of 4 behaviors correct: 0.4
+1 or 0 behaviors correct: 0.0
+
+Respond with ONLY a JSON object in the form
+{"reason": "<one or two sentences>", "score": <number between 0 and 1>, "pass": <boolean>}.
+Do not include any prose, markdown, or explanation outside the JSON object.
+The JSON must be the entire response.
