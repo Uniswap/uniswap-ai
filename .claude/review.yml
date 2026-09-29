@@ -54,7 +54,7 @@ skip:
 # repo-specific context, not from a bigger model. Raise to opus here if
 # review depth ever needs it — the fallout is cost, not correctness.
 model:
-  default: claude-sonnet-4-5-20250929
+  default: claude-sonnet-5
 
 # ─── Limits ────────────────────────────────────────────────────────────
 # trivial_threshold: 0 — the outgoing workflow had no size floor, so a

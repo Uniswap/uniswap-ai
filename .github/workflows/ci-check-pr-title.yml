@@ -6,10 +6,6 @@ on: # zizmor: ignore[dangerous-triggers]
       - opened
       - edited
       - synchronize
-  workflow_run:
-    workflows: ['Claude: Generate PR Title & Description']
-    types: [completed]
-
 permissions: {}
 
 concurrency:
@@ -18,7 +14,6 @@ concurrency:
 
 jobs:
   check-pr-title:
-    if: ${{ github.event_name == 'pull_request_target' || github.event.workflow_run.conclusion == 'success' }}
     name: 🔡 Check PR Title
     runs-on: ubuntu-latest
     permissions:
