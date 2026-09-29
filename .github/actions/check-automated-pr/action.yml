@@ -39,14 +39,8 @@ runs:
         # Branch prefix checks (CI-created branches)
         # ===========================================
 
-        # Graphite merge queue branches
-        if [[ "$BRANCH_NAME" == gtmq* ]]; then
-          IS_AUTOMATED="true"
-          SKIP_REASON="Graphite merge queue branch (gtmq* prefix)"
-          CATEGORY="merge-queue"
-
         # GitHub merge queue branches
-        elif [[ "$BRANCH_NAME" == gh-readonly-queue/* ]]; then
+        if [[ "$BRANCH_NAME" == gh-readonly-queue/* ]]; then
           IS_AUTOMATED="true"
           SKIP_REASON="GitHub merge queue branch (gh-readonly-queue/* prefix)"
           CATEGORY="merge-queue"
