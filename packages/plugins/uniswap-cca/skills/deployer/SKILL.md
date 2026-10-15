@@ -261,6 +261,7 @@ cast abi-encode "initializeDistribution(address,uint256,bytes,bytes32)" \
 pragma solidity ^0.8.24;
 
 import "forge-std/Script.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 interface ICCAFactory {
     function initializeDistribution(
