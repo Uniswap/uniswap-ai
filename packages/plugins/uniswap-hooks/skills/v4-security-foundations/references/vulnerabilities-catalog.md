@@ -131,7 +131,7 @@ function afterSwap(...) external returns (bytes4, int128) {
 **Mitigation**:
 
 ```solidity
-import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 contract SecureHook is BaseHook, ReentrancyGuard {
     function afterSwap(...) external nonReentrant returns (bytes4, int128) {
