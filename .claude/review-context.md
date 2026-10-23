@@ -34,13 +34,13 @@ Nx monorepo, Bun `1.4.4`, Node `>=22`, TypeScript. Root package is
 `packages/sdk/` **does not exist yet**; it's a reserved slot, not a
 broken config entry.
 
-Six plugins, fifteen skills:
+Plugins and their skills:
 
 | Plugin                  | Skills                                                                                           | Notes                                                                |
 | ----------------------- | ------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------- |
 | `uniswap-trading`       | `swap-integration`, `lp-integration`, `pay-with-any-token`, `pay-with-app`, `v4-sdk-integration` | largest; has `agents/swap-integration-expert.md`                     |
 | `uniswap-trading-tools` | `copy-trade`, `dca-bot`, `index-bot`                                                             | plugin-level refs: execution model, strategy state                   |
-| `uniswap-hooks`         | `v4-hook-generator`, `v4-security-foundations`                                                   | emits Solidity; security skill carries a vulnerability catalog       |
+| `uniswap-hooks`         | `aggregator-hook-creator`, `v4-hook-generator`, `v4-security-foundations`                        | emits Solidity; security skill carries a vulnerability catalog       |
 | `uniswap-cca`           | `configurator`, `deployer`                                                                       | Continuous Clearing Auction; only plugin with a Python `mcp-server/` |
 | `uniswap-driver`        | `swap-planner`, `liquidity-planner`                                                              | planning, not execution                                              |
 | `uniswap-viem`          | `viem-integration`                                                                               | has `agents/viem-integration-expert.md`                              |

@@ -159,3 +159,7 @@ Anthropic
 Promptfoo
 Robinhood
 OKX
+
+# Aggregator hooks
+Guidestar
+swapper

@@ -15,10 +15,11 @@ AI-powered, security-first assistance for creating Uniswap v4 hooks.
 
 ## Skills
 
-| Skill                                                        | Description                                               | Invocation                 |
-| ------------------------------------------------------------ | --------------------------------------------------------- | -------------------------- |
-| [v4 Security Foundations](../skills/v4-security-foundations) | Security-first guide for v4 hook development              | `/v4-security-foundations` |
-| [v4 Hook Generator](../skills/v4-hook-generator)             | Generate v4 hook contracts via OpenZeppelin Contracts MCP | `/v4-hook-generator`       |
+| Skill                                                        | Description                                                                | Invocation                 |
+| ------------------------------------------------------------ | -------------------------------------------------------------------------- | -------------------------- |
+| [v4 Security Foundations](../skills/v4-security-foundations) | Security-first guide for v4 hook development                               | `/v4-security-foundations` |
+| [v4 Hook Generator](../skills/v4-hook-generator)             | Generate v4 hook contracts via OpenZeppelin Contracts MCP                  | `/v4-hook-generator`       |
+| [Aggregator Hook Creator](../skills/aggregator-hook-creator) | Work with aggregator hooks that execute swaps on external liquidity venues | `/aggregator-hook-creator` |
 
 ## Hook Callbacks
 
