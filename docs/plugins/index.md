@@ -11,7 +11,7 @@ Plugins are the primary distribution mechanism for Uniswap AI tools. Each plugin
 
 | Plugin                                                     | Description                                              | Skills                                                                                  |
 | ---------------------------------------------------------- | -------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| [uniswap-hooks](./uniswap-hooks)                           | Security-first Uniswap v4 hook development               | v4-security-foundations                                                                 |
+| [uniswap-hooks](./uniswap-hooks)                           | Security-first Uniswap v4 hook development               | v4-security-foundations, v4-hook-generator, aggregator-hook-creator                     |
 | [uniswap-cca](./uniswap-cca)                               | CCA auction configuration and deployment                 | configurator, deployer                                                                  |
 | [uniswap-trading](./uniswap-trading)                       | Uniswap swap integration                                 | swap-integration, pay-with-any-token                                                    |
 | [uniswap-viem](./uniswap-viem)                             | EVM blockchain integration with viem/wagmi               | viem-integration                                                                        |
@@ -52,14 +52,18 @@ The `plugin.json` file defines the plugin:
 ```json
 {
   "name": "uniswap-hooks",
-  "version": "1.3.0",
-  "description": "AI-powered assistance for creating Uniswap v4 hooks",
+  "version": "1.7.0",
+  "description": "AI-powered, security-first assistance for creating Uniswap v4 hooks, including aggregator hooks, custom fee hooks and more",
   "author": {
     "name": "Uniswap Labs",
     "email": "ai-services@uniswap.org"
   },
   "license": "MIT",
-  "skills": ["./skills/v4-security-foundations"]
+  "skills": [
+    "./skills/v4-security-foundations",
+    "./skills/v4-hook-generator",
+    "./skills/aggregator-hook-creator"
+  ]
 }
 ```
 

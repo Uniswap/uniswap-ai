@@ -11,10 +11,11 @@ Skills are AI-powered capabilities that help you build on Uniswap. Each skill is
 
 ### uniswap-hooks Plugin
 
-| Skill                                                | Description                                                      | Invocation                 |
-| ---------------------------------------------------- | ---------------------------------------------------------------- | -------------------------- |
-| [v4 Security Foundations](./v4-security-foundations) | Security-first guide for v4 hook development                     | `/v4-security-foundations` |
-| [v4 Hook Generator](./v4-hook-generator)             | Generate v4 hook contracts via OpenZeppelin Contracts Wizard MCP | `/v4-hook-generator`       |
+| Skill                                                | Description                                                                | Invocation                 |
+| ---------------------------------------------------- | -------------------------------------------------------------------------- | -------------------------- |
+| [v4 Security Foundations](./v4-security-foundations) | Security-first guide for v4 hook development                               | `/v4-security-foundations` |
+| [v4 Hook Generator](./v4-hook-generator)             | Generate v4 hook contracts via OpenZeppelin Contracts Wizard MCP           | `/v4-hook-generator`       |
+| [Aggregator Hook Creator](./aggregator-hook-creator) | Work with aggregator hooks that execute swaps on external liquidity venues | `/aggregator-hook-creator` |
 
 ### uniswap-cca Plugin
 

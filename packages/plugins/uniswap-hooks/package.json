@@ -1,8 +1,8 @@
 {
   "name": "@uniswap/uniswap-hooks",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "private": true,
-  "description": "AI-powered assistance for creating Uniswap v4 hooks - includes custom fee hooks and more",
+  "description": "AI-powered assistance for creating Uniswap v4 hooks - includes aggregator hooks, custom fee hooks, and more",
   "author": "Uniswap Labs <ai-services@uniswap.org>",
   "license": "MIT",
   "repository": {

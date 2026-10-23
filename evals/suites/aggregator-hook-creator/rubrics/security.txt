@@ -1,0 +1,27 @@
+# Aggregator Hook Security Rubric
+
+Evaluate whether the response reflects how Uniswap's aggregator hooks handle slippage, callbacks, and external calls.
+
+## For a slippage question (`min_dy = 0`)
+
+1. Says `min_dy = 0` is acceptable only because the router (for example the Universal Router) enforces the user's minimum output, and the hook has no slippage check of its own
+2. States the condition: every path to the hook must carry a router-enforced limit
+3. Says the hook should instead measure actual output by balance difference, validate the venue at initialization, and not trust unchecked return values
+4. Does not recommend a TWAP or an on-chain price comparison inside the hook as the fix
+
+## For a callback question
+
+1. Names the risks: a fake pool or arbitrary caller invoking the callback, a callback outside an active swap, and reentrancy
+2. Describes the protections: check `msg.sender` equals the expected and registered pool, use a transient-storage expected-pool slot, reject callbacks outside an active swap, and use a transient reentrancy guard
+
+## Scoring Guide
+
+- All required points for the question asked: 1.0
+- One point missing: 0.8
+- Two points missing: 0.6
+- Three or more missing, or recommends a TWAP or on-chain comparison in the hook: 0.3
+- Incorrectly calls `min_dy = 0` safe without any router-limit condition: 0.0
+
+## Instructions
+
+Score the response and give a brief justification.
