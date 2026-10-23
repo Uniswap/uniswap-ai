@@ -28,7 +28,7 @@ test layer for skills is the **evals** system, described below.
 
 ## Structure
 
-Nx monorepo, Bun `1.3.13`, Node `>=22`, TypeScript. Root package is
+Nx monorepo, Bun `1.4.4`, Node `>=22`, TypeScript. Root package is
 `@uniswap/ai-source` (private). Workspace globs are
 `packages/*`, `packages/plugins/*`, `packages/sdk/*` — note
 `packages/sdk/` **does not exist yet**; it's a reserved slot, not a
