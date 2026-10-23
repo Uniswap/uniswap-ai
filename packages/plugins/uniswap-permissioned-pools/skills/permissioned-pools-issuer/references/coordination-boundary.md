@@ -58,7 +58,7 @@ requested through a first-party form in the developer portal.
 | Purpose                                                                    | Where                                                         |
 | -------------------------------------------------------------------------- | ------------------------------------------------------------- |
 | **Request routing allowlisting** — a deployed, verified permissioned token | <https://developers.uniswap.org/permissioned-pools-allowlist> |
-| Register interest — still exploring, want the team to reach out            | <https://developers.uniswap.org/permissioned-pools>           |
+| Register interest — still exploring, want the team to reach out            | <https://developers.uniswap.org/uniswap-labs-hooks>           |
 
 Both are pages in the Uniswap developer portal, not third-party forms. The first is the one the
 deploy guide's Step 7 links; the second exists for teams who have not deployed yet.

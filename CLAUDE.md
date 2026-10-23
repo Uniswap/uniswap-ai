@@ -33,7 +33,7 @@ Before committing or declaring a change complete, Claude Code MUST:
 2. **Lint the code**: Run `bunx nx affected --target=lint --base=HEAD~1` to check for linting errors
 3. **Typecheck the code**: Run `bunx nx affected --target=typecheck --base=HEAD~1` to typecheck affected projects
 4. **Lint markdown files**: Run `bunx markdownlint-cli2 --fix "**/*.md"`
-5. **Lint documentation prose**: Run `bun run docs:lint` to check documentation quality with Vale
+5. **Lint documentation prose**: Run `bun run docs:lint` to check documentation quality with Vale. This check blocks CI. Vale flags unknown words, repeated words, and the terms listed in `reject.txt`; to accept a term it does not know, add it to `.github/vale/styles/config/vocabularies/Uniswap/accept.txt`
 
 ## Package Scopes
 
@@ -208,7 +208,7 @@ CI installs, and Vercel docs builds all run `bun install --frozen-lockfile`.
 ```bash
 # macOS / Linux
 curl -fsSL https://bun.sh/install | bash
-bun --version  # Should match the version pinned in package.json `packageManager`
+bun --version  # Should be 1.4.4 or later
 ```
 
 ### Supply-chain defense

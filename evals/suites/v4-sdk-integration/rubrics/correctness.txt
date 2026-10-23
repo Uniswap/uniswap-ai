@@ -16,10 +16,16 @@ Score based on how many of these are correctly implemented:
    - Encodes plan and passes to RoutePlanner with CommandType.V4_SWAP
    - Calls Universal Router execute() with the encoded commands and inputs
 
-3. **Quoter callStatic Usage (Not Onchain)**
-   - Uses Quoter contract with callStatic (not a live onchain transaction)
+3. **Quoter Simulated via eth_call (Not Sent as a Transaction)**
+   - Simulates the Quoter rather than sending it, using whichever spelling matches the
+     library in use: viem `simulateContract`, ethers v6 `.staticCall`, or ethers v5
+     `callStatic`. Do NOT require one specific spelling, and do NOT penalize a correct
+     spelling for the library the answer actually uses.
    - Calls appropriate quote method (quoteExactInputSingle, quoteExactInput, etc.)
    - Does NOT attempt to call Quoter as a state-mutating transaction
+   - This element is NOT satisfied if `callStatic` is used with ethers v6, where it was removed
+   - This element is NOT satisfied if the two return values are conflated: `quoteExactInputSingle`
+     returns `(amountOut, gasEstimate)`, and only `amountOut` may feed `amountOutMinimum`
 
 4. **Permit2 Two-Step Approval for ERC20**
    - Approves the token to the Permit2 contract address (not directly to router)

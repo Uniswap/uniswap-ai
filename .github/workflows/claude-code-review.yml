@@ -114,10 +114,9 @@ env:
   # downloads.claude.ai's per-version manifest and hard-fails on
   # mismatch, so integrity is already covered; this is about determinism.
   CLAUDE_CODE_VERSION: ${{ vars.CLAUDE_CODE_VERSION || '2.1.212' }}
-  # Matches `packageManager` in the root package.json. vars.BUN_VERSION
-  # is documented in .github/workflows/CLAUDE.md but is not currently set
-  # on the repo, so the fallback is load-bearing.
-  BUN_VERSION: ${{ vars.BUN_VERSION || '1.3.13' }}
+  # vars.BUN_VERSION is documented in .github/workflows/CLAUDE.md but is not
+  # currently set on the repo, so the fallback is load-bearing.
+  BUN_VERSION: ${{ vars.BUN_VERSION || '1.4.4' }}
 
 jobs:
   triage:

@@ -66,4 +66,4 @@ Parameters are collected in four batches of at most four questions each, validat
 
 - [Permissioned Pools Issuer](/skills/permissioned-pools-issuer) - Contract mechanics behind these parameters
 - [Uniswap Permissioned Pools](/plugins/uniswap-permissioned-pools) - Parent plugin
-- [Deploy a permissioned pool](https://developers.uniswap.org/docs/protocols/v4/permissioned-pools/deploy-a-permissioned-pool) - Step-by-step protocol documentation
+- [Deploy a permissioned pool](https://developers.uniswap.org/docs/protocols/uniswap-labs-hooks/permissioned-pools/deploy-a-permissioned-pool) - Step-by-step protocol documentation

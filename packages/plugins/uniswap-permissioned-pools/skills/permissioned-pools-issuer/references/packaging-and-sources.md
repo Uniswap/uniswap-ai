@@ -228,10 +228,10 @@ explorer.
 
 Published issuer documentation — four pages, in the order the documentation lists them:
 
-- <https://developers.uniswap.org/docs/protocols/v4/permissioned-pools/overview>
-- <https://developers.uniswap.org/docs/protocols/v4/permissioned-pools/architecture>
-- <https://developers.uniswap.org/docs/protocols/v4/permissioned-pools/deploy-a-permissioned-pool>
-- <https://developers.uniswap.org/docs/protocols/v4/permissioned-pools/provide-liquidity>
+- <https://developers.uniswap.org/docs/protocols/uniswap-labs-hooks/permissioned-pools/overview>
+- <https://developers.uniswap.org/docs/protocols/uniswap-labs-hooks/permissioned-pools/architecture>
+- <https://developers.uniswap.org/docs/protocols/uniswap-labs-hooks/permissioned-pools/deploy-a-permissioned-pool>
+- <https://developers.uniswap.org/docs/protocols/uniswap-labs-hooks/permissioned-pools/provide-liquidity>
 
 Contract sources:
 
@@ -240,6 +240,12 @@ Contract sources:
 - `Uniswap/v4-hooks-public` at `7da5210f2c81a700820a6b4f585264233d91f349` —
   <https://github.com/Uniswap/v4-hooks-public>
 - `Uniswap/mixed-quoter` — <https://github.com/Uniswap/mixed-quoter>
+
+Published reports on these contracts:
+
+- `Uniswap/v4-periphery`, `audits/permissionedPools/` — Cantina, OpenZeppelin, and an OpenZeppelin
+  fix review, added 2026-08-20 —
+  <https://github.com/Uniswap/v4-periphery/tree/main/audits/permissionedPools>
 
 Deployment records:
 
@@ -252,7 +258,8 @@ This skill:
 
 That list is exhaustive on purpose. Resolve facts about these contracts from the two pinned
 repositories, facts about the intended setup sequence from the four documentation pages, and
-addresses from the deploy guide's table plus `Uniswap/contracts`. Aggregators, token lists,
+addresses from the deploy guide's table plus `Uniswap/contracts`. What was reviewed, in what scope,
+and at which commit comes from the reports themselves. Aggregators, token lists,
 third-party analytics, and explorer search results are not sources for any of it — an explorer is
 for confirming an address you already resolved.
 

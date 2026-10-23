@@ -27,7 +27,7 @@ Core CI validation workflow that runs on all PRs:
 - Validates `bun.lock` is in sync via `bun install --frozen-lockfile`
 - Builds affected packages with Nx
 - Runs linting and formatting checks
-- Lints documentation prose with Vale (non-blocking)
+- Lints documentation prose in `docs/` with Vale
 - Executes test suites with coverage
 - Validates plugin configurations
 - Validates skills (frontmatter, consistency with plugin.json)
@@ -325,12 +325,12 @@ environment before its first publish.
 | --------------------- | -------------------------------------------------------------- |
 | `NODE_VERSION`        | Node.js version for CI (22.x)                                  |
 | `NPM_VERSION`         | npm version for the publish job (11.7.0+, OIDC support)        |
-| `BUN_VERSION`         | Bun version for CI (defaults to 1.3.13)                        |
+| `BUN_VERSION`         | Bun version for CI (defaults to 1.4.4)                         |
 | `REVIEW_CLI_VERSION`  | `@uniswap/review-cli` pin for Code Review (defaults to 1.10.6) |
 | `CLAUDE_CODE_VERSION` | Claude Code binary pin for Code Review (defaults to 2.1.212)   |
 
 Only `NODE_VERSION` and `NPM_VERSION` are actually **set** on the repo today
-(`22.22.2` and `11.7.0`). The other three fall through to the in-file
+(`22.23.4` and `11.7.0`). The other three fall through to the in-file
 defaults, which are therefore load-bearing rather than decorative. Setting
 `REVIEW_CLI_VERSION` is the way to roll the reviewer forward without a
 commit.
@@ -338,7 +338,7 @@ commit.
 `NODE_VERSION` must stay at or above the floor promptfoo declares in its
 `engines` field (`^20.20.0 || >=22.22.0`). It sat at `22.21.1` for a stretch, one
 patch under the floor, which aborted every eval suite at startup while the Evals
-workflow still reported success. It reads `22.22.2` as of 2026-07-31. Raising
+workflow still reported success. It reads `22.23.4` as of 2026-10-23. Raising
 this variable above the floor keeps all jobs compatible with promptfoo's runtime
 requirements. The preflight step below fails loudly on any future drift.
 

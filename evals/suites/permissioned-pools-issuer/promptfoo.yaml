@@ -307,3 +307,40 @@ tests:
 
       - type: icontains
         value: 'DISCLAIMER.md'
+
+  # Test 14: Security due diligence — a wrong "never audited" conclusion, reached
+  # by checking the audits table of the repository that holds the hook.
+  #
+  # The deterministic assertions are identifiers a correct answer has to emit to
+  # answer "where is it and who wrote it": the directory path and the two firms.
+  # They are not stances the answer must take, so they are safe under the
+  # assertion design rule above. Everything judgment-shaped is in the rubric:
+  # correcting the conclusion, explaining the two-repository split, declining to
+  # assert a scope it cannot source, and naming the issuer's own checker as
+  # uncovered. The rubric penalizes invented findings, severities and report dates,
+  # because the reference material carries the directory's publication date and
+  # nothing about contents.
+  - vars:
+      case_content: file://cases/audit-status-due-diligence.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/audit-status.txt
+        threshold: 0.85
+
+      # icontains-any, not contains: the directory names the location, but its
+      # casing is not under test, and a correct answer may split the path ("the
+      # permissionedPools directory under audits/"). Both forms are the same
+      # identifier, so accepting either cannot pass a wrong answer.
+      - type: icontains-any
+        value:
+          - 'audits/permissionedPools'
+          - 'permissionedPools'
+      - type: icontains
+        value: 'Cantina'
+      - type: icontains
+        value: 'OpenZeppelin'
+      - type: icontains-any
+        value:
+          - 'allowlist checker'
+          - 'allowListChecker'
+          - 'BaseAllowlistChecker'

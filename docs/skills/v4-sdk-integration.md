@@ -24,7 +24,7 @@ Help me build a swap using the Uniswap v4 SDK
 This skill helps you:
 
 - **Execute swaps with V4Planner**: Construct single-hop and multi-hop swaps using the V4Planner and RoutePlanner pattern, executed via the Universal Router
-- **Quote prices off-chain**: Call the Quoter using `callStatic` for exact-input and exact-output quotes without on-chain state changes
+- **Quote prices off-chain**: Simulate the Quoter through `eth_call` for exact-input and exact-output quotes without on-chain state changes
 - **Read pool state**: Fetch slot0, liquidity, and pool IDs from StateView using `Pool.getPoolId()`
 - **Manage LP positions**: Add, remove, collect fees, and create positions using `V4PositionManager.multicall()`
 
@@ -45,7 +45,7 @@ This skill helps you:
 ## Key Topics Covered
 
 - **V4Planner pattern**: `Actions.SWAP_EXACT_IN_SINGLE` / `SWAP_EXACT_IN` actions, `SETTLE_ALL` / `TAKE_ALL` settlement, and encoding via `RoutePlanner` with `CommandType.V4_SWAP`
-- **Quoter callStatic**: Off-chain price reads using `quoteExactInputSingle`, `quoteExactInput`, `quoteExactOutputSingle`, and `quoteExactOutput` — never called on-chain
+- **Quoter simulation**: Off-chain price reads using `quoteExactInputSingle`, `quoteExactInput`, `quoteExactOutputSingle`, and `quoteExactOutput` — the Quoter is not `view`, so it is simulated via `eth_call` (viem `simulateContract`, ethers v6 `.staticCall`, ethers v5 `callStatic`) and never sent as a transaction
 - **StateView**: `Pool.getPoolId()` for pool ID computation; `Promise.all` batching for slot0 and getLiquidity reads
 - **PositionManager multicall**: Single transaction for add/remove/collect/create operations; always includes `slippageTolerance` and `deadline`
 - **Permit2 two-step approval**: `token.approve(Permit2Address)` followed by `permit2.approve(token, universalRouter, amount, expiry)` — required for all ERC-20 tokens
