@@ -208,7 +208,7 @@ CI installs, and Vercel docs builds all run `bun install --frozen-lockfile`.
 ```bash
 # macOS / Linux
 curl -fsSL https://bun.sh/install | bash
-bun --version  # Should match the version pinned in package.json `packageManager`
+bun --version  # Should be 1.4.4 or later
 ```
 
 ### Supply-chain defense
