@@ -61,7 +61,7 @@ Facts verified in [`BaseAggregatorHook.sol`](https://github.com/Uniswap/v4-hooks
 
 ## Venues Uniswap has implemented
 
-See [implementations.md](references/implementations.md) for the per-venue table, deployment model (singleton vs one hook per venue pool), exact-output and native-ETH support, and the first-byte protocol ID scheme. Short version: Curve StableSwap and StableSwap-NG, Fluid DEX T1 and Lite, Tempo's stablecoin DEX, Uniswap V2 and V3 forks, Slipstream, PancakeSwap V3, MakerDAO LitePSM, and UniswapX orders. Protocol notes: [curve.md](references/protocols/curve.md), [aerodrome.md](references/protocols/aerodrome.md) (Slipstream). There is no Balancer aggregator hook in `v4-hooks-public`.
+See [implementations.md](references/implementations.md) for the per-venue table, deployment model (singleton vs one hook per venue pool), exact-output and native-ETH support, and the first-byte protocol ID scheme. Short version: Curve StableSwap and StableSwap-NG, Fluid DEX T1 and Lite, Tempo's stablecoin DEX, Uniswap V2 and V3 forks, Slipstream, PancakeSwap V3, MakerDAO LitePSM, and UniswapX orders. Protocol notes: [curve.md](references/protocols/curve.md), [aerodrome.md](references/protocols/aerodrome.md) (Slipstream).
 
 ## Workflow when building your own
 

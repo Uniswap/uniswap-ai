@@ -161,19 +161,5 @@ Robinhood
 OKX
 
 # Aggregator hooks
-Slipstream
-LitePSM
-StableSwap
 Guidestar
-TokenJar
-Aerodrome
-PancakeSwap
-UniswapX
-MakerDAO
-NatSpec
-AGPL
-USDS
-USDT
-MetaRegistry
-Subclassing
 swapper

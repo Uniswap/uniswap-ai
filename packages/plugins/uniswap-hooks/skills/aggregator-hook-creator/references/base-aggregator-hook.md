@@ -1,6 +1,6 @@
 # Building on BaseAggregatorHook
 
-Reference design taken from [`BaseAggregatorHook`](https://github.com/Uniswap/v4-hooks-public/blob/2264ac8b023011fdca8fd3422ada172dc10184e0/src/aggregator-hooks/BaseAggregatorHook.sol) at commit `2264ac8b023011fdca8fd3422ada172dc10184e0`. It describes what Uniswap's own hooks do. No Uniswap source recommends that outside developers subclass it.
+Reference design taken from [`BaseAggregatorHook`](https://github.com/Uniswap/v4-hooks-public/blob/2264ac8b023011fdca8fd3422ada172dc10184e0/src/aggregator-hooks/BaseAggregatorHook.sol). It describes what Uniswap's own hooks do. No Uniswap source recommends that outside developers subclass it.
 
 Read the three required disclosures in `SKILL.md` first: no published audit, `ProtocolFees.sol` is AGPL-3.0-only, and subclasses send the protocol fee to Uniswap's TokenJar.
 
@@ -41,8 +41,7 @@ The V3 family accepts a swap callback from the external pool. It guards this wit
 
 ## Quoting and TVL for routers
 
-- `quote` is not `view` but is meant to be static-called, and it applies the protocol fee.
-- `pseudoTotalValueLocked` reports the venue's balances. Pools emit no v4 liquidity events, so routers should poll it, not index events. Shared venue liquidity is not exclusive per v4 pool.
+- For `quote` and `pseudoTotalValueLocked` semantics, see [integrator-guide.md](integrator-guide.md#quote-and-tvl).
 - Create pools only for direct venue pairs so router-composed hops never fight over the same hidden liquidity (Tempo README guidance).
 
 ## Singleton or per-pool
@@ -51,7 +50,7 @@ From the [aggregator hooks README](https://github.com/Uniswap/v4-hooks-public/bl
 
 ## Address mining
 
-The hook address must encode the permission bits, and Uniswap's set also encodes a first-byte protocol ID, mined with [`AggregatorHookMiner`](https://github.com/Uniswap/v4-hooks-public/blob/2264ac8b023011fdca8fd3422ada172dc10184e0/src/aggregator-hooks/utils/AggregatorHookMiner.sol) and [`MineAggregatorHook.s.sol`](https://github.com/Uniswap/v4-hooks-public/blob/2264ac8b023011fdca8fd3422ada172dc10184e0/script/MineAggregatorHook.s.sol). The README says a random address has a 1/256 chance of a false ID match, so routers should not treat the ID as proof. See [implementations.md](implementations.md).
+The hook address must encode the permission bits, and Uniswap's set also encodes a first-byte protocol ID, mined with [`AggregatorHookMiner`](https://github.com/Uniswap/v4-hooks-public/blob/2264ac8b023011fdca8fd3422ada172dc10184e0/src/aggregator-hooks/utils/AggregatorHookMiner.sol) and [`MineAggregatorHook.s.sol`](https://github.com/Uniswap/v4-hooks-public/blob/2264ac8b023011fdca8fd3422ada172dc10184e0/script/MineAggregatorHook.s.sol). See [implementations.md](implementations.md#first-byte-protocol-ids) for the IDs and their limits.
 
 ## Testing and deployment
 

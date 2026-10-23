@@ -51,19 +51,15 @@ The `plugin.json` file defines the plugin:
 
 ```json
 {
-  "name": "uniswap-hooks",
-  "version": "1.7.0",
-  "description": "AI-powered, security-first assistance for creating Uniswap v4 hooks, including aggregator hooks, custom fee hooks and more",
+  "name": "my-plugin",
+  "version": "1.0.0",
+  "description": "What the plugin does",
   "author": {
     "name": "Uniswap Labs",
     "email": "ai-services@uniswap.org"
   },
   "license": "MIT",
-  "skills": [
-    "./skills/v4-security-foundations",
-    "./skills/v4-hook-generator",
-    "./skills/aggregator-hook-creator"
-  ]
+  "skills": ["./skills/my-skill"]
 }
 ```
 

@@ -34,7 +34,7 @@ Nx monorepo, Bun `1.3.13`, Node `>=22`, TypeScript. Root package is
 `packages/sdk/` **does not exist yet**; it's a reserved slot, not a
 broken config entry.
 
-Six plugins, fifteen skills:
+Plugins and their skills:
 
 | Plugin                  | Skills                                                                                           | Notes                                                                |
 | ----------------------- | ------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------- |

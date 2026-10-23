@@ -7,10 +7,8 @@ Uniswap integrates Aerodrome's concentrated-liquidity pools, called Slipstream, 
 - **Singleton hook.** One deployment serves many v4 pools. It extends `UniswapV3Aggregator` and changes only how the external pool is resolved.
 - **Pool lookup by tick spacing.** The hook calls the Slipstream factory's `getPool(token0, token1, tickSpacing)` and checks the pool's `tickSpacing()` matches the PoolKey.
 - **Dynamic fee flag.** Slipstream fees are dynamic, so the PoolKey's `fee` must be the dynamic-fee flag. Anything else reverts `ExternalPoolMismatch`.
-- **Swap path.** Calls the external pool's `swap` and pays inside `uniswapV3SwapCallback`. The callback is guarded: only the expected pool may call, only during an active swap, with a transient reentrancy guard.
+- **Swap path.** Calls the external pool's `swap` and pays inside `uniswapV3SwapCallback`. The callback is guarded as described in [callback safety](../base-aggregator-hook.md#callback-safety-v3-style-venues).
 - **Quotes** use a chain-deployed quoter compatible with `IQuoterV2`.
-- **No native ETH.** The V3 family reverts `NativeCurrencyNotSupported`. Use the wrapped token.
-- **Exact-input and exact-output** are both supported through the inherited V3 logic.
 
 ## Factory addresses
 

@@ -25,7 +25,7 @@ Or describe what you want:
 
 - **No published audit.** As of the pinned commit, no aggregator-hook audit report is published.
 - **License split.** `ProtocolFees.sol` is AGPL-3.0-only, while the repository is MIT. `BaseAggregatorHook` inherits it.
-- **Protocol fee.** Subclassing `BaseAggregatorHook` sends the protocol fee to Uniswap's TokenJar, resolved through `poolManager.protocolFeeController()`.
+- **Protocol fee.** A subclass of `BaseAggregatorHook` sends the protocol fee to Uniswap's TokenJar, resolved through `poolManager.protocolFeeController()`.
 
 ## Three paths
 

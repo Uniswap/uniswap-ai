@@ -1,6 +1,6 @@
 # Aggregator Hooks Uniswap Has Implemented
 
-Source: [`src/aggregator-hooks/implementations`](https://github.com/Uniswap/v4-hooks-public/tree/2264ac8b023011fdca8fd3422ada172dc10184e0/src/aggregator-hooks/implementations) at commit `2264ac8b023011fdca8fd3422ada172dc10184e0`. Deployment models come from the [aggregator hooks README](https://github.com/Uniswap/v4-hooks-public/blob/2264ac8b023011fdca8fd3422ada172dc10184e0/src/aggregator-hooks/README.md).
+Source: [`src/aggregator-hooks/implementations`](https://github.com/Uniswap/v4-hooks-public/tree/2264ac8b023011fdca8fd3422ada172dc10184e0/src/aggregator-hooks/implementations). Deployment models come from the [aggregator hooks README](https://github.com/Uniswap/v4-hooks-public/blob/2264ac8b023011fdca8fd3422ada172dc10184e0/src/aggregator-hooks/README.md).
 
 | Venue                       | Implementation                                                                                                                                                                              | Deployment model                                | Exact-output                         | Native ETH                               |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- | ------------------------------------ | ---------------------------------------- |
@@ -35,5 +35,4 @@ The README's UniswapX row is stale: the mining script defines the UniswapX ID as
 
 ## Where the hooks are deployed
 
-Do not copy addresses from this skill. The router's configuration lists each chain's sources:
-[Ethereum](https://github.com/Uniswap/guidestar-public/blob/ab00e840fef9e22c595657b372f714361053368b/config/1.json), [Base](https://github.com/Uniswap/guidestar-public/blob/ab00e840fef9e22c595657b372f714361053368b/config/8453.json), [Robinhood Chain](https://github.com/Uniswap/guidestar-public/blob/ab00e840fef9e22c595657b372f714361053368b/config/4663.json). See [integrator-guide.md](integrator-guide.md) for how to read them and their caveats.
+Do not copy addresses from this skill. Read the router's per-chain configuration, linked with its caveats in [integrator-guide.md](integrator-guide.md#finding-the-hooks).

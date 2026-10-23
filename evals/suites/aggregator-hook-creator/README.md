@@ -5,8 +5,7 @@ hooks whose pools execute swaps on an external venue.
 
 ## Overview
 
-The cases check the skill against Uniswap's public aggregator-hook code (`v4-hooks-public`), not
-against the earlier design that compared prices on-chain and used arbitrary-call `hookData`.
+The cases check the skill against Uniswap's public aggregator-hook code (`v4-hooks-public`).
 
 | Case                                | Description                                                     | Key Assertions                                                  |
 | ----------------------------------- | --------------------------------------------------------------- | --------------------------------------------------------------- |

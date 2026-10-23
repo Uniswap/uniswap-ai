@@ -48,8 +48,4 @@ Details: [Guidestar routing in the API docs](https://developers.uniswap.org/docs
 
 ## If a venue is not routed
 
-Routing picks up many hooks automatically, and some need review. A hook you deployed yourself can be submitted with the [hook allowlist form](https://developers.uniswap.org/hook-allowlist); that review is about routing compatibility only. To get a venue into Uniswap's own set, use [get in touch](https://developers.uniswap.org/uniswap-labs-hooks).
-
-## Launch background
-
-Uniswap's [launch post](https://blog.uniswap.org/aggregator-hooks-are-now-live) announces aggregator hooks for the Uniswap interface and API. This skill does not repeat the post's figures because no other public source confirms them. It does not name which venues the post counts, and no public source lists them.
+Routing picks up many hooks automatically, and some need review. For the hook allowlist form and the contact point for adding a venue to Uniswap's own set, see "Pick your path" in [SKILL.md](../SKILL.md#pick-your-path).

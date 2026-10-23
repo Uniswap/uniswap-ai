@@ -8,7 +8,6 @@ Uniswap's Curve aggregator hooks are [`StableSwapAggregator`](https://github.com
 - **Token indices are discovered at initialization.** `_beforeInitialize` scans `coins(i)` (up to 8), maps each v4 currency to an index, and stores it per PoolId.
 - **Pool validation.** The hook checks the Curve MetaRegistry: the pool must be registered, and meta pools are rejected.
 - **Native ETH.** v4 uses the zero address and Curve uses a sentinel address; the hook translates between them.
-- **Interfaces are defined in the repo** because Curve is Vyper and ships no Solidity interfaces.
 
 ## Swap flow
 
@@ -17,11 +16,10 @@ Uniswap's Curve aggregator hooks are [`StableSwapAggregator`](https://github.com
 3. Measure the output by balance difference. A low-level call is used because some pools, such as 3pool, return nothing.
 4. The base settles the output and applies the protocol fee.
 
-`min_dy = 0` is acceptable only because the router enforces the user's minimum. A path that reaches the hook without a router limit would expose users to unbounded slippage.
+For when `min_dy = 0` is safe, see "Slippage lives in the router" in [SKILL.md](../../SKILL.md#how-an-aggregator-hook-works).
 
 ## Limits
 
-- StableSwap is exact-input only (`ExactOutputNotSupported`); StableSwap-NG documents exact-output support.
 - `exchange_underlying` is not used, because meta pools are rejected.
 
 Curve documentation: [curve.readthedocs.io](https://curve.readthedocs.io/).

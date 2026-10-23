@@ -75,7 +75,6 @@ After plugin installation, the plugin's skills should be available as slash comm
 
 ```text
 /v4-security-foundations
-/aggregator-hook-creator
 ```
 
 ## Troubleshooting
