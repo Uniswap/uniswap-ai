@@ -4,7 +4,7 @@ Evaluate whether the response reflects how Uniswap's aggregator hooks handle sli
 
 ## For a slippage question (`min_dy = 0`)
 
-1. Says `min_dy = 0` is acceptable only because the router (for example the Universal Router) enforces the user's minimum output, and the hook has no slippage check of its own
+1. Says the hook has no slippage check of its own, and `min_dy = 0` is acceptable only because the swapper sets a minimum output on its swap
 2. States that the swapper must set the limit, because anyone can call `PoolManager.swap` and a hook author cannot confirm that every path carries one
 3. Says the hook should instead measure actual output by balance difference, validate the venue at initialization, and not trust unchecked return values
 4. Does not recommend a TWAP or an on-chain price comparison inside the hook as the fix

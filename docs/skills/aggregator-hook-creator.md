@@ -43,7 +43,7 @@ No public Uniswap source recommends that outside developers subclass `BaseAggreg
 2. The hook takes the swapper's input, calls the external venue, and settles the output to the `PoolManager`.
 3. It returns a `BeforeSwapDelta` whose specified side cancels the core swap, so no v4 liquidity is used.
 
-The base enables `beforeSwap`, `beforeSwapReturnDelta`, `beforeInitialize`, and `beforeAddLiquidity`. It never enables `afterSwap`, and adding liquidity always reverts. Slippage is checked by the router, not the hook, and route choice happens off-chain.
+The base enables `beforeSwap`, `beforeSwapReturnDelta`, `beforeInitialize`, and `beforeAddLiquidity`. It never enables `afterSwap`, and adding liquidity always reverts. The hook does not check slippage, so the swapper must set a limit, and route choice happens off-chain.
 
 ## What the skill covers
 

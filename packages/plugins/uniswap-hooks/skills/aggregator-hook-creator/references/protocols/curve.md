@@ -16,7 +16,7 @@ Uniswap's Curve aggregator hooks are [`StableSwapAggregator`](https://github.com
 3. Measure the output by balance difference. A low-level call is used because some pools, such as 3pool, return nothing.
 4. The base settles the output and applies the protocol fee.
 
-For when `min_dy = 0` is safe, see "Slippage lives in the router" in [SKILL.md](../../SKILL.md#how-an-aggregator-hook-works).
+For when `min_dy = 0` is safe, see "Slippage is the swapper's job" in [SKILL.md](../../SKILL.md#how-an-aggregator-hook-works).
 
 ## Limits
 

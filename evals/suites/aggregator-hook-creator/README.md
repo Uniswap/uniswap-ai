@@ -11,7 +11,7 @@ The cases check the skill against Uniswap's public aggregator-hook code (`v4-hoo
 | ----------------------------------- | --------------------------------------------------------------- | --------------------------------------------------------------- |
 | `implement-base-aggregator-hook.md` | Skeleton hook in the `BaseAggregatorHook` style                 | Overrides `_conductSwap` and `_rawQuote`; no after-swap hook    |
 | `integrator-quote.md`               | Router prices a swap and tracks depth                           | `quote`, `pseudoTotalValueLocked`, static call, router slippage |
-| `min-dy-zero-security.md`           | Why `min_dy = 0` is acceptable only with router slippage checks | Router enforces limits; no TWAP in the hook                     |
+| `min-dy-zero-security.md`           | Why `min_dy = 0` is acceptable only if the swapper sets a limit | Swapper must set the limit; no TWAP in the hook                 |
 | `callback-validation-security.md`   | Protecting a V3-style swap callback                             | Sender checks, active-swap check, reentrancy guard              |
 | `paths-and-disclosures.md`          | Corrects false assumptions about recommendations and audits     | No audit, AGPL `ProtocolFees`, TokenJar fee                     |
 

@@ -59,7 +59,7 @@ tests:
           - 'staticcall'
           - 'cast call'
 
-  # Test 3: Why min_dy = 0 is acceptable only with router slippage checks
+  # Test 3: Why min_dy = 0 is acceptable only if the swapper sets a limit
   - vars:
       case_content: file://cases/min-dy-zero-security.md
     assert:
