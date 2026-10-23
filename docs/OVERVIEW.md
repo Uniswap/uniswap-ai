@@ -88,7 +88,7 @@ All tools in this repository are designed to work with any LLM coding agent, not
 ### Prerequisites
 
 - Node.js 22.x
-- [Bun](https://bun.sh) 1.3.13 or later
+- [Bun](https://bun.sh) 1.4.4 or later
 
 ### Setup
 

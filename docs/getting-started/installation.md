@@ -54,7 +54,7 @@ bunx nx run-many -t test
 | ----------- | ------- | ----------------- |
 | Claude Code | Latest  | Plugin runtime    |
 | Node.js     | 22.x    | Local development |
-| Bun         | 1.3.13+ | Local development |
+| Bun         | 1.4.4+  | Local development |
 
 ### Bun (for contributors)
 
