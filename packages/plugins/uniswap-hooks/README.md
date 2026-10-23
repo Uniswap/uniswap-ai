@@ -66,7 +66,7 @@ Work with Uniswap v4 aggregator hooks, which execute swaps on external liquidity
 - Integrators: `quote`, `pseudoTotalValueLocked`, and API routing
 - Developers: the patterns in `BaseAggregatorHook`
 - Venues: where to ask Uniswap Labs about getting added
-- Required disclosures: no published audit, AGPL-3.0-only `ProtocolFees`, and fee routing to Uniswap's TokenJar
+- Required disclosures: no published audit, AGPL-3.0-only `ProtocolFees` and `IFeeClassifiedHook`, and fee routing to Uniswap's TokenJar
 
 **Usage:**
 

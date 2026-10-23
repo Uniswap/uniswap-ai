@@ -24,7 +24,7 @@ Or describe what you want:
 ## Disclosures
 
 - **No published audit.** As of the pinned commit, no aggregator-hook audit report is published.
-- **License split.** `ProtocolFees.sol` is AGPL-3.0-only, while the repository is MIT. `BaseAggregatorHook` inherits it.
+- **License split.** `ProtocolFees.sol` and `IFeeClassifiedHook` (from `Uniswap/protocol-fees`) are AGPL-3.0-only, while the repository is MIT. `BaseAggregatorHook` inherits both.
 - **Protocol fee.** A subclass of `BaseAggregatorHook` sends the protocol fee to Uniswap's TokenJar, resolved through `poolManager.protocolFeeController()`.
 
 ## Three paths
@@ -35,7 +35,7 @@ Or describe what you want:
 | A developer building your own aggregator hook    | The patterns in `BaseAggregatorHook`                                                                                                           |
 | A venue that wants to be in Uniswap's own set    | [Get in touch](https://developers.uniswap.org/uniswap-labs-hooks) and the [hook allowlist form](https://developers.uniswap.org/hook-allowlist) |
 
-No public Uniswap source recommends that outside developers subclass `BaseAggregatorHook`, or invites outside pull requests for new venues. The skill treats it as a reference design.
+No public Uniswap source recommends that outside developers subclass `BaseAggregatorHook`, or says a pull request for a new venue will be accepted. The repository documents contribution guidelines, and the skill treats `BaseAggregatorHook` as a reference design.
 
 ## How it works
 

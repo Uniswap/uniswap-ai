@@ -2,7 +2,7 @@
 
 Reference design taken from [`BaseAggregatorHook`](https://github.com/Uniswap/v4-hooks-public/blob/2264ac8b023011fdca8fd3422ada172dc10184e0/src/aggregator-hooks/BaseAggregatorHook.sol). It describes what Uniswap's own hooks do. No Uniswap source recommends that outside developers subclass it.
 
-Read the three required disclosures in `SKILL.md` first: no published audit, `ProtocolFees.sol` is AGPL-3.0-only, and subclasses send the protocol fee to Uniswap's TokenJar.
+Read the three required disclosures in `SKILL.md` first: no published audit, `ProtocolFees.sol` and `IFeeClassifiedHook` are AGPL-3.0-only and inherited, and subclasses send the protocol fee to Uniswap's TokenJar.
 
 ## What you implement
 
@@ -67,7 +67,7 @@ Before going live: mine the address, initialize one pool per pair, watch the `Ho
 ## Security checks specific to this pattern
 
 - The hook must measure real output, validate venue identity at initialization, and never trust unchecked venue return data.
-- Slippage is checked by the router, so `min_dy = 0` style calls are acceptable only on paths that always carry a router limit. Confirm that for every entry point.
+- The hook has no slippage check, and the router's limit is the swapper's to set: anyone can call `PoolManager.swap`, so a hook author cannot confirm that every path carries a limit. The V3 family passes MIN/MAX as the price limit to the external pool and never forwards the caller's `sqrtPriceLimitX96`.
 - A delta that fully consumes the input makes the swap a NoOp that bypasses the pool, so input and output math and internal accounting must be exact (see the [v4 security framework](https://developers.uniswap.org/docs/protocols/v4/security)).
 - Assume venue state can change before callbacks finish. Keep external calls few and guarded.
 - External liquidity increases risk: the security framework scores "External liquidity exposure" explicitly.

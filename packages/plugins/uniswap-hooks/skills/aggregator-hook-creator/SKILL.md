@@ -12,7 +12,7 @@ metadata:
 
 # Aggregator Hooks
 
-An aggregator hook is a v4 hook whose pool holds no liquidity of its own. Every swap is executed against an external venue, and the hook reports the result to the `PoolManager` through `beforeSwapReturnDelta`. Uniswap Labs maintains a set of them in [`Uniswap/v4-hooks-public`](https://github.com/Uniswap/v4-hooks-public/tree/2264ac8b023011fdca8fd3422ada172dc10184e0/src/aggregator-hooks) (MIT, except `ProtocolFees.sol`). All links in this skill point at commit `2264ac8b023011fdca8fd3422ada172dc10184e0`; check `main` for newer behavior before relying on a detail.
+An aggregator hook is a v4 hook whose pool holds no liquidity of its own. Every swap is executed against an external venue, and the hook reports the result to the `PoolManager` through `beforeSwapReturnDelta`. Uniswap Labs maintains a set of them in [`Uniswap/v4-hooks-public`](https://github.com/Uniswap/v4-hooks-public/tree/2264ac8b023011fdca8fd3422ada172dc10184e0/src/aggregator-hooks) (MIT, with the AGPL-3.0-only files named under Required disclosures). All links in this skill point at commit `2264ac8b023011fdca8fd3422ada172dc10184e0`; check `main` for newer behavior before relying on a detail.
 
 > **Security companion.** Complete `v4-security-foundations` first. An aggregator hook moves user funds through your contract and an external venue, so the delta, external-call, and reentrancy risks apply in full.
 
@@ -21,16 +21,16 @@ An aggregator hook is a v4 hook whose pool holds no liquidity of its own. Every 
 State these to the user whenever they plan to build, deploy, or fork aggregator-hook code:
 
 1. **No published audit.** As of the pinned commit, no aggregator-hook audit report is published. The repo's audit table and `docs/audits/` cover other hooks only. Do not describe aggregator hooks as audited.
-2. **License split.** [`ProtocolFees.sol`](https://github.com/Uniswap/v4-hooks-public/blob/2264ac8b023011fdca8fd3422ada172dc10184e0/src/aggregator-hooks/ProtocolFees.sol) is `AGPL-3.0-only`, while the repo is MIT. `BaseAggregatorHook` inherits it. Check license obligations before copying or subclassing, and never paste `ProtocolFees.sol` into an MIT project.
-3. **Protocol fee goes to Uniswap's TokenJar.** A subclass of `BaseAggregatorHook` takes a protocol fee from the unspecified currency and sends it to the `tokenJar`, which the base resolves through `poolManager.protocolFeeController()`. A forked hook inherits that behavior unless the fee logic is replaced.
+2. **License split.** [`ProtocolFees.sol`](https://github.com/Uniswap/v4-hooks-public/blob/2264ac8b023011fdca8fd3422ada172dc10184e0/src/aggregator-hooks/ProtocolFees.sol) and [`IFeeClassifiedHook`](https://github.com/Uniswap/protocol-fees/blob/656096fd382417c9eadc1f54cb45cdd3dd1bc362/src/interfaces/IFeeClassifiedHook.sol) (from `Uniswap/protocol-fees` at `656096f`) are `AGPL-3.0-only`, while the repo is MIT. `BaseAggregatorHook` inherits both, so a subclass is not MIT-only. Check license obligations before copying or subclassing, and never paste either file into an MIT project.
+3. **Protocol fee goes to Uniswap's TokenJar.** A subclass of `BaseAggregatorHook` takes a protocol fee from the unspecified currency and sends it to the `tokenJar`, which the base resolves through `poolManager.protocolFeeController()`. A forked hook inherits that behavior.
 
 ## Pick your path
 
-| You are...                                                             | Path                                                                                                                                        |
-| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| An integrator or router using Uniswap's deployed aggregator hooks      | Call `quote` and `pseudoTotalValueLocked`, or let the Uniswap API route to them. See [integrator-guide.md](references/integrator-guide.md). |
-| A developer building your own aggregator hook                          | Follow the patterns in `BaseAggregatorHook`. See [base-aggregator-hook.md](references/base-aggregator-hook.md).                             |
-| A venue that wants to be part of Uniswap's own set of aggregator hooks | No public source invites outside pull requests for new venues. Use the "get in touch" form (below). Do not assume a PR will be accepted.    |
+| You are...                                                             | Path                                                                                                                                                                                                                                        |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| An integrator or router using Uniswap's deployed aggregator hooks      | Call `quote` and `pseudoTotalValueLocked`, or let the Uniswap API route to them. See [integrator-guide.md](references/integrator-guide.md).                                                                                                 |
+| A developer building your own aggregator hook                          | Follow the patterns in `BaseAggregatorHook`. See [base-aggregator-hook.md](references/base-aggregator-hook.md).                                                                                                                             |
+| A venue that wants to be part of Uniswap's own set of aggregator hooks | The repo's README points contributors to `CONTRIBUTING.md`, and the aggregator README has an "Adding support for a new protocol" section. No public source says a PR for a new venue will be accepted. Use the "get in touch" form (below). |
 
 No Uniswap source says outside developers should subclass `BaseAggregatorHook`, and none says they must. It is the pattern Uniswap's own hooks follow, so this skill describes it as a reference design, not as a Uniswap recommendation.
 
@@ -56,7 +56,7 @@ Facts verified in [`BaseAggregatorHook.sol`](https://github.com/Uniswap/v4-hooks
 - **No v4 liquidity:** `_beforeAddLiquidity` always reverts `LiquidityNotAllowed`. A swap does not touch v4 pool state, so this is a NoOp-style swap by design (see the NoOp section of `v4-security-foundations`).
 - **Implementer surface:** override `_conductSwap`, `_rawQuote`, and `pseudoTotalValueLocked`.
 - **Delta sign:** the specified-side delta is `int128(-params.amountSpecified)` to cancel the core swap. The unspecified side is `-amountOut` for exact-input and `+amountIn` for exact-output, adjusted by the protocol fee.
-- **Slippage lives in the router.** The hook does not enforce a minimum output and has no TWAP or on-chain price comparison. `StableSwapAggregator` passes `min_dy = 0` to Curve with the comment that the router checks slippage. That is safe only because the swap always arrives through a router that enforces the user's limit; a hook callable by an unprotected path would not be.
+- **Slippage is the swapper's job.** The hook does not enforce a minimum output and has no TWAP or on-chain price comparison. `StableSwapAggregator` passes `min_dy = 0` to Curve with the comment that the router checks slippage. Anyone can call `PoolManager.swap` (v4-core `swap` is gated only by `onlyWhenUnlocked`), so a hook author cannot confirm that every path carries a limit; the swapper must set one. The V3 family also never forwards the caller's `sqrtPriceLimitX96`: [`UniswapV3Aggregator._conductSwap`](https://github.com/Uniswap/v4-hooks-public/blob/2264ac8b023011fdca8fd3422ada172dc10184e0/src/aggregator-hooks/implementations/UniswapV3/UniswapV3Aggregator.sol) passes `MIN_SQRT_RATIO_ADJ` or `MAX_SQRT_RATIO_ADJ` to the external pool.
 - **Routing is off-chain.** The hook always executes on its venue. Route choice and splitting happen in the router (Uniswap API or Guidestar), not in the hook.
 
 ## Venues Uniswap has implemented

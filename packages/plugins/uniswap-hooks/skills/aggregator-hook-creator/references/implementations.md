@@ -23,7 +23,7 @@ Notes:
 - The README names a `FluidDexV2Aggregator` as "Mainnet launch TBD". No such contract exists at the pinned commit.
 - Balancer has no aggregator hook in `v4-hooks-public`.
 - Curve and Fluid interfaces are redefined in the repo: Curve is written in Vyper, and Fluid's library pins exact Solidity versions that conflict with v4's pragma.
-- UniswapX is solver-driven: `quote` and `pseudoTotalValueLocked` revert with `QuoteNotSupported`, and the pool opts out of protocol-fee classification.
+- UniswapX is solver-driven: `quote` reverts `QuoteNotSupported` and `pseudoTotalValueLocked` reverts `TVLNotSupported`. `quoteWithHookData` takes the order as `hookData` and quotes it ([`BaseHookDataAggregator`](https://github.com/Uniswap/v4-hooks-public/blob/2264ac8b023011fdca8fd3422ada172dc10184e0/src/aggregator-hooks/BaseHookDataAggregator.sol)). The pool opts out of protocol-fee classification.
 - Tempo is a separate chain with a precompiled exchange. Its README documents a testnet deployment and gas measurements.
 - Which venues the launch blog post counts is unpublished. This skill does not give a count.
 
