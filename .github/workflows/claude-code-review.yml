@@ -106,7 +106,7 @@ env:
   # settings to roll forward without a commit. Declared once here so the
   # two install blocks below cannot drift onto different versions.
   # Fallback matches what Uniswap/universe runs today.
-  REVIEW_CLI_VERSION: ${{ vars.REVIEW_CLI_VERSION || '1.10.1' }}
+  REVIEW_CLI_VERSION: ${{ vars.REVIEW_CLI_VERSION || '1.10.6' }}
   # The Claude Code binary the SDK shells out to. install.sh accepts
   # `stable | latest | X.Y.Z`, so pin it rather than floating: an
   # unpinned install makes the review non-reproducible run-to-run for no
