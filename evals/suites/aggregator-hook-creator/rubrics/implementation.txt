@@ -1,0 +1,39 @@
+# Aggregator Hook Implementation Rubric
+
+Evaluate whether the response implements a hook in the style of Uniswap's BaseAggregatorHook.
+
+## Required Elements
+
+1. **Base contract and overrides**
+   - Extends `BaseAggregatorHook`
+   - Overrides `_conductSwap`, `_rawQuote`, and `pseudoTotalValueLocked`
+2. **Permissions**
+   - Does not enable the after-swap permission (the base enables only beforeSwap, beforeSwapReturnDelta, beforeInitialize, beforeAddLiquidity)
+   - Adding v4 liquidity reverts (`LiquidityNotAllowed`) because the pool holds no liquidity
+3. **Registration**
+   - Validates the external pool in `_beforeInitialize` (factory lookup and token check) and approves the venue once
+4. **Swap mechanics**
+   - Takes the input from the PoolManager, calls the venue, and measures real output (balance difference) instead of trusting a return value
+   - Settles through the base or the sync, send, settle pattern
+   - Rejects exact-output with a clear error, since the request is exact-input only
+5. **Pre-launch checks**
+   - Mentions the missing audit (an independent audit is needed), security review with `v4-security-foundations`, and fork, fuzz, and unit testing
+   - Mentions the AGPL-3.0-only `ProtocolFees` license and that the protocol fee goes to Uniswap's TokenJar, or otherwise flags both inherited obligations
+
+## Penalties
+
+- Enabling the after-swap permission, comparing prices on-chain, routing decisions inside the hook, or arbitrary-call `hookData`: cap the score at 0.5
+- Claiming Uniswap recommends subclassing `BaseAggregatorHook`: cap the score at 0.7
+
+## Scoring Guide
+
+- 5/5 elements correct: 1.0
+- 4/5: 0.85
+- 3/5: 0.7
+- 2/5: 0.5
+- 1/5: 0.3
+- 0/5: 0.0
+
+## Instructions
+
+Score the response and give a brief justification.
