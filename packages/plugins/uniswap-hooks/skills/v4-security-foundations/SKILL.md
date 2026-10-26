@@ -55,7 +55,7 @@ All 14 hook permissions with associated risk levels:
 
 ## CRITICAL: NoOp Rug Pull Attack
 
-The `BEFORE_SWAP_RETURNS_DELTA` permission (bit 10) is the most dangerous hook permission. A malicious hook can:
+The `BEFORE_SWAP_RETURNS_DELTA` permission (bit 3) is the most dangerous hook permission. A malicious hook can:
 
 1. Return a delta claiming it handled the entire swap
 2. PoolManager accepts this and settles the trade
