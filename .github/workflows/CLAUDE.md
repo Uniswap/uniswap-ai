@@ -9,8 +9,6 @@ This directory contains GitHub Actions workflows for the uniswap-ai repository. 
 | [PR Checks](#pr-checks)                                            | PR events                   | Build, lint, test, validate plugins & skills     |
 | [Check PR Title](#check-pr-title)                                  | PR events                   | Enforce conventional commit format               |
 | [Claude Code Review](#claude-code-review)                          | PR events, comments, manual | AI-powered code review via `@uniswap/review-cli` |
-| [Claude Docs Check](#claude-docs-check)                            | PR events                   | Validate documentation updates                   |
-| [Generate PR Title & Description](#generate-pr-title--description) | PR events                   | Auto-generate PR metadata                        |
 | [Generate Documentation](#generate-documentation)                  | Push to main, manual        | Auto-generate API documentation                  |
 | [Publish Packages](#publish-packages)                              | Push to main, manual        | Publish npm packages                             |
 | [Evals](#evals)                                                    | PR events, manual           | LLM evaluation of AI skills                      |
@@ -48,8 +46,7 @@ Enforces conventional commit format for PR titles using [semantic-pull-request](
 AI-powered code review using
 [`@uniswap/review-cli`](https://github.com/Uniswap/internal-tools/tree/main/packages/review-cli),
 the same reviewer running in `Uniswap/backend`, `Uniswap/universe`, and
-`Uniswap/tjar`. Previously this workflow called the `Uniswap/ai-toolkit`
-reusable workflow `_claude-code-review.yml`; that dependency is gone.
+`Uniswap/tjar`.
 
 - Provides formal GitHub reviews (APPROVE/REQUEST_CHANGES/COMMENT)
 - Posts inline comments on specific lines
@@ -166,28 +163,6 @@ known rough edges on the manual-cancel path:
 - If the run is cancelled while still **queued**, no job is allocated, so no
   finalization step runs at all. Harmless, because `triage` never ran either, so
   there is no 👀 or reply to leave stale.
-
-### Claude Docs Check
-
-**File:** `claude-docs-check.yml`
-
-Validates that PR documentation is properly updated:
-
-- Checks CLAUDE.md files are updated when code in their scope changes
-- Verifies README.md files reflect current state
-- Ensures plugin versions are bumped when plugin code changes
-
-Uses a shared reusable workflow.
-
-### Generate PR Title & Description
-
-**File:** `generate-pr-title-description.yml`
-
-Auto-generates PR titles and descriptions using Claude:
-
-- Creates conventional commit-style titles based on repository patterns
-- Generates comprehensive descriptions from merged PR templates
-- Skips rebases using patch-ID detection
 
 ### Generate Documentation
 
@@ -350,18 +325,3 @@ All workflows follow security best practices:
 - [Bullfrog](https://github.com/bullfrogsec/bullfrog) security scanning on all jobs
 - Concurrency groups prevent duplicate runs
 - Minimal required permissions per job
-
-## Shared Workflows
-
-Two workflows still call reusable workflows from `Uniswap/ai-toolkit`:
-
-- `_claude-docs-check.yml` - Documentation validation
-- `_generate-pr-metadata.yml` - PR title/description generation
-
-Code Review no longer does. It runs `@uniswap/review-cli` directly, so the
-review logic is a versioned package pin (`REVIEW_CLI_VERSION`) rather than a
-reusable-workflow SHA that has to be bumped by PR. Migrating PR metadata to
-the sibling `describe-cli` is a separate change; note `ci-check-pr-title.yml`
-has a `workflow_run` trigger keyed to the exact workflow name
-`Claude: Generate PR Title & Description`, so renaming or removing that
-workflow silently stops the title check's second trigger path from firing.
