@@ -1,6 +1,6 @@
 # CI/CD Workflows
 
-This directory contains GitHub Actions workflows for the uniswap-ai repository. The workflows are designed to validate PRs, automate code reviews, and publish packages.
+This directory contains GitHub Actions workflows for the uniswap-ai repository. The workflows are designed to validate PRs and publish packages.
 
 ## Workflow Overview
 
