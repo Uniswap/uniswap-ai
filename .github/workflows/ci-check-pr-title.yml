@@ -28,6 +28,10 @@ jobs:
       - uses: bullfrogsec/bullfrog@7dee337d4575320b6d8cbe9a56d48d2fb765963a # v0.11.1
         with:
           egress-policy: block
+          # bullfrog >= v0.9 no longer allows these by default; checkout and the title check need them.
+          allowed-domains: |
+            github.com
+            api.github.com
 
       - name: Checkout repository (for composite action)
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
