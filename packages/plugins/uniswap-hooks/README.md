@@ -4,7 +4,7 @@ AI-powered, security-first assistance for creating Uniswap v4 hooks.
 
 ## Overview
 
-This Claude Code plugin provides skills for developing Uniswap v4 hooks with a strong emphasis on security. It covers custom fee hooks and other advanced hook patterns—all built on a foundation of security best practices.
+This Claude Code plugin provides skills for developing Uniswap v4 hooks with a strong emphasis on security. It covers aggregator hooks, custom fee hooks, and other advanced hook patterns—all built on a foundation of security best practices.
 
 **Recommended Learning Path**: Complete `v4-security-foundations` before building specific hook types.
 
@@ -58,6 +58,28 @@ Or describe what you want to build:
 ```
 
 **Note**: Run `/v4-security-foundations` after generation to audit the produced hook code for fund-handling risks.
+
+### aggregator-hook-creator
+
+Work with Uniswap v4 aggregator hooks, which execute swaps on external liquidity venues (Curve, Fluid, Slipstream, Uniswap V2/V3 forks, and more). Covers:
+
+- Integrators: `quote`, `pseudoTotalValueLocked`, and API routing
+- Developers: the patterns in `BaseAggregatorHook`
+- Venues: where to ask Uniswap Labs about getting added
+- Required disclosures: no published audit, AGPL-3.0-only `ProtocolFees` and `IFeeClassifiedHook`, and fee routing to Uniswap's TokenJar
+
+**Usage:**
+
+```text
+/aggregator-hook-creator
+```
+
+Or describe what you want:
+
+```text
+"How do I quote an aggregator hook pool?"
+"Implement an aggregator hook following BaseAggregatorHook"
+```
 
 ## Installation
 

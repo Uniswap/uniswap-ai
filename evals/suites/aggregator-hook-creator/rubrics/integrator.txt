@@ -1,0 +1,36 @@
+# Integrator Quoting Rubric
+
+Evaluate whether the response correctly explains how a router prices and routes through a Uniswap aggregator hook.
+
+## Required Elements
+
+1. **Functions**
+   - Names `quote(zeroToOne, amountSpecified, poolId)` and `pseudoTotalValueLocked(poolId)`
+   - Says `quote` is declared non-view but should be called statically (eth_call), not sent as a transaction
+2. **Amount convention**
+   - Negative `amountSpecified` is exact-input, positive is exact-output
+   - Notes that quotes include the protocol fee, and that some hooks do not support exact-output
+3. **Liquidity depth**
+   - Recommends polling `pseudoTotalValueLocked`, not relying on liquidity events, because the pools hold no v4 liquidity
+4. **Discovery and routing**
+   - Points to the published routing configuration or the Uniswap API and Guidestar routing beta, rather than hardcoding addresses
+5. **Slippage**
+   - Says the hook does not enforce slippage, so the router or transaction must set a minimum output
+
+## Penalties
+
+- Requiring the integrator to implement `_conductSwap`, or telling them to write a hook: cap the score at 0.5
+- Recommending on-chain price comparison inside the hook: cap the score at 0.5
+
+## Scoring Guide
+
+- 5/5 elements correct: 1.0
+- 4/5: 0.85
+- 3/5: 0.7
+- 2/5: 0.5
+- 1/5: 0.3
+- 0/5: 0.0
+
+## Instructions
+
+Score the response and give a brief justification.

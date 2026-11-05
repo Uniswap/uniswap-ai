@@ -10,6 +10,7 @@ This plugin provides AI-powered, security-first assistance for creating Uniswap 
 
 - **v4-security-foundations**: Security-first guide for v4 hook development (NoOp attacks, delta accounting, access control, audit checklists)
 - **v4-hook-generator**: Generate Uniswap v4 hook contracts via OpenZeppelin MCP (hook type selection, permission configuration, MCP tool call generation)
+- **aggregator-hook-creator**: Work with aggregator hooks that execute swaps on external liquidity venues (integrator quoting and routing, building on `BaseAggregatorHook`, required disclosures)
 
 ## Uniswap v4 Hooks Architecture
 
@@ -88,8 +89,15 @@ uniswap-hooks/
 │   │       ├── audit-checklist.md
 │   │       ├── base-hook-template.md
 │   │       └── vulnerabilities-catalog.md
-│   └── v4-hook-generator/
-│       └── SKILL.md
+│   ├── v4-hook-generator/
+│   │   └── SKILL.md
+│   └── aggregator-hook-creator/
+│       ├── SKILL.md
+│       └── references/
+│           ├── base-aggregator-hook.md
+│           ├── integrator-guide.md
+│           ├── implementations.md
+│           └── protocols/
 ├── project.json
 ├── package.json
 ├── CLAUDE.md

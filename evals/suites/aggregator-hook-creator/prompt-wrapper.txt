@@ -1,0 +1,23 @@
+You are an AI assistant with the following skill loaded. Follow its instructions precisely when responding to the user's request.
+
+{{ skill_content }}
+
+***
+
+Reference material:
+
+{{ base_reference }}
+
+***
+
+{{ integrator_reference }}
+
+***
+
+{{ implementations_reference }}
+
+***
+
+User request:
+
+{{ case_content }}

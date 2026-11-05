@@ -1,0 +1,31 @@
+# Paths and Disclosures Rubric
+
+Evaluate whether the response corrects the user's assumptions and gives the required disclosures.
+
+## Required Elements
+
+1. **No recommendation claim**
+   - Does not claim Uniswap recommends subclassing `BaseAggregatorHook`; says it is the pattern Uniswap's own hooks follow or a reference design
+2. **No invitation claim**
+   - Does not promise that a pull request to Uniswap's hooks repository will be accepted; says the repository documents contribution guidelines (`CONTRIBUTING.md`, and an "Adding support for a new protocol" section in the aggregator README) but no public source says a new venue's PR will be accepted, and points to Uniswap Labs "get in touch" for a venue to be added to Uniswap's set
+3. **Routing for a self-built hook**
+   - Mentions the hook routing allowlist form, and that its review covers routing compatibility only and is not an audit or endorsement
+4. **Disclosures**
+   - Says no aggregator-hook audit is published as of the skill's pinned commit
+   - Says `ProtocolFees.sol` and the inherited `IFeeClassifiedHook` are AGPL-3.0-only, unlike the MIT repository, so copying or subclassing needs a license check
+   - Says a subclass sends the protocol fee to Uniswap's TokenJar
+5. **Correct premises**
+   - Corrects the user's claims that the code is audited and fully MIT licensed
+
+## Scoring Guide
+
+- 5/5 elements correct: 1.0
+- 4/5: 0.85
+- 3/5: 0.7
+- 2/5: 0.5
+- 1/5: 0.3
+- 0/5: 0.0
+
+## Instructions
+
+Score the response and give a brief justification.

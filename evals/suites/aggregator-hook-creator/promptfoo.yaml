@@ -1,0 +1,103 @@
+# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
+description: 'Aggregator Hook Creator Skill Evaluation'
+
+# Prompt template that injects skill context + reference material + case content
+prompts:
+  - file://prompt-wrapper.txt
+
+providers:
+  - id: anthropic:claude-sonnet-4-5-20250929
+    config:
+      temperature: 0
+      max_tokens: 16384 # the implementation case writes Solidity
+
+defaultTest:
+  options:
+    timeout: 180000 # 3 minutes per case
+  vars:
+    skill_content: file://../../../packages/plugins/uniswap-hooks/skills/aggregator-hook-creator/SKILL.md
+    base_reference: file://../../../packages/plugins/uniswap-hooks/skills/aggregator-hook-creator/references/base-aggregator-hook.md
+    integrator_reference: file://../../../packages/plugins/uniswap-hooks/skills/aggregator-hook-creator/references/integrator-guide.md
+    implementations_reference: file://../../../packages/plugins/uniswap-hooks/skills/aggregator-hook-creator/references/implementations.md
+
+tests:
+  # Test 1: Implement a hook in the BaseAggregatorHook style
+  - vars:
+      case_content: file://cases/implement-base-aggregator-hook.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/implementation.txt
+        threshold: 0.8
+        provider: anthropic:claude-sonnet-4-5-20250929
+      - type: contains
+        value: 'BaseAggregatorHook'
+      - type: contains
+        value: '_conductSwap'
+      - type: contains
+        value: '_rawQuote'
+      - type: not-regex
+        value: 'afterSwap\s*[:=]\s*true' # real aggregator hooks never enable afterSwap
+      - type: contains-any
+        value:
+          - 'AGPL'
+          - 'audit'
+
+  # Test 2: Integrator quoting
+  - vars:
+      case_content: file://cases/integrator-quote.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/integrator.txt
+        threshold: 0.8
+        provider: anthropic:claude-sonnet-4-5-20250929
+      - type: contains
+        value: 'pseudoTotalValueLocked'
+      - type: contains-any
+        value:
+          - 'eth_call'
+          - 'static call'
+          - 'staticcall'
+          - 'cast call'
+
+  # Test 3: Why min_dy = 0 is acceptable only if the swapper sets a limit
+  - vars:
+      case_content: file://cases/min-dy-zero-security.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/security.txt
+        threshold: 0.8
+        provider: anthropic:claude-sonnet-4-5-20250929
+      - type: contains-any
+        value:
+          - 'router'
+          - 'Universal Router'
+
+  # Test 4: Callback validation
+  - vars:
+      case_content: file://cases/callback-validation-security.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/security.txt
+        threshold: 0.8
+        provider: anthropic:claude-sonnet-4-5-20250929
+      - type: contains-any
+        value:
+          - 'msg.sender'
+          - 'UnauthorizedCallback'
+      - type: contains-any
+        value:
+          - 'reentran'
+          - 'Reentran'
+
+  # Test 5: Paths and required disclosures
+  - vars:
+      case_content: file://cases/paths-and-disclosures.md
+    assert:
+      - type: llm-rubric
+        value: file://rubrics/honesty-disclosures.txt
+        threshold: 0.8
+        provider: anthropic:claude-sonnet-4-5-20250929
+      - type: contains
+        value: 'AGPL'
+      - type: contains
+        value: 'TokenJar'
