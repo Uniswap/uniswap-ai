@@ -59,25 +59,9 @@ Every PR runs through these checks:
 | Plugin Validation | Validates plugin configurations      | ✅       |
 | Eval Coverage     | Ensures new skills have evals        | ✅       |
 | PR Title          | Validates conventional commit format | ✅       |
-| Docs Check        | Validates documentation updates      | ⚠️       |
 | Vale              | Checks prose quality                 | ✅       |
 
 ✅ = Required to pass
-⚠️ = Advisory (non-blocking)
-
-### Claude Code Review
-
-PRs automatically receive AI-powered code review:
-
-- Provides formal review (APPROVE/REQUEST_CHANGES/COMMENT)
-- Posts inline comments on specific lines
-- Focuses on security, best practices, and code quality
-
-To request a new review, comment:
-
-```text
-@request-claude-review
-```
 
 ## Review Process
 

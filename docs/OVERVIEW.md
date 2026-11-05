@@ -130,10 +130,6 @@ Contributions are welcome. Please ensure:
 PRs are automatically validated by several workflows:
 
 - **PR Checks** - Build, lint, test, documentation prose linting, and plugin validation
-- **Claude Code Review** - AI-powered code review with inline comments
-- **Claude Docs Check** - Validates CLAUDE.md and README updates, ensures plugin version bumps
-
-If the docs check flags missing documentation updates, you can apply the suggested changes directly from the PR comments.
 
 See [.github/workflows/CLAUDE.md](https://github.com/Uniswap/uniswap-ai/blob/main/.github/workflows/CLAUDE.md) for detailed CI documentation.
 
